@@ -313,8 +313,8 @@ func TestOnDeleteDasFilhasSemRestricao(t *testing.T) {
 	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, &taskRun.ID, vetorUnitario(0))); err != nil {
 		t.Fatalf("gravar memória: %v", err)
 	}
-	if err := repo.Registrar(t.Context(), tentativaDeExemplo(tenant, "acao-on-delete-"+taskRun.ID)); err != nil {
-		t.Fatalf("registrar tentativa: %v", err)
+	if _, err := repo.Reservar(t.Context(), tentativaDeExemplo(tenant, "acao-on-delete-"+taskRun.ID)); err != nil {
+		t.Fatalf("reservar tentativa: %v", err)
 	}
 
 	if _, err := pool.Exec(t.Context(), `DELETE FROM task_runs WHERE id = $1`, taskRun.ID); err != nil {
