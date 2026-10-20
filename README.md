@@ -116,6 +116,7 @@ make down
 | GET    | `/ready`           | Responde 200 se PostgreSQL e Redis respondem, 503 se não |
 | POST   | `/webhooks/github` | Aceita o webhook com 202 e ainda não o processa        |
 | POST   | `/acoes-remotas`   | Aprova, pede alteração ou reanálise a pedido do n8n    |
+| GET    | `/reports/weekly`  | Métricas da semana de uma instalação, para o digest do n8n |
 
 ```sh
 curl -i localhost:8080/health
@@ -155,6 +156,54 @@ Para conferir a permissão real de alguém, sem executar nada:
 ```sh
 make consultar-permissao INSTALLATION_ID=12345678 REPOSITORIO=dono/repo LOGIN=alice
 ```
+
+## Relatório semanal
+
+`GET /reports/weekly` é a fonte do digest semanal do n8n, que nunca lê o banco
+diretamente. A assinatura é a mesma das ações remotas, com a query string no
+lugar do corpo:
+
+```
+GET /reports/weekly?installation_id=12345678&inicio=2026-10-12
+X-Aprova-Timestamp: <unix em segundos>
+X-Aprova-Assinatura: sha256=<hex de HMAC(segredo, timestamp + "." + query string)>
+```
+
+`installation_id` é obrigatório. `inicio` (AAAA-MM-DD) abre uma janela de sete
+dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
+
+```json
+{
+  "installation_id": 12345678,
+  "inicio": "2026-10-12T00:00:00Z",
+  "fim": "2026-10-19T00:00:00Z",
+  "total_execucoes": 10,
+  "concluidas": 6,
+  "rejeitadas": 1,
+  "falhas": 1,
+  "em_andamento": 2,
+  "taxa_sucesso": 0.75,
+  "exigiram_aprovacao_humana": 4,
+  "risco_medio": 3,
+  "revertidas": 2
+}
+```
+
+| Campo | Origem |
+| --- | --- |
+| `total_execucoes` | `task_runs` recebidos na janela |
+| `concluidas`, `rejeitadas`, `falhas`, `em_andamento` | estado atual desses `task_runs` |
+| `taxa_sucesso` | concluídas ÷ (concluídas + rejeitadas + falhas); `null` se nenhuma terminou |
+| `exigiram_aprovacao_humana` | passaram por `aguardando_aprovacao` |
+| `risco_medio` | gate de risco com nível `medio` |
+| `revertidas` | `code_memory` com desfecho `revertida_apos_merge` registrado na janela |
+
+| Status | Quando |
+| --- | --- |
+| 200 | relatório montado |
+| 400 | `installation_id` ausente ou inválido, ou `inicio` fora do formato |
+| 401 | assinatura ausente, inválida ou velha, ou segredo não configurado |
+| 500 | falha ao consultar o banco |
 
 ## Testes
 
