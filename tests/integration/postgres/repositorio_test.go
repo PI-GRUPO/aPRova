@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math"
 	"math/rand/v2"
+	"slices"
 	"testing"
 	"time"
 
@@ -596,14 +597,14 @@ func tentativaDeExemplo(tenant int64, idAcao string) acaoremota.Tentativa {
 	}
 }
 
-func TestRegistroDeTentativasMantemOPrimeiroCliqueEVinculaOTaskRun(t *testing.T) {
+func TestRegistroDeTentativasGuardaCadaCliqueVinculadoAoTaskRun(t *testing.T) {
 	repo := exigirBanco(t)
 	tenant := novoTenant()
 	taskRun := novoTaskRun(t, repo, tenant)
 	idAcao := "clique-" + taskRun.ID
 
-	if err := repo.Registrar(t.Context(), tentativaDeExemplo(tenant, idAcao)); err != nil {
-		t.Fatalf("registrar: %v", err)
+	if _, err := repo.Reservar(t.Context(), tentativaDeExemplo(tenant, idAcao)); err != nil {
+		t.Fatalf("reservar: %v", err)
 	}
 	repetida := tentativaDeExemplo(tenant, idAcao)
 	repetida.Decisao, repetida.Motivo = acaoremota.DecisaoRepetida, acaoremota.MotivoAcaoRepetida
@@ -611,13 +612,35 @@ func TestRegistroDeTentativasMantemOPrimeiroCliqueEVinculaOTaskRun(t *testing.T)
 		t.Fatalf("registrar repetida: %v", err)
 	}
 
-	var decisao, taskRunID string
-	err := pool.QueryRow(t.Context(), `SELECT decision, task_run_id FROM remote_action_attempts WHERE action_id = $1`, idAcao).Scan(&decisao, &taskRunID)
+	linhas, err := pool.Query(t.Context(), `SELECT decision, task_run_id FROM remote_action_attempts WHERE action_id = $1 ORDER BY id`, idAcao)
 	if err != nil {
-		t.Fatalf("ler tentativa: %v", err)
+		t.Fatalf("ler tentativas: %v", err)
 	}
-	if decisao != string(acaoremota.DecisaoAceita) || taskRunID != taskRun.ID {
-		t.Errorf("esperava a primeira decisão vinculada ao task_run %s, obtive %s %s", taskRun.ID, decisao, taskRunID)
+	defer linhas.Close()
+
+	var decisoes []string
+	for linhas.Next() {
+		var decisao, taskRunID string
+		if err := linhas.Scan(&decisao, &taskRunID); err != nil {
+			t.Fatalf("ler tentativa: %v", err)
+		}
+		if taskRunID != taskRun.ID {
+			t.Errorf("tentativa %s vinculada a %s, esperava o task_run %s", decisao, taskRunID, taskRun.ID)
+		}
+		decisoes = append(decisoes, decisao)
+	}
+	if !slices.Equal(decisoes, []string{"aceita", "repetida"}) {
+		t.Errorf("cada clique vira uma linha: esperava [aceita repetida], obtive %v", decisoes)
+	}
+}
+
+func TestRegistrarTentativaAceitaSemReservaERecusado(t *testing.T) {
+	repo := exigirBanco(t)
+
+	err := repo.Registrar(t.Context(), tentativaDeExemplo(novoTenant(), "aceita-sem-reserva"))
+
+	if !errors.Is(err, acaoremota.ErrDecisaoExigeReserva) {
+		t.Errorf("a tentativa aceita só entra pela reserva, obtive %v", err)
 	}
 }
 
