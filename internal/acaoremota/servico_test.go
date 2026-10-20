@@ -94,7 +94,6 @@ func novoCenario(t *testing.T) *cenario {
 		Autoria:    c.autoria,
 		Executor:   c.executor,
 		Tentativas: c.tentativas,
-		Reservas:   NovaReservaEmMemoria(),
 		Agora:      func() time.Time { return momentoDeTeste },
 	})
 	if err != nil {
@@ -270,10 +269,12 @@ func (resolvedorSemLogin) LoginGitHub(context.Context, string) (string, error) {
 	return "", nil
 }
 
-type reservaComErro struct{}
+type registroQueNaoReserva struct {
+	*RegistroEmMemoria
+}
 
-func (reservaComErro) Reservar(context.Context, string) (bool, error) {
-	return false, errors.New("armazenamento de reservas fora do ar")
+func (registroQueNaoReserva) Reservar(context.Context, Tentativa) (Reserva, error) {
+	return Reserva{}, errors.New("armazenamento de reservas fora do ar")
 }
 
 func TestServicoTrataLoginVazioComoFaltaDeVinculo(t *testing.T) {
@@ -402,7 +403,7 @@ func TestServicoInformaFalhaQuandoAExecucaoFalha(t *testing.T) {
 
 func TestServicoNaoExecutaQuandoAReservaFalha(t *testing.T) {
 	c := novoCenario(t)
-	c.servico.reservas = reservaComErro{}
+	c.servico.tentativas = registroQueNaoReserva{c.tentativas}
 
 	decisao := c.servico.Processar(t.Context(), corpoDoPedido(t, nil))
 

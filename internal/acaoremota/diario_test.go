@@ -120,6 +120,14 @@ func (registroComErro) Registrar(context.Context, Tentativa) error {
 	return errors.New("armazenamento de tentativas fora do ar")
 }
 
+func (registroComErro) Reservar(context.Context, Tentativa) (Reserva, error) {
+	return Reserva{}, errors.New("armazenamento de tentativas fora do ar")
+}
+
+func (registroComErro) RegistrarFalhaNaExecucao(context.Context, Reserva, Motivo) error {
+	return errors.New("armazenamento de tentativas fora do ar")
+}
+
 func TestServicoMantemARecusaQuandoORegistroFalha(t *testing.T) {
 	saida := capturarDiario(t)
 	c := novoCenario(t)
@@ -143,7 +151,6 @@ func TestNovoServicoExigeTodasAsDependencias(t *testing.T) {
 			Autoria:     &autoriaFalsa{},
 			Executor:    &executorFalso{},
 			Tentativas:  NovoRegistroEmMemoria(),
-			Reservas:    NovaReservaEmMemoria(),
 		}
 	}
 
@@ -153,7 +160,6 @@ func TestNovoServicoExigeTodasAsDependencias(t *testing.T) {
 		"Autoria":     func(o *OpcoesServico) { o.Autoria = nil },
 		"Executor":    func(o *OpcoesServico) { o.Executor = nil },
 		"Tentativas":  func(o *OpcoesServico) { o.Tentativas = nil },
-		"Reservas":    func(o *OpcoesServico) { o.Reservas = nil },
 	}
 
 	for dependencia, remover := range casos {

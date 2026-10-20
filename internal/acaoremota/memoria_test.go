@@ -2,8 +2,6 @@ package acaoremota
 
 import (
 	"errors"
-	"sync"
-	"sync/atomic"
 	"testing"
 )
 
@@ -35,44 +33,6 @@ func TestResolvedorEmMemoriaNaoEnxergaMudancaNoMapaOriginal(t *testing.T) {
 
 	if _, err := resolvedor.LoginGitHub(t.Context(), "U02"); !errors.Is(err, ErrSemVinculo) {
 		t.Error("o resolvedor precisa guardar a própria cópia do mapa")
-	}
-}
-
-func TestReservaEmMemoriaAceitaCadaIDUmaUnicaVez(t *testing.T) {
-	reserva := NovaReservaEmMemoria()
-
-	primeira, err := reserva.Reservar(t.Context(), "acao-1")
-	if err != nil || !primeira {
-		t.Fatalf("a primeira reserva precisa ser aceita, obtive %v e %v", primeira, err)
-	}
-
-	segunda, err := reserva.Reservar(t.Context(), "acao-1")
-	if err != nil || segunda {
-		t.Errorf("a segunda reserva do mesmo id precisa ser negada, obtive %v e %v", segunda, err)
-	}
-
-	outra, err := reserva.Reservar(t.Context(), "acao-2")
-	if err != nil || !outra {
-		t.Errorf("outro id precisa ser aceito, obtive %v e %v", outra, err)
-	}
-}
-
-func TestReservaEmMemoriaAceitaUmUnicoVencedorEntreConcorrentes(t *testing.T) {
-	reserva := NovaReservaEmMemoria()
-
-	var vencedores atomic.Int32
-	var grupo sync.WaitGroup
-	for range 50 {
-		grupo.Go(func() {
-			if reservada, _ := reserva.Reservar(t.Context(), "clique-duplo"); reservada {
-				vencedores.Add(1)
-			}
-		})
-	}
-	grupo.Wait()
-
-	if vencedores.Load() != 1 {
-		t.Errorf("exatamente uma reserva concorrente pode vencer, venceram %d", vencedores.Load())
 	}
 }
 

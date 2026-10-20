@@ -158,7 +158,6 @@ func montarAmbiente(t *testing.T, vinculos map[string]string) *ambiente {
 		Autoria:     clienteGitHub,
 		Executor:    acaoremota.NovoExecutorNoGitHub(clienteGitHub, reenfileiradorFalso{}),
 		Tentativas:  tentativas,
-		Reservas:    acaoremota.NovaReservaEmMemoria(),
 		Agora:       func() time.Time { return momentoDeTeste },
 	})
 	if err != nil {
