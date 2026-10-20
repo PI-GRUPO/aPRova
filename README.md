@@ -188,7 +188,7 @@ fica de fora:
 | `approvals` | decisão humana de revisão | impede (`RESTRICT`) |
 | `code_memory` | decisões passadas com embedding, para a calibração | ficam, com `task_run_id` nulo |
 | `identity_links` | vínculo usuário do Slack → login do GitHub | não se relaciona |
-| `remote_action_attempts` | toda ação remota autenticada (`action_id` único) | ficam, com `task_run_id` nulo |
+| `remote_action_attempts` | cada tentativa de ação remota autenticada, uma linha por tentativa; no máximo uma aceita por `action_id` | ficam, com `task_run_id` nulo |
 
 `receipts` é append-only no próprio banco: um trigger recusa `UPDATE`, `DELETE`
 e `TRUNCATE`, mesmo vindos de fora da aplicação. O trigger, porém, não segura
