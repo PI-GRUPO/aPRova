@@ -429,6 +429,30 @@ func (r *RepositorioPostgres) BuscarVizinhos(ctx context.Context, tenantID int64
 	return vizinhos, nil
 }
 
+func (r *RepositorioPostgres) RelatorioSemanal(ctx context.Context, tenantID int64, inicio, fim time.Time) (domain.RelatorioSemanal, error) {
+	if tenantID <= 0 || !fim.After(inicio) {
+		return domain.RelatorioSemanal{}, fmt.Errorf("%w: tenant %d, janela %s a %s", domain.ErrDadosInvalidos, tenantID, inicio, fim)
+	}
+
+	linha, err := r.consultas.GetWeeklyReport(ctx, db.GetWeeklyReportParams{TenantID: tenantID, StartsAt: inicio, EndsAt: fim})
+	if err != nil {
+		return domain.RelatorioSemanal{}, traduzir("montar relatório semanal", err)
+	}
+
+	return domain.RelatorioSemanal{
+		TenantID:          tenantID,
+		Inicio:            inicio,
+		Fim:               fim,
+		Total:             linha.Total,
+		Concluidas:        linha.Succeeded,
+		Rejeitadas:        linha.Rejected,
+		Falhas:            linha.Failed,
+		ExigiramAprovacao: linha.NeededApproval,
+		RiscoMedio:        linha.MediumRisk,
+		Revertidas:        linha.Reverted,
+	}, nil
+}
+
 // VincularIdentidade associa o usuário do Slack ao login do GitHub no tenant,
 // substituindo um vínculo anterior.
 func (r *RepositorioPostgres) VincularIdentidade(ctx context.Context, tenantID int64, usuarioSlack, loginGitHub string) error {
