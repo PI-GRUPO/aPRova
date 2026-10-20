@@ -32,7 +32,6 @@ type CreateCodeMemoryParams struct {
 	Outcome    string          `json:"outcome"`
 }
 
-// Com task_run, ele precisa ser do mesmo tenant; senão nenhuma linha entra.
 func (q *Queries) CreateCodeMemory(ctx context.Context, arg CreateCodeMemoryParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createCodeMemory,
 		arg.TenantID,
@@ -75,9 +74,6 @@ type FindNearestCodeMemoryRow struct {
 	Distance   float64   `json:"distance"`
 }
 
-// Distância de cosseno, a mesma do índice HNSW. Só olha o próprio tenant; o
-// repositório liga hnsw.iterative_scan antes, para o filtro não esvaziar o
-// resultado de um tenant pequeno.
 func (q *Queries) FindNearestCodeMemory(ctx context.Context, arg FindNearestCodeMemoryParams) ([]FindNearestCodeMemoryRow, error) {
 	rows, err := q.db.Query(ctx, findNearestCodeMemory, arg.Embedding, arg.TenantID, arg.MaxResults)
 	if err != nil {

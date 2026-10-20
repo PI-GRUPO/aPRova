@@ -32,7 +32,6 @@ type CreateSandboxResultParams struct {
 	TaskRunID   string `json:"task_run_id"`
 }
 
-// O tenant vem do próprio task_run, para o job do sandbox não precisar sabê-lo.
 func (q *Queries) CreateSandboxResult(ctx context.Context, arg CreateSandboxResultParams) (SandboxResult, error) {
 	row := q.db.QueryRow(ctx, createSandboxResult,
 		arg.Attempt,

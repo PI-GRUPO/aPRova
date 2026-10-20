@@ -13,7 +13,6 @@ CREATE TABLE receipts (
 
 CREATE INDEX receipts_tenant_id ON receipts (tenant_id);
 
--- A cadeia de recibos é linear: cada recibo tem no máximo um sucessor.
 CREATE UNIQUE INDEX receipts_um_sucessor ON receipts (previous_receipt_id)
     WHERE previous_receipt_id IS NOT NULL;
 

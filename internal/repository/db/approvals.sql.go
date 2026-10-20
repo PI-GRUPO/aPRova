@@ -29,7 +29,6 @@ type CreateApprovalParams struct {
 	TaskRunID      string    `json:"task_run_id"`
 }
 
-// Uma reentrega do mesmo delivery_id não duplica a aprovação.
 func (q *Queries) CreateApproval(ctx context.Context, arg CreateApprovalParams) (int64, error) {
 	result, err := q.db.Exec(ctx, createApproval,
 		arg.DeliveryID,

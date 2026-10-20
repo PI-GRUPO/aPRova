@@ -1,5 +1,3 @@
--- Um id_acao repetido mantém o primeiro registro, por isso não há decisão
--- 'repetida' aqui: a repetição fica só no log.
 CREATE TABLE remote_action_attempts (
     action_id     text PRIMARY KEY,
     tenant_id     bigint NOT NULL CHECK (tenant_id > 0),

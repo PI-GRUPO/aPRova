@@ -1,5 +1,4 @@
 -- name: CreateSandboxResult :one
--- O tenant vem do próprio task_run, para o job do sandbox não precisar sabê-lo.
 INSERT INTO sandbox_results (
     tenant_id, task_run_id, attempt, compiled, tests_passed, tests_failed,
     raw_output, duration_ms, failure_type

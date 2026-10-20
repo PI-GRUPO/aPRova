@@ -1,6 +1,4 @@
 -- name: CreateRemoteActionAttempt :execrows
--- Um clique repetido com o mesmo action_id mantém o primeiro registro. O
--- task_run é o mais recente do pull request, nulo quando ainda não existe.
 INSERT INTO remote_action_attempts (
     action_id, tenant_id, task_run_id, action_type, slack_user_id, github_login,
     repository, pr_number, decision, reason, attempted_at

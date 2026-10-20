@@ -28,8 +28,6 @@ type CreateTaskRunParams struct {
 	ReceivedAt  time.Time `json:"received_at"`
 }
 
-// Uma reentrega do mesmo delivery_id não cria linha nova: devolve zero linhas
-// e quem chama busca a existente por delivery_id.
 func (q *Queries) CreateTaskRun(ctx context.Context, arg CreateTaskRunParams) (TaskRun, error) {
 	row := q.db.QueryRow(ctx, createTaskRun,
 		arg.TenantID,
@@ -164,8 +162,6 @@ type TransitionTaskRunParams struct {
 	FromState string `json:"from_state"`
 }
 
-// Só transiciona quem ainda está no estado esperado; zero linhas indica que
-// outro processo chegou antes.
 func (q *Queries) TransitionTaskRun(ctx context.Context, arg TransitionTaskRunParams) (TaskRun, error) {
 	row := q.db.QueryRow(ctx, transitionTaskRun, arg.ToState, arg.ID, arg.FromState)
 	var i TaskRun

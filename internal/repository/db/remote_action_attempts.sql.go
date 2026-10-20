@@ -40,8 +40,6 @@ type CreateRemoteActionAttemptParams struct {
 	AttemptedAt time.Time `json:"attempted_at"`
 }
 
-// Um clique repetido com o mesmo action_id mantém o primeiro registro. O
-// task_run é o mais recente do pull request, nulo quando ainda não existe.
 func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemoteActionAttemptParams) (int64, error) {
 	result, err := q.db.Exec(ctx, createRemoteActionAttempt,
 		arg.ActionID,
