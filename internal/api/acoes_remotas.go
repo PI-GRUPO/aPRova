@@ -55,8 +55,16 @@ func (s *Servidor) manipularAcaoRemota(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Servidor) motivoParaNaoAutenticar(cabecalhos http.Header, corpoBruto []byte) string {
-	if len(s.segredoAcoesRemotas) == 0 || s.acoesRemotas == nil {
+	if s.acoesRemotas == nil {
 		return "ações remotas não configuradas"
+	}
+
+	return s.motivoParaRecusarAssinaturaDoN8N(cabecalhos, corpoBruto)
+}
+
+func (s *Servidor) motivoParaRecusarAssinaturaDoN8N(cabecalhos http.Header, corpoBruto []byte) string {
+	if len(s.segredoAcoesRemotas) == 0 {
+		return "segredo do n8n não configurado"
 	}
 
 	timestamp := cabecalhos.Get(cabecalhoTimestampDaAcao)
