@@ -119,7 +119,6 @@ func montarAcoesRemotas(configuracao config.Configuracao) (api.ProcessadorDeAcoe
 		Autoria:     clienteGitHub,
 		Executor:    acaoremota.NovoExecutorNoGitHub(clienteGitHub, acaoremota.ReenfileiradorIndisponivel{}),
 		Tentativas:  acaoremota.NovoRegistroEmMemoria(),
-		Reservas:    acaoremota.NovaReservaEmMemoria(),
 	})
 }
 

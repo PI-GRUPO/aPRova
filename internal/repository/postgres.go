@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	intervaloConsultaPadrao = 500 * time.Millisecond
-	primeiraTentativa       = 1
+	intervaloConsultaPadrao  = 500 * time.Millisecond
+	primeiraTentativa        = 1
+	indiceDeUmaAceitaPorAcao = "remote_action_attempts_uma_aceita_por_acao"
 
 	codigoViolacaoUnica = "23505"
 )
@@ -447,17 +448,58 @@ func (r *RepositorioPostgres) ResolverIdentidade(ctx context.Context, tenantID i
 	return login, nil
 }
 
-// Registrar guarda a tentativa de ação remota. Pedidos inválidos ficam só no
-// log, porque não identificam com segurança tenant, tipo nem pull request. Um
-// clique repetido com o mesmo id_acao mantém o primeiro registro, e a
-// repetição também fica só no log.
+// Registrar guarda a tentativa de ação remota que não foi aceita. Pedidos
+// inválidos ficam só no log, porque não identificam com segurança tenant, tipo
+// nem pull request. A tentativa aceita só entra por Reservar.
 func (r *RepositorioPostgres) Registrar(ctx context.Context, tentativa acaoremota.Tentativa) error {
-	if tentativa.Decisao == acaoremota.DecisaoInvalida || tentativa.Decisao == acaoremota.DecisaoRepetida {
+	switch tentativa.Decisao {
+	case acaoremota.DecisaoInvalida:
 		return nil
+	case acaoremota.DecisaoAceita:
+		return acaoremota.ErrDecisaoExigeReserva
 	}
+
+	_, err := r.gravarTentativa(ctx, tentativa)
+	return err
+}
+
+// Reservar grava a tentativa como aceita antes da execução. O índice único
+// parcial remote_action_attempts_uma_aceita_por_acao garante, no banco, que só
+// uma tentativa aceita exista por id_acao; a segunda devolve ErrAcaoJaAceita.
+func (r *RepositorioPostgres) Reservar(ctx context.Context, tentativa acaoremota.Tentativa) (acaoremota.Reserva, error) {
+	tentativa.Decisao = acaoremota.DecisaoAceita
+
+	id, err := r.gravarTentativa(ctx, tentativa)
+	var erroPg *pgconn.PgError
+	if errors.As(err, &erroPg) && erroPg.ConstraintName == indiceDeUmaAceitaPorAcao {
+		return acaoremota.Reserva{}, fmt.Errorf("%w: %s", acaoremota.ErrAcaoJaAceita, tentativa.IDAcao)
+	}
+	if err != nil {
+		return acaoremota.Reserva{}, err
+	}
+	return acaoremota.Reserva{ID: id}, nil
+}
+
+// RegistrarFalhaNaExecucao passa a tentativa reservada para falha, o que
+// libera o id_acao para uma nova tentativa.
+func (r *RepositorioPostgres) RegistrarFalhaNaExecucao(ctx context.Context, reserva acaoremota.Reserva, motivo acaoremota.Motivo) error {
+	alteradas, err := r.consultas.MarkRemoteActionAttemptFailed(ctx, db.MarkRemoteActionAttemptFailedParams{
+		ID:     reserva.ID,
+		Reason: string(motivo),
+	})
+	if err != nil {
+		return traduzir("marcar tentativa de ação remota como falha", err)
+	}
+	if alteradas == 0 {
+		return fmt.Errorf("%w: tentativa %d", acaoremota.ErrReservaInexistente, reserva.ID)
+	}
+	return nil
+}
+
+func (r *RepositorioPostgres) gravarTentativa(ctx context.Context, tentativa acaoremota.Tentativa) (int64, error) {
 	numeroPR, err := numeroDePR(tentativa.NumeroPR)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var login *string
@@ -465,7 +507,7 @@ func (r *RepositorioPostgres) Registrar(ctx context.Context, tentativa acaoremot
 		login = &tentativa.LoginGitHub
 	}
 
-	_, err = r.consultas.CreateRemoteActionAttempt(ctx, db.CreateRemoteActionAttemptParams{
+	id, err := r.consultas.CreateRemoteActionAttempt(ctx, db.CreateRemoteActionAttemptParams{
 		ActionID:    tentativa.IDAcao,
 		TenantID:    tentativa.InstallationID,
 		Repository:  tentativa.Repositorio,
@@ -477,7 +519,10 @@ func (r *RepositorioPostgres) Registrar(ctx context.Context, tentativa acaoremot
 		Reason:      string(tentativa.Motivo),
 		AttemptedAt: tentativa.Em,
 	})
-	return traduzir("registrar tentativa de ação remota", err)
+	if err != nil {
+		return 0, fmt.Errorf("registrar tentativa de ação remota: %w", err)
+	}
+	return id, nil
 }
 
 // semLinhaNaTransicao distingue o task_run que mudou de estado do que nunca

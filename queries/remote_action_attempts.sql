@@ -1,4 +1,4 @@
--- name: CreateRemoteActionAttempt :execrows
+-- name: CreateRemoteActionAttempt :one
 INSERT INTO remote_action_attempts (
     action_id, tenant_id, task_run_id, action_type, slack_user_id, github_login,
     repository, pr_number, decision, reason, attempted_at
@@ -12,4 +12,9 @@ VALUES (
     sqlc.arg(action_type), sqlc.arg(slack_user_id), sqlc.narg(github_login),
     sqlc.arg(repository), sqlc.arg(pr_number), sqlc.arg(decision), sqlc.arg(reason), sqlc.arg(attempted_at)
 )
-ON CONFLICT (action_id) DO NOTHING;
+RETURNING id;
+
+-- name: MarkRemoteActionAttemptFailed :execrows
+UPDATE remote_action_attempts
+SET decision = 'falha', reason = sqlc.arg(reason)
+WHERE id = sqlc.arg(id) AND decision = 'aceita';

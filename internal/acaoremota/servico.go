@@ -29,7 +29,6 @@ type OpcoesServico struct {
 	Autoria     ConsultorAutoria
 	Executor    ExecutorAcao
 	Tentativas  RegistroTentativas
-	Reservas    ReservaDeAcoes
 	Agora       func() time.Time
 }
 
@@ -40,17 +39,17 @@ type Servico struct {
 	autoria     ConsultorAutoria
 	executor    ExecutorAcao
 	tentativas  RegistroTentativas
-	reservas    ReservaDeAcoes
 	politica    Politica
 	agora       func() time.Time
 }
 
 type desfecho struct {
-	pedido  Pedido
-	login   string
-	decisao Decisao
-	motivo  Motivo
-	causa   error
+	pedido       Pedido
+	login        string
+	decisao      Decisao
+	motivo       Motivo
+	causa        error
+	jaRegistrado bool
 }
 
 // NovoServico constrói o serviço a partir das dependências informadas. Todas
@@ -70,7 +69,6 @@ func NovoServico(opcoes OpcoesServico) (*Servico, error) {
 		autoria:     opcoes.Autoria,
 		executor:    opcoes.Executor,
 		tentativas:  opcoes.Tentativas,
-		reservas:    opcoes.Reservas,
 		politica:    NovaPolitica(),
 		agora:       opcoes.Agora,
 	}, nil
@@ -115,20 +113,28 @@ func (s *Servico) autorizar(ctx context.Context, pedido Pedido) desfecho {
 }
 
 func (s *Servico) efetivar(ctx context.Context, autorizado desfecho) desfecho {
-	reservada, err := s.reservas.Reservar(ctx, autorizado.pedido.IDAcao)
-	if err != nil {
-		return autorizado.com(DecisaoFalha, MotivoFalhaNaReserva, err)
-	}
-	if !reservada {
+	reserva, err := s.tentativas.Reservar(ctx, s.tentativaDe(autorizado))
+	switch {
+	case errors.Is(err, ErrAcaoJaAceita):
 		return autorizado.com(DecisaoRepetida, MotivoAcaoRepetida, nil)
+	case err != nil:
+		return autorizado.com(DecisaoFalha, MotivoFalhaNaReserva, err)
 	}
 
 	acao := AcaoAutorizada{Pedido: autorizado.pedido, LoginGitHub: autorizado.login}
 	if err := s.executor.Executar(ctx, acao); err != nil {
-		return autorizado.com(DecisaoFalha, MotivoFalhaNaExecucao, err)
+		s.liberarReserva(ctx, autorizado.pedido.IDAcao, reserva)
+		return autorizado.com(DecisaoFalha, MotivoFalhaNaExecucao, err).registrado()
 	}
 
-	return autorizado
+	return autorizado.registrado()
+}
+
+func (s *Servico) liberarReserva(ctx context.Context, idAcao string, reserva Reserva) {
+	if err := s.tentativas.RegistrarFalhaNaExecucao(context.WithoutCancel(ctx), reserva, MotivoFalhaNaExecucao); err != nil {
+		slog.ErrorContext(ctx, "a tentativa aceita não pôde ser marcada como falha depois do erro no GitHub; o id_acao continua reservado",
+			"id_acao", idAcao, "erro", err)
+	}
 }
 
 func (s *Servico) levantarSituacao(ctx context.Context, pedido Pedido, login string) (Situacao, error) {
@@ -149,7 +155,21 @@ func (s *Servico) levantarSituacao(ctx context.Context, pedido Pedido, login str
 }
 
 func (s *Servico) concluir(ctx context.Context, resultado desfecho) Decisao {
-	tentativa := Tentativa{
+	tentativa := s.tentativaDe(resultado)
+	registrarNoDiario(ctx, tentativa, resultado.causa)
+
+	if resultado.jaRegistrado {
+		return resultado.decisao
+	}
+	if err := s.tentativas.Registrar(ctx, tentativa); err != nil {
+		slog.ErrorContext(ctx, "falha ao registrar tentativa de ação remota", "id_acao", tentativa.IDAcao, "erro", err)
+	}
+
+	return resultado.decisao
+}
+
+func (s *Servico) tentativaDe(resultado desfecho) Tentativa {
+	return Tentativa{
 		IDAcao:         resultado.pedido.IDAcao,
 		Tipo:           resultado.pedido.Tipo,
 		UsuarioSlack:   resultado.pedido.UsuarioSlack,
@@ -161,14 +181,6 @@ func (s *Servico) concluir(ctx context.Context, resultado desfecho) Decisao {
 		Motivo:         resultado.motivo,
 		Em:             s.agora(),
 	}
-
-	registrarNoDiario(ctx, tentativa, resultado.causa)
-
-	if err := s.tentativas.Registrar(ctx, tentativa); err != nil {
-		slog.ErrorContext(ctx, "falha ao registrar tentativa de ação remota", "id_acao", tentativa.IDAcao, "erro", err)
-	}
-
-	return resultado.decisao
 }
 
 func registrarNoDiario(ctx context.Context, tentativa Tentativa, causa error) {
@@ -200,7 +212,6 @@ func exigirDependencias(opcoes OpcoesServico) error {
 		{"Autoria", opcoes.Autoria != nil},
 		{"Executor", opcoes.Executor != nil},
 		{"Tentativas", opcoes.Tentativas != nil},
-		{"Reservas", opcoes.Reservas != nil},
 	}
 
 	for _, dependencia := range dependencias {
@@ -209,6 +220,11 @@ func exigirDependencias(opcoes OpcoesServico) error {
 		}
 	}
 	return nil
+}
+
+func (d desfecho) registrado() desfecho {
+	d.jaRegistrado = true
+	return d
 }
 
 func (d desfecho) com(decisao Decisao, motivo Motivo, causa error) desfecho {

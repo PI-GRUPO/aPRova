@@ -2,6 +2,7 @@ package acaoremota
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Azulpasta/aPRova/internal/platform"
@@ -104,13 +105,31 @@ type ReenfileiradorAnalise interface {
 	Reenfileirar(ctx context.Context, acao AcaoAutorizada) error
 }
 
-// RegistroTentativas guarda cada pedido autenticado e o seu desfecho.
+// RegistroTentativas guarda cada tentativa de ação remota e garante que um
+// id_acao seja executado uma única vez. Reservar grava a tentativa como aceita
+// antes da execução e devolve ErrAcaoJaAceita quando já existe outra aceita
+// para o mesmo id_acao. RegistrarFalhaNaExecucao passa a tentativa reservada
+// para falha, o que libera o id_acao para uma nova tentativa. Registrar grava
+// as demais decisões e recusa a aceita com ErrDecisaoExigeReserva.
 type RegistroTentativas interface {
 	Registrar(ctx context.Context, tentativa Tentativa) error
+	Reservar(ctx context.Context, tentativa Tentativa) (Reserva, error)
+	RegistrarFalhaNaExecucao(ctx context.Context, reserva Reserva, motivo Motivo) error
 }
 
-// ReservaDeAcoes garante que cada id_acao produza efeito uma única vez.
-// Reservar devolve false quando o id_acao já foi reservado antes.
-type ReservaDeAcoes interface {
-	Reservar(ctx context.Context, idAcao string) (bool, error)
+// Reserva identifica a tentativa gravada como aceita antes da execução.
+type Reserva struct {
+	ID int64
 }
+
+var (
+	// ErrAcaoJaAceita indica que o id_acao já tem uma tentativa aceita.
+	ErrAcaoJaAceita = errors.New("acaoremota: id_acao já tem uma tentativa aceita")
+
+	// ErrDecisaoExigeReserva indica tentativa aceita gravada sem passar pela
+	// reserva.
+	ErrDecisaoExigeReserva = errors.New("acaoremota: tentativa aceita só é gravada pela reserva")
+
+	// ErrReservaInexistente indica reserva que não existe ou já não está aceita.
+	ErrReservaInexistente = errors.New("acaoremota: reserva inexistente ou já encerrada")
+)

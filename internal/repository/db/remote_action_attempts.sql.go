@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const createRemoteActionAttempt = `-- name: CreateRemoteActionAttempt :execrows
+const createRemoteActionAttempt = `-- name: CreateRemoteActionAttempt :one
 INSERT INTO remote_action_attempts (
     action_id, tenant_id, task_run_id, action_type, slack_user_id, github_login,
     repository, pr_number, decision, reason, attempted_at
@@ -24,7 +24,7 @@ VALUES (
     $5, $6, $7,
     $3, $4, $8, $9, $10
 )
-ON CONFLICT (action_id) DO NOTHING
+RETURNING id
 `
 
 type CreateRemoteActionAttemptParams struct {
@@ -41,7 +41,7 @@ type CreateRemoteActionAttemptParams struct {
 }
 
 func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemoteActionAttemptParams) (int64, error) {
-	result, err := q.db.Exec(ctx, createRemoteActionAttempt,
+	row := q.db.QueryRow(ctx, createRemoteActionAttempt,
 		arg.ActionID,
 		arg.TenantID,
 		arg.Repository,
@@ -53,6 +53,24 @@ func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemot
 		arg.Reason,
 		arg.AttemptedAt,
 	)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const markRemoteActionAttemptFailed = `-- name: MarkRemoteActionAttemptFailed :execrows
+UPDATE remote_action_attempts
+SET decision = 'falha', reason = $1
+WHERE id = $2 AND decision = 'aceita'
+`
+
+type MarkRemoteActionAttemptFailedParams struct {
+	Reason string `json:"reason"`
+	ID     int64  `json:"id"`
+}
+
+func (q *Queries) MarkRemoteActionAttemptFailed(ctx context.Context, arg MarkRemoteActionAttemptFailedParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markRemoteActionAttemptFailed, arg.Reason, arg.ID)
 	if err != nil {
 		return 0, err
 	}

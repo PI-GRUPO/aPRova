@@ -28,7 +28,9 @@ func (r *ResolvedorEmMemoria) LoginGitHub(_ context.Context, usuarioSlack string
 	return login, nil
 }
 
-// RegistroEmMemoria guarda as tentativas na memória do processo.
+// RegistroEmMemoria guarda as tentativas na memória do processo, com a mesma
+// regra da versão PostgreSQL: no máximo uma tentativa aceita por id_acao. Não
+// sobrevive a reinício nem cruza processos.
 type RegistroEmMemoria struct {
 	mutex      sync.Mutex
 	tentativas []Tentativa
@@ -39,12 +41,49 @@ func NovoRegistroEmMemoria() *RegistroEmMemoria {
 	return &RegistroEmMemoria{}
 }
 
-// Registrar guarda a tentativa.
+// Registrar guarda a tentativa. A aceita só entra por Reservar.
 func (r *RegistroEmMemoria) Registrar(_ context.Context, tentativa Tentativa) error {
+	if tentativa.Decisao == DecisaoAceita {
+		return ErrDecisaoExigeReserva
+	}
+
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
 	r.tentativas = append(r.tentativas, tentativa)
+	return nil
+}
+
+// Reservar guarda a tentativa como aceita, ou devolve ErrAcaoJaAceita quando
+// o id_acao já tem uma tentativa aceita.
+func (r *RegistroEmMemoria) Reservar(_ context.Context, tentativa Tentativa) (Reserva, error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	for _, registrada := range r.tentativas {
+		if registrada.IDAcao == tentativa.IDAcao && registrada.Decisao == DecisaoAceita {
+			return Reserva{}, ErrAcaoJaAceita
+		}
+	}
+
+	tentativa.Decisao = DecisaoAceita
+	r.tentativas = append(r.tentativas, tentativa)
+	return Reserva{ID: int64(len(r.tentativas))}, nil
+}
+
+// RegistrarFalhaNaExecucao passa a tentativa reservada para falha, liberando o
+// id_acao para uma nova tentativa.
+func (r *RegistroEmMemoria) RegistrarFalhaNaExecucao(_ context.Context, reserva Reserva, motivo Motivo) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	indice := reserva.ID - 1
+	if indice < 0 || indice >= int64(len(r.tentativas)) || r.tentativas[indice].Decisao != DecisaoAceita {
+		return ErrReservaInexistente
+	}
+
+	r.tentativas[indice].Decisao = DecisaoFalha
+	r.tentativas[indice].Motivo = motivo
 	return nil
 }
 
@@ -55,30 +94,4 @@ func (r *RegistroEmMemoria) Tentativas() []Tentativa {
 	defer r.mutex.Unlock()
 
 	return append([]Tentativa(nil), r.tentativas...)
-}
-
-// ReservaEmMemoria guarda os id_acao reservados na memória do processo. Não
-// sobrevive a reinício nem cruza processos.
-type ReservaEmMemoria struct {
-	mutex      sync.Mutex
-	reservados map[string]struct{}
-}
-
-// NovaReservaEmMemoria constrói uma reserva vazia.
-func NovaReservaEmMemoria() *ReservaEmMemoria {
-	return &ReservaEmMemoria{reservados: map[string]struct{}{}}
-}
-
-// Reservar marca o id_acao como usado, devolvendo false quando ele já tinha
-// sido reservado.
-func (r *ReservaEmMemoria) Reservar(_ context.Context, idAcao string) (bool, error) {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	if _, jaReservado := r.reservados[idAcao]; jaReservado {
-		return false, nil
-	}
-
-	r.reservados[idAcao] = struct{}{}
-	return true, nil
 }

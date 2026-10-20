@@ -69,6 +69,7 @@ type RemoteActionAttempt struct {
 	Reason      string    `json:"reason"`
 	AttemptedAt time.Time `json:"attempted_at"`
 	CreatedAt   time.Time `json:"created_at"`
+	ID          int64     `json:"id"`
 }
 
 type RiskGate struct {
