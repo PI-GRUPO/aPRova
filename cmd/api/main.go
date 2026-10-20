@@ -64,14 +64,17 @@ func executar() error {
 		return err
 	}
 
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+
 	servidorHTTP := &http.Server{
 		Addr: configuracao.EnderecoHTTP(),
 		Handler: api.NovoServidor(api.Opcoes{
 			Dependencias:        dependencias(bancoDados, clienteRedis),
 			SegredoWebhook:      []byte(configuracao.GitHubSegredoWebhook),
-			Execucoes:           repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{}),
+			Execucoes:           repositorio,
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
+			Relatorios:          repositorio,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
 	}

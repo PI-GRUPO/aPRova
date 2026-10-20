@@ -32,6 +32,10 @@ type ProcessadorDeAcoesRemotas interface {
 	Processar(ctx context.Context, corpo []byte) acaoremota.Decisao
 }
 
+type FonteDeRelatorios interface {
+	RelatorioSemanal(ctx context.Context, tenantID int64, inicio, fim time.Time) (domain.RelatorioSemanal, error)
+}
+
 // Opcoes reúne as dependências com que o servidor HTTP é construído.
 type Opcoes struct {
 	Dependencias        []Dependencia
@@ -39,6 +43,7 @@ type Opcoes struct {
 	Execucoes           RegistroDeExecucoes
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
+	Relatorios          FonteDeRelatorios
 	Agora               func() time.Time
 }
 
@@ -49,6 +54,7 @@ type Servidor struct {
 	execucoes           RegistroDeExecucoes
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
+	relatorios          FonteDeRelatorios
 	agora               func() time.Time
 }
 
@@ -65,6 +71,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		execucoes:           opcoes.Execucoes,
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
+		relatorios:          opcoes.Relatorios,
 		agora:               agora,
 	}
 }
@@ -82,6 +89,7 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/ready", s.manipularProntidao)
 	roteador.Post("/webhooks/github", s.manipularWebhookGitHub)
 	roteador.Post("/acoes-remotas", s.manipularAcaoRemota)
+	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
 
 	return roteador
 }
