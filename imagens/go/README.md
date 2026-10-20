@@ -23,6 +23,17 @@ tag e o digest juntos nos dois `FROM` e rode os testes de integração.
 Na Azure, a imagem é publicada pelo workflow `imagem-sandbox-go` com a tag do
 SHA do commit, nunca `latest`, e o worker a escolhe por `SANDBOX_IMAGEM_GO`.
 
+O registro, a identidade `aprova-github` que publica, a credencial OIDC e os
+segredos do repositório são configurados por `scripts/configurar-acr.sh`, que é
+idempotente e aceita `--plano` para só mostrar o que faria:
+
+```sh
+scripts/configurar-acr.sh aprovasandbox PI-GRUPO/aPRova --plano
+```
+
+Só um repositório publica por vez: a credencial `github-main` aceita um único
+subject, e rodar o script para outro repositório a reconcilia para ele.
+
 Tamanho na versão inicial: 406 MB descomprimida, cerca de 78 MB comprimida. A
 base sozinha responde por 373 MB, porque o toolchain do Go precisa estar
 presente para compilar e testar o código do PR.

@@ -5,7 +5,6 @@ GRUPO="rg-aprova"
 JOB="aprova-sandbox-teste"
 APLICACAO="aprova-github"
 CREDENCIAL_FEDERADA="github-main"
-REPOSITORIO_GITHUB="Azulpasta/aPRova"
 EMISSOR_OIDC="https://token.actions.githubusercontent.com"
 AUDIENCIA_OIDC="api://AzureADTokenExchange"
 PLANO_DO_REGISTRO="Basic"
@@ -19,20 +18,23 @@ PASSO="validação dos argumentos"
 trap 'echo "falhou no passo: ${PASSO}" >&2' ERR
 
 uso() {
-	echo "uso: $0 <nome_do_registro> [--plano]" >&2
+	echo "uso: $0 <nome_do_registro> <dono/repositorio> [--plano]" >&2
 	echo "  nome_do_registro: 5 a 50 caracteres, só letras minúsculas e números" >&2
+	echo "  dono/repositorio: o repositório do GitHub que publica a imagem, ex.: PI-GRUPO/aPRova" >&2
 	echo "  --plano: só consulta e mostra o que seria criado, sem criar nada" >&2
 	exit 2
 }
 
-[ "$#" -ge 1 ] && [ "$#" -le 2 ] || uso
+[ "$#" -ge 2 ] && [ "$#" -le 3 ] || uso
 REGISTRO="$1"
+REPOSITORIO_GITHUB="$2"
 PLANO=false
-if [ "$#" -eq 2 ]; then
-	[ "$2" = "--plano" ] || uso
+if [ "$#" -eq 3 ]; then
+	[ "$3" = "--plano" ] || uso
 	PLANO=true
 fi
 [[ "$REGISTRO" =~ ^[a-z0-9]{5,50}$ ]] || uso
+[[ "$REPOSITORIO_GITHUB" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9._-]{1,100}$ ]] || uso
 
 CRIADOS=0
 
@@ -122,9 +124,10 @@ az account show >/dev/null || abortar "faça az login antes"
 gh auth status >/dev/null 2>&1 || abortar "faça gh auth login antes"
 az group show -n "$GRUPO" >/dev/null
 az containerapp job show -n "$JOB" -g "$GRUPO" >/dev/null
+gh repo view "$REPOSITORIO_GITHUB" --json nameWithOwner >/dev/null 2>&1 || abortar "o repositório ${REPOSITORIO_GITHUB} não existe ou o gh não tem acesso a ele"
 ASSINATURA=$(az account show --query id -o tsv)
 TENANT=$(az account show --query tenantId -o tsv)
-relatar "az, gh, grupo ${GRUPO} e job ${JOB}" "ok"
+relatar "az, gh, grupo ${GRUPO}, job ${JOB} e repositório ${REPOSITORIO_GITHUB}" "ok"
 
 PASSO="1/5 registro ${REGISTRO}"
 echo "[$PASSO]"
