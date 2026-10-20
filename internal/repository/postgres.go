@@ -364,6 +364,9 @@ func (r *RepositorioPostgres) GravarMemoriaDeCodigo(ctx context.Context, memoria
 	if err := validar(memoria); err != nil {
 		return 0, err
 	}
+	if err := exigirDimensaoDoEmbedding(memoria.Embedding); err != nil {
+		return 0, err
+	}
 
 	id, err := r.consultas.CreateCodeMemory(ctx, db.CreateCodeMemoryParams{
 		TenantID:   memoria.TenantID,
@@ -383,8 +386,8 @@ func (r *RepositorioPostgres) GravarMemoriaDeCodigo(ctx context.Context, memoria
 // BuscarVizinhos devolve as memórias do tenant mais próximas do embedding,
 // da mais próxima para a mais distante, por distância de cosseno.
 func (r *RepositorioPostgres) BuscarVizinhos(ctx context.Context, tenantID int64, embedding []float32, limite int) ([]domain.Vizinho, error) {
-	if len(embedding) != domain.DimensoesEmbedding {
-		return nil, fmt.Errorf("%w: embedding com %d dimensões, esperava %d", domain.ErrDadosInvalidos, len(embedding), domain.DimensoesEmbedding)
+	if err := exigirDimensaoDoEmbedding(embedding); err != nil {
+		return nil, err
 	}
 	if limite <= 0 || limite > 1000 {
 		return nil, fmt.Errorf("%w: limite %d fora de 1..1000", domain.ErrDadosInvalidos, limite)
@@ -488,6 +491,15 @@ func (r *RepositorioPostgres) semLinhaNaTransicao(ctx context.Context, transicao
 		return fmt.Errorf("transicionar task_run %s: %w", transicao.TaskRunID, domain.ErrNaoEncontrado)
 	}
 	return fmt.Errorf("%w: %s não está em %s", domain.ErrTransicaoConcorrente, transicao.TaskRunID, transicao.De)
+}
+
+// exigirDimensaoDoEmbedding recusa, antes do banco, o vetor que não tem a
+// dimensão da coluna code_memory.embedding.
+func exigirDimensaoDoEmbedding(embedding []float32) error {
+	if len(embedding) != domain.DimensoesEmbedding {
+		return fmt.Errorf("%w: embedding com %d dimensões, esperava %d", domain.ErrDadosInvalidos, len(embedding), domain.DimensoesEmbedding)
+	}
+	return nil
 }
 
 // numeroDePR converte o número do pull request para a coluna integer, que

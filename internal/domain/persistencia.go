@@ -14,8 +14,10 @@ var (
 	ErrTransicaoConcorrente = errors.New("domain: task_run não está mais no estado esperado")
 )
 
-// DimensoesEmbedding é o tamanho do vetor guardado em code_memory.
-const DimensoesEmbedding = 1536
+// DimensoesEmbedding é o tamanho do vetor guardado em code_memory e o
+// outputDimensionality pedido ao gemini-embedding-001 por quem gera o
+// embedding. A coluna code_memory.embedding é vector(DimensoesEmbedding).
+const DimensoesEmbedding = 768
 
 // EstadoTaskRun é um estado da máquina de estados em docs/maquina-estados.mmd.
 type EstadoTaskRun string
@@ -153,11 +155,11 @@ type Aprovacao struct {
 
 // MemoriaDeCodigo é uma decisão passada guardada para a calibração do gate.
 type MemoriaDeCodigo struct {
-	TenantID    int64           `validate:"required,gt=0"`
-	TaskRunID   *string         `validate:"omitempty,uuid"`
-	Repositorio string          `validate:"required,max=200"`
-	Resumo      string          `validate:"required"`
-	Embedding   []float32       `validate:"len=1536"`
+	TenantID    int64   `validate:"required,gt=0"`
+	TaskRunID   *string `validate:"omitempty,uuid"`
+	Repositorio string  `validate:"required,max=200"`
+	Resumo      string  `validate:"required"`
+	Embedding   []float32
 	Nivel       NivelRisco      `validate:"required,oneof=baixo medio alto"`
 	Desfecho    DesfechoMudanca `validate:"required,oneof=revertida_apos_merge alto_risco_aprovada fechada_sem_merge ajustada_e_aprovada sem_reversao"`
 }
