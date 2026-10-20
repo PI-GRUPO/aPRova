@@ -45,13 +45,45 @@ jobs:
       - name: login no registro
         run: az acr login --name "${{ vars.ACR_NOME }}"
 
+      - name: a tag deste commit já foi publicada?
+        id: existente
+        env:
+          REGISTRO: ${{ vars.ACR_NOME }}
+          TAG: ${{ github.sha }}
+        run: |
+          if tags=$(az acr repository show-tags --name "$REGISTRO" --repository aprova-sandbox-go -o tsv 2>erro.txt); then
+            if grep -qx "$TAG" <<<"$tags"; then
+              echo "publicada=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "publicada=false" >> "$GITHUB_OUTPUT"
+            fi
+          elif grep -qi "not found" erro.txt; then
+            echo "publicada=false" >> "$GITHUB_OUTPUT"
+          else
+            cat erro.txt >&2
+            echo "não foi possível conferir as tags do registro; nada é publicado" >&2
+            exit 1
+          fi
+
+      - name: tag já publicada, nada a fazer
+        if: steps.existente.outputs.publicada == 'true'
+        run: |
+          {
+            echo "### aprova-sandbox-go"
+            echo ""
+            echo "- \`$IMAGEM\` já existe no registro e não foi sobrescrita"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: construir
+        if: steps.existente.outputs.publicada == 'false'
         run: docker build -f imagens/go/Dockerfile -t "$IMAGEM" .
 
       - name: publicar
+        if: steps.existente.outputs.publicada == 'false'
         run: docker push "$IMAGEM"
 
       - name: registrar tamanho
+        if: steps.existente.outputs.publicada == 'false'
         run: |
           tamanho=$(docker image inspect "$IMAGEM" --format '{{.Size}}')
           {
