@@ -55,6 +55,9 @@ jobs:
       - name: go test, sem a integração do sandbox
         run: go test $(go list ./... | grep -v /tests/integration) -race -covermode=atomic -coverprofile=coverage.out
 
+      - name: script de eventos assina como o núcleo verifica
+        run: go test ./tests/integration/eventos/... -race -count=1 -v
+
       - name: govulncheck
         run: |
           go install "golang.org/x/vuln/cmd/govulncheck@${VERSAO_GOVULNCHECK}"
