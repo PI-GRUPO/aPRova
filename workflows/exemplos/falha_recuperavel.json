@@ -1,0 +1,16 @@
+{
+  "versao": 1,
+  "id_evento": "9b7d5f3a-1e0c-4b2d-a4f6-8c0e2a4b6d8f",
+  "tipo_evento": "falha_recuperavel",
+  "ocorrido_em": "2026-10-20T10:41:57Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "task_run_id": "6d8f0a2c-4e1b-4c3d-b5a7-9e0f1a2b3c4d",
+    "repositorio": "Azulpasta/aPRova-TESTES",
+    "numero_pr": 15,
+    "url_pr": "https://github.com/Azulpasta/aPRova-TESTES/pull/15",
+    "etapa": "testando_sandbox",
+    "diagnostico": "a execução do job aprova-sandbox no Azure Container Apps não começou em 120 s; a réplica ficou em Pending, sem capacidade disponível na região",
+    "tentativa": 1
+  }
+}

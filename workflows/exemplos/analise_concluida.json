@@ -1,0 +1,25 @@
+{
+  "versao": 1,
+  "id_evento": "0f8e6c1a-3b2d-4c5e-8f7a-9b0c1d2e3f40",
+  "tipo_evento": "analise_concluida",
+  "ocorrido_em": "2026-10-19T14:32:08Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "task_run_id": "7f3c2a1e-5b8d-4e6f-9a0b-1c2d3e4f5a6b",
+    "repositorio": "Azulpasta/aPRova-TESTES",
+    "numero_pr": 14,
+    "url_pr": "https://github.com/Azulpasta/aPRova-TESTES/pull/14",
+    "autor_pr": "wlaisw",
+    "sha": "3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3",
+    "nivel_risco": "medio",
+    "motivos": [
+      {
+        "nome": "sem_teste_para_alteracao",
+        "descricao": "go/frete/frete.go mudou e nenhum teste Go cobre o caminho alterado"
+      }
+    ],
+    "explicacao": "O PR muda a faixa de peso em frete.Calcular, mas nenhum teste cobre peso igual a zero. Os testes existentes passaram no sandbox; o risco é médio porque um defeito nessa faixa continuaria invisível.",
+    "receipt_hash": "9c4e2a7f1b3d5e6f8a0b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f",
+    "url_recibo": "https://aprova.example.com/recibos/2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e"
+  }
+}

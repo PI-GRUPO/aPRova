@@ -1,0 +1,18 @@
+{
+  "versao": 1,
+  "id_evento": "e2c4a6b8-0d1f-4e3a-9b5c-7d8e9f0a1b2c",
+  "tipo_evento": "aprovacao_registrada",
+  "ocorrido_em": "2026-10-19T17:48:12Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "task_run_id": "c41d7e9a-2f3b-4c8d-a5e6-0b1c2d3e4f5a",
+    "repositorio": "Azulpasta/aPRova-TESTES",
+    "numero_pr": 14,
+    "url_pr": "https://github.com/Azulpasta/aPRova-TESTES/pull/14",
+    "decisao": "alteracoes_solicitadas",
+    "login_github": "Azulpasta",
+    "origem": "slack",
+    "nivel_risco_original": "alto",
+    "id_aprovacao": 37
+  }
+}

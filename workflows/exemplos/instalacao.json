@@ -1,0 +1,14 @@
+{
+  "versao": 1,
+  "id_evento": "b8a0c2e4-6f1d-4a3b-9c5e-7f9a1b3c5d7e",
+  "tipo_evento": "instalacao",
+  "ocorrido_em": "2026-10-18T20:03:15Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "acao": "instalado",
+    "conta": "Azulpasta",
+    "repositorios": [
+      "Azulpasta/aPRova-TESTES"
+    ]
+  }
+}

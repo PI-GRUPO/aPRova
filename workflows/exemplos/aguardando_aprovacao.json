@@ -1,0 +1,29 @@
+{
+  "versao": 1,
+  "id_evento": "5a1b9c3d-7e2f-4a6b-8c0d-1e2f3a4b5c6d",
+  "tipo_evento": "aguardando_aprovacao",
+  "ocorrido_em": "2026-10-19T16:05:41Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "task_run_id": "c41d7e9a-2f3b-4c8d-a5e6-0b1c2d3e4f5a",
+    "repositorio": "Azulpasta/aPRova-TESTES",
+    "numero_pr": 14,
+    "url_pr": "https://github.com/Azulpasta/aPRova-TESTES/pull/14",
+    "autor_pr": "wlaisw",
+    "sha": "a7d3e9f1c5b2084e6a1f3c5d7e9b0a2c4e6f8a1b",
+    "nivel_risco": "alto",
+    "motivos": [
+      {
+        "nome": "area_sensivel",
+        "descricao": "go/frete/frete.go calcula o valor cobrado do cliente"
+      },
+      {
+        "nome": "falha_nos_testes",
+        "descricao": "TestCalcularPesoZero falhou no sandbox: esperava ErrPesoInvalido, obteve 10.00"
+      }
+    ],
+    "explicacao": "O novo teste de peso zero falhou: frete.Calcular(0, 100) devolve a tarifa base de 10,00 em vez de recusar o peso. A versão Python e a Java recusam peso zero, então a Go diverge. O PR fica bloqueado até um humano com permissão de escrita decidir.",
+    "receipt_hash": "4e8a2c6f0b1d3e5f7a9c1e3b5d7f9a0c2e4f6a8b0d2c4e6f8a0b1c3d5e7f9a1b",
+    "url_recibo": "https://aprova.example.com/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b"
+  }
+}

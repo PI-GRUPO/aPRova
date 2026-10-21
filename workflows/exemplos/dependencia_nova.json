@@ -1,0 +1,24 @@
+{
+  "versao": 1,
+  "id_evento": "1d3f5b7a-9c2e-4f6a-8b0d-2e4f6a8c0e1b",
+  "tipo_evento": "dependencia_nova",
+  "ocorrido_em": "2026-10-20T09:12:30Z",
+  "tenant_id": 58291734,
+  "dados": {
+    "task_run_id": "3b5d7f9a-1c2e-4a4b-8d6f-0a2c4e6b8d0f",
+    "repositorio": "Azulpasta/aPRova-TESTES",
+    "url_pr": "https://github.com/Azulpasta/aPRova-TESTES/pull/15",
+    "dependencias": [
+      {
+        "ecossistema": "Go",
+        "nome": "github.com/shopspring/decimal",
+        "versao": "v1.4.0"
+      },
+      {
+        "ecossistema": "Maven",
+        "nome": "org.javamoney:moneta",
+        "versao": "1.4.4"
+      }
+    ]
+  }
+}
