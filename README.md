@@ -9,7 +9,7 @@ saúde e aceita o webhook, mas nenhuma dessas regras está implementada ainda.
 
 ## Requisitos
 
-- Go 1.26.9 ou superior (versão fixada na diretiva `toolchain` do `go.mod`)
+- Go 1.26.10 ou superior (versão fixada na diretiva `toolchain` do `go.mod`)
 - Docker e Docker Compose
 - golangci-lint, para o alvo `make lint`
 - [golang-migrate](https://github.com/golang-migrate/migrate) e
@@ -305,8 +305,8 @@ vulnerabilidades da stdlib que localmente não apareciam.
 Para rodar contra exatamente o mesmo toolchain do CI:
 
 ```sh
-GOTOOLCHAIN=go1.26.9 go test ./... -race
-GOTOOLCHAIN=go1.26.9 govulncheck ./...
+GOTOOLCHAIN=go1.26.10 go test ./... -race
+GOTOOLCHAIN=go1.26.10 govulncheck ./...
 ```
 
 Ao subir a versão do Go, altere a diretiva `toolchain` no `go.mod` e refaça a
@@ -320,7 +320,7 @@ outubro de 2026 só saíram para 1.26 e 1.27.
 
 O toolchain também não pode passar da versão do Go com que o golangci-lint foi
 compilado: o v2.13.2 foi compilado com go1.26 e recusa analisar com go1.27. Por
-isso o projeto está em 1.26.9; ir para 1.27 exige subir o golangci-lint junto.
+isso o projeto está em 1.26.10; ir para 1.27 exige subir o golangci-lint junto.
 
 ### Proteção da branch principal
 
