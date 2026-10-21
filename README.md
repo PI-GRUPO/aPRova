@@ -205,12 +205,32 @@ dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
 | 401 | assinatura ausente, inválida ou velha, ou segredo não configurado |
 | 500 | falha ao consultar o banco |
 
+## Eventos para o n8n
+
+O núcleo avisa o n8n por eventos assinados, enviados para `N8N_WEBHOOK_URL`
+sem esperar resposta. O contrato (envelope, os seis tipos e os campos de cada
+um) e a assinatura com `N8N_SEGREDO_EVENTOS` estão em
+[docs/eventos-n8n.md](docs/eventos-n8n.md), escrito para quem constrói os
+workflows. Os tipos Go e a verificação ficam em `internal/eventos`.
+
+`APROVA_URL_PUBLICA` é a base dos links de recibo nos eventos. Enquanto o
+núcleo não tem endereço público, fica vazia e vale `https://aprova.example.com`.
+
+Para testar um workflow sem o núcleo, o script envia o exemplo de um tipo,
+com `id_evento` e `ocorrido_em` novos, assinado:
+
+```sh
+scripts/emitir-evento.sh aguardando_aprovacao http://localhost:5678/webhook-test/aprova
+scripts/emitir-evento.sh analise_concluida http://localhost:5678/webhook-test/aprova --nivel-risco alto --imprimir
+```
+
 ## Testes
 
 Testes unitários ficam no mesmo pacote do código testado, como arquivos
 `*_test.go`. O diretório `tests/` é reservado para testes que cruzam pacotes ou
 dependem de serviço externo: `tests/integration` (Docker real, com a imagem do sandbox; pulam sem Docker),
 `tests/integration/postgres` (Postgres com pgvector via testcontainers; pulam sem Docker, mas reprovam no CI),
+`tests/integration/eventos` (o `scripts/emitir-evento.sh` contra a verificação de assinatura do Go; precisa de `curl`, `jq` e `openssl`),
 `tests/functional` (requisitos de negócio ponta a ponta) e `tests/e2e` (contra
 Pull Request real).
 
@@ -280,7 +300,8 @@ uma falha trivial não espere a suíte inteira:
 | 3 | `golangci-lint` | erro ignorado, problema de segurança, complexidade |
 | 4 | `go build` | quebra de compilação |
 | 5 | `go test -race` | teste reprovado e condição de corrida |
-| 6 | `govulncheck` | CVE alcançável nas dependências |
+| 6 | script de eventos | `scripts/emitir-evento.sh` assinando diferente do núcleo |
+| 7 | `govulncheck` | CVE alcançável nas dependências |
 
 O gitleaks vem primeiro porque é a falha mais grave e a mais rápida de detectar,
 e roda contra o histórico completo (`--log-opts="--all --full-history"`), não só
