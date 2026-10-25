@@ -10,7 +10,7 @@ URL_PUBLICA_PROVISORIA="https://aprova.example.com"
 uso() {
 	echo "uso: $0 <tipo> <url> [opções]" >&2
 	echo "  tipo: um dos exemplos em workflows/exemplos: $(tipos_conhecidos)" >&2
-	echo "  url: endereço do webhook que recebe o evento, ex.: http://localhost:5678/webhook/aprova" >&2
+	echo "  url: endereço do webhook que recebe o evento, ex.: http://localhost:5978/webhook/aprova" >&2
 	echo "opções:" >&2
 	echo "  --repositorio dono/nome   sobrescreve dados.repositorio" >&2
 	echo "  --numero-pr N             sobrescreve dados.numero_pr" >&2

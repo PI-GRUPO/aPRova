@@ -36,5 +36,8 @@ profile.out
 .vscode/
 *.swp
 
+# Dados locais do n8n: credenciais, workflows e execuções
+/.n8n/
+
 # Repositórios temporários dos testes de integração do sandbox
 tests/integration/.repositorios-*
