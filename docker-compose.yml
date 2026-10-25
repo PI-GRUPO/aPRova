@@ -36,6 +36,21 @@ services:
       retries: 10
       start_period: 5s
 
+  n8n-aprova:
+    profiles: ["automacao"]
+    image: n8nio/n8n
+    ports:
+      - "127.0.0.1:${N8N_PORTA_LOCAL:-5978}:5678"
+    volumes:
+      - ./.n8n:/home/node/.n8n
+    environment:
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Sao_Paulo}
+      N8N_EDITOR_BASE_URL: ${N8N_URL_BASE:-http://localhost:5978/}
+      N8N_WEBHOOK_URL: ${N8N_URL_BASE:-http://localhost:5978/}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
 volumes:
   dados-postgres:
   dados-redis:

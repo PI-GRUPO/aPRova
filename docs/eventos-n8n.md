@@ -10,13 +10,19 @@ O núcleo analisa o pull request, decide o risco e guarda tudo no banco. O n8n
 fica na periferia: **recebe** eventos e avisa pessoas (Slack, Trello, SLA,
 digest). Ele nunca decide risco e nunca lê o banco.
 
-- O núcleo envia cada evento por `POST` para a URL do webhook do n8n
-  (`N8N_WEBHOOK_URL`).
+- O contrato prevê o envio de cada evento por `POST` para a URL do webhook
+  do n8n (`N8N_WEBHOOK_URL`). O envio automático ainda não está conectado ao
+  núcleo; para testar os workflows, use o script descrito neste guia.
 - O envio é *fire-and-forget*: o núcleo não espera o workflow terminar e não
   falha se o n8n estiver fora do ar. Um evento perdido não trava nenhuma
   análise, e por isso o workflow não pode ser a única fonte de nada.
 - Tudo o que o n8n quiser **fazer** num PR volta pelo `POST /acoes-remotas`
   (veja o README), que confere a permissão no GitHub antes de agir.
+
+Para iniciar uma instância local opcional e compartilhar os workflows como
+JSON, veja [workflows/n8n/README.md](../workflows/n8n/README.md). Cada pessoa
+usa sua própria conta e credenciais. Os JSONs em `workflows/exemplos/`
+abaixo são payloads de eventos, não workflows importáveis no n8n.
 
 ## Envelope
 
@@ -260,13 +266,19 @@ O nó devolve o evento já conferido, e os nós seguintes leem `tipo_evento`,
 
 ### Variáveis de ambiente do n8n
 
+O Compose mínimo do repositório permite abrir o editor com os dados locais;
+ele não injeta os segredos da integração nem habilita acesso a variáveis nos nós. O exemplo de
+validação acima exige configuração adicional no ambiente do n8n ou do
+runner, conforme a versão utilizada. Não coloque valores reais no JSON
+versionado do workflow.
+
 - `NODE_FUNCTION_ALLOW_BUILTIN=crypto` libera o `require('crypto')` no nó
   Code. Sem ela, o n8n bloqueia a importação. Com os task runners em modo
   externo (imagem `n8nio/runners`), a variável vai no `env-overrides` do runner
   JavaScript, no arquivo `n8n-task-runners.json`, e não no contêiner do n8n.
 - `N8N_SEGREDO_EVENTOS` com o mesmo valor do núcleo.
-- `N8N_BLOCK_ENV_ACCESS_IN_NODE` precisa continuar `false`, que é o padrão,
-  para o nó Code conseguir ler `$env`.
+- `N8N_BLOCK_ENV_ACCESS_IN_NODE` precisa estar `false` para o nó Code
+  conseguir ler `$env`; não presuma o valor padrão da versão instalada.
 
 ## Testar sem o núcleo
 
@@ -298,15 +310,15 @@ Vazia, fica o endereço provisório `https://aprova.example.com`.
 | `--imprimir` | mostra cabeçalhos e corpo sem enviar nada |
 
 O script recusa sobrescrever um campo que o tipo não tem, como `--numero-pr`
-num evento `instalacao`. O n8n de teste local costuma escutar em
-`http://localhost:5678`. A URL de teste do nó Webhook usa `/webhook-test/` e só
-recebe enquanto o workflow está aberto no editor esperando um evento. A de
-produção usa `/webhook/`.
+num evento `instalacao`. O n8n do Compose local fica em
+`http://localhost:5978` por padrão. A URL de teste do nó Webhook usa
+`/webhook-test/` e só recebe enquanto o workflow está aberto no editor
+esperando um evento. A de produção usa `/webhook/`.
 
 Um exemplo por tipo:
 
 ```sh
-URL=http://localhost:5678/webhook-test/aprova
+URL=http://localhost:5978/webhook-test/aprova
 
 scripts/emitir-evento.sh analise_concluida "$URL" --nivel-risco baixo --dado 'motivos=[]'
 scripts/emitir-evento.sh aguardando_aprovacao "$URL" --repositorio PI-GRUPO/aPRova --numero-pr 7

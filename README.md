@@ -108,6 +108,77 @@ Para derrubar os serviços:
 make down
 ```
 
+### n8n opcional
+
+O serviço `n8n-aprova` pertence ao perfil `automacao`. Por padrão, `make up`
+inicia apenas PostgreSQL e Redis. Para iniciar os três serviços:
+
+```sh
+mkdir -p .n8n
+docker compose --profile automacao up -d
+```
+
+Para iniciar somente o n8n, sem PostgreSQL, Redis ou a API, execute na raiz do
+projeto:
+
+```sh
+mkdir -p .n8n
+docker compose up -d n8n-aprova
+```
+
+Acesse <http://localhost:5978/> e, na primeira execução em uma instalação
+nova, crie sua própria conta. A porta é publicada apenas em `127.0.0.1`, para
+acesso pela própria máquina. Cada pessoa terá uma instância independente;
+clonar o repositório não dá acesso à conta, às credenciais ou aos workflows
+de outra pessoa.
+
+As configurações locais ficam no `.env`, a partir dos exemplos em
+`.env.example`. Os padrões do Compose também permitem iniciar o n8n sem
+criar um `.env`:
+
+| Variável | Padrão local | Uso |
+| --- | --- | --- |
+| `N8N_PORTA_LOCAL` | `5978` | Porta publicada no host; o container usa `5678` |
+| `N8N_URL_BASE` | `http://localhost:5978/` | Endereço externo do editor e base dos webhooks |
+| `GENERIC_TIMEZONE` | `America/Sao_Paulo` | Fuso dos agendamentos dos workflows |
+
+Ao mudar a porta, ajuste também a URL base. Esses endereços são para execução
+local; em um servidor, configure URLs acessíveis naquele ambiente.
+
+Os dados do n8n ficam em `.n8n/`, montada em `/home/node/.n8n` no container.
+Essa pasta guarda o banco SQLite, os dados da conta, as credenciais e a chave
+de criptografia; ela e o `.env` são ignorados pelo Git. Não compartilhe essa
+pasta. Em Linux, ela precisa permitir escrita pelo usuário do container
+(`node`, UID/GID `1000:1000`); se aparecer `EACCES`, ajuste a propriedade da
+pasta para esse usuário. Os dados pessoais já existentes nessa pasta são
+preservados ao reiniciar o container.
+
+Os workflows exportados e revisados serão versionados como JSON em
+[`workflows/n8n/`](workflows/n8n/README.md). Eles não são importados
+automaticamente pelo Compose. Cada pessoa poderá importá-los no próprio n8n
+e configurar suas credenciais. Os arquivos em `workflows/exemplos/` são
+payloads de eventos para testes, não workflows importáveis. A pasta de
+workflows contém as instruções para exportar, importar e levar os JSONs ao
+servidor posteriormente.
+
+Os workflows usam a API do aPRova para acessar funcionalidades do projeto;
+não acessam diretamente o PostgreSQL. Para executar esses workflows, a API
+precisa estar acessível e com suas dependências em execução. Quando a API
+roda na máquina host, os nós HTTP do n8n devem usar
+`http://host.docker.internal:8080` (ou a porta configurada da API), pois
+`localhost` dentro do container aponta para o próprio n8n.
+
+A integração usa `N8N_WEBHOOK_URL` com a URL completa do workflow e os segredos
+`N8N_SEGREDO_ACOES` e `N8N_SEGREDO_EVENTOS`, configurados no `.env` local e
+nos workflows correspondentes. Esses segredos são diferentes da chave de
+criptografia das credenciais. O Compose mínimo não injeta esses segredos
+nos workflows nem importa credenciais. Eles não são necessários para apenas
+iniciar o editor.
+
+Para parar apenas o n8n, use `docker compose stop n8n-aprova`. Para derrubar
+os três serviços, use `docker compose --profile automacao down`. Executar
+`docker compose up -d` sem o perfil não para um n8n que já estava rodando.
+
 ## Rotas
 
 | Método | Rota               | Descrição                                              |
@@ -207,9 +278,11 @@ dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
 
 ## Eventos para o n8n
 
-O núcleo avisa o n8n por eventos assinados, enviados para `N8N_WEBHOOK_URL`
-sem esperar resposta. O contrato (envelope, os seis tipos e os campos de cada
-um) e a assinatura com `N8N_SEGREDO_EVENTOS` estão em
+O contrato prevê que o núcleo avise o n8n por eventos assinados, enviados para
+`N8N_WEBHOOK_URL` sem esperar resposta. O envio automático ainda não está
+conectado ao núcleo; o script abaixo permite testar os workflows. O contrato
+(envelope, os seis tipos e os campos de cada um) e a assinatura com
+`N8N_SEGREDO_EVENTOS` estão em
 [docs/eventos-n8n.md](docs/eventos-n8n.md), escrito para quem constrói os
 workflows. Os tipos Go e a verificação ficam em `internal/eventos`.
 
@@ -220,8 +293,8 @@ Para testar um workflow sem o núcleo, o script envia o exemplo de um tipo,
 com `id_evento` e `ocorrido_em` novos, assinado:
 
 ```sh
-scripts/emitir-evento.sh aguardando_aprovacao http://localhost:5678/webhook-test/aprova
-scripts/emitir-evento.sh analise_concluida http://localhost:5678/webhook-test/aprova --nivel-risco alto --imprimir
+scripts/emitir-evento.sh aguardando_aprovacao http://localhost:5978/webhook-test/aprova
+scripts/emitir-evento.sh analise_concluida http://localhost:5978/webhook-test/aprova --nivel-risco alto --imprimir
 ```
 
 ## Testes
