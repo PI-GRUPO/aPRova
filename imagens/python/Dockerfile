@@ -17,7 +17,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_INPUT=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git procps \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 aprova \
     && useradd --uid 10001 --gid aprova --create-home --shell /usr/sbin/nologin aprova
