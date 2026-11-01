@@ -211,8 +211,12 @@ func assinar(segredo, timestamp, corpo string) string {
 }
 
 func corpoDeAcao(idAcao, tipo, usuarioSlack string) string {
+	justificativa := ""
+	if tipo == "aprovar" {
+		justificativa = `,"justificativa":"Risco avaliado e aceito."`
+	}
 	return `{"id_acao":"` + idAcao + `","tipo":"` + tipo + `","usuario_slack":"` + usuarioSlack + `",` +
-		`"repositorio":"Azulpasta/aPRova","numero_pr":42,"installation_id":7001}`
+		`"repositorio":"Azulpasta/aPRova","numero_pr":42,"installation_id":7001` + justificativa + `}`
 }
 
 func lerCorpo(t *testing.T, resposta *httptest.ResponseRecorder) string {
@@ -325,7 +329,7 @@ func TestEscritorAprovaPRDeOutraPessoa(t *testing.T) {
 		t.Fatalf("write aprovando PR de outra pessoa: esperava 202, obtive %d", resposta.Code)
 	}
 	reviews := ambiente.github.reviewsRecebidas()
-	esperada := reviewRecebida{Evento: "APPROVE", Corpo: "Aprovado por @erin via Slack"}
+	esperada := reviewRecebida{Evento: "APPROVE", Corpo: "Aprovado por @erin via Slack:\n\nRisco avaliado e aceito."}
 	if len(reviews) != 1 || reviews[0] != esperada {
 		t.Errorf("reviews = %+v, esperava só %+v", reviews, esperada)
 	}
@@ -368,6 +372,20 @@ func TestSolicitarAlteracaoSemJustificativaEhCorpoInvalido(t *testing.T) {
 
 	if resposta.Code != http.StatusBadRequest {
 		t.Errorf("solicitar alteração sem justificativa: esperava 400, obtive %d", resposta.Code)
+	}
+}
+
+func TestAprovarSemJustificativaNaoConsultaNemEscreveNoGitHub(t *testing.T) {
+	ambiente := montarAmbiente(t, map[string]string{"U-ESCRITOR": "erin"})
+	ambiente.github.definirPapel("erin", "write")
+	corpo := strings.Replace(corpoDeAcao("acao-sem-justificativa", "aprovar", "U-ESCRITOR"),
+		`,"justificativa":"Risco avaliado e aceito."`, "", 1)
+	resposta := ambiente.enviarAssinado(t, corpo)
+	if resposta.Code != http.StatusBadRequest {
+		t.Fatalf("aprovação sem justificativa deveria devolver 400, obtive %d", resposta.Code)
+	}
+	if chamadas := ambiente.github.chamadasRecebidas(); chamadas != 0 {
+		t.Fatalf("pedido inválido chegou ao GitHub: %d chamadas", chamadas)
 	}
 }
 

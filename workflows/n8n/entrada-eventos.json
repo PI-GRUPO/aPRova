@@ -1,0 +1,869 @@
+{
+  "name": "aPRova | Core | Entrada e Roteamento de Eventos",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aprova/events",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "0b93ee5f-c0df-4a98-b3d1-79ea4ad17741",
+      "name": "01 | Receber Evento",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "e5eb5164-abfd-44e3-8177-1270001956a6"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ JSON.stringify({ meta: { recebido_em: $now.toISO(), origem_verificada: $json.meta?.origem_verificada === true }, evento: {}, dados: {}, original: $json.body === undefined ? null : $json.body }) }}",
+        "options": {}
+      },
+      "id": "3ae7b1d4-d699-40ca-a7ce-0a211110eba0",
+      "name": "02 | Capturar Payload Original",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.original !== null && typeof $json.original === 'object' && !Array.isArray($json.original) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5d01d49a-aff8-47cd-b26b-d32fde86bf43",
+      "name": "03 | Validar Entrada",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const VERSAO_SUPORTADA = 1;\nconst ORIGEM_DO_ADAPTADOR = 'aprova-core';\nconst TIPOS_EVENTO = {\n  analise_concluida: 'analise_concluida',\n  aguardando_aprovacao: 'aguardando_aprovacao',\n  aprovacao_registrada: 'aprovacao_registrada',\n  dependencia_nova: 'dependencia_nova',\n  falha_recuperavel: 'falha_recuperavel',\n  instalacao: 'instalacao'\n};\nconst NIVEIS_RISCO = { baixo: 'BAIXO', medio: 'MEDIO', alto: 'ALTO' };\nconst ehObjeto = valor => valor !== null && typeof valor === 'object' && !Array.isArray(valor);\nconst objeto = valor => ehObjeto(valor) ? valor : {};\nconst primeiro = (...valores) => valores.find(valor => valor !== undefined && valor !== null);\nconst texto = valor => typeof valor === 'string' ? valor : '';\nconst inteiroPositivo = valor => Number.isSafeInteger(valor) && valor > 0 ? valor : null;\nconst uuidValido = valor => typeof valor === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);\nconst nivelRisco = valor => typeof valor === 'string' && Object.prototype.hasOwnProperty.call(NIVEIS_RISCO, valor) ? NIVEIS_RISCO[valor] : texto(valor);\nconst instanteUTCValido = valor => {\n  if (typeof valor !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|\\+00:00)$/i.test(valor)) return false;\n  const instante = new Date(valor);\n  return Number.isFinite(instante.getTime()) && instante.toISOString().slice(0, 19) === valor.slice(0, 19).toUpperCase();\n};\n\nconst original = $json.original;\nconst envelope = objeto(original);\nconst dados = objeto(envelope.dados);\nconst metaExterna = objeto(envelope.meta);\nconst erros = [];\nconst tipoRecebido = texto(envelope.tipo_evento);\nconst tipo = Object.prototype.hasOwnProperty.call(TIPOS_EVENTO, tipoRecebido) ? TIPOS_EVENTO[tipoRecebido] : tipoRecebido;\nconst taskRunId = texto(dados.task_run_id);\nconst idEvento = texto(envelope.id_evento);\n\nif (envelope.versao !== VERSAO_SUPORTADA) erros.push('versao deve ser o inteiro 1; versão ausente ou não suportada.');\nif (!uuidValido(envelope.id_evento)) erros.push('id_evento obrigatório e deve ser UUID.');\nif (!tipoRecebido.trim()) erros.push('tipo_evento obrigatório e deve ser texto não vazio.');\nif (!instanteUTCValido(envelope.ocorrido_em)) erros.push('ocorrido_em obrigatório e deve ser RFC 3339 em UTC.');\nif (inteiroPositivo(envelope.tenant_id) === null) erros.push('tenant_id obrigatório e deve ser inteiro positivo seguro.');\nif (!ehObjeto(envelope.dados)) erros.push('dados obrigatório e deve ser objeto JSON.');\nif (dados.task_run_id !== undefined && !uuidValido(dados.task_run_id)) erros.push('dados.task_run_id, quando informado, deve ser UUID.');\n\nconst correlacaoInformada = primeiro(metaExterna.correlation_id, envelope.correlation_id, envelope.correlationId);\nconst temCorrelacaoInformada = correlacaoInformada !== undefined;\nif (temCorrelacaoInformada && (typeof correlacaoInformada !== 'string' || !correlacaoInformada.trim())) erros.push('correlation_id informado deve ser texto não vazio.');\nconst correlationId = temCorrelacaoInformada ? texto(correlacaoInformada) : taskRunId || idEvento;\nconst correlationFonte = temCorrelacaoInformada ? 'correlation_id' : taskRunId ? 'dados.task_run_id' : 'id_evento';\n\nconst nomeRepositorio = texto(dados.repositorio);\nconst partesRepositorio = nomeRepositorio.split('/');\nconst repositorioSeparavel = partesRepositorio.length === 2 && partesRepositorio.every(parte => parte.length > 0);\nconst urlPr = texto(dados.url_pr);\nconst numeroNaUrl = /^https:\\/\\/github\\.com\\/[^/]+\\/[^/]+\\/pull\\/([1-9]\\d*)(?:[/?#]|$)/i.exec(urlPr);\nconst numeroPr = inteiroPositivo(dados.numero_pr) ?? (numeroNaUrl ? inteiroPositivo(Number(numeroNaUrl[1])) : null);\nconst motivos = Array.isArray(dados.motivos) ? dados.motivos : [];\nconst motivo = motivos.map(item => texto(objeto(item).descricao)).filter(Boolean).join('\\n') || texto(dados.explicacao);\nconst falhaExplicita = dados.falha_recuperavel;\nif (falhaExplicita !== undefined && typeof falhaExplicita !== 'boolean') erros.push('dados.falha_recuperavel, quando informado, deve ser booleano.');\nif (tipo === 'falha_recuperavel' && falhaExplicita === false) erros.push('dados.falha_recuperavel=false contradiz o tipo falha_recuperavel.');\nconst acoes = primeiro(dados.acoes_disponiveis, envelope.acoes_disponiveis);\nconst acoesValidas = acoes === undefined || (Array.isArray(acoes) && acoes.every(acao => typeof acao === 'string' && acao.trim() !== ''));\nif (!acoesValidas) erros.push('acoes_disponiveis, quando informado, deve ser array de strings não vazias.');\n\nreturn {\n  json: {\n    meta: {\n      schema_version: '1.0',\n      versao_evento: Number.isSafeInteger(envelope.versao) ? envelope.versao : null,\n      id_evento: idEvento,\n      tenant_id: inteiroPositivo(envelope.tenant_id),\n      ocorrido_em: texto(envelope.ocorrido_em),\n      recebido_em: texto($json.meta?.recebido_em),\n      correlation_id: correlationId,\n      correlation_id_fonte: correlationFonte,\n      correlation_id_fallback_desenvolvimento: false,\n      execution_id: taskRunId,\n      n8n_execution_id: String($execution.id),\n      origem: ORIGEM_DO_ADAPTADOR,\n      origem_verificada: $json.meta?.origem_verificada === true,\n      tipo_recebido: tipoRecebido,\n      validacao: { valido: erros.length === 0, erros }\n    },\n    evento: {\n      tipo,\n      acao: tipo === 'instalacao' ? texto(dados.acao) : tipo === 'aprovacao_registrada' ? texto(dados.decisao) : '',\n      estado: ''\n    },\n    repositorio: {\n      owner: repositorioSeparavel ? partesRepositorio[0] : '',\n      nome: repositorioSeparavel ? partesRepositorio[1] : '',\n      full_name: nomeRepositorio\n    },\n    pr: {\n      id: null,\n      numero: numeroPr,\n      titulo: '',\n      url: urlPr,\n      sha: texto(dados.sha),\n      autor: { id: '', login: texto(dados.autor_pr), tipo: '' }\n    },\n    risco: {\n      nivel: nivelRisco(dados.nivel_risco),\n      nivel_original: nivelRisco(dados.nivel_risco_original),\n      motivo,\n      motivos,\n      explicacao: texto(dados.explicacao),\n      score: null\n    },\n    execucao: {\n      status: '',\n      falha_recuperavel: tipo === 'falha_recuperavel' || falhaExplicita === true,\n      diagnostico: primeiro(dados.diagnostico) ?? null,\n      etapa: texto(dados.etapa),\n      tentativa: inteiroPositivo(dados.tentativa)\n    },\n    acoes_disponiveis: acoesValidas && Array.isArray(acoes) ? [...acoes] : [],\n    recibo: { hash: texto(dados.receipt_hash), url: texto(dados.url_recibo) },\n    aprovacao: {\n      id: inteiroPositivo(dados.id_aprovacao),\n      decisao: texto(dados.decisao),\n      login_github: texto(dados.login_github),\n      origem: texto(dados.origem)\n    },\n    dependencias: Array.isArray(dados.dependencias) ? dados.dependencias : [],\n    instalacao: {\n      acao: tipo === 'instalacao' ? texto(dados.acao) : '',\n      conta: texto(dados.conta),\n      repositorios: Array.isArray(dados.repositorios) ? dados.repositorios : []\n    },\n    dados,\n    original\n  }\n};\n"
+      },
+      "id": "c49cc2ab-7823-4e59-85bc-958fe0494702",
+      "name": "04 | Normalizar Evento aPRova",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.meta.validacao.valido }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "id": "99543149-6a07-4de5-a2f8-2856848216e4"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "45af092a-3195-4b02-bf3d-108154f2a034",
+      "name": "04b | Validar Contrato Mínimo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "enableResponseOutput": true,
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, correlation_id: $json.meta.correlation_id, message: 'Evento recebido pela camada de automação' }) }}",
+        "options": {
+          "responseCode": 202,
+          "enableStreaming": false
+        }
+      },
+      "id": "290e9a7a-9a1a-458e-ac42-f5f0e560c302",
+      "name": "05 | Responder Recebido",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1440,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "aguardando_aprovacao",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "918ca192-d13b-4043-b271-e332e1972e8d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "aguardando_aprovacao"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "execucao_concluida",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bbd57a81-db5b-4eaf-98b4-c42d396ca7ce"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "execucao_concluida"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "execucao_falhou",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "796fee28-e324-4889-854d-db6d6448bfd4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "execucao_falhou"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "reversao",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b62ed943-9a91-4b4e-bd05-71a1851af652"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reversao"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "relatorio_periodico",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a3207350-e5ec-4288-8536-5d030b0e48fd"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "relatorio_periodico"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "analise_concluida",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bec7686d-533d-4474-a560-00bcb4deaec6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "analise_concluida"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "aprovacao_registrada",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9c020084-614c-4951-90d2-8a982d8269b6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "aprovacao_registrada"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "dependencia_nova",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "727d02ba-4260-40c7-9f41-f7c19f939ce2"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dependencia_nova"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "falha_recuperavel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "6465f49b-6ab8-45fc-af38-8ee99d2936b0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "falha_recuperavel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.evento.tipo }}",
+                    "rightValue": "instalacao",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bf0d83c2-c20a-4aca-8ab2-328ab660cc0f"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "instalacao"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "evento_desconhecido",
+          "allMatchingOutputs": false
+        }
+      },
+      "id": "9e0803d1-82b7-46bc-9c03-ca19c63186b8",
+      "name": "06 | Rotear tipo_evento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        112
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ca1a6539-4e03-4c0a-a4a6-56f828c29934",
+      "name": "07A | aguardando_aprovacao | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        -256
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ba62e176-897e-4aae-9303-2ecffa0dc580",
+      "name": "07B | execucao_concluida | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        -64
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "25cacf09-3af6-43d2-bb91-9393bca568b6",
+      "name": "07C | execucao_falhou | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        144
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "50d19900-993f-42df-9833-0d2f54e800f4",
+      "name": "07D | reversao | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        352
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0d242ce7-e112-4585-ad8b-050ee7ae846f",
+      "name": "07E | relatorio_periodico | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "registro-sem-rota",
+              "name": "meta.roteamento",
+              "type": "object",
+              "value": "={{ { status: 'sem_rota_configurada', tipo_recebido: $json.meta.tipo_recebido, correlation_id: $json.meta.correlation_id, registrado_em: $now.toISO(), mensagem: 'Evento preservado nesta execução; nenhuma integração acionada.' } }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "f516fb55-cfc1-4efa-a749-d9f30acc1f1c",
+      "name": "07F | Registrar Evento Sem Rota",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2224,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "enableResponseOutput": true,
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: false, correlation_id: $json.meta?.correlation_id || null, message: 'Evento inválido; não encaminhado', errors: $json.meta?.validacao?.erros ?? ['O corpo deve ser um objeto JSON.'] }) }}",
+        "options": {
+          "responseCode": 400,
+          "enableStreaming": false
+        }
+      },
+      "id": "8f557c01-882c-467a-a320-2dcbdde70bfd",
+      "name": "05E | Responder Entrada Inválida",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1488,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Entrada de eventos aPRova\nAssinatura HMAC do núcleo verificada sobre o corpo bruto; janela de cinco minutos. Contrato backend v1 normalizado para 1.0 sem recalcular risco.\n\n202 após validação; deduplicação persistida no n8n por tenant_id + id_evento (últimas 10.000 chaves). Tipos desconhecidos preservados sem integração.\n\naguardando_aprovacao e falha_recuperavel chamam a Central do Slack sem aguardar sua conclusão. As demais saídas permanecem como pontos de extensão.\n\nN8N_SEGREDO_EVENTOS precisa estar disponível no container e ser o mesmo usado pelo emissor. Histórico depende da persistência do n8n. O núcleo continua sendo a fonte da verdade.",
+        "height": 650,
+        "width": 1100,
+        "color": 5
+      },
+      "id": "0dfdc248-767f-4cd1-9339-e744b68faa26",
+      "name": "Contrato e evolução",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -1552
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "ec6ee557-6ce6-4ff7-83b8-41256358de5b",
+      "name": "07G | analise_concluida | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        960
+      ],
+      "notes": "Recebe o contrato normalizado de analise_concluida. Conectar futuramente o workflow especializado."
+    },
+    {
+      "parameters": {},
+      "id": "70ac2465-bd66-41c7-aa61-aaf1e56eb9b2",
+      "name": "07H | aprovacao_registrada | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        1168
+      ],
+      "notes": "Recebe o contrato normalizado de aprovacao_registrada. Conectar futuramente o workflow especializado."
+    },
+    {
+      "parameters": {},
+      "id": "266c53ea-b314-4530-baa1-5fe05adafd78",
+      "name": "07I | dependencia_nova | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        1360
+      ],
+      "notes": "Recebe o contrato normalizado de dependencia_nova. Conectar futuramente o workflow especializado."
+    },
+    {
+      "parameters": {},
+      "id": "eed74da6-3dbd-4e2d-b2eb-f154bdc432c1",
+      "name": "07J | falha_recuperavel | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        1568
+      ],
+      "notes": "Recebe o contrato normalizado de falha_recuperavel. Conectar futuramente o workflow especializado."
+    },
+    {
+      "parameters": {},
+      "id": "2a6cc711-d451-45fd-86a8-fb22328c2337",
+      "name": "07K | instalacao | Conectar workflow",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        1760
+      ],
+      "notes": "Recebe o contrato normalizado de instalacao. Conectar futuramente o workflow especializado."
+    },
+    {
+      "id": "abee543c-1349-464c-a11a-89af2424d0a9",
+      "name": "01B | Verificar Assinatura do Núcleo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        304
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst entrada = $input.first();\nconst segredo = $env.N8N_SEGREDO_EVENTOS;\nif (!segredo) throw new Error('N8N_SEGREDO_EVENTOS não configurado.');\nconst headers = Object.fromEntries(Object.entries(entrada.json.headers || {}).map(([k, v]) => [k.toLowerCase(), v]));\nconst timestamp = headers['x-aprova-timestamp'];\nconst assinatura = headers['x-aprova-assinatura'];\nif (typeof timestamp !== 'string' || !/^\\d+$/.test(timestamp) ||\n    typeof assinatura !== 'string' || !/^sha256=[0-9a-f]{64}$/.test(assinatura)) {\n  throw new Error('Cabeçalhos de assinatura do núcleo inválidos.');\n}\nconst segundos = Number(timestamp);\nif (!Number.isSafeInteger(segundos) || Math.abs(Date.now() / 1000 - segundos) > 300) {\n  throw new Error('Evento fora da janela de cinco minutos.');\n}\nif (!entrada.binary?.data) throw new Error('Corpo bruto indisponível no webhook de eventos.');\nconst corpo = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst esperada = Buffer.from('sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.').update(corpo).digest('hex'));\nconst recebida = Buffer.from(assinatura);\nif (recebida.length !== esperada.length || !crypto.timingSafeEqual(recebida, esperada)) {\n  throw new Error('Assinatura do núcleo inválida.');\n}\nreturn [{\n  json: {\n    ...entrada.json,\n    body: JSON.parse(corpo.toString('utf8')),\n    meta: { origem_verificada: true },\n  },\n}];"
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "279352d6-40c5-4f8c-90b9-460fd7554c32",
+      "name": "05B | Descartar Eventos Repetidos",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        112
+      ],
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "logic": "removeItemsWithAlreadySeenKeyValues",
+        "dedupeValue": "={{ $json.meta.tenant_id + ':' + $json.meta.id_evento }}",
+        "options": {
+          "scope": "node",
+          "historySize": 10000
+        }
+      }
+    },
+    {
+      "id": "9da0ad00-8465-4d85-ab3a-346f54654a25",
+      "name": "08 | Executar Central do Slack",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2520,
+        656
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLACK_WORKFLOW_ID }}"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "9bacceb4-8778-44a3-b684-78c39a08fd36",
+      "name": "01E | Recusar Evento Não Autenticado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        560
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"received\":false,\"message\":\"Evento não autenticado.\"}",
+        "options": {
+          "responseCode": 401
+        }
+      }
+    }
+  ],
+  "connections": {
+    "02 | Capturar Payload Original": {
+      "main": [
+        [
+          {
+            "node": "03 | Validar Entrada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Validar Entrada": {
+      "main": [
+        [
+          {
+            "node": "04 | Normalizar Evento aPRova",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "05E | Responder Entrada Inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | Normalizar Evento aPRova": {
+      "main": [
+        [
+          {
+            "node": "04b | Validar Contrato Mínimo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04b | Validar Contrato Mínimo": {
+      "main": [
+        [
+          {
+            "node": "05 | Responder Recebido",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "05E | Responder Entrada Inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Rotear tipo_evento": {
+      "main": [
+        [
+          {
+            "node": "07A | aguardando_aprovacao | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07B | execucao_concluida | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07C | execucao_falhou | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07D | reversao | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07E | relatorio_periodico | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07G | analise_concluida | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07H | aprovacao_registrada | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07I | dependencia_nova | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07J | falha_recuperavel | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07K | instalacao | Conectar workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07F | Registrar Evento Sem Rota",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 | Receber Evento": {
+      "main": [
+        [
+          {
+            "node": "01B | Verificar Assinatura do Núcleo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01B | Verificar Assinatura do Núcleo": {
+      "main": [
+        [
+          {
+            "node": "02 | Capturar Payload Original",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "01E | Recusar Evento Não Autenticado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Responder Recebido": {
+      "main": [
+        [
+          {
+            "node": "05B | Descartar Eventos Repetidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05B | Descartar Eventos Repetidos": {
+      "main": [
+        [
+          {
+            "node": "06 | Rotear tipo_evento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07A | aguardando_aprovacao | Conectar workflow": {
+      "main": [
+        [
+          {
+            "node": "08 | Executar Central do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07J | falha_recuperavel | Conectar workflow": {
+      "main": [
+        [
+          {
+            "node": "08 | Executar Central do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}

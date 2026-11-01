@@ -24,6 +24,10 @@ JSON, veja [workflows/n8n/README.md](../workflows/n8n/README.md). Cada pessoa
 usa sua própria conta e credenciais. Os JSONs em `workflows/exemplos/`
 abaixo são payloads de eventos, não workflows importáveis no n8n.
 
+As implementações importáveis de entrada e da Central do Slack já estão em
+`workflows/n8n/`. O estado de implementação, a configuração e as pendências
+da operação remota estão em [central-slack-implementacao.md](central-slack-implementacao.md).
+
 ## Envelope
 
 Todo evento tem a mesma casca. Um único nó **Switch** em `tipo_evento` roteia
@@ -205,7 +209,8 @@ X-Aprova-Assinatura: sha256=<hex do HMAC-SHA256 de "<timestamp>.<corpo bruto>">
 ### Nó Webhook
 
 1. **HTTP Method**: `POST`.
-2. **Path**: o caminho que vai em `N8N_WEBHOOK_URL`, por exemplo `aprova`.
+2. **Path**: o caminho que vai em `N8N_WEBHOOK_URL`, como `aprova/events`
+   no workflow importável deste repositório.
 3. **Respond**: `Using 'Respond to Webhook' Node`, para responder logo depois
    de conferir a assinatura.
 4. Em **Options**, ligue **Raw Body**. Com ele, o corpo exato fica no binário
@@ -221,6 +226,11 @@ Webhook → Code (confere a assinatura) → Respond to Webhook (200) → Remove 
 Se a assinatura não conferir, o nó Code lança um erro antes do **Respond to
 Webhook**, e o n8n responde 500. Assim o script de envio mostra que a
 assinatura foi recusada.
+
+No workflow importável deste repositório, o erro de autenticação tem uma
+saída dedicada que responde **401** e encerra o caminho, sem normalizar nem
+rotear o evento. Isso evita depender da resposta padrão de cada versão do
+n8n quando um nó falha antes de responder.
 
 ### Nó Code
 
@@ -266,11 +276,13 @@ O nó devolve o evento já conferido, e os nós seguintes leem `tipo_evento`,
 
 ### Variáveis de ambiente do n8n
 
-O Compose mínimo do repositório permite abrir o editor com os dados locais;
-ele não injeta os segredos da integração nem habilita acesso a variáveis nos nós. O exemplo de
-validação acima exige configuração adicional no ambiente do n8n ou do
-runner, conforme a versão utilizada. Não coloque valores reais no JSON
-versionado do workflow.
+O Compose de desenvolvimento do repositório injeta os segredos da integração
+a partir do ambiente, libera `crypto` e configura o acesso a variáveis nos
+nós. Os valores devem ser definidos no `.env` local, que não é versionado.
+Em outro ambiente ou com runners externos, confira a configuração equivalente
+e as permissões da versão utilizada. Não coloque valores reais no JSON
+versionado do workflow. Essa configuração local não substitui a revisão de
+segredos e permissões necessária para produção.
 
 - `NODE_FUNCTION_ALLOW_BUILTIN=crypto` libera o `require('crypto')` no nó
   Code. Sem ela, o n8n bloqueia a importação. Com os task runners em modo
@@ -318,7 +330,7 @@ esperando um evento. A de produção usa `/webhook/`.
 Um exemplo por tipo:
 
 ```sh
-URL=http://localhost:5978/webhook-test/aprova
+URL=http://localhost:5978/webhook/aprova/events
 
 scripts/emitir-evento.sh analise_concluida "$URL" --nivel-risco baixo --dado 'motivos=[]'
 scripts/emitir-evento.sh aguardando_aprovacao "$URL" --repositorio PI-GRUPO/aPRova --numero-pr 7

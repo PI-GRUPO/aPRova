@@ -40,7 +40,7 @@ func (e *ExecutorNoGitHub) Executar(ctx context.Context, acao AcaoAutorizada) er
 	case TipoAprovar:
 		return e.publicar(ctx, acao, platform.Review{
 			Evento: platform.EventoAprovar,
-			Corpo:  fmt.Sprintf("Aprovado por @%s via Slack", acao.LoginGitHub),
+			Corpo:  fmt.Sprintf("Aprovado por @%s via Slack:\n\n%s", acao.LoginGitHub, acao.Justificativa),
 		})
 	case TipoSolicitarAlteracao:
 		return e.publicar(ctx, acao, platform.Review{

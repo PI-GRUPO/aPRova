@@ -13,31 +13,34 @@ import (
 const createRemoteActionAttempt = `-- name: CreateRemoteActionAttempt :one
 INSERT INTO remote_action_attempts (
     action_id, tenant_id, task_run_id, action_type, slack_user_id, github_login,
-    repository, pr_number, decision, reason, attempted_at
+    repository, pr_number, decision, reason, attempted_at, justification
 )
 VALUES (
     $1, $2,
     (SELECT tr.id FROM task_runs tr
      WHERE tr.tenant_id = $2 AND tr.repository = $3 AND tr.pr_number = $4
+       AND ($5::uuid IS NULL OR tr.id = $5::uuid)
      ORDER BY tr.created_at DESC, tr.id DESC
      LIMIT 1),
-    $5, $6, $7,
-    $3, $4, $8, $9, $10
+    $6, $7, $8,
+    $3, $4, $9, $10, $11, $12
 )
 RETURNING id
 `
 
 type CreateRemoteActionAttemptParams struct {
-	ActionID    string    `json:"action_id"`
-	TenantID    int64     `json:"tenant_id"`
-	Repository  string    `json:"repository"`
-	PrNumber    int32     `json:"pr_number"`
-	ActionType  string    `json:"action_type"`
-	SlackUserID string    `json:"slack_user_id"`
-	GithubLogin *string   `json:"github_login"`
-	Decision    string    `json:"decision"`
-	Reason      string    `json:"reason"`
-	AttemptedAt time.Time `json:"attempted_at"`
+	ActionID      string    `json:"action_id"`
+	TenantID      int64     `json:"tenant_id"`
+	Repository    string    `json:"repository"`
+	PrNumber      int32     `json:"pr_number"`
+	TaskRunID     *string   `json:"task_run_id"`
+	ActionType    string    `json:"action_type"`
+	SlackUserID   string    `json:"slack_user_id"`
+	GithubLogin   *string   `json:"github_login"`
+	Decision      string    `json:"decision"`
+	Reason        string    `json:"reason"`
+	AttemptedAt   time.Time `json:"attempted_at"`
+	Justification string    `json:"justification"`
 }
 
 func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemoteActionAttemptParams) (int64, error) {
@@ -46,12 +49,14 @@ func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemot
 		arg.TenantID,
 		arg.Repository,
 		arg.PrNumber,
+		arg.TaskRunID,
 		arg.ActionType,
 		arg.SlackUserID,
 		arg.GithubLogin,
 		arg.Decision,
 		arg.Reason,
 		arg.AttemptedAt,
+		arg.Justification,
 	)
 	var id int64
 	err := row.Scan(&id)

@@ -56,7 +56,8 @@ type Pedido struct {
 	Repositorio    string `json:"repositorio" validate:"required,repositorio_github"`
 	NumeroPR       int    `json:"numero_pr" validate:"required,gt=0"`
 	InstallationID int64  `json:"installation_id" validate:"required,gt=0"`
-	Justificativa  string `json:"justificativa" validate:"required_if=Tipo solicitar_alteracao,max=4000"`
+	TaskRunID      string `json:"task_run_id,omitempty" validate:"omitempty,uuid"`
+	Justificativa  string `json:"justificativa" validate:"required_unless=Tipo reexecutar_analise,max=4000"`
 }
 
 // AcaoAutorizada é um pedido que passou pela autorização, acompanhado do login
@@ -69,6 +70,8 @@ type AcaoAutorizada struct {
 // Tentativa é o registro de um pedido autenticado, aceito ou recusado.
 type Tentativa struct {
 	IDAcao         string
+	TaskRunID      string
+	Justificativa  string
 	Tipo           Tipo
 	UsuarioSlack   string
 	LoginGitHub    string

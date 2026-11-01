@@ -530,18 +530,24 @@ func (r *RepositorioPostgres) gravarTentativa(ctx context.Context, tentativa aca
 	if tentativa.LoginGitHub != "" {
 		login = &tentativa.LoginGitHub
 	}
+	var taskRunID *string
+	if tentativa.TaskRunID != "" {
+		taskRunID = &tentativa.TaskRunID
+	}
 
 	id, err := r.consultas.CreateRemoteActionAttempt(ctx, db.CreateRemoteActionAttemptParams{
-		ActionID:    tentativa.IDAcao,
-		TenantID:    tentativa.InstallationID,
-		Repository:  tentativa.Repositorio,
-		PrNumber:    numeroPR,
-		ActionType:  string(tentativa.Tipo),
-		SlackUserID: tentativa.UsuarioSlack,
-		GithubLogin: login,
-		Decision:    string(tentativa.Decisao),
-		Reason:      string(tentativa.Motivo),
-		AttemptedAt: tentativa.Em,
+		ActionID:      tentativa.IDAcao,
+		TaskRunID:     taskRunID,
+		Justification: tentativa.Justificativa,
+		TenantID:      tentativa.InstallationID,
+		Repository:    tentativa.Repositorio,
+		PrNumber:      numeroPR,
+		ActionType:    string(tentativa.Tipo),
+		SlackUserID:   tentativa.UsuarioSlack,
+		GithubLogin:   login,
+		Decision:      string(tentativa.Decisao),
+		Reason:        string(tentativa.Motivo),
+		AttemptedAt:   tentativa.Em,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("registrar tentativa de ação remota: %w", err)

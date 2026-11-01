@@ -44,6 +44,14 @@ jobs:
       - name: go vet
         run: go vet ./...
 
+      - name: instalar Node para os testes dos workflows
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: validar contratos dos workflows do n8n
+        run: node --test workflows/n8n/tests/*.test.cjs
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:

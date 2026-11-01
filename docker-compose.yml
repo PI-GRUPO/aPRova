@@ -47,6 +47,14 @@ services:
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-America/Sao_Paulo}
       N8N_EDITOR_BASE_URL: ${N8N_URL_BASE:-http://localhost:5978/}
       N8N_WEBHOOK_URL: ${N8N_URL_BASE:-http://localhost:5978/}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
+      N8N_SEGREDO_ACOES: ${N8N_SEGREDO_ACOES}
+      N8N_SEGREDO_EVENTOS: ${N8N_SEGREDO_EVENTOS:-}
+      APROVA_API_URL: ${APROVA_API_URL:-http://host.docker.internal:8080}
+      SLACK_INCOMING_WEBHOOK_URL: ${SLACK_INCOMING_WEBHOOK_URL:-}
+      APROVA_SLACK_WORKFLOW_ID: ${APROVA_SLACK_WORKFLOW_ID:-}
+      NODE_FUNCTION_ALLOW_BUILTIN: "crypto"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

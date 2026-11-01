@@ -59,12 +59,11 @@ func executar() error {
 		}
 	}()
 
-	acoesRemotas, err := montarAcoesRemotas(configuracao)
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	acoesRemotas, err := montarAcoesRemotas(configuracao, repositorio)
 	if err != nil {
 		return err
 	}
-
-	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
 
 	servidorHTTP := &http.Server{
 		Addr: configuracao.EnderecoHTTP(),
@@ -100,7 +99,7 @@ func executar() error {
 	return servidorHTTP.Shutdown(contextoDesligamento)
 }
 
-func montarAcoesRemotas(configuracao config.Configuracao) (api.ProcessadorDeAcoesRemotas, error) {
+func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.RegistroTentativas) (api.ProcessadorDeAcoesRemotas, error) {
 	if configuracao.N8NSegredoAcoes == "" {
 		slog.Warn("N8N_SEGREDO_ACOES ausente, /acoes-remotas recusará todo pedido")
 		return nil, nil
@@ -121,7 +120,7 @@ func montarAcoesRemotas(configuracao config.Configuracao) (api.ProcessadorDeAcoe
 		Permissoes:  clienteGitHub,
 		Autoria:     clienteGitHub,
 		Executor:    acaoremota.NovoExecutorNoGitHub(clienteGitHub, acaoremota.ReenfileiradorIndisponivel{}),
-		Tentativas:  acaoremota.NovoRegistroEmMemoria(),
+		Tentativas:  tentativas,
 	})
 }
 

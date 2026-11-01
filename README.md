@@ -216,11 +216,27 @@ vínculos vêm de `SLACK_GITHUB_VINCULOS`.
 | Status | Quando |
 | --- | --- |
 | 202 | ação autorizada e executada |
-| 400 | corpo inválido, tipo desconhecido, ou `solicitar_alteracao` sem justificativa |
+| 400 | corpo inválido, tipo desconhecido, ou aprovação/revisão sem justificativa |
 | 401 | assinatura ausente, inválida ou velha, ou segredo não configurado |
 | 403 | sem vínculo, sem permissão de escrita, autor aprovando o próprio PR, ou falha ao verificar |
 | 409 | `id_acao` já executado |
 | 500 | autorizada, mas a execução falhou |
+
+Os pedidos `aprovar` e `solicitar_alteracao` exigem `justificativa` não vazia,
+com até 4000 caracteres. O formulário do Slack limita a 3000. A aprovação e
+o pedido de revisão publicam o texto na review do GitHub. `reexecutar_analise`
+não exige justificativa.
+
+`task_run_id` é um UUID opcional que correlaciona a ação à análise original.
+A Central do Slack o envia quando ele existe no evento. O histórico persistido
+em `remote_action_attempts` guarda a justificativa e o vínculo da análise,
+conferindo tenant, repositório e PR; pedidos sem esse campo mantêm a busca da
+análise mais recente. Execute as migrations antes de iniciar a API atualizada.
+
+O histórico e a proteção contra repetição usam PostgreSQL na API. Os vínculos
+Slack → GitHub ainda vêm de `SLACK_GITHUB_VINCULOS`. A reexecução continua
+indisponível enquanto o worker não consumir pedidos de reanálise. Guardar a
+justificativa ainda não a conecta automaticamente à calibração do gate.
 
 Para conferir a permissão real de alguém, sem executar nada:
 
