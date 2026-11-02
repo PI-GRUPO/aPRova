@@ -27,9 +27,11 @@ configuração externa para endereços, IDs de workflows e segredos. Documente
 quais escolhas são locais e o que precisa mudar na implantação. Testes locais
 e publicação na instância local do n8n não comprovam prontidão para produção.
 
-Estado da implementação em 2026-11-01. Esta entrega prepara a interface de
-operação local e mantém a autorização no núcleo. Não comprova aprovação em
-um repositório GitHub real nem calibração automática do gate.
+Registro inicial da implementação em 2026-11-01, com complementos datados
+abaixo, incluindo Trello e validação integrada em 2026-11-02. Esta entrega
+prepara a interface de operação local e mantém a autorização no núcleo.
+Não comprova aprovação em um repositório GitHub real nem calibração
+automática do gate.
 
 ## O que foi implementado
 
@@ -72,6 +74,8 @@ um repositório GitHub real nem calibração automática do gate.
 | `06 | Rotear tipo_evento` | Encaminha pelo tipo, mantendo saída para desconhecidos. |
 | `07A` e `07J` | Pontos das rotas de aprovação pendente e falha recuperável, agora ligados à Central. |
 | `08 | Executar Central do Slack` | Executa a Central identificada por `APROVA_SLACK_WORKFLOW_ID`, sem aguardar. |
+| `07I` e chamada do OSV | Encaminham `dependencia_nova` ao subworkflow de consulta de dependências. |
+| `07G` e `09 \| Executar Sugestão no Trello` | Encaminham `analise_concluida` ao Trello por item, sem aguardar. O export exige selecionar o workflow importado no nó 09. |
 
 ## Nós da Central do Slack
 
@@ -488,3 +492,232 @@ terminou em `success` porque a falha de transporte foi tratada; isso não
 significa sucesso da ação no núcleo. Continua pendente disponibilizar a API
 ao container e validar permissões e execução real no GitHub. Esse teste
 validou o formulário de aprovação; o de revisão ainda precisa de teste real.
+
+## Trello: sugestão de movimentação e aviso Slack — 2026-11-02
+
+### Finalidade e regra de vínculo
+
+Workflow `aPRova | Trello | Sugestão de Movimentação`, ligado ao Core pela
+rota `analise_concluida → 07G → 09`. O fluxo recebe um evento normalizado por
+execução, com origem verificada pelo Core, e acrescenta um comentário no
+card correspondente. Depois de o Trello confirmar o comentário, replica
+o mesmo texto e o link do card no canal do Incoming Webhook do Slack.
+
+A regra da task permanece: o link completo da PR deve estar na descrição
+do card, inserido manualmente pela equipe. O vínculo não é inferido pelo
+título e não é criado pela automação. Um card pode conter links de várias
+PRs; para cada evento, deve haver um único card correspondente no quadro
+configurado. A equipe reconheceu o custo desse preenchimento; automatizar
+o vínculo ficou para avaliação de uma possível versão 2, sem alteração do
+fluxo atual ou do contrato de eventos.
+
+O n8n nunca move o card. O risco continua vindo do núcleo e o comentário
+não presume que análise concluída signifique aprovação, merge ou conclusão
+da tarefa. A notificação Trello no Slack não contém botões; as ações remotas
+continuam na Central e dependem da autorização do núcleo.
+
+### Inventário de nós e funções
+
+| Nó | Função |
+| --- | --- |
+| `01 \| Receber Evento do Core` | Trigger de subworkflow; aceita o objeto normalizado completo. |
+| `02 \| Preparar Evento e Quadro` | Exige um evento por execução; aceita apenas `analise_concluida`, verifica origem, tenant, UUID, risco e consistência entre URL, repositório e número da PR. Prepara quadro, lista de revisão e marcador do evento. |
+| `03 \| Evento para Pesquisa` | Encaminha apenas os eventos destinados à pesquisa. |
+| `04 \| Buscar Card pela PR` | Usa `GET /1/search` do Trello, `idBoards` e `modelTypes=cards`; pesquisa `description:<proprietário do repositório>`. Busca até dez páginas de cem cards. |
+| `05 \| Validar Vínculo Único` | Consolida páginas, elimina IDs repetidos e compara o link completo da PR na descrição. Exige quadro correto, card aberto e correspondência única; não confunde PR 14 com PR 140. |
+| `06 \| Card Único Encontrado` | Só continua quando há um único card correspondente. |
+| `07 \| Consultar Card Atual` | Relê o card pela API, incluindo descrição, quadro, lista e arquivamento. |
+| `08 \| Revalidar Card Atual` | Confere novamente o vínculo contra o evento original. |
+| `09 \| Vínculo Confirmado` | Impede comentário se o vínculo foi removido ou o card deixou o quadro/foi arquivado. |
+| `10 \| Consultar Comentários` | Consulta `commentCard`, até dez páginas de mil comentários, antes de repetir qualquer efeito. |
+| `11 \| Conferir Duplicidade e Preparar Comentário` | Procura o marcador `[aPRova:evento:<tenant>:<evento>]`; prepara texto com PR, autor, risco, motivos, explicação e sugestão conforme a etapa. |
+| `12 \| Pode Comentar` | Libera somente `pronto_para_comentar`. |
+| `13 \| Adicionar Comentário no Card` | Operação nativa Trello `cardComment/create`; não altera lista ou outro estado do card. |
+| `14 \| Confirmar Comentário` | Confere ID da ação, tipo `commentCard`, card e texto retornados pelo Trello. |
+| `15 \| Preparar Aviso do Trello no Slack` | Exige comentário confirmado; divide o texto em blocos de até 2800 caracteres, preservando o conteúdo e sem interpretar texto como marcação ou comandos. |
+| `16 \| Enviar Comentário ao Slack` | POST JSON para `SLACK_INCOMING_WEBHOOK_URL`, timeout de 15 segundos, resposta completa em texto e sem retry automático. |
+| `17 \| Registrar Resultado do Slack` | Confirma HTTP 200 e `ok`, aceitando tanto `body` quanto `data`; preserva o resultado Trello em falhas do Slack. |
+| `99 \| Resultado da Integração` | Registra evento, tenant, PR, resultado Trello e estado separado da notificação Slack. |
+
+Na instância local há também um trigger manual ligado a uma consulta somente
+de leitura do quadro. Esse ramo não publica comentários e foi removido do
+export. Os nós temporários usados para reprocessar o evento de teste também
+foram removidos antes da publicação final.
+
+A busca pela URL completa retornou zero cards mesmo com o link salvo como
+Markdown na descrição. A consulta por proprietário encontrou o candidato;
+a comparação exata posterior mantém a segurança do vínculo. Erros HTTP,
+respostas inválidas e limite de páginas sem término confirmado interrompem
+o caminho antes do comentário; não são tratados como ausência de cards.
+
+### Configuração, contratos e export portátil
+
+- Export: `workflows/n8n/trello-sugestao-movimentacao.json`, inativo, sem
+  credenciais, dados fixados, IDs do quadro pessoal ou ramos manuais de teste.
+- No export, preencher `configuracao` no nó 02 com quadro e sete listas do
+  template Kanban. A configuração não preenchida bloqueia o processamento.
+  Os textos usam Revisão de código e Fase de teste; outros processos exigem
+  ajustar também as sugestões no nó 11.
+- O workflow local mantém o quadro de teste configurado. O export usa um
+  único objeto de configuração que segue no contexto, em vez dos IDs locais
+  embutidos nas funções. Essa adaptação foi verificada em memória, sem
+  substituir a configuração da instância em funcionamento.
+- Vincular uma credencial `trelloOAuth1Api` nos nós 04, 07, 10 e 13. A
+  credencial Trello e o token do bot Slack ficam em Credentials do n8n, sem
+  duplicação obrigatória no `.env` e sem export de valores ou referências
+  pessoais. O OSV não exige credencial.
+- Os segredos e endereços lidos por `$env` permanecem no ambiente do serviço:
+  `SLACK_SIGNING_SECRET`, `SLACK_INCOMING_WEBHOOK_URL`, `N8N_SEGREDO_EVENTOS`,
+  `N8N_SEGREDO_ACOES` e demais variáveis já documentadas. Não houve alteração
+  de `.env`, `.env.example` ou Compose nesta entrega.
+- No export do Core, substituir `CONFIGURE_WORKFLOW_TRELLO` no nó 09 pela
+  seleção do workflow importado. Não foi adicionada variável de ambiente
+  para essa seleção. Manter modo `each` e `waitForSubWorkflow=false`.
+- A consulta OSV da Central e a rota do OSV continuam usando
+  `APROVA_OSV_WORKFLOW_ID` nos exports. Os exports Slack/OSV já correspondiam
+  à implementação revisada; foram preservados. O Core ganhou a rota Trello.
+- Publicar subworkflows antes do Core. Os quatro workflows estão publicados
+  na instância local; os JSONs no repositório são importados inativos.
+- Não houve alteração de funções Go, rotas, migrations, contrato de ações
+  remotas ou contrato v1 dos eventos. Nenhum banco do núcleo é consultado.
+
+### Validações realizadas
+
+- Testes com respostas externas simuladas no n8n verificaram correspondência
+  única, ausência de vínculo, PR 140 quando a esperada era 14, ambiguidade,
+  comentário já existente, remoção do vínculo antes da escrita e falha da
+  API Trello. Nos caminhos de ausência/ambiguidade/duplicidade, a escrita
+  não foi executada. A falha de consulta interrompeu a execução.
+- Testes simulados do envio Slack verificaram o mesmo texto do comentário,
+  sucesso, falha HTTP sem perder a confirmação Trello e ausência de novo
+  envio para um evento já comentado.
+- Nas primeiras execuções reais, o card estava sem descrição; depois de
+  preenchido, a busca pela URL inteira ainda retornava zero. A execução
+  `294` comprovou a consulta por proprietário; `295` reprocessou o evento
+  recebido, criou o comentário real e recebeu HTTP 200 com `data=ok` do
+  Slack. O verificador esperava `body` e foi corrigido para aceitar as duas
+  formas. A correção passou no teste simulado `296`, sem duplicar a mensagem.
+- A execução de leitura `297` confirmou que o card permaneceu no Backlog.
+- Na exportação, passaram os três arquivos de testes existentes executados
+  por `node --test workflows/n8n/tests/*.test.cjs`, além da verificação de
+  JSON, conexões, remoção de credenciais/dados locais e `git diff --check`.
+  Uma verificação adicional em memória cobriu configuração pendente,
+  configuração preenchida, vínculo, comentário, duplicidade, preservação
+  do risco e retorno Slack em `body` e `data`. Essa verificação não foi
+  adicionada como arquivo de teste permanente.
+
+### Teste integrado real sem a API Go — 2026-11-02
+
+O script oficial enviou três eventos simulados e assinados ao webhook
+publicado do Core, compartilhando tenant, PR e `task_run_id`. As chamadas ao
+Trello, OSV e Slack foram reais; nenhuma chamada foi feita à API Go e nenhum
+botão de operação remota foi acionado.
+
+| Execuções | Resultado observado |
+| --- | --- |
+| Core `298` → OSV `299` | `requests 2.19.1` em PyPI: dez avisos, cinco CVEs distintas e severidades textuais média/alta. Contexto salvo na Data Table e alerta Slack confirmado com `ok`. As contagens registram o resultado naquele instante e podem mudar na fonte. |
+| Core `300` → Trello `301` | Comentário real confirmado no card e réplica Slack com `notificacao_slack.status=enviado`. |
+| Core `302` → Central `303` | Leitura do contexto OSV da mesma análise antes do alerta; publicação Slack com botões e `ok`. O risco permaneceu ALTO, conforme o evento simulado. |
+| Trello, leitura `304` | Card ainda no Backlog após o comentário, sem movimentação. |
+
+Para repetir na raiz do projeto `aPRova`, com o link de exemplo salvo na
+descrição de um único card do quadro configurado:
+
+```sh
+URL=http://localhost:5978/webhook/aprova/events
+ANALISE_TESTE=7f3c2a1e-5b8d-4e6f-9a0b-1c2d3e4f5a6b
+
+scripts/emitir-evento.sh dependencia_nova "$URL" \
+  --dado 'url_pr=https://github.com/Azulpasta/aPRova-TESTES/pull/14' \
+  --dado "task_run_id=$ANALISE_TESTE" \
+  --dado 'dependencias=[{"ecossistema":"PyPI","nome":"requests","versao":"2.19.1"}]'
+
+# Confira a conclusão do OSV antes de testar a reutilização do contexto.
+scripts/emitir-evento.sh analise_concluida "$URL" \
+  --repositorio Azulpasta/aPRova-TESTES --numero-pr 14 --nivel-risco alto \
+  --dado "task_run_id=$ANALISE_TESTE" \
+  --dado 'explicacao=TESTE integrado: análise simulada para validar Trello e Slack.'
+
+scripts/emitir-evento.sh aguardando_aprovacao "$URL" \
+  --repositorio Azulpasta/aPRova-TESTES --numero-pr 14 \
+  --dado "task_run_id=$ANALISE_TESTE" \
+  --dado 'sha=3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3' \
+  --dado 'explicacao=TESTE integrado: aprovação pendente simulada; não executar ações remotas.'
+```
+
+O tipo `dependencia_nova` não tem `numero_pr` no payload de exemplo; por
+isso o comando troca `url_pr` diretamente, sem usar `--numero-pr`. Os
+identificadores acima são exemplos de desenvolvimento. Para uma análise
+independente, use outro UUID compartilhado entre os três eventos. Cada
+invocação gera um `id_evento` novo, podendo gerar outro comentário/aviso.
+HTTP 202 confirma recebimento, não a conclusão das integrações; confira as
+execuções filhas e os resultados finais. O esperado é um alerta OSV, um
+comentário Trello com réplica Slack e uma aprovação pendente enriquecida.
+
+### Pendências e limites
+
+O teste confirma o percurso local de eventos e integrações externas, não a
+emissão automática pelo gate, execução de sandbox, autorização de revisores,
+aprovação/revisão real no GitHub ou calibração do gate. Esses pontos continuam
+dependendo do núcleo e da configuração das integrações correspondentes.
+
+Sem vínculo ou com ambiguidade, o estado fica no nó 99 e não gera cobrança
+automática no Slack. Só `analise_concluida` está ligado ao Trello; sugestões
+baseadas em `aprovacao_registrada`, alterações solicitadas ou merge não foram
+implementadas. O OSV não é acrescentado ao comentário Trello por este fluxo;
+seu enriquecimento aparece no alerta de dependências e na Central.
+
+A conferência de comentários evita repetição sequencial do mesmo evento,
+mas não é uma transação entre Trello e n8n e não garante exclusão entre
+execuções simultâneas. Um novo evento para o mesmo commit também pode gerar
+novo comentário. Não há política de redução de mensagens equivalentes.
+
+Uma falha Slack é registrada separadamente, com o comentário já confirmado.
+A execução pode terminar em `success` mesmo com
+`notificacao_slack.status=falha`; confira esse campo. Reprocessar o evento
+inteiro encontra o comentário existente e não reenvia o Slack. A recuperação
+automática dessa notificação continua pendente; antes de retomar só o envio,
+confira se a mensagem já foi aceita para evitar duplicidade.
+
+O quadro é configuração única da instalação atual. Uma implantação para
+múltiplas equipes precisa definir o mapeamento de quadros, as credenciais,
+a retenção, os limites de busca e a recuperação das notificações. Validação
+local e publicação não comprovam implantação de produção. Os arquivos foram
+salvos apenas no repositório local, sem commit ou push nesta entrega.
+
+### Regressão automatizada do export Trello — 2026-11-02
+
+Foram adicionados 18 testes permanentes em
+`workflows/n8n/tests/trello-sugestao-movimentacao.test.cjs`. A configuração
+portátil é preenchida somente em memória com IDs sintéticos; os testes não
+usam credenciais nem publicam comentários ou mensagens.
+
+Os casos cobrem configuração pendente, origem e identificação do evento,
+consistência da PR, vínculo único, PR 14 versus 140, ambiguidade, cards
+arquivados ou de outro quadro, releitura antes da escrita, falhas e limites
+das consultas, duplicidade em página posterior, sugestões por etapa,
+preservação do risco, confirmação do comentário, limites/texto do Slack e
+sucesso/falha com respostas em `body` ou `data`. Conferem também a rota do
+Core, ausência de operações de movimentação e os quatro exports sem
+credenciais/dados fixados, com referências entre nós consistentes.
+
+O teste de paginação identificou o uso de `page` na consulta de ações do
+card. Segundo a [documentação de paginação do Trello](https://developer.atlassian.com/cloud/trello/guides/rest-api/api-introduction/#paging),
+a próxima página deve usar `before` com o ID da última ação retornada.
+O export foi corrigido no nó `10 | Consultar Comentários`: a primeira
+requisição não informa cursor; as seguintes usam o último ID da resposta
+anterior. O limite de dez páginas e a recusa de histórico incompleto foram
+preservados. Antes da correção, 52 dos 53 testes passavam; o novo teste de
+cursor falhava. Depois da correção, os 53 passaram.
+
+Esta correção foi feita apenas no export do repositório. Não foi aplicada
+à instância n8n publicada, nem validada contra um card real com mais de mil
+comentários. Ao atualizar a instalação, aplicar também a configuração do
+cursor no nó 10; preservar as credenciais e IDs locais ao importar.
+
+A regressão completa posterior terminou com 636 casos Go aprovados com
+`-race -count=1`, sem falhas nem testes pulados, incluindo PostgreSQL,
+migrations, script de eventos e sandbox Docker. Os 53 testes dos workflows,
+`go vet`, build, validação do Compose e `git diff --check` também passaram.
+O resultado e os limites estão em
+[revisao-regressao-2026-11-02.md](revisao-regressao-2026-11-02.md).

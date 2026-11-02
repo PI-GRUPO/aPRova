@@ -1,0 +1,697 @@
+{
+  "name": "aPRova | Trello | Sugestão de Movimentação",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "6b673a33-8978-42a9-bd20-dcf4c4bbed59",
+      "name": "01 | Receber Evento do Core",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const entradas = $input.all();\nif (entradas.length !== 1) throw new Error('Este workflow recebe um evento por execução; configure o chamador no modo each.');\nconst e = entradas[0].json;\nif (e.evento?.tipo !== 'analise_concluida') return [{json:{...e,trello:{status:'evento_ignorado',motivo:'Somente analise_concluida gera sugestão no Kanban.'}}}];\nconst configuracao = {\n  \"quadro_id\": \"CONFIGURE_ID_QUADRO_TRELLO\",\n  \"quadro_nome\": \"Quadro da equipe\",\n  \"listas\": {\n    \"backlog\": {\n      \"id\": \"CONFIGURE_ID_LISTA_BACKLOG\",\n      \"nome\": \"Backlog\"\n    },\n    \"design\": {\n      \"id\": \"CONFIGURE_ID_LISTA_DESIGN\",\n      \"nome\": \"Design\"\n    },\n    \"a_fazer\": {\n      \"id\": \"CONFIGURE_ID_LISTA_A_FAZER\",\n      \"nome\": \"A Fazer\"\n    },\n    \"em_andamento\": {\n      \"id\": \"CONFIGURE_ID_LISTA_EM_ANDAMENTO\",\n      \"nome\": \"Em andamento\"\n    },\n    \"revisao\": {\n      \"id\": \"CONFIGURE_ID_LISTA_REVISAO\",\n      \"nome\": \"Revisão de código\"\n    },\n    \"teste\": {\n      \"id\": \"CONFIGURE_ID_LISTA_TESTE\",\n      \"nome\": \"Fase de teste\"\n    },\n    \"concluido\": {\n      \"id\": \"CONFIGURE_ID_LISTA_CONCLUIDO\",\n      \"nome\": \"Concluído\"\n    }\n  }\n};\nconst idsConfigurados = [configuracao.quadro_id, ...Object.values(configuracao.listas).map(lista=>lista.id)];\nif (!idsConfigurados.every(id=>/^[0-9a-f]{24}$/i.test(id))) throw new Error('Configure o ID do quadro e das sete listas no objeto configuracao do nó 02 antes de publicar.');\nconst erros = [];\nif (e.meta?.origem_verificada !== true) erros.push('Evento sem origem verificada pelo Core.');\nif (!Number.isSafeInteger(e.meta?.tenant_id) || e.meta.tenant_id <= 0) erros.push('tenant_id inválido.');\nif (typeof e.meta?.id_evento !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e.meta.id_evento)) erros.push('id_evento inválido.');\nconst m = /^https:\\/\\/github\\.com\\/([A-Za-z0-9_.-]+)\\/([A-Za-z0-9_.-]+)\\/pull\\/([1-9]\\d*)\\/?(?:[?#].*)?$/i.exec(e.pr?.url || '');\nif (!m || !Number.isSafeInteger(e.pr?.numero) || Number(m[3]) !== e.pr.numero || (m[1]+'/'+m[2]).toLowerCase() !== String(e.repositorio?.full_name || '').toLowerCase()) erros.push('URL da PR, número e repositório inconsistentes.');\nif (!['BAIXO','MEDIO','ALTO'].includes(e.risco?.nivel)) erros.push('Nível de risco ausente ou desconhecido; deve vir do núcleo.');\nif (erros.length) throw new Error(erros.join(' '));\nreturn [{json:{...e,trello:{status:'pesquisar',quadro_id:configuracao.quadro_id,quadro_nome:configuracao.quadro_nome,lista_revisao_id:configuracao.listas.revisao.id,lista_revisao_nome:configuracao.listas.revisao.nome,configuracao,url_pr:'https://github.com/'+m[1]+'/'+m[2]+'/pull/'+m[3],marcador:'[aPRova:evento:'+e.meta.tenant_id+':'+e.meta.id_evento+']'}}}];"
+      },
+      "id": "be9e6dc1-f4f8-4365-951b-14fd3ce2fff8",
+      "name": "02 | Preparar Evento e Quadro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.trello.status }}",
+              "rightValue": "pesquisar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4497d952-5880-4a1c-b66d-3bf3453dd5d8",
+      "name": "03 | Evento para Pesquisa",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.trello.com/1/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloOAuth1Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ 'description:' + $json.repositorio.full_name.split('/')[0] }}"
+            },
+            {
+              "name": "idBoards",
+              "value": "={{ $json.trello.quadro_id }}"
+            },
+            {
+              "name": "modelTypes",
+              "value": "cards"
+            },
+            {
+              "name": "card_fields",
+              "value": "name,desc,url,idBoard,idList,closed"
+            },
+            {
+              "name": "cards_limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "cards_page",
+                    "value": "={{ $pageCount }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ $response.statusCode !== 200 || !Array.isArray($response.body?.cards) || $response.body.cards.length < 100 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10,
+              "requestInterval": 200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "937b9212-4b9f-4c5f-a92c-c4234811bdf9",
+      "name": "04 | Buscar Card pela PR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        720,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const contexto = $('02 | Preparar Evento e Quadro').first().json;\nconst paginas = $input.all().map(i=>i.json);\nconst cards = new Map();\nfor (const pagina of paginas) {\n  if (pagina.statusCode !== 200 || !Array.isArray(pagina.body?.cards)) throw new Error('Falha ou resposta inválida na busca do Trello. Nenhum comentário enviado.');\n  for (const card of pagina.body.cards) {\n    if (!card || typeof card.id !== 'string') throw new Error('Card inválido na resposta do Trello.');\n    cards.set(card.id,card);\n  }\n}\nif (!paginas.length || paginas[paginas.length-1].body.cards.length >= 100) throw new Error('Busca incompleta: limite de páginas atingido. Nenhum comentário enviado.');\nconst alvo = contexto.trello.url_pr.toLowerCase();\nconst possuiLink = desc => typeof desc === 'string' && (desc.match(/https:\\/\\/github\\.com\\/[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+\\/pull\\/[1-9]\\d*(?![A-Za-z0-9_-])/gi) || []).some(url=>url.toLowerCase()===alvo);\nconst encontrados = [...cards.values()].filter(c=>c.idBoard===contexto.trello.quadro_id && c.closed===false && possuiLink(c.desc));\nconst status = encontrados.length===1 ? 'card_encontrado' : encontrados.length===0 ? 'sem_card_vinculado' : 'vinculo_ambiguo';\nreturn [{json:{...contexto,trello:{...contexto.trello,status,candidatos_busca:cards.size,correspondencias:encontrados.length,cards_correspondentes:encontrados.map(c=>({id:c.id,nome:c.name,url:c.url})),card:encontrados.length===1?encontrados[0]:null}}}];"
+      },
+      "id": "80de41cf-7844-4655-820a-d3fad3dcc8b3",
+      "name": "05 | Validar Vínculo Único",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.trello.status }}",
+              "rightValue": "card_encontrado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3124ef7f-c55b-4f3e-a007-679aed2d1a34",
+      "name": "06 | Card Único Encontrado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.trello.com/1/cards/' + $json.trello.card.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloOAuth1Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "name,desc,url,idBoard,idList,closed"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "e3fd6f94-8bb0-4994-bef0-bd8c48c21b5d",
+      "name": "07 | Consultar Card Atual",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1440,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const contexto = $('05 | Validar Vínculo Único').first().json;\nconst card = $json.body;\nif ($json.statusCode !== 200 || !card || typeof card.id !== 'string') throw new Error('Não foi possível reler o card do Trello.');\nconst links = typeof card.desc==='string' ? card.desc.match(/https:\\/\\/github\\.com\\/[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+\\/pull\\/[1-9]\\d*(?![A-Za-z0-9_-])/gi)||[] : [];\nconst valido=card.id===contexto.trello.card.id && card.idBoard===contexto.trello.quadro_id && card.closed===false && links.some(u=>u.toLowerCase()===contexto.trello.url_pr.toLowerCase());\nreturn {json:{...contexto,trello:{...contexto.trello,status:valido?'vinculo_confirmado':'vinculo_alterado',card}}};"
+      },
+      "id": "de05f1da-990a-4548-885b-e95498261049",
+      "name": "08 | Revalidar Card Atual",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.trello.status }}",
+              "rightValue": "vinculo_confirmado",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "433a14f8-b1f0-4548-ab5e-6115e6228d02",
+      "name": "09 | Vínculo Confirmado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.trello.com/1/cards/' + $json.trello.card.id + '/actions' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloOAuth1Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filter",
+              "value": "commentCard"
+            },
+            {
+              "name": "limit",
+              "value": "1000"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "name": "before",
+                    "value": "={{ $pageCount === 0 ? undefined : $response.body?.at(-1)?.id }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ $response.statusCode !== 200 || !Array.isArray($response.body) || $response.body.length < 1000 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 10,
+              "requestInterval": 200
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "e750f6d5-d3cc-41ea-9c2e-aac4dd39b0a7",
+      "name": "10 | Consultar Comentários",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const contexto = $('08 | Revalidar Card Atual').first().json;\nconst paginas=$input.all().map(i=>i.json);\nconst comentarios=[];\nfor (const pagina of paginas) {\n  if(pagina.statusCode!==200 || !Array.isArray(pagina.body)) throw new Error('Não foi possível conferir os comentários anteriores.');\n  for(const acao of pagina.body) {\n    if(acao.type!=='commentCard' || typeof acao.data?.text!=='string') throw new Error('Histórico de comentários inválido.');\n    comentarios.push(acao);\n  }\n}\nif(!paginas.length || paginas[paginas.length-1].body.length>=1000) throw new Error('Histórico incompleto: limite de páginas atingido. Nenhum comentário enviado.');\nconst anterior=comentarios.find(a=>a.data.text.includes(contexto.trello.marcador));\nif(anterior) return [{json:{...contexto,trello:{...contexto.trello,status:'evento_ja_comentado',comentario_id:anterior.id}}}];\nconst card=contexto.trello.card;\nconst listas=Object.fromEntries(Object.values(contexto.trello.configuracao.listas).map(lista=>[lista.id,lista.nome]));\nlet sugestao;\nif(card.idList===contexto.trello.lista_revisao_id) sugestao='O card já está em Revisão de código. Sugestão: mantenham essa etapa até concluir a revisão humana; depois, avaliem manualmente a passagem para Fase de teste.';\nelse if([contexto.trello.configuracao.listas.teste.id,contexto.trello.configuracao.listas.concluido.id].includes(card.idList)) sugestao='O card já está em uma etapa posterior à revisão. Sugestão: confiram se a etapa atual continua adequada diante desta análise e decidam manualmente se alguma movimentação é necessária.';\nelse sugestao='Sugestão: se a implementação estiver pronta, avaliem mover este card para Revisão de código, para avaliação humana da PR.';\nconst texto=v=>String(v??'').replace(/[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]/g,'').trim();\nconst partes=['aPRova — análise concluída','PR: '+contexto.repositorio.full_name+' #'+contexto.pr.numero,contexto.trello.url_pr,'Autor da PR: '+texto(contexto.pr.autor?.login||contexto.dados?.autor_pr||'não informado'),'Risco informado pelo núcleo: '+contexto.risco.nivel,'Etapa atual: '+(listas[card.idList]||card.idList)];\nconst motivos=Array.isArray(contexto.risco.motivos)?contexto.risco.motivos:[];\nif(motivos.length) partes.push('Motivos:\\n'+motivos.slice(0,20).map(m=>'- '+texto(m.descricao||m.nome).slice(0,700)).join('\\n'));\nif(contexto.risco.explicacao) partes.push('Análise do núcleo: '+texto(contexto.risco.explicacao).slice(0,4000));\npartes.push(sugestao,'A análise não comprova aprovação, merge ou conclusão da tarefa. A decisão e a movimentação do card cabem ao time.',contexto.trello.marcador);\nreturn [{json:{...contexto,trello:{...contexto.trello,status:'pronto_para_comentar',lista_anterior:card.idList,comentario:partes.join('\\n\\n')}}}];"
+      },
+      "id": "ae59d68c-d05e-4e10-8155-81e3032b2c1a",
+      "name": "11 | Conferir Duplicidade e Preparar Comentário",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.trello.status }}",
+              "rightValue": "pronto_para_comentar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d6dbcf6-0ea5-442a-9138-40b7596adb58",
+      "name": "12 | Pode Comentar",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2640,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth1",
+        "resource": "cardComment",
+        "cardId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.trello.card.id }}"
+        },
+        "text": "={{ $json.trello.comentario }}"
+      },
+      "id": "638ae3a0-1cba-410c-ba37-cf8482b7a403",
+      "name": "13 | Adicionar Comentário no Card",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const contexto=$('11 | Conferir Duplicidade e Preparar Comentário').first().json;\nif(typeof $json.id!=='string' || $json.type!=='commentCard' || $json.data?.card?.id!==contexto.trello.card.id || $json.data?.text!==contexto.trello.comentario) throw new Error('O Trello não confirmou o comentário esperado. Confira a execução antes de reenviar.');\nreturn {json:{...contexto,trello:{...contexto.trello,status:'comentario_adicionado',comentario_id:$json.id,comentario_em:$json.date}}};"
+      },
+      "id": "312b06e9-f2b8-48d0-b4f6-ed9bc8886d77",
+      "name": "14 | Confirmar Comentário",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return {json:{id_evento:$json.meta?.id_evento||null,tenant_id:$json.meta?.tenant_id||null,tipo_evento:$json.evento?.tipo||null,pr:$json.pr?.url||null,trello:$json.trello,notificacao_slack:$json.notificacao_slack||{status:'nao_disparado'}}};"
+      },
+      "id": "ff9c006f-c2e3-49a1-988d-ab53999dea4b",
+      "name": "99 | Resultado da Integração",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        320
+      ]
+    },
+    {
+      "id": "fe91c88e-6df9-4cab-8249-db882529d897",
+      "name": "15 | Preparar Aviso do Trello no Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($json.trello?.status !== 'comentario_adicionado' || !$json.trello.comentario_id || typeof $json.trello.comentario !== 'string') throw new Error('O Slack só recebe comentários confirmados pelo Trello.');\nconst texto=$json.trello.comentario;\nconst pontos=Array.from(texto);\nconst blocos=[{type:'header',text:{type:'plain_text',text:'Sugestão registrada no Trello',emoji:true}},{type:'section',text:{type:'plain_text',text:('Card: '+String($json.trello.card?.name||'')+'\\n'+String($json.trello.card?.url||'')).slice(0,2800),emoji:false}}];\nfor(let i=0;i<pontos.length;i+=2800) blocos.push({type:'section',text:{type:'plain_text',text:pontos.slice(i,i+2800).join(''),emoji:false}});\nif(blocos.length>50) throw new Error('Comentário excede o limite de blocos da mensagem do Slack.');\nreturn {json:{...$json,notificacao_slack:{status:'pendente',comentario_trello_id:$json.trello.comentario_id},slack_payload:{text:('Sugestão registrada no Trello: '+String($json.trello.card?.url||'')+'\\n\\n'+texto).slice(0,3900),mrkdwn:false,unfurl_links:false,unfurl_media:false,blocks:blocos}}};"
+      }
+    },
+    {
+      "id": "8acd49d8-5056-4ec4-8231-031751db675f",
+      "name": "16 | Enviar Comentário ao Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3600,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_INCOMING_WEBHOOK_URL }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.slack_payload) }}",
+        "options": {
+          "timeout": 15000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "ab10f800-9ad1-4d24-8540-69a6039e6769",
+      "name": "17 | Registrar Resultado do Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const contexto=$('15 | Preparar Aviso do Trello no Slack').item.json;\nconst resposta=$json.body ?? $json.data;\nconst enviado=$json.statusCode===200 && typeof resposta==='string' && resposta.trim()==='ok';\nreturn {json:{...contexto,notificacao_slack:{...contexto.notificacao_slack,status:enviado?'enviado':'falha',http_status:Number.isInteger($json.statusCode)?$json.statusCode:null,mensagem:enviado?'Slack confirmou o recebimento.':'O envio ao Slack não foi confirmado. O comentário do Trello continua registrado; confira o nó 16 antes de tentar reenviar somente a notificação.'}}};"
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Configuração após importar\n1. No nó 02, preencha o objeto configuracao com o ID do quadro e das sete listas do Kanban. As sugestões usam as etapas Revisão de código e Fase de teste; ajuste os textos se o processo da equipe usar outros nomes.\n2. Vincule sua credencial Trello (trelloOAuth1Api) aos nós 04, 07, 10 e 13. Nenhuma chave ou token está neste JSON.\n3. O serviço n8n precisa receber SLACK_INCOMING_WEBHOOK_URL pelo ambiente, como os outros workflows. Não coloque a URL real neste arquivo.\n4. No Core, selecione este workflow no nó 09 | Executar Sugestão no Trello, mantendo modo each.\n5. O link completo da PR deve constar na descrição de um único card do quadro. O evento analise_concluida vem do Core com origem verificada.\n6. Teste e publique o Trello antes de publicar o Core. O export está inativo e não contém dados fixados.\n\nO workflow adiciona comentário e replica o texto no Slack. Nunca move cards, não decide risco e não chama a API de ações do núcleo.",
+        "height": 560,
+        "width": 1040,
+        "color": 5
+      },
+      "id": "trello-configuracao-importacao",
+      "name": "Configuração de importação",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -700
+      ]
+    }
+  ],
+  "connections": {
+    "01 | Receber Evento do Core": {
+      "main": [
+        [
+          {
+            "node": "02 | Preparar Evento e Quadro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Preparar Evento e Quadro": {
+      "main": [
+        [
+          {
+            "node": "03 | Evento para Pesquisa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Evento para Pesquisa": {
+      "main": [
+        [
+          {
+            "node": "04 | Buscar Card pela PR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "99 | Resultado da Integração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | Buscar Card pela PR": {
+      "main": [
+        [
+          {
+            "node": "05 | Validar Vínculo Único",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Validar Vínculo Único": {
+      "main": [
+        [
+          {
+            "node": "06 | Card Único Encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Card Único Encontrado": {
+      "main": [
+        [
+          {
+            "node": "07 | Consultar Card Atual",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "99 | Resultado da Integração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 | Consultar Card Atual": {
+      "main": [
+        [
+          {
+            "node": "08 | Revalidar Card Atual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 | Revalidar Card Atual": {
+      "main": [
+        [
+          {
+            "node": "09 | Vínculo Confirmado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 | Vínculo Confirmado": {
+      "main": [
+        [
+          {
+            "node": "10 | Consultar Comentários",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "99 | Resultado da Integração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 | Consultar Comentários": {
+      "main": [
+        [
+          {
+            "node": "11 | Conferir Duplicidade e Preparar Comentário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 | Conferir Duplicidade e Preparar Comentário": {
+      "main": [
+        [
+          {
+            "node": "12 | Pode Comentar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 | Pode Comentar": {
+      "main": [
+        [
+          {
+            "node": "13 | Adicionar Comentário no Card",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "99 | Resultado da Integração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 | Adicionar Comentário no Card": {
+      "main": [
+        [
+          {
+            "node": "14 | Confirmar Comentário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 | Confirmar Comentário": {
+      "main": [
+        [
+          {
+            "node": "15 | Preparar Aviso do Trello no Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 | Preparar Aviso do Trello no Slack": {
+      "main": [
+        [
+          {
+            "node": "16 | Enviar Comentário ao Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 | Enviar Comentário ao Slack": {
+      "main": [
+        [
+          {
+            "node": "17 | Registrar Resultado do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 | Registrar Resultado do Slack": {
+      "main": [
+        [
+          {
+            "node": "99 | Resultado da Integração",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}

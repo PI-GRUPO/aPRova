@@ -77,6 +77,18 @@ a versão que não conhece.
 | `falha_recuperavel` | a análise falhou por infraestrutura e pode ser reexecutada | alerta de operação com o botão de reexecutar |
 | `instalacao` | o GitHub App foi instalado, removido ou mudou de repositórios | boas-vindas e cadastro da conta no n8n |
 
+Na implementação local revisada em 2026-11-02, `analise_concluida` já chama
+o workflow Trello: ele procura o link completo da PR na descrição de um
+único card do quadro configurado, comenta sugerindo movimentação e replica
+o comentário confirmado no Slack. Nunca move o card. Sem vínculo ou com
+ambiguidade, registra o resultado na execução e não publica mensagem. A
+inserção do link na descrição permanece uma prática manual da equipe na
+versão atual. Configuração, inventário, testes e limites estão em
+[central-slack-implementacao.md](central-slack-implementacao.md), na seção
+Trello. O export portátil e as instruções de importação estão em
+[workflows/n8n/README.md](../workflows/n8n/README.md). Essa integração não
+adicionou campos ao contrato de eventos nem conectou o emissor Go.
+
 Os exemplos completos de cada tipo ficam em `workflows/exemplos/`, um arquivo
 por tipo. São eles que o script de envio usa, e um teste do núcleo garante que
 cada um é um evento válido.

@@ -9,6 +9,9 @@ pessoais ou dados fixados:
   retorno da ação no canal de notificações.
 - `dependencias-osv.json`: consulta pública ao OSV por dependência e versão;
   enriquece o alerta Slack sem modificar o risco definido pelo núcleo.
+- `trello-sugestao-movimentacao.json`: encontra o card vinculado à PR,
+  adiciona comentário sugerindo movimentação e replica o texto no Slack.
+  Nunca move o card.
 
 O inventário dos nós, funções, testes e pendências está em
 [docs/central-slack-implementacao.md](../../docs/central-slack-implementacao.md).
@@ -77,10 +80,67 @@ credenciais ou cópias da pasta `.n8n/`.
    A definição está em `recursos/tabela-contexto-osv.json`; esse arquivo
    descreve a tabela e não é um workflow para importar. Os nós localizam a
    tabela pelo nome, sem um ID fixo de outra instalação.
-6. Recrie apenas o serviço para carregar as variáveis:
+6. Importe `trello-sugestao-movimentacao.json`. Vincule sua credencial
+   `trelloOAuth1Api` aos nós `04`, `07`, `10` e `13`. No nó
+   `02 | Preparar Evento e Quadro`, preencha o objeto `configuracao` com o ID
+   do quadro e os IDs das sete listas do template Kanban. O export recusa
+   processar eventos enquanto os marcadores `CONFIGURE_ID_*` não forem
+   substituídos. Se o quadro tiver outras etapas, adapte o mapeamento e os
+   textos das sugestões nos nós `02` e `11` antes de publicar.
+7. No Core, selecione o workflow Trello importado no nó
+   `09 | Executar Sugestão no Trello`, substituindo
+   `CONFIGURE_WORKFLOW_TRELLO`. Mantenha execução por item (`each`) e sem
+   aguardar a conclusão. Essa seleção não exige nova variável de ambiente.
+8. Recrie apenas o serviço se tiver alterado variáveis de ambiente:
    `docker compose --profile automacao up -d --no-deps n8n-aprova`.
-7. Ajuste os endereços e teste antes de publicar ou ativar o workflow,
-   conforme a versão do n8n.
+9. Ajuste os endereços e teste antes de publicar ou ativar os workflows,
+   conforme a versão do n8n. Publique os subworkflows antes do Core.
+
+### Credenciais e ambiente
+
+As credenciais Trello e `slackApi` são cadastradas em **Credentials** no n8n;
+não precisam ser duplicadas no `.env`. Elas permanecem na instalação local,
+cuja pasta `.n8n/` é ignorada pelo Git. Os exports não levam nem os valores
+nem as referências pessoais dessas credenciais; vincule-as após importar.
+
+`SLACK_SIGNING_SECRET`, `SLACK_INCOMING_WEBHOOK_URL`, `N8N_SEGREDO_EVENTOS`,
+`N8N_SEGREDO_ACOES` e os endereços/IDs lidos por `$env` continuam no ambiente
+do serviço n8n. Use o `.env` local e o repasse previsto no Compose, sem
+valores reais em `.env.example`, JSONs ou documentação. O OSV é público e
+não exige credencial. Alterar uma credencial no editor não exige recriar o
+container; alterar variáveis de ambiente exige recriar o serviço.
+
+### Vínculo e comportamento do Trello
+
+O autor coloca manualmente o link completo da PR na descrição de um único
+card do quadro configurado. Esse vínculo permanece para novas análises da
+mesma PR. A automação não associa cards por semelhança de título nem cria o
+vínculo. Vinculação automática ficou para avaliação de uma possível v2.
+
+O Core encaminha `analise_concluida` pela rota `07G → 09`. A API de busca
+do Trello pesquisa candidatos na descrição pelo proprietário do repositório,
+restrita ao quadro; depois o workflow confere o link exato, o repositório e
+o número da PR. Isso evita depender da busca pela URL inteira, que retornou
+zero candidatos no teste real com o link presente. Antes de comentar, o
+workflow relê o card e confere novamente descrição, quadro e arquivamento.
+
+Sem vínculo ou com mais de um card correspondente, o nó `99` registra
+`sem_card_vinculado` ou `vinculo_ambiguo`; não há comentário nem aviso Slack.
+Falhas de consulta e paginação incompleta interrompem a execução. O marcador
+`tenant_id:id_evento` no comentário evita repetir o mesmo evento em reenvios
+sequenciais; cada nova execução do script emissor gera outro evento.
+
+O comentário apresenta PR, autor, risco e análise informados pelo núcleo,
+além da sugestão adequada à etapa do card. Não considera análise concluída
+como aprovação, merge ou tarefa concluída. O único efeito no Trello é criar
+comentário, sem alterar `idList`.
+
+Após a confirmação do Trello, o mesmo texto e o link do card são enviados por
+`SLACK_INCOMING_WEBHOOK_URL`, sem botões de operação. O resultado do nó `99`
+separa `trello.status` de `notificacao_slack.status`. Uma falha Slack não
+desfaz o comentário; um reenvio completo do mesmo evento encontra o marcador
+e não tenta novamente a notificação. Confira o envio antes de retomar apenas
+essa etapa, pois um timeout pode ocorrer depois de a mensagem ser aceita.
 
 As URLs públicas de produção são `/webhook/aprova/events` para eventos e
 `/webhook/aprova/slack/interacoes` para interatividade do Slack. Configure a
