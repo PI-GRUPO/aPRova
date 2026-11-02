@@ -573,6 +573,9 @@
       "notes": "Recebe o contrato normalizado de instalacao. Conectar futuramente o workflow especializado."
     },
     {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst entrada = $input.first();\nconst segredo = $env.N8N_SEGREDO_EVENTOS;\nif (!segredo) throw new Error('N8N_SEGREDO_EVENTOS não configurado.');\nconst headers = Object.fromEntries(Object.entries(entrada.json.headers || {}).map(([k, v]) => [k.toLowerCase(), v]));\nconst timestamp = headers['x-aprova-timestamp'];\nconst assinatura = headers['x-aprova-assinatura'];\nif (typeof timestamp !== 'string' || !/^\\d+$/.test(timestamp) ||\n    typeof assinatura !== 'string' || !/^sha256=[0-9a-f]{64}$/.test(assinatura)) {\n  throw new Error('Cabeçalhos de assinatura do núcleo inválidos.');\n}\nconst segundos = Number(timestamp);\nif (!Number.isSafeInteger(segundos) || Math.abs(Date.now() / 1000 - segundos) > 300) {\n  throw new Error('Evento fora da janela de cinco minutos.');\n}\nif (!entrada.binary?.data) throw new Error('Corpo bruto indisponível no webhook de eventos.');\nconst corpo = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst esperada = Buffer.from('sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.').update(corpo).digest('hex'));\nconst recebida = Buffer.from(assinatura);\nif (recebida.length !== esperada.length || !crypto.timingSafeEqual(recebida, esperada)) {\n  throw new Error('Assinatura do núcleo inválida.');\n}\nreturn [{\n  json: {\n    ...entrada.json,\n    body: JSON.parse(corpo.toString('utf8')),\n    meta: { origem_verificada: true },\n  },\n}];"
+      },
       "id": "abee543c-1349-464c-a11a-89af2424d0a9",
       "name": "01B | Verificar Assinatura do Núcleo",
       "type": "n8n-nodes-base.code",
@@ -581,13 +584,17 @@
         240,
         304
       ],
-      "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const crypto = require('crypto');\nconst entrada = $input.first();\nconst segredo = $env.N8N_SEGREDO_EVENTOS;\nif (!segredo) throw new Error('N8N_SEGREDO_EVENTOS não configurado.');\nconst headers = Object.fromEntries(Object.entries(entrada.json.headers || {}).map(([k, v]) => [k.toLowerCase(), v]));\nconst timestamp = headers['x-aprova-timestamp'];\nconst assinatura = headers['x-aprova-assinatura'];\nif (typeof timestamp !== 'string' || !/^\\d+$/.test(timestamp) ||\n    typeof assinatura !== 'string' || !/^sha256=[0-9a-f]{64}$/.test(assinatura)) {\n  throw new Error('Cabeçalhos de assinatura do núcleo inválidos.');\n}\nconst segundos = Number(timestamp);\nif (!Number.isSafeInteger(segundos) || Math.abs(Date.now() / 1000 - segundos) > 300) {\n  throw new Error('Evento fora da janela de cinco minutos.');\n}\nif (!entrada.binary?.data) throw new Error('Corpo bruto indisponível no webhook de eventos.');\nconst corpo = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst esperada = Buffer.from('sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.').update(corpo).digest('hex'));\nconst recebida = Buffer.from(assinatura);\nif (recebida.length !== esperada.length || !crypto.timingSafeEqual(recebida, esperada)) {\n  throw new Error('Assinatura do núcleo inválida.');\n}\nreturn [{\n  json: {\n    ...entrada.json,\n    body: JSON.parse(corpo.toString('utf8')),\n    meta: { origem_verificada: true },\n  },\n}];"
-      },
       "onError": "continueErrorOutput"
     },
     {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.meta.tenant_id + ':' + $json.meta.id_evento }}",
+        "options": {
+          "scope": "node",
+          "historySize": 10000
+        }
+      },
       "id": "279352d6-40c5-4f8c-90b9-460fd7554c32",
       "name": "05B | Descartar Eventos Repetidos",
       "type": "n8n-nodes-base.removeDuplicates",
@@ -595,40 +602,44 @@
       "position": [
         1680,
         112
-      ],
-      "parameters": {
-        "operation": "removeItemsSeenInPreviousExecutions",
-        "logic": "removeItemsWithAlreadySeenKeyValues",
-        "dedupeValue": "={{ $json.meta.tenant_id + ':' + $json.meta.id_evento }}",
-        "options": {
-          "scope": "node",
-          "historySize": 10000
-        }
-      }
+      ]
     },
     {
-      "id": "9da0ad00-8465-4d85-ab3a-346f54654a25",
-      "name": "08 | Executar Central do Slack",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        2520,
-        656
-      ],
       "parameters": {
-        "source": "database",
         "workflowId": {
           "__rl": true,
           "mode": "id",
           "value": "={{ $env.APROVA_SLACK_WORKFLOW_ID }}"
         },
-        "mode": "once",
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
         "options": {
           "waitForSubWorkflow": false
         }
-      }
+      },
+      "id": "9da0ad00-8465-4d85-ab3a-346f54654a25",
+      "name": "08 | Executar Central do Slack",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        656
+      ]
     },
     {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"received\":false,\"message\":\"Evento não autenticado.\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
       "id": "9bacceb4-8778-44a3-b684-78c39a08fd36",
       "name": "01E | Recusar Evento Não Autenticado",
       "type": "n8n-nodes-base.respondToWebhook",
@@ -636,14 +647,36 @@
       "position": [
         480,
         560
-      ],
+      ]
+    },
+    {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "{\"received\":false,\"message\":\"Evento não autenticado.\"}",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_OSV_WORKFLOW_ID }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
         "options": {
-          "responseCode": 401
+          "waitForSubWorkflow": false
         }
-      }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        1360
+      ],
+      "id": "325ef3c7-c2e5-460e-98c8-03345d309f1c",
+      "name": "Call 'aPRova | Dependências | Consulta OSV'"
     }
   ],
   "connections": {
@@ -858,11 +891,21 @@
           }
         ]
       ]
+    },
+    "07I | dependencia_nova | Conectar workflow": {
+      "main": [
+        [
+          {
+            "node": "Call 'aPRova | Dependências | Consulta OSV'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1",
-    "callerPolicy": "workflowsFromSameOwner"
+    "executionOrder": "v1"
   },
   "active": false,
   "pinData": {}

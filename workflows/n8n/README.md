@@ -7,6 +7,8 @@ pessoais ou dados fixados:
   roteamento dos eventos do núcleo.
 - `central-slack.json`: notificações, formulários, pedido assinado à API e
   retorno da ação no canal de notificações.
+- `dependencias-osv.json`: consulta pública ao OSV por dependência e versão;
+  enriquece o alerta Slack sem modificar o risco definido pelo núcleo.
 
 O inventário dos nós, funções, testes e pendências está em
 [docs/central-slack-implementacao.md](../../docs/central-slack-implementacao.md).
@@ -66,6 +68,15 @@ credenciais ou cópias da pasta `.n8n/`.
    valor no emissor e no receptor daquela direção.
 5. Copie o ID atribuído à Central para `APROVA_SLACK_WORKFLOW_ID` no `.env`.
    O nó `08 | Executar Central do Slack` do roteador usa essa variável.
+   Importe também `dependencias-osv.json` e preencha `APROVA_OSV_WORKFLOW_ID`
+   com o ID dessa importação. A rota `dependencia_nova` do export do Core usa
+   essa variável, assim como a consulta complementar da Central, sem depender
+   do ID de outra instalação.
+   No mesmo projeto do n8n, crie uma Data Table chamada
+   `aprova_osv_por_analise`, com colunas `chave` e `contexto`, ambas String.
+   A definição está em `recursos/tabela-contexto-osv.json`; esse arquivo
+   descreve a tabela e não é um workflow para importar. Os nós localizam a
+   tabela pelo nome, sem um ID fixo de outra instalação.
 6. Recrie apenas o serviço para carregar as variáveis:
    `docker compose --profile automacao up -d --no-deps n8n-aprova`.
 7. Ajuste os endereços e teste antes de publicar ou ativar o workflow,
@@ -81,6 +92,44 @@ A Central devolve mensagens pelo Incoming Webhook do canal configurado.
 O bot usado para abrir formulários não precisa publicar via `chat.postMessage`.
 O webhook fixa o destino dos retornos; para atender vários canais será preciso
 outra configuração de envio.
+
+O workflow OSV não exige token nem credencial. Ele consulta
+`https://api.osv.dev/v1/query` com o nome, ecossistema e versão informados pelo
+núcleo e publica um alerta por dependência usando `SLACK_INCOMING_WEBHOOK_URL`.
+As consultas têm timeout de 30 segundos e limite de dez páginas. Resultados
+incompletos e falhas são identificados no texto, sem anunciar ausência de
+vulnerabilidades. A severidade só é exibida quando informada textualmente
+pelas fontes. O risco do núcleo permanece inalterado.
+
+Desde a integração de 2026-11-02, o OSV também guarda um resumo informativo
+por tenant, análise, repositório e PR na Data Table do n8n. Isso não dá acesso
+ao banco do núcleo. A Central lê esse contexto antes do alerta com botões e
+leva o mesmo resumo aos formulários de aprovação e revisão. SHA incompatível,
+quando informado nos dois eventos, impede reutilização.
+
+O resumo é reutilizado por até 24 horas. Se estiver vencido, ou se o próprio
+evento de aprovação trouxer dependências e não houver contexto compatível,
+a Central chama o OSV e espera o retorno antes de publicar o alerta. Essa
+consulta complementar limita-se a dez pacotes, duas páginas e cinco segundos
+por requisição; esses limites podem produzir resultados parciais. Sem
+dependências conhecidas, sem resultado ou em falha, o alerta declara
+indisponibilidade e não presume ausência de vulnerabilidades.
+
+A consulta não ocorre depois do clique: os formulários recebem o resumo do
+próprio alerta. O resumo tem até 1000 caracteres e detalha até três pacotes.
+Ele não é enviado em `pedido_acao` nem acrescentado à justificativa humana.
+Publicar esse contexto na review do GitHub continua pendente no núcleo.
+
+Se a aprovação chegar antes do evento de dependências e não trouxer a lista
+no próprio payload, o alerta indicará contexto ainda indisponível. A chegada
+posterior do evento de dependências alimenta a tabela e o alerta OSV separado;
+a mensagem de aprovação já publicada não é atualizada automaticamente.
+
+Os exports são importados inativos. Na instância revisada em 2026-11-02,
+Core e OSV estavam publicados e ligados por seleção direta do workflow no
+editor. A variável `APROVA_OSV_WORKFLOW_ID` é necessária para importar os
+exports portáteis. A chamada da Central ao OSV foi publicada na instância
+local; não houve reinício de container nessa integração.
 
 A API recebe o corpo JSON bruto assinado em `POST /acoes-remotas`.
 O nó `13` está habilitado e tem timeout de 15 segundos. Só `202` com

@@ -78,7 +78,7 @@ um repositório GitHub real nem calibração automática do gate.
 | Nó | Função |
 | --- | --- |
 | `01` e `02` | Recebem o evento normalizado e separam aprovação pendente de falha recuperável. |
-| `03A | Preparar Aprovação` | Mostra PR, autor, motivo do risco e botões Aprovar/Pedir revisão. |
+| `03A | Preparar Aprovação` | Mostra PR, autor, motivo do risco, contexto OSV disponível e botões Aprovar/Pedir revisão. |
 | `03B | Preparar Falha` | Mostra diagnóstico informado pelo núcleo e botão Reexecutar. |
 | `HTTP Request` | Publica a notificação por `SLACK_INCOMING_WEBHOOK_URL`. |
 | `05 | Receber Interação do Slack` | Recebe cliques e envios dos formulários com corpo bruto. |
@@ -206,3 +206,285 @@ A atualização do alerta original após `aprovacao_registrada`, prevista no
 guia geral de eventos, continua sendo uma evolução separada: exige identificar
 e guardar a mensagem original e tratar o evento de decisão. Não faz parte dos
 retornos de formulários implementados aqui.
+
+## Workflow aPRova | Dependências | Consulta OSV — revisão de 2026-11-02
+
+### Finalidade e regra crítica
+
+Quando o núcleo em Go emite `dependencia_nova`, consultar o OSV e enriquecer
+o texto do alerta com os avisos, CVEs e severidades conhecidas da versão.
+O resultado é informativo. O workflow não altera `risk_gates`, não recalcula
+`risco.nivel`, não acessa PostgreSQL e não chama uma API do núcleo para alterar
+risco. A decisão do gate continua exclusivamente no núcleo.
+
+### O que foi implementado e conferido
+
+- A entrada aceita o evento já normalizado pelo Core. Apenas o tipo
+  `dependencia_nova`, com lista de dependências não vazia, segue para consulta.
+- Cada dependência é consultada com `package.name`, `package.ecosystem` e
+  `version`, sem autenticação, em `https://api.osv.dev/v1/query`.
+- As respostas são consolidadas por tenant, evento, ecossistema, nome e versão.
+  O contexto da PR e o risco recebidos são preservados nos resultados.
+- A paginação envia `page_token`, para quando não existe `next_page_token` ou
+  quando o HTTP não é 200 e limita a dez requisições, com intervalo de 200 ms.
+  O timeout de cada requisição é de 30 segundos.
+- Avisos retirados (`withdrawn`) não entram na contagem. Avisos OSV são
+  contados por ID; CVEs são extraídas de IDs/aliases e deduplicadas. Dois
+  avisos de fontes diferentes sobre uma mesma CVE não viram duas CVEs.
+- A consulta é classificada como `concluida`, `incompleta` ou `falha`.
+  Totais definitivos só existem para consultas concluídas. Falha HTTP,
+  timeout, resposta inválida ou paginação pendente não significam ausência
+  de vulnerabilidades.
+- Severidades textuais das fontes são apresentadas como crítica, alta,
+  média ou baixa. Vetores CVSS são preservados nos dados, mas não são
+  convertidos em severidade pelo workflow. Se não houver classificação
+  textual reconhecida, o alerta informa que ela não foi fornecida.
+- Um alerta em texto simples é enviado por dependência ao Incoming Webhook
+  configurado. No máximo dez CVEs aparecem no texto; a saída da execução
+  mantém os demais IDs. Esse histórico está sujeito à retenção do n8n.
+
+### Inventário de nós e funções
+
+| Nó | Função |
+| --- | --- |
+| `01 | Receber Evento Normalizado` | Trigger de subworkflow com `inputSource=passthrough`, preservando o item do Core. |
+| `02 | Validar Evento de Dependências` | IF por tipo do evento e lista não vazia; a saída falsa encerra sem integração. |
+| `03 | Separar Dependências` | Split Out em `dependencias`, preservando os demais campos e nomeando o pacote atual como `dependencia`. |
+| `04 | Consultar OSV` | POST público por pacote/versão, com resposta completa, paginação, timeout e continuação em caso de falha de transporte. |
+| `05 | Consolidar Consulta por Dependência` | Código em todos os itens; `Map` de grupos e avisos, extração de CVEs, descarte de avisos retirados e status de completude. Usa `itemMatching` e `pairedItem` para manter o vínculo com a entrada correta. |
+| `06 | Preparar Alerta de Dependência` | Código por item; monta `texto_alerta` e `slack_payload`, traduz somente severidades informadas e preserva o objeto de risco. |
+| `07 | Enviar Alerta Enriquecido` | POST em `SLACK_INCOMING_WEBHOOK_URL`, sem token embutido no export. |
+
+Não houve alteração no Go, na API, nas tabelas ou nas migrations para esta
+revisão. Os códigos JavaScript dos nós 05 e 06 ficam dentro do export
+`workflows/n8n/dependencias-osv.json`.
+
+### Ligação com o Core e preparação do repositório
+
+- No Core, `06 | Rotear tipo_evento` encaminha `dependencia_nova` para
+  `07I | dependencia_nova | Conectar workflow` e depois para
+  `Call 'aPRova | Dependências | Consulta OSV'`.
+- A chamada usa execução por item e `waitForSubWorkflow=false`. O núcleo
+  recebe a confirmação de entrada antes das consultas e do envio do alerta.
+- Na instância revisada, Core e OSV estão ativos, com o rascunho atual
+  publicado. A seleção direta do ID do workflow na chamada ativa foi mantida.
+- O novo export OSV foi adicionado e o export do Core foi atualizado com a
+  rota criada no editor. O export usa `APROVA_OSV_WORKFLOW_ID` para evitar
+  depender do ID local ao importar em outra instalação.
+- A variável foi documentada em `.env.example` e adicionada ao Compose.
+  Após importar os JSONs, preencher o ID no ambiente e recriar o serviço do
+  n8n para carregar a variável. Não houve reinício de container nesta revisão.
+- Os exports estão inativos, sem credenciais, segredos ou dados fixados.
+  O webhook Slack e os IDs são configurados por ambiente. Não houve commit,
+  push ou implantação de produção durante esta revisão.
+
+### Validações realizadas
+
+- Os sete nós passaram em `validate_node_config` do n8n.
+- A execução existente `259`, iniciada pelo Core `258` em 2026-11-02,
+  comprova a integração real: evento normalizado com origem verificada,
+  consulta OSV HTTP 200 e envio ao Slack com resposta `ok`. Foram 10 avisos
+  OSV e cinco CVEs distintas naquela consulta; esses números são históricos
+  e não devem ser usados como dados atuais da base OSV.
+- A execução isolada `260` no n8n testou duas dependências e três respostas:
+  duas páginas de um pacote e HTTP 503 no outro. A consolidação manteve os
+  pacotes separados, uma CVE na consulta concluída, total nulo na falha e
+  `risco.nivel=BAIXO` em ambos. HTTP OSV e envio Slack foram simulados nesse
+  teste; nenhuma mensagem adicional foi publicada para a revisão.
+- Treze testes em `workflows/n8n/tests/dependencias-osv.test.cjs` passaram:
+  contrato da consulta, destinos HTTP permitidos, preservação do risco,
+  CVEs repetidas, paginação, resultados parciais, HTTP 429/500, timeout,
+  resposta inválida, consulta vazia, avisos retirados, severidade e CVSS,
+  isolamento de contexto e configuração portátil da rota.
+- Os doze testes existentes da Central do Slack também passaram, incluindo
+  a normalização dos exemplos de eventos. A CI já executa todos os arquivos
+  `workflows/n8n/tests/*.test.cjs`; o teste novo está incluído nessa regra.
+
+### Parecer e limites para concluir a task
+
+O comportamento revisado atende à task de consulta e enriquecimento de alerta
+Slack, respeitando a exclusividade da decisão de risco no núcleo. Os exports,
+testes e documentação podem ser versionados em uma branch para revisão do
+time. Isso não significa que a implantação de produção esteja concluída.
+
+Para outra instalação/produção, configurar o ID importado, o webhook Slack,
+a saída de rede para o OSV, a retenção do histórico e validar o percurso com
+as credenciais e endereços do ambiente. A emissão automática do evento pelo
+núcleo continua pendente no projeto; a execução real acima foi provocada
+por um evento enviado ao Core, não comprova emissão automática pelo gate.
+
+Melhorias posteriores, sem mudar a regra de risco: validar os campos de cada
+dependência antes da chamada HTTP, definir política de retry/backoff para
+falhas transitórias e conferir limites de volume por evento. Atualmente o IF
+valida tipo e lista; campos ausentes são detectados no consolidado. Não há
+comentário em PR/Trello implementado neste workflow: o destino atual é o
+alerta Slack. Incluir outro destino deve reutilizar o enriquecimento e manter
+a decisão de risco no núcleo.
+
+Referências técnicas conferidas:
+
+- [Contrato POST /v1/query e paginação do OSV](https://google.github.io/osv.dev/post-v1-query/).
+- [Esquema OSV: IDs, aliases, withdrawn e severidade](https://ossf.github.io/osv-schema/).
+- [Paginação no HTTP Request do n8n](https://docs.n8n.io/build/code-in-n8n/cookbook/http-request-node/pagination.md).
+
+## OSV no alerta e nos formulários de decisão — integração de 2026-11-02
+
+Este complemento atualiza a revisão inicial do workflow OSV acima. O escopo
+autorizado é apresentar o contexto ao revisor antes da decisão. A ampliação
+da publicação de reviews/comentários no núcleo fica para outra entrega.
+
+### O que foi implementado
+
+- O OSV guarda um resumo informativo na Data Table nativa do n8n
+  `aprova_osv_por_analise`, no mesmo projeto dos workflows, com duas colunas
+  String: `chave` e `contexto`. Não há acesso direto ao PostgreSQL do núcleo,
+  nem alteração de `risk_gates` ou uso desse contexto para autorizar ações.
+- A chave inclui tenant, `task_run_id`, repositório e número da PR. A Central
+  confere esses campos e rejeita SHA incompatível quando presente nos dois
+  eventos. A consulta de uma análise nunca é reaproveitada apenas porque
+  pertence à mesma PR.
+- A Central busca o resultado antes de montar a mensagem com os botões.
+  Contextos de até 24 horas são reutilizados. Resultados vencidos são
+  consultados novamente usando somente os pacotes da mesma análise.
+- Se `aguardando_aprovacao` já trouxer `dados.dependencias`, a normalização
+  existente preserva a lista e a Central pode consultar o OSV antes do alerta
+  sem depender de um evento anterior de dependências. A lista continua
+  opcional no contrato; o emissor Go não foi alterado nesta entrega.
+- A consulta complementar é limitada a dez pacotes, duas páginas e cinco
+  segundos por requisição. O prazo total depende da quantidade de pacotes e
+  páginas; esses limites não são um timeout global de cinco segundos. Os
+  limites atingidos são apresentados como resultados parciais.
+- Sem resultado ou pacotes conhecidos, com contexto incompatível ou em
+  falha, o alerta declara que o resultado está indisponível. Isso não altera
+  o risco nem vira uma afirmação de ausência de vulnerabilidades.
+- O resumo inclui o instante da consulta e até três pacotes, em no máximo
+  1000 caracteres. Ele aparece antes dos botões e acompanha o valor de ambos
+  os botões, permitindo mostrar o mesmo contexto nos dois formulários.
+- Nenhuma consulta OSV é feita depois do clique. Os formulários continuam
+  pedindo a justificativa humana; o resumo não é enviado em `pedido_acao`,
+  não é anexado automaticamente à justificativa e não muda a review publicada
+  no GitHub nesta fase.
+- O modo `contexto_aprovacao` devolve os resultados à Central sem publicar
+  outro alerta OSV. O evento `dependencia_nova` mantém seu alerta separado
+  por pacote e também alimenta o contexto persistido.
+
+### Nós adicionados e funções
+
+| Workflow / nó | Função |
+| --- | --- |
+| Central `02A | Identificar Contexto OSV` | Confere a identificação da aprovação e monta a chave da análise. |
+| Central `02B | Buscar Contexto OSV` | Lê a Data Table pelo nome e chave; retorna o registro mais recentemente atualizado. Saída vazia ou falha segue para tratamento explícito. |
+| Central `02C | Selecionar Contexto OSV` | Confere correlação, SHA, pacotes e validade temporal; seleciona resumo ou prepara consulta complementar. |
+| Central `02D | Consultar OSV Antes do Alerta` | Separa reutilização/indisponibilidade de uma consulta necessária. |
+| Central `02E | Consultar Contexto OSV` | Chama o subworkflow OSV por item e espera o resultado antes da mensagem com botões. |
+| Central `02F | Receber Contexto OSV` | Confere novamente o resultado contra a aprovação original; erros não impedem o alerta com aviso de indisponibilidade. |
+| OSV `06A | Agrupar Contexto OSV da Análise` | Agrupa resultados pela análise e monta um snapshot sem risco ou decisão. Persiste até 50 pacotes e sinaliza cobertura parcial quando limitada. |
+| OSV `06B | Guardar Contexto OSV` | Faz upsert pela chave na Data Table; uma falha de cache não autoriza ação nem altera risco. |
+| OSV `06C | Retornar Contexto OSV` | Devolve o snapshot ao chamador, preservando o contexto de execução. |
+| OSV `06D | Publicar Alerta de Dependência` | Só permite o envio do alerta separado quando a chamada não é para contextualizar aprovação. |
+
+Os nós `03A`, `10` e `10B` foram ajustados para mostrar o resumo. A validação
+do OSV passou a aceitar aprovação apenas no modo de consulta de contexto, e
+o HTTP usa os limites correspondentes a cada modo. As funções JavaScript
+`compativel` e `apresentar`, nos nós 02C/02F, fazem a validação e a apresentação
+do snapshot. Não houve mudança no Go, na API, em migrations ou na assinatura
+do pedido de ação nesta entrega.
+
+### Configuração, exports e estado local
+
+- A tabela foi criada na instância local; não foi criado nem reiniciado
+  container. O esquema sem dados está em
+  `workflows/n8n/recursos/tabela-contexto-osv.json`.
+- Em outra instalação, criar a tabela com o mesmo nome e colunas no projeto
+  dos workflows. Os nós usam o nome da tabela, sem ID local embutido.
+- O export da Central referencia o OSV por `APROVA_OSV_WORKFLOW_ID`. A chamada
+  ativa usa a seleção do workflow já existente na instância local.
+- OSV e Central foram publicados após a validação. O Core não precisou ser
+  alterado para esta integração: ele continua encaminhando os dois eventos
+  por seus caminhos atuais.
+- Os exports foram atualizados sem credenciais, segredos ou dados fixados.
+  Não houve commit, push ou implantação de produção.
+
+### Validação realizada
+
+- Dez testes novos em `tests/osv-aprovacao.test.cjs` verificaram correlação,
+  rejeição de outro tenant/análise/PR/repositório/SHA, ausência de resultado,
+  consulta complementar, expiração, falhas, presença nos dois formulários,
+  limite dos botões/metadados, preservação do risco e contrato da API.
+- Os treze testes do OSV e os doze da Central também passaram: 35 testes
+  locais no total. Os novos nós e as configurações alteradas passaram na
+  validação de parâmetros do n8n.
+- Execução `261`: resposta OSV simulada, escrita real na Data Table e retorno
+  do snapshot, sem envio ao Slack. Execução `262`: leitura real do mesmo
+  contexto pela Central e geração do alerta enriquecido, com envio simulado.
+- Execução `263`: nenhuma linha para a análise consultada; o alerta continuou
+  com indisponibilidade explícita, sem reutilizar dados da análise anterior.
+- Execuções `264 → 265`: a Central chamou o subworkflow, que fez consulta
+  pública real ao OSV para um pacote de teste; o contexto retornou antes de
+  montar a aprovação. O envio ao Slack foi simulado e o modo de contexto
+  não publicou o alerta OSV separado.
+- Execução `266`: o evento de dependência continuou alcançando seu envio de
+  alerta, simulado no teste. Execução `267`: os dois registros sintéticos
+  criados pelos testes foram removidos por suas chaves exatas; o nó temporário
+  de limpeza foi removido antes da publicação final.
+
+### Limites e trabalho posterior
+
+Se a aprovação chegar antes do evento de dependências e não trouxer a lista
+no próprio payload, não existe informação suficiente para consultar o OSV
+para aquela análise. O alerta declara indisponibilidade. Um evento posterior
+atualiza a tabela e publica o alerta de dependências, mas não edita a mensagem
+de aprovação já publicada nem seu resumo nos formulários. Para garantir que
+toda aprovação tenha OSV disponível desde a primeira mensagem, o emissor deve
+fornecer os pacotes junto do evento ou será necessária uma evolução de
+atualização/correlação de mensagens. Não se presume uma ordem de chegada.
+
+A validade de 24 horas controla reutilização, não remove registros antigos.
+Definir retenção/limpeza da Data Table e validar capacidade é parte da
+preparação para produção. O cache é um apoio à apresentação, não a fonte da
+decisão. A indisponibilidade do cache ou do OSV não cria autorização paralela.
+
+Continuam pendentes a emissão automática no processamento do núcleo, a
+validação de ponta a ponta com Slack/GitHub reais e a futura ampliação do
+núcleo para publicar o contexto OSV na review, com contrato e idempotência
+próprios. Essa publicação foi explicitamente deixada para depois.
+
+### Diagnóstico dos botões no ambiente local — 2026-11-02
+
+Após enviar os eventos de teste, a execução `272` da Central confirmou a
+publicação da notificação no Slack (`ok`). Na conferência seguinte, não havia
+nova execução de entrada para os cliques. O workflow estava ativo e com a
+versão atual publicada. O container expunha o n8n em `127.0.0.1:5978`.
+A inspeção inicial não identificou o ngrok, mas essa conclusão foi corrigida
+pela consulta à API local do túnel fora do sandbox: ele estava ativo,
+encaminhando HTTPS público para `http://localhost:5978`.
+
+O histórico HTTP do ngrok confirmou três cliques em 16:32:18, 16:32:29 e
+16:32:30 (UTC-3), todos com `POST /webhook-test/aprova/slack/interacoes`
+e resposta `404 Not Found`. Os cliques chegaram ao túnel, mas usaram o
+endpoint de teste sem escuta manual e não iniciaram o workflow publicado.
+O envio de notificações por Incoming Webhook não
+configura o caminho de volta. Para testar localmente, disponibilizar um
+endpoint HTTPS público que encaminhe ao n8n e configurar a Request URL da
+interatividade do Slack App como
+`https://<endereco-publico>/webhook/aprova/slack/interacoes`.
+O prefixo `/webhook-test/` exige escuta manual; `/webhook/` usa o workflow
+publicado. Corrigir a Request URL no Slack App para o domínio atual do ngrok
+com `/webhook/aprova/slack/interacoes`, salvar e clicar novamente. O painel
+do Slack App não foi acessado nem alterado nesta inspeção; o caminho chamado
+foi comprovado pelo histórico do ngrok. A abertura do formulário após a
+correção ainda precisa ser validada.
+
+Validação posterior no mesmo dia: a execução `273` recebeu o clique pelo
+webhook publicado e abriu o formulário de aprovação (`views.open` com
+`ok: true`). A execução `274` recebeu o envio, validou a assinatura do Slack,
+preparou a decisão com justificativa e assinou a chamada ao núcleo.
+O nó `13 | Enviar Ação ao Núcleo` encontrou `ECONNREFUSED` na porta `8080`
+do host configurado. Portanto, não houve confirmação de autorização nem
+registro de aprovação no GitHub por esse pedido. O nó
+`14 | Preparar Retorno ao Usuário` informou que a ação não estava confirmada,
+e `HTTP Request1` publicou esse retorno no Slack (`ok`). A execução n8n
+terminou em `success` porque a falha de transporte foi tratada; isso não
+significa sucesso da ação no núcleo. Continua pendente disponibilizar a API
+ao container e validar permissões e execução real no GitHub. Esse teste
+validou o formulário de aprovação; o de revisão ainda precisa de teste real.

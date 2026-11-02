@@ -85,13 +85,13 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const evento = $json;\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n};\n\nconst autor = evento.pr?.autor?.login;\nconst motivo = evento.risco?.motivo || evento.risco?.explicacao;\n\nif (\n  evento.evento?.tipo !== 'aguardando_aprovacao' ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  !autor ||\n  !motivo\n) {\n  throw new Error('Evento de aprovação incompleto ou incompatível.');\n}\n\nconst valorBotao = JSON.stringify(contexto);\n\nif (valorBotao.length > 2000) {\n  throw new Error('Contexto dos botões excede o limite do Slack.');\n}\nconst slack_payload = {\n  text: `Aprovação pendente: ${contexto.repositorio} #${contexto.numero_pr}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `PR aguardando aprovação\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}\\n` +\n          `Autor: ${autor}`,\n      },\n    },\n    {\n       type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Motivo do risco:\\n${String(motivo).slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'actions',\n      elements: [\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Aprovar' },\n          style: 'primary',\n          action_id: 'aprovar',\n          value: valorBotao,\n        },\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Pedir revisão' },\n          action_id: 'solicitar_alteracao',\n          value: valorBotao,\n        },\n      ],\n    },\n  ],\n};\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};\n\n"
+        "jsCode": "const evento = $json;\n\nconst resumoOsv = String(evento.contexto_osv?.resumo ||\n  'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.').slice(0, 1000);\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n  osv_resumo: resumoOsv,\n};\n\nconst autor = evento.pr?.autor?.login;\nconst motivo = evento.risco?.motivo || evento.risco?.explicacao;\n\nif (\n  evento.evento?.tipo !== 'aguardando_aprovacao' ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  !autor ||\n  !motivo\n) {\n  throw new Error('Evento de aprovação incompleto ou incompatível.');\n}\n\nconst valorBotao = JSON.stringify(contexto);\n\nif (valorBotao.length > 2000) {\n  throw new Error('Contexto dos botões excede o limite do Slack.');\n}\nconst slack_payload = {\n  text: `Aprovação pendente: ${contexto.repositorio} #${contexto.numero_pr}\\n${resumoOsv}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `PR aguardando aprovação\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}\\n` +\n          `Autor: ${autor}`,\n      },\n    },\n    {\n       type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Motivo do risco:\\n${String(motivo).slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'section',\n      text: { type: 'plain_text', text: 'Contexto OSV para a decisão:\\n' + resumoOsv },\n    },\n    {\n      type: 'actions',\n      elements: [\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Aprovar' },\n          style: 'primary',\n          action_id: 'aprovar',\n          value: valorBotao,\n        },\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Pedir revisão' },\n          action_id: 'solicitar_alteracao',\n          value: valorBotao,\n        },\n      ],\n    },\n  ],\n};\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};\n\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        576,
-        -160
+        1760,
+        -336
       ],
       "id": "aa658d6a-8867-4b25-a72d-f7c9d27971fc",
       "name": "03A | Preparar Aprovação"
@@ -104,8 +104,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        576,
-        16
+        1760,
+        -128
       ],
       "id": "d70543b0-68b8-40e8-96a7-5ef88ddd7b71",
       "name": "03B | Preparar Falha"
@@ -128,8 +128,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        912,
-        -80
+        1984,
+        -240
       ],
       "id": "246a299d-24e5-49e3-8da8-45371304b02b",
       "name": "HTTP Request"
@@ -352,7 +352,7 @@
         "nodeCredentialType": "slackApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ ({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_aprovacao\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"aprovar\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Justificar aprovação\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar justificativa\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Explique por que você considera aceitável aprovar esta alteração. O núcleo verificará sua permissão antes de executar a ação.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Justificativa da aprovação\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Descreva sua avaliação do risco.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
+        "jsonBody": "={{ ({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_aprovacao\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"aprovar\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Justificar aprovação\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar justificativa\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Contexto OSV apresentado no alerta:\\n\" +\n            String(JSON.parse($json.slack.actions[0].value).osv_resumo ||\n              \"OSV: resultado não disponível para esta análise.\").slice(0, 1000)\n        }\n      },\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Explique por que você considera aceitável aprovar esta alteração. O núcleo verificará sua permissão antes de executar a ação.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Justificativa da aprovação\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Descreva sua avaliação do risco.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -417,7 +417,6 @@
       ],
       "id": "f5baa2d3-e834-4d0b-82a3-3249fe46ea23",
       "name": "13 | Enviar Ação ao Núcleo",
-      "disabled": false,
       "onError": "continueRegularOutput"
     },
     {
@@ -428,7 +427,7 @@
         "nodeCredentialType": "slackApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_revisao\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"solicitar_alteracao\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Pedir revisão\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar justificativa\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Descreva as alterações necessárias neste PR. O núcleo verificará sua permissão antes de registrar o pedido de revisão.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Alterações solicitadas\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Explique o que precisa ser alterado e por quê.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
+        "jsonBody": "={{ JSON.stringify({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_revisao\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"solicitar_alteracao\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Pedir revisão\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar justificativa\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Contexto OSV apresentado no alerta:\\n\" +\n            String(JSON.parse($json.slack.actions[0].value).osv_resumo ||\n              \"OSV: resultado não disponível para esta análise.\").slice(0, 1000)\n        }\n      },\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Descreva as alterações necessárias neste PR. O núcleo verificará sua permissão antes de registrar o pedido de revisão.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Alterações solicitadas\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Explique o que precisa ser alterado e por quê.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -507,20 +506,154 @@
       "name": "HTTP Request1"
     },
     {
-      "id": "c969efaa-8a57-4d7e-b683-4d3bf5d007ff",
-      "name": "07E | Recusar Interação Não Autenticada",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        400,
-        650
-      ],
       "parameters": {
         "respondWith": "json",
         "responseBody": "{\"received\":false,\"message\":\"Interação não autenticada.\"}",
         "options": {
           "responseCode": 401
         }
+      },
+      "id": "c969efaa-8a57-4d7e-b683-4d3bf5d007ff",
+      "name": "07E | Recusar Interação Não Autenticada",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        400,
+        656
+      ]
+    },
+    {
+      "id": "7afd1674-85a9-4c42-8866-abe433144fad",
+      "name": "02A | Identificar Contexto OSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -384
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const evento = $json;\nconst identidade = [evento.meta?.tenant_id, evento.meta?.execution_id, evento.repositorio?.full_name, evento.pr?.numero];\nif (evento.evento?.tipo !== 'aguardando_aprovacao' ||\n    !Number.isSafeInteger(identidade[0]) || identidade[0] <= 0 ||\n    typeof identidade[1] !== 'string' || !identidade[1] ||\n    typeof identidade[2] !== 'string' || !identidade[2] ||\n    !Number.isSafeInteger(identidade[3]) || identidade[3] <= 0) {\n  throw new Error('Contexto de aprovação inválido para consultar OSV.');\n}\nreturn { json: { ...evento, chave_osv: JSON.stringify(identidade) } };"
+      }
+    },
+    {
+      "id": "fb8ad9ab-04b8-456b-86af-4a1b825d1116",
+      "name": "02B | Buscar Contexto OSV",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        -384
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "aprova_osv_por_analise"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "condition": "eq",
+              "keyValue": "={{ $json.chave_osv }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1,
+        "orderBy": true,
+        "orderByColumn": "updatedAt",
+        "orderByDirection": "DESC"
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "41364195-7ba4-4668-a4b7-aaebbc585de4",
+      "name": "02C | Selecionar Contexto OSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -384
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function compativel(snapshot, evento) {\n  if (!snapshot || snapshot.versao !== 1 ||\n      !['concluida', 'incompleta', 'falha'].includes(snapshot.status) ||\n      !Array.isArray(snapshot.dependencias) || snapshot.dependencias.length === 0 ||\n      JSON.stringify(snapshot.identidade) !== evento.chave_osv ||\n      (snapshot.sha && evento.pr?.sha && snapshot.sha !== evento.pr.sha) ||\n      !Number.isFinite(Date.parse(snapshot.consultado_em))) return false;\n  if (snapshot.dependencias.some(d => !d || !['nome', 'versao', 'ecossistema'].every(k => typeof d[k] === 'string' && d[k].trim()))) return false;\n  const nomes = lista => JSON.stringify(lista.map(d => [d.ecossistema, d.nome, d.versao]).sort());\n  return !Array.isArray(evento.dependencias) || evento.dependencias.length === 0 ||\n    nomes(evento.dependencias) === nomes(snapshot.dependencias);\n}\nfunction apresentar(snapshot) {\n  const prefixo = snapshot.status === 'concluida' ? 'Consulta OSV concluída' : snapshot.status === 'falha' ? 'Consulta OSV indisponível' : 'Consulta OSV com resultados parciais';\n  const linhas = snapshot.dependencias.slice(0, 3).map(d =>\n    d.nome + ' @ ' + d.versao + ' (' + d.ecossistema + '): ' + String(d.resumo || 'Resultado indisponível.').slice(0, 230));\n  if (snapshot.total_dependencias > 3) linhas.push('Resumo limitado a 3 de ' + snapshot.total_dependencias + ' dependências; este resumo não é exaustivo.');\n  return (prefixo + ' em ' + snapshot.consultado_em + '.\\n\\n' + linhas.join('\\n\\n')).slice(0, 1000);\n}\nconst evento = $('02A | Identificar Contexto OSV').item.json;\nlet snapshot;\ntry { snapshot = JSON.parse($json.contexto); } catch {}\nconst valido = compativel(snapshot, evento);\nconst recente = valido && snapshot.status !== 'falha' && Date.now() - Date.parse(snapshot.consultado_em) <= 24 * 60 * 60 * 1000 &&\n  Date.parse(snapshot.consultado_em) - Date.now() <= 300000;\nconst dependencias = Array.isArray(evento.dependencias) && evento.dependencias.length > 0\n  ? evento.dependencias\n  : valido ? snapshot.dependencias.map(({ nome, versao, ecossistema }) => ({ nome, versao, ecossistema })) : [];\nreturn { json: {\n  ...evento, dependencias: dependencias.slice(0, 10),\n  osv_pacotes_total: dependencias.length,\n  modo_osv: 'contexto_aprovacao',\n  consultar_osv: !recente && dependencias.length > 0,\n  contexto_osv: recente\n    ? { status: snapshot.status, resumo: apresentar(snapshot), consultado_em: snapshot.consultado_em }\n    : { status: 'indisponivel', resumo: 'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.' },\n} };"
+      }
+    },
+    {
+      "id": "729666b5-7b19-443b-89f9-1f228da6b849",
+      "name": "02D | Consultar OSV Antes do Alerta",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        -384
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.consultar_osv === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8cfe2e1b-c554-4eee-9f74-bdde7956501e",
+      "name": "02E | Consultar Contexto OSV",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1296,
+        -464
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_OSV_WORKFLOW_ID }}"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "5030623f-0ef3-400f-8a92-a614ed04ecf0",
+      "name": "02F | Receber Contexto OSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -464
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function compativel(snapshot, evento) {\n  if (!snapshot || snapshot.versao !== 1 ||\n      !['concluida', 'incompleta', 'falha'].includes(snapshot.status) ||\n      !Array.isArray(snapshot.dependencias) || snapshot.dependencias.length === 0 ||\n      JSON.stringify(snapshot.identidade) !== evento.chave_osv ||\n      (snapshot.sha && evento.pr?.sha && snapshot.sha !== evento.pr.sha) ||\n      !Number.isFinite(Date.parse(snapshot.consultado_em))) return false;\n  if (snapshot.dependencias.some(d => !d || !['nome', 'versao', 'ecossistema'].every(k => typeof d[k] === 'string' && d[k].trim()))) return false;\n  const nomes = lista => JSON.stringify(lista.map(d => [d.ecossistema, d.nome, d.versao]).sort());\n  return !Array.isArray(evento.dependencias) || evento.dependencias.length === 0 ||\n    nomes(evento.dependencias) === nomes(snapshot.dependencias);\n}\nfunction apresentar(snapshot) {\n  const prefixo = snapshot.status === 'concluida' ? 'Consulta OSV concluída' : snapshot.status === 'falha' ? 'Consulta OSV indisponível' : 'Consulta OSV com resultados parciais';\n  const linhas = snapshot.dependencias.slice(0, 3).map(d =>\n    d.nome + ' @ ' + d.versao + ' (' + d.ecossistema + '): ' + String(d.resumo || 'Resultado indisponível.').slice(0, 230));\n  if (snapshot.total_dependencias > 3) linhas.push('Resumo limitado a 3 de ' + snapshot.total_dependencias + ' dependências; este resumo não é exaustivo.');\n  return (prefixo + ' em ' + snapshot.consultado_em + '.\\n\\n' + linhas.join('\\n\\n')).slice(0, 1000);\n}\nconst evento = $('02C | Selecionar Contexto OSV').item.json;\nconst snapshot = $json.contexto_osv_snapshot;\nconst valido = compativel(snapshot, evento);\nreturn { json: {\n  ...evento,\n  contexto_osv: valido\n    ? { status: snapshot.status, resumo: apresentar(snapshot), consultado_em: snapshot.consultado_em }\n    : { status: 'indisponivel', resumo: 'OSV: não foi possível concluir a consulta para esta análise. Isso não indica ausência de vulnerabilidades.' },\n} };"
       }
     }
   ],
@@ -540,7 +673,7 @@
       "main": [
         [
           {
-            "node": "03A | Preparar Aprovação",
+            "node": "02A | Identificar Contexto OSV",
             "type": "main",
             "index": 0
           }
@@ -708,6 +841,79 @@
         [
           {
             "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02A | Identificar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "02B | Buscar Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02B | Buscar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "02C | Selecionar Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02C | Selecionar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "02D | Consultar OSV Antes do Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02D | Consultar OSV Antes do Alerta": {
+      "main": [
+        [
+          {
+            "node": "02E | Consultar Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "03A | Preparar Aprovação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02E | Consultar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "02F | Receber Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02F | Receber Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "03A | Preparar Aprovação",
             "type": "main",
             "index": 0
           }

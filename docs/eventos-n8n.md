@@ -115,6 +115,15 @@ sempre `alto`. Uma análise de risco alto gera os dois eventos: o
 `analise_concluida` para o histórico e este para a Central no Slack e para o
 SLA.
 
+A Central pode enriquecer o alerta de decisão com uma consulta OSV da mesma
+análise, sem alterar o risco. Para isso, usa o resultado de `dependencia_nova`
+correlacionado por `tenant_id`, `task_run_id`, repositório e PR. O adaptador
+também preserva uma lista opcional `dados.dependencias` quando o emissor a
+fornece em `aguardando_aprovacao`, permitindo consulta antes do alerta mesmo
+sem evento anterior. Essa lista não é obrigatória no contrato v1; esta
+integração não alterou o emissor Go. Sem contexto disponível, o alerta deve
+informar a indisponibilidade, nunca afirmar que não há vulnerabilidades.
+
 ### `aprovacao_registrada`
 
 Emitido quando um humano aprova ou pede alterações num PR bloqueado, pelo
