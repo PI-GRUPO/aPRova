@@ -5,21 +5,34 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
+	"net/url"
 	"os"
+	"path"
+	"regexp"
+	"slices"
+	"strconv"
 	"strings"
 
+	"github.com/Azulpasta/aPRova/internal/rastro"
 	"github.com/joho/godotenv"
 )
 
 const (
-	portaPadrao    = "8080"
-	nivelLogPadrao = "info"
-	regiaoPadrao   = "us-central1"
+	portaPadrao              = "8080"
+	nivelLogPadrao           = "info"
+	regiaoPadrao             = "us-central1"
+	urlPublicaProvisoria     = "https://aprova.example.com"
+	concorrenciaPadrao       = 4
+	maximoDeTentativasPadrao = 3
+	redeLocalPadrao          = "none"
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
+
+var formatoDoNomeDeRede = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
 var nomesDosNiveisDeLog = []string{"debug", "info", "warn", "error"}
 
@@ -68,8 +81,16 @@ type Configuracao struct {
 	AzureResourceGroup    string
 	AzureNomeDoJobSandbox string
 
-	URLWebhookN8N   string
-	N8NSegredoAcoes string
+	URLWebhookN8N     string
+	N8NSegredoAcoes   string
+	N8NSegredoEventos string
+	URLPublica        string
+
+	GitHubAppSlug       string
+	SandboxDiretorios   map[string]string
+	SandboxRedeLocal    string
+	WorkerConcorrencia  int
+	WorkerMaxTentativas int
 
 	VinculosSlackGitHub map[string]string
 }
@@ -112,8 +133,16 @@ func Carregar() (Configuracao, error) {
 		AzureResourceGroup:    lerVariavel("AZURE_RESOURCE_GROUP"),
 		AzureNomeDoJobSandbox: lerVariavel("AZURE_SANDBOX_JOB_NAME"),
 
-		URLWebhookN8N:   leitura.opcional("N8N_WEBHOOK_URL", ""),
-		N8NSegredoAcoes: leitura.opcional("N8N_SEGREDO_ACOES", ""),
+		URLWebhookN8N:     leitura.opcional("N8N_WEBHOOK_URL", ""),
+		N8NSegredoAcoes:   leitura.opcional("N8N_SEGREDO_ACOES", ""),
+		N8NSegredoEventos: leitura.opcional("N8N_SEGREDO_EVENTOS", ""),
+		URLPublica:        leitura.urlHTTP("APROVA_URL_PUBLICA", urlPublicaProvisoria),
+
+		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
+		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
+		SandboxRedeLocal:    leitura.nomeDeRede("SANDBOX_REDE_LOCAL", redeLocalPadrao),
+		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
+		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
 
 		VinculosSlackGitHub: leitura.vinculosSlackGitHub("SLACK_GITHUB_VINCULOS"),
 	}
@@ -127,12 +156,19 @@ func Carregar() (Configuracao, error) {
 	return configuracao, nil
 }
 
+// NovoLogger devolve o logger JSON dos processos, no nível configurado, que
+// acrescenta a cada linha registrada com contexto os atributos guardados nele
+// por rastro.Com.
+func NovoLogger(configuracao Configuracao, saida io.Writer) *slog.Logger {
+	return slog.New(rastro.NovoHandler(slog.NewJSONHandler(saida, &slog.HandlerOptions{
+		Level: configuracao.NivelSlog(),
+	})))
+}
+
 // ConfigurarLogPadrao instala como logger global um handler JSON no nível
 // definido pela configuração.
 func ConfigurarLogPadrao(configuracao Configuracao) {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: configuracao.NivelSlog(),
-	})))
+	slog.SetDefault(NovoLogger(configuracao, os.Stdout))
 }
 
 // NivelSlog traduz o nível de log configurado para o tipo usado por log/slog.
@@ -232,6 +268,67 @@ func (l *leitor) vinculosSlackGitHub(nome string) map[string]string {
 	}
 
 	return vinculos
+}
+
+func (l *leitor) inteiroPositivo(nome string, padrao int) int {
+	valor := l.opcional(nome, strconv.Itoa(padrao))
+	numero, err := strconv.Atoi(valor)
+	if err != nil || numero <= 0 {
+		l.registrarPendencia("%s espera um inteiro positivo, obtive %q", nome, valor)
+		return padrao
+	}
+	return numero
+}
+
+func (l *leitor) urlHTTP(nome, padrao string) string {
+	valor := strings.TrimSuffix(l.opcional(nome, padrao), "/")
+	endereco, err := url.Parse(valor)
+	if err != nil || (endereco.Scheme != "http" && endereco.Scheme != "https") || endereco.Host == "" {
+		l.registrarPendencia("%s espera uma URL começando com http:// ou https://, obtive %q", nome, valor)
+	}
+	return valor
+}
+
+func (l *leitor) nomeDeRede(nome, padrao string) string {
+	valor := l.opcional(nome, padrao)
+	if !formatoDoNomeDeRede.MatchString(valor) {
+		l.registrarPendencia("%s espera o nome de uma rede do Docker, como none ou bridge, obtive %q", nome, valor)
+	}
+	return valor
+}
+
+func (l *leitor) diretoriosDoSandbox(nome string) map[string]string {
+	diretorios := map[string]string{}
+
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return diretorios
+	}
+
+	for _, entrada := range strings.Split(valor, ",") {
+		repositorio, diretorio, valido := interpretarDiretorio(entrada)
+		if !valido {
+			l.registrarPendencia("%s espera pares dono/repositorio=diretorio_relativo separados por vírgula, entrada %q é inválida", nome, strings.TrimSpace(entrada))
+			return nil
+		}
+		if _, repetido := diretorios[repositorio]; repetido {
+			l.registrarPendencia("%s define o repositório %q mais de uma vez", nome, repositorio)
+			return nil
+		}
+		diretorios[repositorio] = diretorio
+	}
+	return diretorios
+}
+
+func interpretarDiretorio(entrada string) (string, string, bool) {
+	repositorio, diretorio, separado := strings.Cut(strings.TrimSpace(entrada), "=")
+	repositorio = strings.TrimSpace(repositorio)
+	diretorio = strings.TrimSpace(diretorio)
+
+	dono, nome, temDono := strings.Cut(repositorio, "/")
+	valido := separado && temDono && dono != "" && nome != "" && diretorio != "" &&
+		!path.IsAbs(diretorio) && !slices.Contains(strings.Split(diretorio, "/"), "..")
+	return repositorio, diretorio, valido
 }
 
 func interpretarVinculo(entrada string) (string, string, bool) {
