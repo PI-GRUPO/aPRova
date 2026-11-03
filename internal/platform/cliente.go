@@ -51,11 +51,19 @@ type Cliente struct {
 }
 
 type chamada struct {
-	instalacaoID int64
-	metodo       string
-	caminho      string
-	corpo        any
-	resposta     any
+	instalacaoID  int64
+	metodo        string
+	caminho       string
+	aceita        string
+	corpo         any
+	resposta      any
+	respostaBruta *respostaBruta
+}
+
+type respostaBruta struct {
+	limite   int
+	conteudo []byte
+	truncada bool
 }
 
 // NovoCliente constrói o cliente a partir das opções informadas.
@@ -140,12 +148,15 @@ func (c *Cliente) chamar(ctx context.Context, pedido chamada) error {
 	}
 	defer func() { _ = resposta.Body.Close() }()
 
-	registrarSaldoDeRequisicoes(resposta, pedido.instalacaoID)
+	registrarSaldoDeRequisicoes(ctx, resposta, pedido.instalacaoID)
 
-	if err := classificarRespostaDaAPI(resposta.StatusCode, pedido); err != nil {
+	if err := classificarRespostaDaAPI(resposta, pedido); err != nil {
 		return err
 	}
 
+	if pedido.respostaBruta != nil {
+		return lerRespostaBruta(resposta.Body, pedido)
+	}
 	if pedido.resposta == nil {
 		return nil
 	}
@@ -171,7 +182,7 @@ func (c *Cliente) montarRequisicao(ctx context.Context, pedido chamada, token st
 	}
 
 	requisicao.Header.Set("Authorization", "Bearer "+token)
-	requisicao.Header.Set("Accept", "application/vnd.github+json")
+	requisicao.Header.Set("Accept", valorOuPadrao(pedido.aceita, "application/vnd.github+json"))
 	requisicao.Header.Set("X-GitHub-Api-Version", versaoDaAPI)
 	if pedido.corpo != nil {
 		requisicao.Header.Set("Content-Type", "application/json")
@@ -180,10 +191,24 @@ func (c *Cliente) montarRequisicao(ctx context.Context, pedido chamada, token st
 	return requisicao, nil
 }
 
-func classificarRespostaDaAPI(status int, pedido chamada) error {
+func lerRespostaBruta(corpo io.Reader, pedido chamada) error {
+	destino := pedido.respostaBruta
+	conteudo, err := io.ReadAll(io.LimitReader(corpo, int64(destino.limite)+1))
+	if err != nil {
+		return fmt.Errorf("%w: corpo interrompido em %s %s: %w", ErrGitHubIndisponivel, pedido.metodo, pedido.caminho, err)
+	}
+	destino.truncada = len(conteudo) > destino.limite
+	destino.conteudo = conteudo[:min(len(conteudo), destino.limite)]
+	return nil
+}
+
+func classificarRespostaDaAPI(resposta *http.Response, pedido chamada) error {
+	status := resposta.StatusCode
 	switch {
 	case status < http.StatusMultipleChoices:
 		return nil
+	case limiteDeRequisicoesAtingido(resposta):
+		return fmt.Errorf("%w: %s %s respondeu %d", ErrLimiteDeRequisicoes, pedido.metodo, pedido.caminho, status)
 	case status == http.StatusNotFound:
 		return fmt.Errorf("%w: %s %s", ErrNaoEncontrado, pedido.metodo, pedido.caminho)
 	case status >= http.StatusInternalServerError:
@@ -191,6 +216,14 @@ func classificarRespostaDaAPI(status int, pedido chamada) error {
 	default:
 		return fmt.Errorf("%w: %s %s respondeu %d", ErrRespostaInesperada, pedido.metodo, pedido.caminho, status)
 	}
+}
+
+func limiteDeRequisicoesAtingido(resposta *http.Response) bool {
+	if resposta.StatusCode == http.StatusTooManyRequests {
+		return true
+	}
+	return resposta.StatusCode == http.StatusForbidden &&
+		(resposta.Header.Get("X-RateLimit-Remaining") == "0" || resposta.Header.Get("Retry-After") != "")
 }
 
 func caminhoDoRepositorio(dono, repositorio string) string {
