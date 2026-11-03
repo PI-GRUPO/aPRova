@@ -41,6 +41,18 @@ os testes de repositórios Go vem de `SANDBOX_IMAGEM_GO`; veja
 [imagens/go/README.md](imagens/go/README.md) para construir a imagem e entender
 por que o código do PR não consegue forjar o próprio resultado.
 
+`SANDBOX_DIRETORIOS` diz em que diretório de cada repositório fica o projeto
+que o sandbox testa, no formato `dono/repositorio=diretorio`, separado por
+vírgula (por exemplo `Azulpasta/aPRova-TESTES=go`). Repositório sem entrada é
+testado a partir da raiz. O diretório vem sempre daqui, nunca do conteúdo do
+PR.
+
+O executor local roda o contêiner sem rede (`SANDBOX_REDE_LOCAL=none`), e assim
+só consegue testar repositórios `file://`, como os dos testes de integração.
+Para analisar um PR real do GitHub na sua máquina, defina
+`SANDBOX_REDE_LOCAL=bridge`: o clone passa a funcionar, e o código do PR também
+ganha acesso à rede durante os testes. Use só em desenvolvimento.
+
 Para disparar o job real na Azure contra um SHA e ver o status final:
 
 ```sh
@@ -101,6 +113,9 @@ Em outro, suba o worker:
 ```sh
 make run-worker
 ```
+
+O worker precisa das credenciais do GitHub App (`GITHUB_APP_ID` e
+`GITHUB_PRIVATE_KEY_BASE64`) para ler os pull requests e conferir quem revisou.
 
 Para derrubar os serviços:
 
@@ -276,11 +291,55 @@ dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
 | 401 | assinatura ausente, inválida ou velha, ou segredo não configurado |
 | 500 | falha ao consultar o banco |
 
+## Worker
+
+O worker conduz cada `task_run` criado pelo webhook pela máquina de estados,
+até um estado terminal ou até esperar um review:
+
+```
+pendente → mapeando_contexto → testando_sandbox → avaliando_risco
+avaliando_risco → aplicando (baixo ou médio) → concluido
+avaliando_risco → aguardando_aprovacao (alto) → aplicando ou rejeitado
+qualquer estado não terminal → falhou
+```
+
+A tabela de transições permitidas fica em `domain.EstadoTaskRun.PodeIrPara`, e o
+repositório recusa qualquer transição fora dela. `gerando` continua no banco,
+mas fica fora do fluxo, porque o PR já existe quando o aPRova é acionado.
+
+**A fila é o próprio PostgreSQL.** Cada trabalhador reivindica o `task_run` não
+terminal mais antigo com `SELECT ... FOR UPDATE SKIP LOCKED`, gravando quem
+assumiu (`claimed_by`) e até quando (`lease_expires_at`). Enquanto uma etapa
+demora, o prazo é renovado. Se o processo morre, o `task_run` volta à fila
+quando o prazo vence, e outro trabalhador retoma do estado gravado. Cada etapa
+grava o estado novo antes da chamada externa e reaproveita o que já está no
+banco: o resultado da tentativa atual do sandbox, o gate e o recibo. Assim,
+retomar não perde nem duplica trabalho.
+
+Um `task_run` em `aguardando_aprovacao` só volta à fila quando chega um review
+novo, ou quando o PR recebe um commit mais novo. Review de quem não tem
+permissão de escrita no repositório fica registrado, mas não libera o PR. Um
+push novo cria outro `task_run`, e o anterior encerra em `falhou` com o motivo
+"substituído por commit mais novo", sem publicar nada.
+
+| Variável | Padrão | Efeito |
+| --- | --- | --- |
+| `WORKER_CONCORRENCIA` | `4` | quantos `task_runs` o processo conduz ao mesmo tempo |
+| `WORKER_MAX_TENTATIVAS` | `3` | tentativas de uma falha transitória (infraestrutura do sandbox, 5xx ou limite do GitHub) antes de `falhou` e do evento `falha_recuperavel` |
+| `GITHUB_APP_SLUG` | vazio | nome do app no GitHub; o review que o próprio app publica a partir do Slack só vale quando o revisor é `<slug>[bot]` |
+
+O gate de risco, o recibo assinado e a publicação no GitHub ainda não existem.
+Até lá, o worker usa implementações provisórias: o avaliador classifica todo
+PR como risco alto ("gate de risco ainda não implementado"), e o recibo e a
+publicação só vão para o log. Na dúvida, o sistema bloqueia e espera um humano.
+Um `SIGTERM` para de pegar trabalho novo, espera as etapas em andamento por até
+30 segundos e devolve à fila as que não terminaram.
+
 ## Eventos para o n8n
 
-O contrato prevê que o núcleo avise o n8n por eventos assinados, enviados para
-`N8N_WEBHOOK_URL` sem esperar resposta. O envio automático ainda não está
-conectado ao núcleo; o script abaixo permite testar os workflows. O contrato
+O núcleo avisa o n8n por eventos assinados, enviados pelo worker para
+`N8N_WEBHOOK_URL` sem esperar resposta. Com a URL vazia, o envio fica
+desligado; com a URL preenchida, `N8N_SEGREDO_EVENTOS` é obrigatório. O contrato
 (envelope, os seis tipos e os campos de cada um) e a assinatura com
 `N8N_SEGREDO_EVENTOS` estão em
 [docs/eventos-n8n.md](docs/eventos-n8n.md), escrito para quem constrói os
