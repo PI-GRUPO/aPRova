@@ -11,11 +11,11 @@ import (
 )
 
 const createApproval = `-- name: CreateApproval :execrows
-INSERT INTO approvals (tenant_id, task_run_id, delivery_id, decision, reviewer, feedback_reason, justification, decided_at)
-SELECT tr.tenant_id, tr.id, $1, $2, $3,
-       $4, $5, $6
+INSERT INTO approvals (tenant_id, task_run_id, delivery_id, decision, reviewer, origin, feedback_reason, justification, decided_at)
+SELECT tr.tenant_id, tr.id, $1, $2, $3, $4,
+       $5, $6, $7
 FROM task_runs tr
-WHERE tr.id = $7
+WHERE tr.id = $8
 ON CONFLICT (delivery_id) DO NOTHING
 `
 
@@ -23,6 +23,7 @@ type CreateApprovalParams struct {
 	DeliveryID     string    `json:"delivery_id"`
 	Decision       string    `json:"decision"`
 	Reviewer       string    `json:"reviewer"`
+	Origin         string    `json:"origin"`
 	FeedbackReason *string   `json:"feedback_reason"`
 	Justification  *string   `json:"justification"`
 	DecidedAt      time.Time `json:"decided_at"`
@@ -34,6 +35,7 @@ func (q *Queries) CreateApproval(ctx context.Context, arg CreateApprovalParams) 
 		arg.DeliveryID,
 		arg.Decision,
 		arg.Reviewer,
+		arg.Origin,
 		arg.FeedbackReason,
 		arg.Justification,
 		arg.DecidedAt,
@@ -43,4 +45,35 @@ func (q *Queries) CreateApproval(ctx context.Context, arg CreateApprovalParams) 
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const nextApprovalAfter = `-- name: NextApprovalAfter :one
+SELECT id, tenant_id, task_run_id, delivery_id, decision, reviewer, feedback_reason, justification, decided_at, created_at, origin FROM approvals
+WHERE task_run_id = $1 AND id > $2
+ORDER BY id
+LIMIT 1
+`
+
+type NextApprovalAfterParams struct {
+	TaskRunID string `json:"task_run_id"`
+	AfterID   int64  `json:"after_id"`
+}
+
+func (q *Queries) NextApprovalAfter(ctx context.Context, arg NextApprovalAfterParams) (Approval, error) {
+	row := q.db.QueryRow(ctx, nextApprovalAfter, arg.TaskRunID, arg.AfterID)
+	var i Approval
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.TaskRunID,
+		&i.DeliveryID,
+		&i.Decision,
+		&i.Reviewer,
+		&i.FeedbackReason,
+		&i.Justification,
+		&i.DecidedAt,
+		&i.CreatedAt,
+		&i.Origin,
+	)
+	return i, err
 }

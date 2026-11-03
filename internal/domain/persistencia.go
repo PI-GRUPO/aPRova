@@ -12,6 +12,8 @@ var (
 	ErrDuplicado            = errors.New("domain: registro já existe")
 	ErrDadosInvalidos       = errors.New("domain: dados inválidos")
 	ErrTransicaoConcorrente = errors.New("domain: task_run não está mais no estado esperado")
+	ErrTransicaoProibida    = errors.New("domain: transição fora da máquina de estados")
+	ErrPrazoPerdido         = errors.New("domain: task_run não está mais reivindicado por este trabalhador")
 )
 
 // DimensoesEmbedding é o tamanho do vetor guardado em code_memory e o
@@ -53,6 +55,15 @@ type DecisaoAprovacao string
 const (
 	DecisaoAprovada              DecisaoAprovacao = "aprovada"
 	DecisaoAlteracoesSolicitadas DecisaoAprovacao = "alteracoes_solicitadas"
+)
+
+// OrigemAprovacao é por onde a decisão humana chegou ao GitHub.
+type OrigemAprovacao string
+
+// Origens de uma aprovação.
+const (
+	OrigemGitHub OrigemAprovacao = "github"
+	OrigemSlack  OrigemAprovacao = "slack"
 )
 
 // MotivoFeedback é o motivo declarado por quem aprovou uma mudança de risco alto.
@@ -104,6 +115,11 @@ type TaskRun struct {
 	RecebidoEm   time.Time
 	CriadoEm     time.Time
 	AtualizadoEm time.Time
+
+	ReivindicadoPor      string
+	PrazoAte             *time.Time
+	TentativasDaEtapa    int
+	UltimaAprovacaoVista int64
 }
 
 // Transicao move um task_run de um estado para outro, deixando uma etapa
@@ -148,9 +164,16 @@ type Aprovacao struct {
 	DeliveryID     string           `validate:"required,max=100"`
 	Decisao        DecisaoAprovacao `validate:"required,oneof=aprovada alteracoes_solicitadas"`
 	Revisor        string           `validate:"required,max=100"`
+	Origem         OrigemAprovacao  `validate:"omitempty,oneof=github slack"`
 	MotivoFeedback *MotivoFeedback  `validate:"omitempty,oneof=regra_conservadora risco_aceito falso_positivo"`
 	Justificativa  *string          `validate:"omitempty,max=4000"`
 	DecididaEm     time.Time        `validate:"required"`
+}
+
+// AprovacaoRegistrada é uma aprovação já gravada, com o id que a ordena.
+type AprovacaoRegistrada struct {
+	Aprovacao
+	ID int64
 }
 
 // MemoriaDeCodigo é uma decisão passada guardada para a calibração do gate.

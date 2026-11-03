@@ -22,6 +22,7 @@ import (
 const (
 	intervaloConsultaPadrao  = 500 * time.Millisecond
 	primeiraTentativa        = 1
+	maximoDeTentativas       = 1000
 	indiceDeUmaAceitaPorAcao = "remote_action_attempts_uma_aceita_por_acao"
 
 	codigoViolacaoUnica = "23505"
@@ -219,6 +220,7 @@ func (r *RepositorioPostgres) RegistrarRevisao(ctx context.Context, decisao doma
 		DeliveryID: decisao.DeliveryID,
 		Decisao:    decisaoAprovacao,
 		Revisor:    decisao.Revisor,
+		Origem:     decisao.Origem,
 		DecididaEm: decisao.RecebidoEm,
 	})
 }
@@ -235,11 +237,17 @@ func (r *RepositorioPostgres) RegistrarAprovacao(ctx context.Context, aprovacao 
 		motivo = &texto
 	}
 
+	origem := aprovacao.Origem
+	if origem == "" {
+		origem = domain.OrigemGitHub
+	}
+
 	inseridas, err := r.consultas.CreateApproval(ctx, db.CreateApprovalParams{
 		TaskRunID:      aprovacao.TaskRunID,
 		DeliveryID:     aprovacao.DeliveryID,
 		Decision:       string(aprovacao.Decisao),
 		Reviewer:       aprovacao.Revisor,
+		Origin:         string(origem),
 		FeedbackReason: motivo,
 		Justification:  aprovacao.Justificativa,
 		DecidedAt:      aprovacao.DecididaEm,
@@ -618,7 +626,19 @@ func paraTaskRun(linha db.TaskRun) domain.TaskRun {
 		RecebidoEm:   linha.ReceivedAt,
 		CriadoEm:     linha.CreatedAt,
 		AtualizadoEm: linha.UpdatedAt,
+
+		ReivindicadoPor:      valorOuVazio(linha.ClaimedBy),
+		PrazoAte:             linha.LeaseExpiresAt,
+		TentativasDaEtapa:    int(linha.StepAttempts),
+		UltimaAprovacaoVista: linha.LastApprovalSeen,
 	}
+}
+
+func valorOuVazio(texto *string) string {
+	if texto == nil {
+		return ""
+	}
+	return *texto
 }
 
 func paraRecibo(linha db.Receipt) domain.Recibo {

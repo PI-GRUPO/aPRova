@@ -22,6 +22,7 @@ type DecisaoDeReview struct {
 	NumeroPR       int
 	Estado         string
 	Revisor        string
+	Origem         OrigemAprovacao
 	RecebidoEm     time.Time
 }
 
