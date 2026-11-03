@@ -2,15 +2,22 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Azulpasta/aPRova/internal/config"
+	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/Azulpasta/aPRova/internal/worker"
 )
+
+const limiteDoDesligamento = 30 * time.Second
 
 func main() {
 	if err := executar(); err != nil {
@@ -27,7 +34,8 @@ func executar() error {
 
 	config.ConfigurarLogPadrao(configuracao)
 
-	if _, err := sandbox.NovoExecutor(configuracaoDoSandbox(configuracao)); err != nil {
+	executorSandbox, err := sandbox.NovoExecutor(configuracaoDoSandbox(configuracao))
+	if err != nil {
 		return err
 	}
 
@@ -40,21 +48,75 @@ func executar() error {
 	}
 	defer bancoDados.Close()
 
-	clienteRedis, err := repository.ConectarRedis(ctx, configuracao.URLRedis)
+	clienteGitHub, err := montarClienteGitHub(configuracao)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := clienteRedis.Close(); err != nil {
-			slog.Error("falha ao fechar o cliente redis", "erro", err)
-		}
+
+	emissorDeEventos, err := eventos.NovoEmissor(eventos.OpcoesEmissor{
+		URL:     configuracao.URLWebhookN8N,
+		Segredo: []byte(configuracao.N8NSegredoEventos),
+	})
+	if err != nil {
+		return err
+	}
+	if !emissorDeEventos.Ligado() {
+		slog.Info("N8N_WEBHOOK_URL vazia, envio de eventos ao n8n desligado")
+	}
+
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	motor, err := worker.NovoMotor(worker.Opcoes{
+		Armazenamento: repositorio,
+		LeitorDePR:    clienteGitHub,
+		Permissoes:    clienteGitHub,
+		Sandbox:       executorSandbox,
+		Avaliador:     worker.AvaliadorRiscoProvisorio{},
+		Recibos:       worker.NovoEmissorReciboProvisorio(slog.Default()),
+		Publicador:    worker.NovoPublicadorPRProvisorio(slog.Default()),
+		Eventos:       emissorDeEventos,
+		Diretorios:    configuracao.SandboxDiretorios,
+		URLPublica:    configuracao.URLPublica,
+		MaxTentativas: configuracao.WorkerMaxTentativas,
+	})
+	if err != nil {
+		return err
+	}
+
+	pool, err := worker.NovoPool(worker.OpcoesPool{
+		Motor:         motor,
+		Armazenamento: repositorio,
+		Concorrencia:  configuracao.WorkerConcorrencia,
+	})
+	if err != nil {
+		return err
+	}
+
+	rodando := make(chan struct{})
+	go func() {
+		pool.Rodar(context.Background())
+		close(rodando)
 	}()
 
-	slog.Info("worker iniciado, aguardando execuções")
+	slog.Info("worker iniciado, aguardando execuções", "concorrencia", configuracao.WorkerConcorrencia)
 	<-ctx.Done()
-	slog.Info("sinal de encerramento recebido, desligando o worker")
+	slog.Info("sinal de encerramento recebido, desligando o worker", "limite", limiteDoDesligamento)
+
+	pool.Parar(limiteDoDesligamento)
+	<-rodando
+	emissorDeEventos.Aguardar()
 
 	return nil
+}
+
+func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, error) {
+	autenticador, err := platform.NovoAutenticador(platform.OpcoesAutenticador{
+		AppID:           configuracao.GitHubAppID,
+		ChavePrivadaPEM: configuracao.GitHubChavePrivada,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("o worker exige as credenciais do GitHub App para ler os pull requests: %w", err)
+	}
+	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
 }
 
 func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.ConfiguracaoExecutor {
@@ -62,7 +124,7 @@ func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.Configuraca
 
 	return sandbox.ConfiguracaoExecutor{
 		Tipo:  configuracao.SandboxExecutor,
-		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagens},
+		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagens, Rede: configuracao.SandboxRedeLocal},
 		Azure: sandbox.OpcoesExecutorAzure{
 			ImagemPorLinguagem: imagens,
 			SubscriptionID:     configuracao.AzureSubscriptionID,
