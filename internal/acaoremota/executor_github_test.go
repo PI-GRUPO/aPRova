@@ -137,3 +137,35 @@ func TestReenfileiradorIndisponivelSempreFalha(t *testing.T) {
 		t.Errorf("enquanto o worker não existe, reanálise precisa falhar explicitamente, obtive %v", err)
 	}
 }
+
+func TestQuemDecidiuNoSlackVoltaDoTextoDaReview(t *testing.T) {
+	for _, tipo := range []Tipo{TipoAprovar, TipoSolicitarAlteracao} {
+		t.Run(string(tipo), func(t *testing.T) {
+			publicador := &publicadorFalso{}
+			if err := NovoExecutorNoGitHub(publicador, &reenfileiradorFalso{}).Executar(t.Context(), acaoAutorizadaDeTeste(tipo, "falta o teste de peso zero")); err != nil {
+				t.Fatalf("executar: %v", err)
+			}
+
+			login, doSlack := QuemDecidiuNoSlack(publicador.publicadas[0].review.Corpo)
+
+			if !doSlack || login != "erin" {
+				t.Errorf("o texto publicado precisa devolver o login erin, obtive %q (doSlack=%v)", login, doSlack)
+			}
+		})
+	}
+}
+
+func TestQuemDecidiuNoSlackRecusaTextoForaDoFormato(t *testing.T) {
+	for _, corpo := range []string{
+		"LGTM",
+		"Aprovado por @erin",
+		"Aprovado por @-erin- via Slack",
+		"Aprovado por @erin via Slack e mais coisa",
+		"  Aprovado por @erin via Slack",
+		"Aprovado por @erin via Slack\n",
+	} {
+		if login, doSlack := QuemDecidiuNoSlack(corpo); doSlack {
+			t.Errorf("%q não é texto do aPRova, mas devolveu %q", corpo, login)
+		}
+	}
+}
