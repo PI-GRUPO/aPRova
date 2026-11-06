@@ -21,6 +21,7 @@ type Approval struct {
 	Justification  *string   `json:"justification"`
 	DecidedAt      time.Time `json:"decided_at"`
 	CreatedAt      time.Time `json:"created_at"`
+	Origin         string    `json:"origin"`
 }
 
 type CodeMemory struct {
@@ -98,18 +99,22 @@ type SandboxResult struct {
 }
 
 type TaskRun struct {
-	ID          string    `json:"id"`
-	TenantID    int64     `json:"tenant_id"`
-	DeliveryID  string    `json:"delivery_id"`
-	Repository  string    `json:"repository"`
-	PrNumber    int32     `json:"pr_number"`
-	HeadSha     string    `json:"head_sha"`
-	Author      string    `json:"author"`
-	EventAction string    `json:"event_action"`
-	State       string    `json:"state"`
-	ReceivedAt  time.Time `json:"received_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID               string     `json:"id"`
+	TenantID         int64      `json:"tenant_id"`
+	DeliveryID       string     `json:"delivery_id"`
+	Repository       string     `json:"repository"`
+	PrNumber         int32      `json:"pr_number"`
+	HeadSha          string     `json:"head_sha"`
+	Author           string     `json:"author"`
+	EventAction      string     `json:"event_action"`
+	State            string     `json:"state"`
+	ReceivedAt       time.Time  `json:"received_at"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	ClaimedBy        *string    `json:"claimed_by"`
+	LeaseExpiresAt   *time.Time `json:"lease_expires_at"`
+	StepAttempts     int32      `json:"step_attempts"`
+	LastApprovalSeen int64      `json:"last_approval_seen"`
 }
 
 type TaskStep struct {

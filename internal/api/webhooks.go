@@ -8,8 +8,10 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
+	"github.com/Azulpasta/aPRova/internal/acaoremota"
 	"github.com/Azulpasta/aPRova/internal/domain"
 )
 
@@ -21,6 +23,7 @@ const (
 	eventoPullRequestReview = "pull_request_review"
 
 	tamanhoMaximoDoCorpo = 1 << 20
+	sufixoDeBot          = "[bot]"
 )
 
 var (
@@ -56,6 +59,7 @@ type cargaPullRequest struct {
 type cargaReview struct {
 	Review struct {
 		Estado  string `json:"state"`
+		Corpo   string `json:"body"`
 		Usuario struct {
 			Login string `json:"login"`
 		} `json:"user"`
@@ -169,13 +173,20 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		return http.StatusBadRequest, nil
 	}
 
+	revisor, origem, valida := s.quemDecidiu(carga.Review.Usuario.Login, carga.Review.Corpo)
+	if !valida {
+		entrega.diario.Warn("revisão de bot sem prova de vir do Slack ignorada", "revisor", carga.Review.Usuario.Login)
+		return http.StatusNoContent, nil
+	}
+
 	err := s.execucoes.RegistrarRevisao(ctx, domain.DecisaoDeReview{
 		InstallationID: carga.Instalacao.ID,
 		DeliveryID:     entrega.deliveryID,
 		Repositorio:    carga.Repositorio.NomeCompleto,
 		NumeroPR:       carga.PullRequest.Numero,
 		Estado:         carga.Review.Estado,
-		Revisor:        carga.Review.Usuario.Login,
+		Revisor:        revisor,
+		Origem:         origem,
 		RecebidoEm:     time.Now().UTC(),
 	})
 	if errors.Is(err, domain.ErrNaoEncontrado) {
@@ -191,4 +202,16 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		"numero_pr", carga.PullRequest.Numero, "estado", carga.Review.Estado)
 
 	return http.StatusAccepted, nil
+}
+
+func (s *Servidor) quemDecidiu(revisor, corpo string) (string, domain.OrigemAprovacao, bool) {
+	if !strings.HasSuffix(revisor, sufixoDeBot) {
+		return revisor, domain.OrigemGitHub, true
+	}
+	if s.slugDoApp == "" || revisor != s.slugDoApp+sufixoDeBot {
+		return "", "", false
+	}
+
+	login, doSlack := acaoremota.QuemDecidiuNoSlack(corpo)
+	return login, domain.OrigemSlack, doSlack
 }

@@ -154,7 +154,7 @@ func (a *Autenticador) solicitarTokenComRetentativa(ctx context.Context, instala
 			return tokenDeInstalacao{}, err
 		}
 
-		slog.Warn("nova tentativa de obter token de instalação",
+		slog.WarnContext(ctx, "nova tentativa de obter token de instalação",
 			"instalacao_id", instalacaoID, "tentativa", tentativa, "erro", err)
 
 		a.espera(esperaBaseEntreTentativas << (tentativa - 1))
@@ -198,7 +198,7 @@ func (a *Autenticador) solicitarToken(ctx context.Context, instalacaoID int64) (
 	}
 	defer func() { _ = resposta.Body.Close() }()
 
-	registrarSaldoDeRequisicoes(resposta, instalacaoID)
+	registrarSaldoDeRequisicoes(ctx, resposta, instalacaoID)
 
 	if err := classificarStatus(resposta.StatusCode); err != nil {
 		return tokenDeInstalacao{}, err
@@ -269,13 +269,13 @@ func limiteDeTentativas(err error) int {
 	}
 }
 
-func registrarSaldoDeRequisicoes(resposta *http.Response, instalacaoID int64) {
+func registrarSaldoDeRequisicoes(ctx context.Context, resposta *http.Response, instalacaoID int64) {
 	restantes := resposta.Header.Get("X-RateLimit-Remaining")
 	if restantes == "" {
 		return
 	}
 
-	slog.Info("saldo de requisições do github",
+	slog.InfoContext(ctx, "saldo de requisições do github",
 		"instalacao_id", instalacaoID,
 		"restantes", restantes,
 		"limite", resposta.Header.Get("X-RateLimit-Limit"),

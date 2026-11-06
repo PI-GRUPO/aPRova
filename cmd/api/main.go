@@ -74,6 +74,7 @@ func executar() error {
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
+			SlugDoApp:           configuracao.GitHubAppSlug,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
 	}

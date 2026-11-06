@@ -10,9 +10,9 @@ O núcleo analisa o pull request, decide o risco e guarda tudo no banco. O n8n
 fica na periferia: **recebe** eventos e avisa pessoas (Slack, Trello, SLA,
 digest). Ele nunca decide risco e nunca lê o banco.
 
-- O contrato prevê o envio de cada evento por `POST` para a URL do webhook
-  do n8n (`N8N_WEBHOOK_URL`). O envio automático ainda não está conectado ao
-  núcleo; para testar os workflows, use o script descrito neste guia.
+- O worker do núcleo envia cada evento por `POST` para a URL do webhook do n8n
+  (`N8N_WEBHOOK_URL`). Para testar os workflows sem o núcleo rodando, use o
+  script descrito neste guia.
 - O envio é *fire-and-forget*: o núcleo não espera o workflow terminar e não
   falha se o n8n estiver fora do ar. Um evento perdido não trava nenhuma
   análise, e por isso o workflow não pode ser a única fonte de nada.
@@ -47,16 +47,22 @@ para o workflow certo.
 | Campo | Tipo | Obrigatório | Exemplo | Observação |
 | --- | --- | --- | --- | --- |
 | `versao` | inteiro | sim | `1` | versão do contrato; hoje só existe a 1 |
-| `id_evento` | texto (UUID) | sim | `0f8e6c1a-3b2d-4c5e-8f7a-9b0c1d2e3f40` | novo a cada envio; use para descartar repetidos |
+| `id_evento` | texto (UUID) | sim | `0f8e6c1a-3b2d-4c5e-8f7a-9b0c1d2e3f40` | um por fato; o mesmo fato reenviado repete o id; use para descartar repetidos |
 | `tipo_evento` | texto | sim | `analise_concluida` | um dos seis tipos abaixo |
 | `ocorrido_em` | texto (RFC 3339, UTC) | sim | `2026-10-19T14:32:08Z` | quando o fato aconteceu no núcleo |
 | `tenant_id` | inteiro | sim | `58291734` | `installation_id` do GitHub App; identifica a conta |
 | `dados` | objeto | sim | | campos do tipo, descritos abaixo |
 
-O mesmo evento pode chegar duas vezes, por exemplo quando o núcleo reenvia
-depois de um timeout. O `id_evento` se repete nesse caso. O nó **Remove
-Duplicates**, com a opção de lembrar itens de execuções anteriores e a chave
-`id_evento`, resolve isso.
+O mesmo evento pode chegar duas vezes, por exemplo quando um worker cai no
+meio de uma análise e outro a retoma. O `id_evento` é calculado a partir do
+fato (o tipo, o `task_run` e, na aprovação, o id da decisão), então se repete
+nesse caso. O nó **Remove Duplicates**, com a opção de lembrar itens de
+execuções anteriores e a chave `id_evento`, resolve isso.
+
+A ordem de chegada também não é garantida: cada evento sai numa conexão
+própria, e um `aguardando_aprovacao` pode chegar antes do `analise_concluida`
+da mesma análise. Nenhum workflow deve depender de um evento ter chegado antes
+de outro.
 
 ### Mudanças futuras
 

@@ -44,6 +44,7 @@ type Opcoes struct {
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
 	Relatorios          FonteDeRelatorios
+	SlugDoApp           string
 	Agora               func() time.Time
 }
 
@@ -55,6 +56,7 @@ type Servidor struct {
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
 	relatorios          FonteDeRelatorios
+	slugDoApp           string
 	agora               func() time.Time
 }
 
@@ -72,6 +74,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
 		relatorios:          opcoes.Relatorios,
+		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
 	}
 }

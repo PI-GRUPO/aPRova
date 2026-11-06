@@ -8,6 +8,8 @@ import (
 	"maps"
 	"strings"
 	"testing"
+
+	"github.com/Azulpasta/aPRova/internal/rastro"
 )
 
 func ambienteLimpo(t *testing.T) {
@@ -22,6 +24,8 @@ func ambienteLimpo(t *testing.T) {
 		"AZURE_SUBSCRIPTION_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_ID",
 		"AZURE_CLIENT_SECRET", "AZURE_RESOURCE_GROUP", "AZURE_SANDBOX_JOB_NAME",
 		"N8N_SEGREDO_ACOES", "SLACK_GITHUB_VINCULOS", "SANDBOX_IMAGEM_GO",
+		"N8N_SEGREDO_EVENTOS", "APROVA_URL_PUBLICA", "WORKER_CONCORRENCIA", "WORKER_MAX_TENTATIVAS",
+		"SANDBOX_DIRETORIOS", "GITHUB_APP_SLUG", "SANDBOX_REDE_LOCAL",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -334,5 +338,136 @@ func TestConfigurarLogPadraoRespeitaONivelConfigurado(t *testing.T) {
 	}
 	if !slog.Default().Enabled(t.Context(), slog.LevelError) {
 		t.Error("nível warn deveria habilitar error")
+	}
+}
+
+func TestCarregarUsaOsPadroesDoWorker(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+
+	if configuracao.WorkerConcorrencia != 4 || configuracao.WorkerMaxTentativas != 3 {
+		t.Errorf("padrões do worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
+	}
+	if configuracao.URLPublica != "https://aprova.example.com" {
+		t.Errorf("sem APROVA_URL_PUBLICA vale o endereço provisório, obtive %q", configuracao.URLPublica)
+	}
+	if len(configuracao.SandboxDiretorios) != 0 || configuracao.GitHubAppSlug != "" || configuracao.N8NSegredoEventos != "" {
+		t.Errorf("opcionais deveriam vir vazios: %+v", configuracao)
+	}
+}
+
+func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("WORKER_CONCORRENCIA", "8")
+	t.Setenv("WORKER_MAX_TENTATIVAS", "5")
+	t.Setenv("N8N_SEGREDO_EVENTOS", "segredo-dos-eventos")
+	t.Setenv("APROVA_URL_PUBLICA", "https://api.aprova.test/")
+	t.Setenv("SANDBOX_DIRETORIOS", " Azulpasta/aPRova-TESTES=go , PI-GRUPO/outro=servicos/api ")
+	t.Setenv("GITHUB_APP_SLUG", "aprova-pi")
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+
+	if configuracao.WorkerConcorrencia != 8 || configuracao.WorkerMaxTentativas != 5 {
+		t.Errorf("worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
+	}
+	if configuracao.N8NSegredoEventos != "segredo-dos-eventos" || configuracao.GitHubAppSlug != "aprova-pi" {
+		t.Errorf("segredo ou slug lidos errado: %q %q", configuracao.N8NSegredoEventos, configuracao.GitHubAppSlug)
+	}
+	if configuracao.URLPublica != "https://api.aprova.test" {
+		t.Errorf("a URL pública perde a barra final, obtive %q", configuracao.URLPublica)
+	}
+	esperados := map[string]string{"Azulpasta/aPRova-TESTES": "go", "PI-GRUPO/outro": "servicos/api"}
+	if !maps.Equal(configuracao.SandboxDiretorios, esperados) {
+		t.Errorf("diretórios = %v, esperava %v", configuracao.SandboxDiretorios, esperados)
+	}
+}
+
+func TestCarregarRecusaVariaveisDoWorkerInvalidas(t *testing.T) {
+	casos := map[string]string{
+		"WORKER_CONCORRENCIA=0":                              "WORKER_CONCORRENCIA",
+		"WORKER_CONCORRENCIA=-2":                             "WORKER_CONCORRENCIA",
+		"WORKER_CONCORRENCIA=quatro":                         "WORKER_CONCORRENCIA",
+		"WORKER_MAX_TENTATIVAS=0":                            "WORKER_MAX_TENTATIVAS",
+		"APROVA_URL_PUBLICA=api.aprova.test":                 "APROVA_URL_PUBLICA",
+		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES":         "SANDBOX_DIRETORIOS",
+		"SANDBOX_DIRETORIOS==go":                             "SANDBOX_DIRETORIOS",
+		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES=../fora": "SANDBOX_DIRETORIOS",
+		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES=/go":     "SANDBOX_DIRETORIOS",
+		"SANDBOX_DIRETORIOS=a/b=go,a/b=java":                 "SANDBOX_DIRETORIOS",
+	}
+
+	for atribuicao, variavel := range casos {
+		t.Run(atribuicao, func(t *testing.T) {
+			ambienteMinimoValido(t)
+			nome, valor, _ := strings.Cut(atribuicao, "=")
+			t.Setenv(nome, valor)
+
+			_, err := Carregar()
+
+			if err == nil || !strings.Contains(err.Error(), variavel) {
+				t.Errorf("esperava erro nomeando %s, obtive %v", variavel, err)
+			}
+		})
+	}
+}
+
+func TestRedeDoSandboxLocalFicaDesligadaPorPadrao(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+	if configuracao.SandboxRedeLocal != "none" {
+		t.Errorf("sem SANDBOX_REDE_LOCAL o sandbox local roda sem rede, obtive %q", configuracao.SandboxRedeLocal)
+	}
+}
+
+func TestRedeDoSandboxLocalAceitaNomeDeRedeDoDocker(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("SANDBOX_REDE_LOCAL", "bridge")
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+	if configuracao.SandboxRedeLocal != "bridge" {
+		t.Errorf("rede lida errada: %q", configuracao.SandboxRedeLocal)
+	}
+}
+
+func TestRedeDoSandboxLocalRecusaValorQueViraOpcaoDoDocker(t *testing.T) {
+	for _, valor := range []string{"bridge --privileged", "--host", "host;rm"} {
+		t.Run(valor, func(t *testing.T) {
+			ambienteMinimoValido(t)
+			t.Setenv("SANDBOX_REDE_LOCAL", valor)
+
+			if _, err := Carregar(); err == nil || !strings.Contains(err.Error(), "SANDBOX_REDE_LOCAL") {
+				t.Errorf("esperava erro nomeando SANDBOX_REDE_LOCAL, obtive %v", err)
+			}
+		})
+	}
+}
+
+func TestLoggerDosProcessosLevaOsAtributosDoContexto(t *testing.T) {
+	var saida bytes.Buffer
+	diario := NovoLogger(Configuracao{NivelLog: "info"}, &saida)
+
+	diario.DebugContext(rastro.Com(t.Context(), "task_run_id", "abaixo-do-nivel"), "não aparece")
+	diario.InfoContext(rastro.Com(t.Context(), "task_run_id", "0742a9a6-3866-4ddf-8b1a-1b0501aea6d3"), "saldo de requisições do github")
+
+	texto := saida.String()
+	if !strings.Contains(texto, `"task_run_id":"0742a9a6-3866-4ddf-8b1a-1b0501aea6d3"`) {
+		t.Errorf("o logger dos processos precisa levar o task_run_id do contexto: %s", texto)
+	}
+	if strings.Contains(texto, "abaixo-do-nivel") {
+		t.Errorf("o nível configurado continua valendo: %s", texto)
 	}
 }

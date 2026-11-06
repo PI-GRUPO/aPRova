@@ -4,9 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/Azulpasta/aPRova/internal/platform"
 )
+
+const (
+	formatoDaAprovacaoPeloSlack = "Aprovado por @%s via Slack:\n\n%s"
+	formatoDaAlteracaoPeloSlack = "Alteração solicitada por @%s via Slack:\n\n%s"
+	tamanhoMaximoDoLogin        = 39
+)
+
+var reviewPublicadaPeloSlack = regexp.MustCompile(
+	`^(?:Aprovado por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack(?::\n\n(?s:.*))?|Alteração solicitada por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack:\n\n(?s:.*))$`)
 
 var (
 	// ErrTipoSemExecucao indica ação autorizada para a qual não há efeito definido.
@@ -40,12 +50,12 @@ func (e *ExecutorNoGitHub) Executar(ctx context.Context, acao AcaoAutorizada) er
 	case TipoAprovar:
 		return e.publicar(ctx, acao, platform.Review{
 			Evento: platform.EventoAprovar,
-			Corpo:  fmt.Sprintf("Aprovado por @%s via Slack:\n\n%s", acao.LoginGitHub, acao.Justificativa),
+			Corpo:  fmt.Sprintf(formatoDaAprovacaoPeloSlack, acao.LoginGitHub, acao.Justificativa),
 		})
 	case TipoSolicitarAlteracao:
 		return e.publicar(ctx, acao, platform.Review{
 			Evento: platform.EventoSolicitarAlteracao,
-			Corpo:  fmt.Sprintf("Alteração solicitada por @%s via Slack:\n\n%s", acao.LoginGitHub, acao.Justificativa),
+			Corpo:  fmt.Sprintf(formatoDaAlteracaoPeloSlack, acao.LoginGitHub, acao.Justificativa),
 		})
 	case TipoReexecutarAnalise:
 		return e.reenfileirador.Reenfileirar(ctx, acao)
@@ -65,4 +75,16 @@ type ReenfileiradorIndisponivel struct{}
 // Reenfileirar sempre devolve ErrReanaliseIndisponivel.
 func (ReenfileiradorIndisponivel) Reenfileirar(context.Context, AcaoAutorizada) error {
 	return ErrReanaliseIndisponivel
+}
+
+// QuemDecidiuNoSlack devolve o login do humano nomeado numa review que o
+// próprio aPRova publicou a partir do Slack. Texto fora desse formato devolve
+// doSlack igual a false.
+func QuemDecidiuNoSlack(corpo string) (login string, doSlack bool) {
+	partes := reviewPublicadaPeloSlack.FindStringSubmatch(corpo)
+	if partes == nil {
+		return "", false
+	}
+	login = partes[1] + partes[2]
+	return login, len(login) <= tamanhoMaximoDoLogin
 }

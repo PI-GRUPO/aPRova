@@ -109,7 +109,7 @@ automática do gate.
 | `ExecutorNoGitHub.Executar` | Publica `APPROVE` ou `REQUEST_CHANGES`; a aprovação agora inclui a justificativa. |
 | `RepositorioPostgres.Reservar` / `Registrar` | Mantêm o histórico e a proteção contra repetição no banco. |
 | `RepositorioPostgres.gravarTentativa` / `CreateRemoteActionAttempt` | Gravam justificativa e correlacionam a análise por ID, tenant, repositório e PR. Sem ID informado, usam a análise mais recente. Um ID incompatível não é associado a outra análise. |
-| Migration `000013` | Adiciona a justificativa ao histórico com limite de 4000 caracteres e rollback correspondente. |
+| Migration `000015` | Adiciona a justificativa ao histórico com limite de 4000 caracteres e rollback correspondente. |
 
 `202 + {"status":"aceito"}` significa, neste backend, que a ação passou pela
 autorização e pelo executor. `400`, `401`, `403`, `409` e `500` recebem mensagens

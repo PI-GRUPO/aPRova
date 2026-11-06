@@ -20,8 +20,8 @@ com Slack e GitHub reais.
   receberão HTTP 400. O limite da API é de 4000 caracteres; o formulário
   Slack admite 3000. A justificativa passa a aparecer também na review.
 - **Banco obrigatório para as ações:** a API troca o registro em memória
-  pelo PostgreSQL. A migration `000013` deve ser aplicada antes de executar
-  a API atualizada; sem a coluna `justification`, a reserva falha e a ação
+  pelo PostgreSQL. A migration `000015` (originalmente `000013`, renumerada
+  após a integração com `dev`) deve ser aplicada antes de executar a API atualizada; sem a coluna `justification`, a reserva falha e a ação
   não é executada. A proteção contra duplicidade passa a sobreviver à criação
   de outra instância do repositório.
 - **Correlação da análise:** `task_run_id` é opcional. Sem ele, permanece a
