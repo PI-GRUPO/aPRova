@@ -1,5 +1,3 @@
-// Package python roda as dependências e os testes de repositórios Python no
-// sandbox e classifica o desfecho no ResultadoSandbox comum às linguagens.
 package python
 
 import (
@@ -34,15 +32,12 @@ const (
 	saidaSemTestes      = 5
 )
 
-// Opcoes configura a execução de dependências e testes de um repositório
-// Python. DiretorioDeCache recebe o venv, o cache do pip e o relatório.
 type Opcoes struct {
 	Rodador          processo.Rodador
 	DiretorioDeCache string
 	Agora            func() time.Time
 }
 
-// Linguagem roda dependências e testes de repositórios Python.
 type Linguagem struct {
 	rodador          processo.Rodador
 	diretorioDeCache string
@@ -50,8 +45,6 @@ type Linguagem struct {
 	lerRelatorio     func(caminho string) ([]byte, error)
 }
 
-// Nova constrói a linguagem Python com as opções informadas. Sem relógio, usa
-// time.Now.
 func Nova(opcoes Opcoes) *Linguagem {
 	agora := opcoes.Agora
 	if agora == nil {
@@ -65,9 +58,6 @@ func Nova(opcoes Opcoes) *Linguagem {
 	}
 }
 
-// Executar instala as dependências (se houver requirements.txt na raiz do
-// projeto), roda o pytest e classifica o desfecho. prazoFinal é o instante em
-// que o resultado já precisa ter sido entregue.
 func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal time.Time) sandbox.ResultadoSandbox {
 	python, falha := l.prepararDependencias(ctx, diretorio)
 	if falha != nil {
@@ -82,16 +72,12 @@ func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal t
 	return l.rodarTestes(ctx, diretorio, python, timeout)
 }
 
-// prepararDependencias devolve o python que roda os testes: o do sistema
-// quando não há requirements.txt, o de um venv com as dependências quando há.
 func (l *Linguagem) prepararDependencias(ctx context.Context, diretorio string) (string, *sandbox.ResultadoSandbox) {
 	if !existeRequisitosNaRaiz(diretorio) {
 		return binarioPython, nil
 	}
 
 	venv := filepath.Join(l.diretorioDeCache, "venv")
-	// O pytest e o plugin de relatório vêm da imagem; o venv os enxerga por
-	// --system-site-packages e só acrescenta o que o requirements.txt pede.
 	criacao := l.rodar(ctx, diretorio, binarioPython, argumentoDeModulo, "venv", "--system-site-packages", venv)
 	if !concluiu(criacao) {
 		falha := infraestrutura(descreverInterrupcao("python -m venv", criacao), criacao.Saida)
@@ -144,18 +130,12 @@ func (l *Linguagem) ambiente() []string {
 	}
 }
 
-// caminhoDoRelatorio tem sufixo aleatório para que o código do PR não consiga
-// plantar um relatório antes da execução.
 func (l *Linguagem) caminhoDoRelatorio() string {
 	sufixo := make([]byte, 8)
 	_, _ = rand.Read(sufixo)
 	return filepath.Join(l.diretorioDeCache, "relatorio-"+hex.EncodeToString(sufixo)+".json")
 }
 
-// classificarTeste decide o tipo de falha cruzando o código de saída do
-// pytest, que vem do processo, com o relatório, que o código do PR consegue
-// escrever. Qualquer divergência entre os dois vira infraestrutura: o PR pode
-// no máximo reprovar a si mesmo, nunca aprovar com uma falha escondida.
 func (l *Linguagem) classificarTeste(teste processo.Execucao, caminhoDoRelatorio string) sandbox.ResultadoSandbox {
 	if teste.Erro != nil || teste.PrazoEsgotado {
 		return infraestrutura(descreverInterrupcao("pytest", teste), teste.Saida)
