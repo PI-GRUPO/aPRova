@@ -897,3 +897,347 @@ provisório em log; não equivale ao gate e à publicação finais.
 A matriz distingue implementação de código, teste com dados simulados e
 validação real. A presença ou validade atual dos segredos do ambiente não
 foi revalidada nesta exportação. Nenhum valor de credencial foi registrado.
+
+## Chat de métricas e consulta semanal — preparação local em 2026-11-07
+
+As subseções de preparação e ampliação abaixo preservam o histórico do teste
+com dados fictícios. O estado atual é o **Fechamento para desenvolvimento e
+exportação** ao fim desta seção: a entrada foi migrada ao Slack, a simulação
+foi removida e os dois workflows foram exportados. Não use as instruções
+históricas de simulação para configurar a versão atual.
+
+### Finalidade e limite de acesso
+
+Os workflows `aPRova | Chat | Consulta de Métrica` e
+`aPRova | Consulta | Relatório Semanal` foram montados no editor do n8n.
+O primeiro recebe perguntas no chat manual, usa Gemini e memória por sessão
+e oferece as ferramentas de leitura `consultar_relatorio_semanal`,
+`consultar_saude_api` e `consultar_prontidao_api`. O segundo
+valida a data, define a instalação pela configuração do ambiente, assina a
+consulta e permite somente GET em `/reports/weekly`. O modelo fornece apenas
+`inicio`; não escolhe instalação, URL, método ou headers. Não há conexão a
+`/acoes-remotas`, operação de escrita ou acesso ao banco nesse ramo.
+
+O Core de eventos permanece independente. O chat não fabrica eventos nem
+passa pelo webhook de normalização. A consulta usa o mesmo contrato HMAC
+do relatório semanal já documentado. A configuração fixa de uma instalação
+serve ao teste privado; acesso compartilhado ou múltiplos tenants exigirá
+mapear o usuário/contexto autenticado à instalação autorizada.
+
+### Inventário dos nós
+
+| Workflow / nó | Função |
+| --- | --- |
+| Chat / `When chat message received` | Entrada manual, sem chat público, resposta pelo último nó. |
+| Chat / `AI Agent` | Interpreta perguntas e apresenta resultados, exige consulta para métricas e identifica dados simulados. |
+| Chat / `Google Gemini Chat Model` | Modelo ligado à conexão de linguagem; credencial permanece no n8n. |
+| Chat / `Simple Memory` | Contexto por sessão do chat, sem usar histórico como fonte atualizada de métricas. |
+| Chat / `consultar_relatorio_semanal` | Chama o subworkflow com uma única entrada textual, `inicio`, preenchida pela IA. |
+| Chat / `consultar_saude_api` | HTTP Request Tool com GET fixo em `/health`, sem argumentos controlados pela IA, autenticação ou corpo; testa se a API responde. |
+| Chat / `consultar_prontidao_api` | HTTP Request Tool com GET fixo em `/ready`, preservando código HTTP e os estados das dependências retornados pela API. |
+| Consulta / `When Executed by Another Workflow` | Recebe a data inicial ou string vazia para última semana UTC completa. |
+| Consulta / `01 | Configurar Instalação` | Define `installation_id` como Number a partir de `APROVA_CHAT_INSTALLATION_ID`, preservando a entrada. |
+| Consulta / `01B | Simulação Habilitada` | Lê exclusivamente `APROVA_CHAT_SIMULACAO` do ambiente: true segue à resposta fictícia; false segue à validação real. |
+| Consulta / `SIMULAÇÃO | Retornar Relatório Fictício` | Valida a data, calcula a janela e retorna `status=simulado`, aviso explícito e métricas fictícias. Encerra o ramo, sem API ou assinatura. |
+| Consulta / `02 | Validar Consulta` | No ramo real, exige instalação positiva segura e data válida, calculando a janela de sete dias UTC. |
+| Consulta / `03 | Assinar Consulta` | HMAC com `N8N_SEGREDO_ACOES` sobre a query exata. Não devolve o segredo. |
+| Consulta / `04 | Consultar Relatório Semanal` | GET fixo com timeout de 15 segundos, sem redirects, resposta completa e tratamento de erros. Headers foram corrigidos para nomes literais, sem prefixo `=`. |
+| Consulta / `05 | Validar e Retornar Relatório` | Confere contrato, instalação, período, contagens e taxa. Retorna dados válidos ou `indisponivel` com `dados=null`; não repassa headers ou assinatura ao agente. |
+
+### Configuração e estado local
+
+Foram adicionadas `APROVA_CHAT_INSTALLATION_ID` e `APROVA_CHAT_SIMULACAO`
+ao repasse de ambiente do serviço `n8n-aprova` no Compose e ao `.env.example`.
+O exemplo usa instalação zero e simulação desativada por padrão. O `.env`
+local, ignorado pelo Git, habilita explicitamente a simulação e mantém a
+instalação zero. Somente o serviço n8n foi recriado para carregar essas
+variáveis; o volume e os workflows foram preservados. A presença dos dois
+valores esperados foi conferida dentro do container sem imprimir segredos.
+
+A simulação retorna dez execuções: seis concluídas, uma rejeitada, uma com
+falha e duas em andamento; taxa de sucesso de 75%, três aprovações humanas,
+duas de risco médio e uma reversão. O ID 123 é fictício e não sai em nenhuma
+requisição. Os mesmos números são usados para qualquer janela válida de
+teste: não são um histórico real nem validam comparações entre semanas.
+O agente foi instruído a começar a resposta com
+`[SIMULAÇÃO — dados fictícios]` e dizer que nenhuma API foi consultada.
+
+Desabilitar a simulação exige alterar `APROVA_CHAT_SIMULACAO=false` e recriar
+o serviço. Para a consulta real, configurar também instalação verdadeira,
+API acessível e segredo compartilhado. A instalação zero bloqueia o ramo
+real antes da assinatura e da rede. Nenhum parâmetro da ferramenta permite
+à IA ligar a simulação ou substituir a instalação configurada.
+
+O endpoint de relatório não chama o GitHub, mas a inicialização atual da API
+em `cmd/api/main.go` monta também as ações remotas: quando
+`N8N_SEGREDO_ACOES` está definido, exige autenticação do GitHub App. Sem esse
+segredo, as consultas assinadas não são aceitas. Não se removeu essa proteção
+nem se iniciou a API sem credenciais nesta preparação.
+
+### Validações e pendências
+
+- Os nós alterados/adicionados passaram na validação de configuração do n8n,
+  e as atualizações não retornaram avisos. Conexões e estado final dos dois
+  workflows foram relidos; ambos continuam desativados.
+- A resposta simulada foi verificada em memória com data explícita e período
+  padrão; data inexistente e tentativa de inserir outro parâmetro na data
+  foram recusadas. Campos enviados na entrada não alteram o ID fictício.
+- A validação do ramo real mantém o bloqueio para instalação zero.
+- Ainda falta o teste manual pelo usuário no chat para confirmar credencial,
+  modelo, chamada da ferramenta e identificação da resposta simulada. Não
+  foi executada uma chamada ao Gemini nem à API nesta preparação.
+- A consulta real depende de instalação/credenciais e do backend disponível.
+  Para produção, faltam autenticação e autorização do público do chat,
+  implantação, política de memória e configuração por tenant.
+
+Por solicitação do usuário, estes dois workflows ainda não foram exportados
+para `workflows/n8n/`. As alterações locais são de configuração e documentação;
+os workflows foram ajustados somente na instância n8n, sem publicar, fazer
+commit ou push. Esta seção registra preparação para simulação, não validação
+de métricas reais nem conclusão da task conversacional.
+
+### Ampliação para os endpoints de leitura existentes — 2026-11-07
+
+A inspeção de `internal/api/servidor.go` confirmou cinco rotas: GET
+`/health`, GET `/ready`, GET `/reports/weekly`, POST `/webhooks/github` e
+POST `/acoes-remotas`. Antes desta ampliação, somente o relatório semanal
+estava conectado ao agente. Foram adicionadas as duas ferramentas HTTP de
+saúde acima, ligadas diretamente à conexão `ai_tool` do agente, sem criar
+endpoints no backend ou alterar o subworkflow semanal.
+
+As novas ferramentas usam exclusivamente `APROVA_API_URL` com os caminhos
+fixos `/health` e `/ready`, timeout de cinco segundos, sem redirects, corpo,
+query, credenciais ou retry automático. Retornam JSON com código HTTP
+completo, preservando também respostas 503. Erros de transporte seguem com
+`continueRegularOutput` para o agente informar que não conseguiu consultar.
+Nenhum parâmetro é preenchido por `$fromAI` nessas duas ferramentas.
+
+O prompt agora descreve quando escolher cada ferramenta e distingue:
+
+- `/health`: HTTP 200 e `status=ok` confirmam somente que a API responde.
+  O handler `Servidor.manipularSaude` não consulta banco ou Redis.
+- `/ready`: `Servidor.manipularProntidao` verifica as dependências em paralelo,
+  com limite de dois segundos. HTTP 200 e `status=ok` indicam prontidão;
+  HTTP 503 e `status=indisponivel` indicam falha de uma ou mais dependências.
+  O mapa `dependencias` informa quais estão `ok` ou `indisponivel`.
+- Conexão recusada, timeout ou contrato inesperado não autorizam afirmar
+  qual dependência falhou. O agente deve informar que não confirmou o estado.
+
+Essas ferramentas consultam a API real independentemente de
+`APROVA_CHAT_SIMULACAO`; a flag continua restrita às métricas semanais.
+Os POSTs não foram adicionados: são entradas de eventos e ações, incompatíveis
+com o limite de consulta somente leitura. As ferramentas são chamadas sob
+demanda conforme a pergunta, não em toda mensagem.
+
+As duas configurações passaram em `validate_node_config` como ferramentas,
+e a atualização do workflow não retornou avisos de validação. A releitura
+confirmou as três conexões de ferramentas e o chat desativado. A consulta
+semanal estava ativa na inspeção desta revisão; seu estado não foi alterado
+e ela não foi republicada nesta entrega.
+
+Um teste real de GET a partir do container n8n retornou `ECONNREFUSED` nos
+dois endpoints. Portanto, o caminho está configurado, mas a API não estava
+acessível no endereço de `APROVA_API_URL` naquele momento. Não se iniciou a
+API nem se simulou saúde positiva. Não foi feita nova chamada ao Gemini;
+a escolha das ferramentas e a resposta conversacional ainda podem ser
+verificadas pelo chat manual. A leitura com resposta saudável e a leitura
+real de prontidão com dependência degradada continuam pendentes do backend
+em execução. Nenhum workflow foi exportado, publicado ou enviado ao Git.
+
+### Fechamento para desenvolvimento e exportação — 2026-11-07
+
+#### O que ficou implementado
+
+O assistente agora se chama `aPRova | Slack | Consulta de Métricas`.
+Recebe os eventos do Slack em `/webhook/aprova/slack/consultas`, com HMAC
+sobre o corpo bruto usando `SLACK_SIGNING_SECRET` e janela de cinco minutos.
+O challenge autenticado recebe a resposta exigida pelo Slack; eventos
+recebem HTTP 200 antes da chamada ao modelo, e assinatura inválida recebe
+401. A confirmação HTTP não significa que a IA respondeu ou a consulta
+funcionou: é preciso conferir o resultado dos nós posteriores.
+
+Há dois comportamentos no mesmo workflow:
+
+- DM: aceita `message` com `channel_type=im`, sem menção. A conversa mantém
+  contexto entre mensagens do mesmo usuário na mesma DM.
+- Canal do time: aceita somente `app_mention` no canal configurado e
+  responde como mensagem normal no canal, sem `thread_ts`. Não acompanha
+  mensagens comuns do canal nem exige que a resposta fique em uma thread.
+
+Workspace e app devem corresponder à configuração. Bots, subtipos e eventos
+fora do escopo são descartados antes do agente. A deduplicação guarda as
+últimas 10.000 chaves `team_id:event_id`. Isso impede repetição sequencial;
+não é uma garantia transacional de entrega exatamente uma vez. Ao retomar
+uma falha após a deduplicação, confira antes o envio ao Slack.
+
+A memória é isolada por modo (DM/canal), workspace, conversa e usuário.
+Seu namespace foi alterado para `consultas-reais-v1`, para não reaproveitar
+o contexto dos testes com métricas fictícias. O modelo nunca usa o histórico
+como fonte atualizada de métricas. Simple Memory mantém uma janela de cinco
+interações; persistência, retenção e uso em múltiplos workers precisam de
+revisão antes da produção.
+
+As únicas ferramentas são `consultar_relatorio_semanal`,
+`consultar_saude_api` e `consultar_prontidao_api`. Os caminhos HTTP, métodos
+GET e configuração da instalação não são controlados pelo modelo. Os POSTs
+`/acoes-remotas` e `/webhooks/github` não foram conectados. A saída ao Slack
+é um nó da aplicação, não uma ferramenta livre do agente; usa somente o
+destino do evento autenticado, escapando menções e sem divulgar o link do
+workflow. O limite de somente leitura diz respeito ao núcleo e aos PRs;
+publicar a resposta no Slack é o efeito esperado da interface.
+
+#### Inventário final dos nós e funções
+
+| Nó do assistente Slack | Função |
+| --- | --- |
+| `01 | Receber Consulta do Slack` | Webhook POST com Raw Body e resposta explícita. Substitui o antigo Chat Trigger. |
+| `02 | Verificar Assinatura do Slack` | Confere assinatura, timestamp e envelope antes de liberar a origem. |
+| `02E | Recusar Requisição Não Autenticada` | Responde 401 e encerra a entrada inválida. |
+| `03 | É Verificação de URL` | Separa o challenge do Slack de um evento. |
+| `03C | Responder Challenge do Slack` | Responde o challenge autenticado, sem chamar a IA. |
+| `03A | Confirmar Recebimento` | Responde 200 antes do processamento da pergunta. |
+| `04 | Preparar Consulta do Slack` | Valida a configuração externa, filtra DM/menção e prepara texto, destino, chave de deduplicação e sessão. |
+| `05 | Descartar Eventos Repetidos` | Deduplicação persistida no n8n por workspace/evento. |
+| `AI Agent` | Interpreta a pergunta, escolhe entre as três consultas permitidas e apresenta o resultado sem inventar números. |
+| `Google Gemini Chat Model` | Modelo selecionado: `models/gemini-3.5-flash-lite`; credencial própria do ambiente. |
+| `Simple Memory` | Contexto separado por usuário e DM/canal, sem reutilizar memória dos testes anteriores. |
+| `consultar_relatorio_semanal` | Executa o subworkflow identificado por `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID`; somente `inicio` é fornecido pela IA. |
+| `consultar_saude_api` | GET fixo em `/health`, timeout de cinco segundos, sem redirects. |
+| `consultar_prontidao_api` | GET fixo em `/ready`, timeout de cinco segundos, preservando HTTP 503 e o mapa de dependências. |
+| `06 | Preparar Resposta ao Slack` | Exige saída textual e destino autenticado, limita o tamanho e escapa menções. |
+| `07 | É Conversa Direta` | Separa o envio na DM do envio ao canal do time. |
+| `08A | Responder na DM` | Publica na mesma conversa privada que originou a pergunta, sem thread. |
+| `08B | Responder no Canal do Time` | Publica como mensagem normal no canal autorizado, sem thread. |
+
+O subworkflow `aPRova | Consulta | Relatório Semanal` tem agora seis nós:
+
+| Nó da consulta semanal | Função |
+| --- | --- |
+| `When Executed by Another Workflow` | Entrada única `inicio`, texto em AAAA-MM-DD ou vazio. |
+| `01 | Configurar Instalação` | Define instalação numérica por `APROVA_CHAT_INSTALLATION_ID`, fora do controle da IA. |
+| `02 | Validar Consulta` | Bloqueia instalação ausente/inválida e data inexistente; calcula sete dias UTC, usando a última semana completa quando a entrada está vazia. |
+| `03 | Assinar Consulta` | Usa `N8N_SEGREDO_ACOES` e assina exatamente a query enviada. |
+| `04 | Consultar Relatório Semanal` | GET real, timeout de 15 segundos, sem redirects e com resposta completa. |
+| `05 | Validar e Retornar Relatório` | Confere HTTP, período, instalação, soma dos estados e taxa; devolve métricas válidas ou indisponibilidade com `dados=null`, sem assinatura/headers. |
+
+#### Remoção dos dados fictícios e estado do ambiente
+
+Foram removidos o nó `01B | Simulação Habilitada`, o nó de resposta fictícia,
+as instruções de resposta simulada do agente e a variável
+`APROVA_CHAT_SIMULACAO` do `.env` local, `.env.example` e Compose.
+A conexão agora é diretamente `01 → 02 → 03 → 04 → 05` na consulta.
+Não há fallback para números de demonstração. Instalação zero continua
+bloqueando a consulta real; falha não vira relatório vazio.
+
+As execuções históricas de teste foram preservadas como evidência. Exemplos
+do contrato de eventos e fixtures das suítes automatizadas também permanecem;
+eles não são carregados como métricas pelo assistente em execução.
+
+Os IDs locais de Slack e do subworkflow saíram dos parâmetros fixos para
+configuração externa. O Compose repassa:
+
+| Variável | Uso e configuração pendente |
+| --- | --- |
+| `APROVA_CHAT_INSTALLATION_ID` | Instalação real do GitHub App; continua em zero enquanto não houver configuração válida. |
+| `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` | ID atribuído à importação de `consulta-relatorio-semanal.json`. |
+| `APROVA_SLACK_TEAM_ID` | Workspace autorizado. |
+| `APROVA_SLACK_APP_ID` | App autorizado, correspondente ao signing secret e ao bot. |
+| `APROVA_SLACK_CANAL_CONSULTAS_ID` | Único canal do time autorizado para menções; DMs são separadas e restritas ao workspace/app. |
+| `APROVA_API_URL` | Base acessível pelo n8n; o padrão host.docker.internal é de desenvolvimento local. |
+| `SLACK_SIGNING_SECRET` | Assinatura da nova entrada de eventos; também usada pela Central, sem registrar seu valor. |
+| `N8N_SEGREDO_ACOES` | Assinatura do relatório, igual ao segredo da API. |
+
+O `.env` local preserva os IDs da instalação n8n/Slack já utilizados, mas
+não contém um ID real do GitHub App para esta consulta. O `.env.example`
+usa campos vazios ou zero, sem valores pessoais. O n8n foi recriado para
+carregar a configuração atual; volume e credenciais foram preservados.
+Na instância, os dois workflows foram republicados com a limpeza. Os JSONs
+distribuídos ficam inativos, sem credenciais ou dados fixados.
+
+A conferência final dentro do container confirmou a ausência da variável
+de simulação e a presença dos quatro IDs de configuração n8n/Slack, sem
+imprimir seus valores. A instalação real ainda não está configurada.
+Novos GETs em `/health` e `/ready` continuaram retornando `ECONNREFUSED`:
+não havia API acessível no endereço configurado durante este fechamento.
+
+No Slack App, a Request URL de **Event Subscriptions** usa o caminho público
+`/webhook/aprova/slack/consultas`, com `app_mention` e `message.im`.
+Os scopes são `app_mentions:read`, `im:history` e `chat:write`; a aba Messages
+do App Home permite conversa privada. **Interactivity & Shortcuts** continua
+usando `/webhook/aprova/slack/interacoes` para os botões da Central.
+O domínio ngrok é configuração local temporária e não foi incorporado ao
+export. Em produção, usar HTTPS estável e revisar autorização dos usuários.
+
+#### Contratos e limites do backend
+
+`Servidor.manipularSaude` responde `{status:ok}` sem consultar dependências.
+`Servidor.manipularProntidao` verifica PostgreSQL/Redis em paralelo, com limite
+de dois segundos: responde 200 com `status=ok`, ou 503 com
+`status=indisponivel` e os estados no mapa `dependencias`. Erro de transporte
+não permite deduzir qual dependência falhou.
+
+O contrato do relatório, as funções `manipularRelatorioSemanal`,
+`inicioDoRelatorio`, `domain.RelatorioSemanal` e a query `GetWeeklyReport`
+permanecem os já documentados na seção Digest. A janela é de sete dias UTC;
+`em_andamento` conta execuções recebidas nessa janela e não lista todas as
+execuções atuais. Não existem nesta API endpoints para listar PRs pendentes,
+detalhar uma execução ou explicar sua falha. Nenhum endpoint novo foi criado.
+
+O acoplamento da inicialização da API às ações remotas continua: com
+`N8N_SEGREDO_ACOES` definido, `montarAcoesRemotas` exige as credenciais do
+GitHub App. Sem o segredo, o relatório autenticado não é aceito. Essa condição
+não foi contornada nem alterada no backend nesta entrega.
+
+#### Evidências e verificações
+
+| Evidência | O que comprova e o que não comprova |
+| --- | --- |
+| Execução `346` | DM autenticada processada e mensagem realmente aceita pelo Slack (`ok=true`); foi antes da remoção da simulação. |
+| Execução `349` | Menção no canal processada e resposta normal realmente aceita pelo Slack (`ok=true`); não comprova consulta real de métricas. |
+| Consulta `347` | O resultado semanal desses testes veio do ramo fictício, agora removido. |
+| Execuções `336`, `337`, `338` e `340` | Gemini 3 Flash Preview recusou requisições por cota diária, com HTTP 429. Houve silêncio porque o agente parou antes do envio ao Slack. |
+| Publicação posterior do modelo | O Gemini 3.5 Flash-Lite foi selecionado e publicado; os envios posteriores confirmaram o percurso. Salvar o rascunho não troca o modelo da versão ativa. |
+| Testes locais do webhook | Challenge assinado aceito (200), requisição sem assinatura recusada (401) e bot descartado antes da IA; sem mensagens externas de teste nessa verificação. |
+| Testes dos exports nesta entrega | 74 casos passaram em sete arquivos, incluindo 11 casos novos de consultas: HMAC, replay, filtros, DM/canal, isolamento, deduplicação, destinos fixos, instalação/data e contrato semanal. Sem chamadas externas nessas suítes. |
+
+Os parâmetros alterados passaram na validação do n8n; as últimas atualizações
+não retornaram avisos. Também foram conferidos os sete exports JSON, seus
+grafos, ausência de credenciais/dados fixados/IDs pessoais, configuração do
+Compose e `git diff --check`. Não houve mudança no Go nem repetição da suíte
+Go histórica. Não se enviaram mensagens de teste ao Slack nem se consumiu
+cota do modelo durante a limpeza e exportação.
+
+#### Arquivos exportados e pendências para retomar
+
+Novos arquivos: `workflows/n8n/slack-consulta-metricas.json` e
+`workflows/n8n/consulta-relatorio-semanal.json`. As credenciais Gemini e Slack
+precisam ser associadas após importar. O guia de configuração está no README
+da pasta. Os outros cinco exports foram comparados: as diferenças da Central,
+OSV e Core são configurações/defaults locais já portabilizados; o Digest
+continua sem testes. Preservou-se a correção de paginação `before` do Trello
+no repositório, ainda pendente de aplicação na instância.
+
+Para retomar o desenvolvimento:
+
+1. Obter e configurar o GitHub App e a instalação real, iniciar a API com
+   dependências/migrations e validar uma consulta semanal real, inclusive
+   período vazio, HTTP de erro e indisponibilidade. Até lá, o relatório não
+   fornece números; `/health` e `/ready` dependem da API acessível.
+2. Tratar falhas do modelo, cota, configuração e ferramentas com um aviso
+   amigável no Slack. Hoje erros que interrompem o agente ainda podem deixar
+   o usuário sem resposta. Definir recuperação sem duplicar mensagens.
+3. Ao existirem novos endpoints de leitura, acrescentar ferramentas com
+   destino/método/parâmetros limitados e validar autorização. Não conectar
+   operações remotas ao agente. As consultas de PR pendente/detalhe de
+   execução permanecem fora do escopo atual.
+4. Definir autorização dos usuários e mapeamento por instalação antes de
+   atender múltiplas equipes; DM no workspace não substitui permissão de
+   acesso aos dados do cliente. Revisar memória persistente, retenção,
+   concorrência, limites de cota e HTTPS estável na produção.
+5. Aplicar as demais pendências independentes de Core, Central, OSV, Trello
+   e Digest listadas nas respectivas seções; esta entrega não as conclui.
+
+Os arquivos estão apenas no repositório local para revisão, sem commit,
+push ou deploy de servidor. A publicação mencionada é somente na instância
+local do n8n. Simulação removida e exportação não comprovam prontidão de
+produção ou métricas reais validadas.

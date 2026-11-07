@@ -15,6 +15,12 @@ pessoais ou dados fixados:
 - `digest-semanal.json`: consulta assinada ao relatório da última semana
   completa e publicação de um resumo por instalação no Slack, às segundas
   às 09h de São Paulo. Exportado desativado, sem nós ou dados de simulação.
+- `slack-consulta-metricas.json`: assistente de consultas em DM contínua e
+  por menção no canal do time, com autenticação HMAC, deduplicação e memória
+  isolada. Oferece apenas relatório semanal, saúde e prontidão da API.
+- `consulta-relatorio-semanal.json`: ferramenta de leitura do assistente;
+  valida instalação/período, assina o GET e retorna métricas reais ou
+  indisponibilidade, sem dados fictícios.
 
 O inventário dos nós, funções, testes e pendências está em
 [docs/central-slack-implementacao.md](../../docs/central-slack-implementacao.md).
@@ -221,6 +227,44 @@ com o n8n desligado não são recuperados automaticamente.
 O teste realizado em 2026-11-07 enviou dados fictícios ao Slack real. Os
 nós de simulação foram removidos; o workflow permanece desativado até a
 configuração real. Detalhes e pendências estão na documentação central.
+
+## Assistente de consultas do Slack
+
+1. Importe `consulta-relatorio-semanal.json` e copie o ID criado para
+   `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` no `.env` local.
+2. Importe `slack-consulta-metricas.json`. Associe a credencial Gemini
+   (`googlePalmApi`) ao nó `Google Gemini Chat Model` e a credencial do bot
+   (`slackApi`) aos dois nós `08A` e `08B`. O modelo exportado é
+   `models/gemini-3.5-flash-lite`, selecionado no desenvolvimento; confira
+   disponibilidade/cota da sua conta ou selecione outro com ferramentas.
+3. Configure `APROVA_CHAT_INSTALLATION_ID` com a instalação real do GitHub App,
+   `APROVA_SLACK_TEAM_ID` com o workspace, `APROVA_SLACK_APP_ID` com o app e
+   `APROVA_SLACK_CANAL_CONSULTAS_ID` com o único canal permitido. Os campos
+   de exemplo estão vazios ou em zero e bloqueiam o uso sem configuração.
+4. Configure `APROVA_API_URL`, `N8N_SEGREDO_ACOES` e `SLACK_SIGNING_SECRET`.
+   Recrie somente o n8n após mudar o ambiente:
+   `docker compose --profile automacao up -d --no-deps n8n-aprova`.
+5. Teste e publique o subworkflow antes do assistente. Em **Event
+   Subscriptions** do Slack App, use a URL HTTPS pública com o caminho
+   `/webhook/aprova/slack/consultas` e assine `app_mention` e `message.im`.
+   O bot precisa de `app_mentions:read`, `im:history` e `chat:write`; reinstale
+   o app após alterar scopes e habilite mensagens em **App Home**.
+   Preserve a URL dos botões em **Interactivity & Shortcuts**.
+6. Convide o bot ao canal configurado. Na DM, envie texto sem menção; no
+   canal, mencione o bot. A resposta sai como mensagem normal, sem thread.
+
+Os dois exports são inativos, sem credenciais, dados fixados ou IDs locais.
+O subworkflow recebe apenas `inicio`: a IA não escolhe instalação, URL,
+método nem assinatura. A memória usa workspace, tipo de conversa, canal e
+usuário; DM e canal não compartilham contexto. O histórico de deduplicação
+guarda as últimas 10.000 chaves por workspace/evento.
+
+Não há mais ramo nem variável de simulação. A instalação zero impede a
+consulta semanal; não a substitua por um ID inventado. `/health` e `/ready`
+são consultas reais, sem assinatura, e não dependem de uma instalação.
+Atualmente faltam credenciais/configuração da API para validar métricas
+reais. O status de desenvolvimento e a lista de pendências estão na
+documentação central. Não existem ferramentas para listar ou operar PRs.
 
 ## Testes
 
