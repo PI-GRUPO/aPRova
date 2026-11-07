@@ -12,6 +12,9 @@ pessoais ou dados fixados:
 - `trello-sugestao-movimentacao.json`: encontra o card vinculado à PR,
   adiciona comentário sugerindo movimentação e replica o texto no Slack.
   Nunca move o card.
+- `digest-semanal.json`: consulta assinada ao relatório da última semana
+  completa e publicação de um resumo por instalação no Slack, às segundas
+  às 09h de São Paulo. Exportado desativado, sem nós ou dados de simulação.
 
 O inventário dos nós, funções, testes e pendências está em
 [docs/central-slack-implementacao.md](../../docs/central-slack-implementacao.md).
@@ -196,7 +199,58 @@ O nó `13` está habilitado e tem timeout de 15 segundos. Só `202` com
 `status=aceito` confirma a ação; falhas HTTP e de comunicação não confirmam
 execução. A autoridade continua sendo o núcleo e a permissão do GitHub.
 
+## Configurar o Digest semanal
+
+Importe `digest-semanal.json` e preencha `configuracao.installation_ids` no
+nó `02 | Configurar Instalações` com 1 a 50 IDs reais do GitHub App. A lista
+vazia impede a consulta; não use o número de uma PR ou o ID de um workflow.
+Configure `APROVA_API_URL`, `N8N_SEGREDO_ACOES` (igual ao da API) e
+`SLACK_INCOMING_WEBHOOK_URL` no ambiente do n8n. Não coloque segredos no JSON.
+
+O agendamento usa `America/Sao_Paulo`; o período consultado é a semana UTC
+completa anterior, de segunda 00h até segunda 00h, com fim exclusivo. O
+Digest consulta diretamente a API, independentemente da rota de relatório
+do Core, sem ler PostgreSQL. Não exige ngrok: o envio ao Slack é de saída.
+
+Antes de ativar, valide a API com uma instalação e métricas reais. Uma
+execução manual envia o resumo da última semana ao canal configurado.
+Não há deduplicação do Digest nem retry automático do envio: confira o canal
+antes de repetir uma execução que terminou em timeout. Horários perdidos
+com o n8n desligado não são recuperados automaticamente.
+
+O teste realizado em 2026-11-07 enviou dados fictícios ao Slack real. Os
+nós de simulação foram removidos; o workflow permanece desativado até a
+configuração real. Detalhes e pendências estão na documentação central.
+
 ## Testes
+
+### Integração dos endpoints do núcleo
+
+O Core normaliza e encaminha `aguardando_aprovacao` à Central, que já envia
+decisões humanas assinadas para `POST /acoes-remotas`. Esse pedido só deve
+nascer da interação autenticada do Slack. Configure `SLACK_GITHUB_VINCULOS`
+na API e aplique as migrations, incluindo a 15. O botão de reexecução ainda
+não tem executor disponível no backend.
+
+A saída `07E | relatorio_periodico` agora consulta `GET /reports/weekly`.
+Envie ao mesmo webhook do Core um envelope v1 assinado com
+`tipo_evento=relatorio_periodico`, `tenant_id` da instalação e `dados={}`
+ou `dados={"inicio":"2026-10-26"}`. Esse é um pedido da automação; o worker
+atual não emite esse tipo automaticamente. Essa rota não tem agendamento;
+o agendamento semanal está no workflow independente de Digest.
+O Core assina a query exata com `N8N_SEGREDO_ACOES`, usando `APROVA_API_URL`,
+e acrescenta `relatorio_semanal` ao evento preservado. Apenas HTTP 200 com
+contrato e instalação compatíveis resulta em `status=disponivel`.
+Erros HTTP, timeout e resposta inválida resultam em `status=indisponivel`
+com `dados=null`; não viram métricas zeradas. O resultado fica na execução,
+sem envio de digest ao Slack nesta integração.
+
+O recebimento HTTP 202 do Core confirma a entrada validada do evento;
+a consulta ao relatório acontece depois. Para o sentido worker → Core,
+configure `N8N_WEBHOOK_URL` com a URL completa `/webhook/aprova/events` e
+recarregue o ambiente do worker. A emissão real de `dependencia_nova` e
+`instalacao` continua pendente no núcleo. Links de recibo ainda não têm
+endpoint implementado.
 
 Com Node 22 ou superior, sem dependências npm e sem chamadas externas:
 

@@ -28,6 +28,24 @@ As implementações importáveis de entrada e da Central do Slack já estão em
 `workflows/n8n/`. O estado de implementação, a configuração e as pendências
 da operação remota estão em [central-slack-implementacao.md](central-slack-implementacao.md).
 
+### Estado conferido em 2026-11-07
+
+O worker atual já conecta o emissor e produz `analise_concluida`,
+`aguardando_aprovacao`, `aprovacao_registrada` e `falha_recuperavel`
+(`cmd/worker/main.go` e `internal/worker/eventos_do_motor.go`). Isso é
+implementação no código; não comprova validação de ponta a ponta com o
+GitHub App real. A emissão de `dependencia_nova` e `instalacao` continua
+pendente. O gate, os recibos e a publicação do worker usam implementações
+provisórias, descritas no README principal.
+
+O workflow `aPRova | Digest | Resumo Semanal` consulta `GET /reports/weekly`
+com HMAC de `N8N_SEGREDO_ACOES`, sem acessar o banco. Tem agendamento próprio,
+independente dos seis tipos de evento do núcleo. O Core também aceita o
+pedido autenticado `relatorio_periodico` como extensão da automação; esse
+pedido não é um sétimo evento emitido pelo worker e apenas guarda o relatório
+na execução. Configuração, testes com métricas fictícias e pendências do
+Digest estão na documentação central e em `workflows/n8n/README.md`.
+
 ## Envelope
 
 Todo evento tem a mesma casca. Um único nó **Switch** em `tipo_evento` roteia

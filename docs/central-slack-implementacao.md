@@ -35,6 +35,11 @@ automática do gate.
 
 ## O que foi implementado
 
+Os registros de 2026-11-01 e 2026-11-02 abaixo preservam o histórico. Para o
+estado atual do worker, exportação, relatório e Digest, consulte as revisões
+de 2026-11-07 neste documento; elas atualizam as pendências históricas sobre
+emissão de eventos e existência do orquestrador.
+
 - Eventos do núcleo são autenticados com HMAC-SHA256 sobre o corpo bruto,
   usando `N8N_SEGREDO_EVENTOS`, com janela de cinco minutos em ambas as direções
   do relógio. A entrada marca a origem como verificada somente após conferir.
@@ -76,6 +81,42 @@ automática do gate.
 | `08 | Executar Central do Slack` | Executa a Central identificada por `APROVA_SLACK_WORKFLOW_ID`, sem aguardar. |
 | `07I` e chamada do OSV | Encaminham `dependencia_nova` ao subworkflow de consulta de dependências. |
 | `07G` e `09 \| Executar Sugestão no Trello` | Encaminham `analise_concluida` ao Trello por item, sem aguardar. O export exige selecionar o workflow importado no nó 09. |
+| `07E`, `10`, `11` e `12` | Recebem o pedido autenticado `relatorio_periodico`, assinam a query, consultam `/reports/weekly` e normalizam o retorno, preservando o evento. Não publicam o Digest. |
+
+### Integração com os endpoints e exportação do Core — 2026-11-07
+
+A rota `07E | relatorio_periodico | Conectar workflow` está ligada a:
+
+| Nó | Função |
+| --- | --- |
+| `10 | Assinar Consulta Semanal` | Exige origem verificada, tipo correto e tenant positivo; valida `dados.inicio` opcional como data real e assina a query exata com `N8N_SEGREDO_ACOES`. O tenant autenticado define `installation_id`, sem aceitar substituição pelo payload. |
+| `11 | Consultar Relatório Semanal` | GET em `APROVA_API_URL/reports/weekly`, timeout de 15 segundos, sem redirects, com resposta HTTP completa e tratamento de falhas. |
+| `12 | Normalizar Relatório Semanal` | Preserva o evento e acrescenta `relatorio_semanal`: HTTP 200 e contrato compatível geram `disponivel`; falhas geram `indisponivel`, com `dados=null`. Não converte falha em contagens zeradas. |
+
+`relatorio_periodico` é um pedido da automação por envelope v1 assinado,
+não um evento emitido pelo worker. Essa rota termina na execução; o envio
+semanal ao Slack pertence ao workflow de Digest descrito ao fim do documento.
+O HTTP 202 do Core confirma recebimento e validação do evento, antes das
+consultas e integrações. Não comprova o sucesso delas.
+
+Os cinco workflows foram conferidos contra a instância conectada. O Core
+foi sincronizado preservando os nós de relatório já presentes na cópia
+local e as referências portáteis: `APROVA_SLACK_WORKFLOW_ID`,
+`APROVA_OSV_WORKFLOW_ID` e `CONFIGURE_WORKFLOW_TRELLO`. Central e OSV já
+correspondem funcionalmente aos exports, após substituir IDs locais; não
+houve mudança funcional a transferir nesses dois arquivos.
+
+O Trello local foi preservado: tem a configuração por marcadores, a nota de
+importação e a correção de cursor `before` que ainda não existe na instância
+conectada. Exportar diretamente essa instância reintroduziria `page` e os
+IDs do quadro de teste. Os dois nós locais de diagnóstico do quadro não
+foram incluídos no export. A divergência de paginação continua pendente de
+aplicação e validação na instância, conforme a revisão de 2026-11-02 na seção
+Trello. Esta entrega não altera nem republica os workflows remotos.
+
+Os exports permanecem inativos, sem credenciais pessoais, IDs de chamadas
+de outra instalação ou dados fixados. Os arquivos foram preparados somente
+no repositório local, sem commit, push ou deploy.
 
 ## Nós da Central do Slack
 
@@ -721,3 +762,138 @@ migrations, script de eventos e sandbox Docker. Os 53 testes dos workflows,
 `go vet`, build, validação do Compose e `git diff --check` também passaram.
 O resultado e os limites estão em
 [revisao-regressao-2026-11-02.md](revisao-regressao-2026-11-02.md).
+
+## Workflow aPRova | Digest | Resumo Semanal — 2026-11-07
+
+### Finalidade e implementação
+
+Export importável: `workflows/n8n/digest-semanal.json`. Envia ao canal do
+Incoming Webhook um resumo por instalação do GitHub App, consultando somente
+`GET /reports/weekly` do núcleo. Não lê PostgreSQL, não decide risco e não
+executa ações em PR. A API é a fonte das métricas.
+
+O agendamento é segunda-feira às 09h, com fuso `America/Sao_Paulo`. O período
+é a semana UTC completa anterior: segunda 00h até a segunda seguinte 00h,
+com fim exclusivo. O texto mostra o último domingo como fim inclusivo de
+exibição e informa UTC. A hora local do disparo não muda a janela da API.
+
+### Inventário de nós e funções
+
+| Nó | Função |
+| --- | --- |
+| `01 | Segunda-feira às 09h` | Schedule Trigger com cron `0 9 * * 1`. |
+| `02 | Configurar Instalações` | Lê `configuracao.installation_ids`, remove duplicados, exige de 1 a 50 inteiros positivos seguros e calcula a última semana UTC completa. Produz um item por instalação. A lista exportada está vazia. |
+| `03 | Assinar Consulta à API` | Usa `APROVA_API_URL` e HMAC-SHA256 com `N8N_SEGREDO_ACOES` sobre `timestamp + '.' + query`, preservando exatamente a query enviada. Exige também configuração do webhook Slack antes da consulta. |
+| `04 | Consultar Relatório Semanal` | GET com `installation_id` e `inicio`, timeout de 15 segundos, sem redirects e com resposta HTTP completa em JSON. |
+| `05 | Validar e Formatar Digest` | Confere HTTP 200, instalação, início/fim esperados, contagens inteiras não negativas, soma dos estados e taxa de sucesso. Monta texto e bloco Slack em texto simples. Contrato inválido interrompe o envio. |
+| `06 | Publicar Digest no Slack` | POST de `slack_payload` ao `SLACK_INCOMING_WEBHOOK_URL`, timeout de 15 segundos, sem redirects e sem retry automático. |
+| `07 | Confirmar Publicação` | Exige HTTP 200 e texto `ok`, aceitando resposta em `body` ou `data`. Retorna `status=enviado`, instalação e período. Outro retorno não confirma publicação. |
+
+Os três nós `TESTE | ...` e o desvio `05B | É Simulação` foram removidos
+da instância e do export. A conexão agora é `05 → 06 → 07`, sem flags,
+prefixos ou dados de simulação. O export atual contém somente os sete nós
+reais. A nota temporária de testes também não faz parte do arquivo final.
+
+### Funções e contratos do backend
+
+| Função/arquivo | Responsabilidade |
+| --- | --- |
+| `Servidor.manipularRelatorioSemanal` (`internal/api/relatorio_semanal.go`) | Autentica a query bruta com o segredo de ações, valida instalação e data, consulta o repositório e serializa o relatório. |
+| `Servidor.inicioDoRelatorio` | Interpreta `inicio` em `AAAA-MM-DD`; sem parâmetro, escolhe a última semana completa. A janela tem sete dias UTC. |
+| `domain.RelatorioSemanal.Finalizadas`, `EmAndamento` e `TaxaDeSucesso` | Calculam as métricas derivadas; taxa é nula se nenhuma execução terminou. |
+| `GetWeeklyReport` (`queries/reports.sql`) | Agrega as execuções da instalação por `received_at` e os estados atuais; conta aprovação humana e risco médio. Conta reversões de `code_memory` pela data de criação na janela. O n8n nunca executa essa query. |
+
+O JSON contém `installation_id`, `inicio`, `fim`, `total_execucoes`,
+`concluidas`, `rejeitadas`, `falhas`, `em_andamento`, `taxa_sucesso`,
+`exigiram_aprovacao_humana`, `risco_medio` e `revertidas`.
+O Digest exibe total, taxa, aprovação humana, reversões e execuções em
+andamento; preserva as demais métricas retornadas no item da execução.
+Taxa de sucesso é `concluidas / (concluidas + rejeitadas + falhas)`.
+Uma semana sem execuções é válida e tem taxa indisponível; falha da API não
+é uma semana vazia. Reversões podem se referir a análises de semanas anteriores.
+
+Retornos do endpoint: 200 com relatório, 400 para parâmetros inválidos,
+401 para assinatura recusada, 500 em falha de consulta e 503 se o serviço de
+relatórios não estiver disponível. No Digest, falhas interrompem a execução;
+na rota de consulta do Core, tornam-se `relatorio_semanal.status=indisponivel`.
+
+### Configuração e estado do ambiente
+
+Na leitura da instância em 2026-11-07, Core, Central Slack, OSV e Trello
+estavam ativos. O Digest estava desativado, sem versão publicada e com
+`installation_ids: []`. Os cinco exports do repositório são inativos para
+exigir configuração e validação antes de publicar em outra instalação.
+
+O Digest requer `APROVA_API_URL`, `N8N_SEGREDO_ACOES` e
+`SLACK_INCOMING_WEBHOOK_URL`, além de acesso a `$env` e ao módulo `crypto`
+nos nós Code. O endereço padrão `http://host.docker.internal:8080` é local:
+em produção, configure o endereço interno acessível da API. O segredo deve
+ser o mesmo na API e no n8n; os valores nunca entram no export.
+
+Os IDs reais devem ser preenchidos no nó 02 da instalação de destino.
+Eles não são descobertos automaticamente pelo evento `instalacao`.
+O webhook fixa um único canal para todos os resumos; múltiplos destinos
+exigem configuração adicional. O Digest não precisa de ngrok para enviar
+ao Slack. Já os botões da Central exigem HTTPS público e a Request URL
+`/webhook/aprova/slack/interacoes`, com domínio atualizado do túnel e Central
+publicada. O teste de envio do Digest não valida a interatividade do Slack.
+
+Execuções manuais reenviam o resumo da última semana completa. Não há
+deduplicação por instalação/período nem recuperação automática de horários
+perdidos com o n8n desligado. Um timeout pode ocorrer após o Slack receber a
+mensagem; conferir o canal antes de repetir. Falhas param o fluxo e podem
+deixar instalações seguintes sem processamento; não há retomada automática.
+
+### Validações realizadas e seus limites
+
+- A execução `310`, em 2026-11-07 às 12h10 de São Paulo, concluiu a prévia
+  com dados fictícios, sem chamar API ou Slack (`simulado_sem_envio`).
+- O usuário confirmou o recebimento da simulação no Slack. Na execução
+  `312`, o nó de envio recebeu HTTP 200 com `data=ok`: envio real, métricas
+  fictícias. A execução terminou em erro no nó 07, que esperava `body`.
+  Esse erro era da confirmação posterior, não evidência de falha na entrega.
+- O nó 07 foi corrigido para `body ?? data`. A validação em memória cobriu
+  sucesso nos dois formatos e recusa de resposta inválida ou HTTP de erro.
+  Não houve novo envio ao Slack após essa correção nesta revisão.
+- A limpeza dos nós de teste foi salva e conferida no n8n, mantendo o
+  Digest desativado. As operações não retornaram avisos de validação.
+- Os testes locais dos exports cobrem HMAC, janela semanal, instalação,
+  consistência das métricas, semana vazia, confirmação Slack e ausência dos
+  nós de teste. A suíte completa é executada sem chamadas externas.
+- Nesta exportação, os 63 casos dos seis arquivos de teste passaram com
+  Node 24 (`node --test --test-isolation=none workflows/n8n/tests/*.test.cjs`),
+  sem falhas ou casos pulados. Foram conferidos os cinco JSONs, seus grafos,
+  ausência de credenciais/dados fixados/IDs de chamadas locais e
+  `git diff --check`. Os testes Go históricos não foram reexecutados nesta
+  entrega, que não alterou o backend.
+
+Não foi validada nesta entrega uma consulta do Digest à API com instalação
+real e histórico real. O teste no Slack não comprova as métricas do backend,
+o disparo automático do cron, autorização de uma decisão humana nem prontidão
+de produção. Não foram realizados commit, push, deploy ou publicação no n8n.
+
+## Estado consolidado e pendências atuais — 2026-11-07
+
+Esta revisão atualiza as pendências históricas, preservando seus registros.
+A conferência do código atual encontrou o motor/pool em `internal/worker`
+e o emissor conectado em `cmd/worker/main.go`. O motor já emite
+`analise_concluida`, `aguardando_aprovacao`, `aprovacao_registrada` e
+`falha_recuperavel`. Portanto, implementar do zero o orquestrador ou ligar
+esses quatro eventos deixou de ser pendência de código. Ainda é necessário
+validar o percurso real com as configurações da instalação. O worker usa
+gate provisório que classifica risco alto, recibo provisório e publicador
+provisório em log; não equivale ao gate e à publicação finais.
+
+| Área | O que temos | O que falta |
+| --- | --- | --- |
+| Core | Entrada assinada, normalização, deduplicação, rotas Slack/OSV/Trello e consulta semanal autenticada. | Validar eventos do worker real com o GitHub App e `N8N_WEBHOOK_URL` configurados; emissão de `dependencia_nova` e `instalacao` ainda não está conectada no worker. |
+| Central Slack | Notificações e formulários implementados; integração local Slack/OSV real registrada em 2026-11-02; pedidos ao núcleo assinados. | Credenciais/configuração efetivas do GitHub App, vínculos `SLACK_GITHUB_VINCULOS`, migrations e API acessível; validar decisão autorizada, recusa, autoaprovação, repetição e proteções de branch em PR real. Confirmar interatividade após configurar a URL pública. |
+| Reexecução | Botão, contrato e validação do pedido existem. O worker já possui motor e fila. | A ação remota ainda usa `ReenfileiradorIndisponivel`; conectar um reenfileirador real. A existência da fila não conclui essa integração. |
+| OSV | Consultas reais e contexto por análise na Data Table, alerta separado e enriquecimento da Central. | Emissão real de dependências pelo núcleo; contexto na review GitHub; atualização do alerta já publicado e tratamento dos casos fora dos limites de consulta/retenção. |
+| Trello | Busca pelo link exato, comentário real e réplica Slack confirmados; sem movimentação automática. Export portátil e testes de regressão disponíveis. | Aplicar o cursor `before` também à instância e validar histórico extenso; definir mapeamento para outras equipes e recuperação de notificações. Novas instalações precisam configurar quadro, listas e credencial. |
+| Digest | Sete nós reais, cron, consulta HMAC, validação e publicação; Slack real testado com dados fictícios. | Preencher IDs reais das instalações, validar API/segredo e histórico da semana; depois ativar e conferir o primeiro disparo agendado. Continua desativado. |
+| Núcleo e produção | Contratos, persistência, motor e testes automatizados no repositório. | Gate/recibo/publicador definitivos, calibração com a justificativa humana, endpoint de recibos e implantação com HTTPS, rede, segredos, persistência e monitoramento próprios. |
+
+A matriz distingue implementação de código, teste com dados simulados e
+validação real. A presença ou validade atual dos segredos do ambiente não
+foi revalidada nesta exportação. Nenhum valor de credencial foi registrado.

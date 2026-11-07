@@ -71,7 +71,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const VERSAO_SUPORTADA = 1;\nconst ORIGEM_DO_ADAPTADOR = 'aprova-core';\nconst TIPOS_EVENTO = {\n  analise_concluida: 'analise_concluida',\n  aguardando_aprovacao: 'aguardando_aprovacao',\n  aprovacao_registrada: 'aprovacao_registrada',\n  dependencia_nova: 'dependencia_nova',\n  falha_recuperavel: 'falha_recuperavel',\n  instalacao: 'instalacao'\n};\nconst NIVEIS_RISCO = { baixo: 'BAIXO', medio: 'MEDIO', alto: 'ALTO' };\nconst ehObjeto = valor => valor !== null && typeof valor === 'object' && !Array.isArray(valor);\nconst objeto = valor => ehObjeto(valor) ? valor : {};\nconst primeiro = (...valores) => valores.find(valor => valor !== undefined && valor !== null);\nconst texto = valor => typeof valor === 'string' ? valor : '';\nconst inteiroPositivo = valor => Number.isSafeInteger(valor) && valor > 0 ? valor : null;\nconst uuidValido = valor => typeof valor === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);\nconst nivelRisco = valor => typeof valor === 'string' && Object.prototype.hasOwnProperty.call(NIVEIS_RISCO, valor) ? NIVEIS_RISCO[valor] : texto(valor);\nconst instanteUTCValido = valor => {\n  if (typeof valor !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|\\+00:00)$/i.test(valor)) return false;\n  const instante = new Date(valor);\n  return Number.isFinite(instante.getTime()) && instante.toISOString().slice(0, 19) === valor.slice(0, 19).toUpperCase();\n};\n\nconst original = $json.original;\nconst envelope = objeto(original);\nconst dados = objeto(envelope.dados);\nconst metaExterna = objeto(envelope.meta);\nconst erros = [];\nconst tipoRecebido = texto(envelope.tipo_evento);\nconst tipo = Object.prototype.hasOwnProperty.call(TIPOS_EVENTO, tipoRecebido) ? TIPOS_EVENTO[tipoRecebido] : tipoRecebido;\nconst taskRunId = texto(dados.task_run_id);\nconst idEvento = texto(envelope.id_evento);\n\nif (envelope.versao !== VERSAO_SUPORTADA) erros.push('versao deve ser o inteiro 1; versão ausente ou não suportada.');\nif (!uuidValido(envelope.id_evento)) erros.push('id_evento obrigatório e deve ser UUID.');\nif (!tipoRecebido.trim()) erros.push('tipo_evento obrigatório e deve ser texto não vazio.');\nif (!instanteUTCValido(envelope.ocorrido_em)) erros.push('ocorrido_em obrigatório e deve ser RFC 3339 em UTC.');\nif (inteiroPositivo(envelope.tenant_id) === null) erros.push('tenant_id obrigatório e deve ser inteiro positivo seguro.');\nif (!ehObjeto(envelope.dados)) erros.push('dados obrigatório e deve ser objeto JSON.');\nif (dados.task_run_id !== undefined && !uuidValido(dados.task_run_id)) erros.push('dados.task_run_id, quando informado, deve ser UUID.');\n\nconst correlacaoInformada = primeiro(metaExterna.correlation_id, envelope.correlation_id, envelope.correlationId);\nconst temCorrelacaoInformada = correlacaoInformada !== undefined;\nif (temCorrelacaoInformada && (typeof correlacaoInformada !== 'string' || !correlacaoInformada.trim())) erros.push('correlation_id informado deve ser texto não vazio.');\nconst correlationId = temCorrelacaoInformada ? texto(correlacaoInformada) : taskRunId || idEvento;\nconst correlationFonte = temCorrelacaoInformada ? 'correlation_id' : taskRunId ? 'dados.task_run_id' : 'id_evento';\n\nconst nomeRepositorio = texto(dados.repositorio);\nconst partesRepositorio = nomeRepositorio.split('/');\nconst repositorioSeparavel = partesRepositorio.length === 2 && partesRepositorio.every(parte => parte.length > 0);\nconst urlPr = texto(dados.url_pr);\nconst numeroNaUrl = /^https:\\/\\/github\\.com\\/[^/]+\\/[^/]+\\/pull\\/([1-9]\\d*)(?:[/?#]|$)/i.exec(urlPr);\nconst numeroPr = inteiroPositivo(dados.numero_pr) ?? (numeroNaUrl ? inteiroPositivo(Number(numeroNaUrl[1])) : null);\nconst motivos = Array.isArray(dados.motivos) ? dados.motivos : [];\nconst motivo = motivos.map(item => texto(objeto(item).descricao)).filter(Boolean).join('\\n') || texto(dados.explicacao);\nconst falhaExplicita = dados.falha_recuperavel;\nif (falhaExplicita !== undefined && typeof falhaExplicita !== 'boolean') erros.push('dados.falha_recuperavel, quando informado, deve ser booleano.');\nif (tipo === 'falha_recuperavel' && falhaExplicita === false) erros.push('dados.falha_recuperavel=false contradiz o tipo falha_recuperavel.');\nconst acoes = primeiro(dados.acoes_disponiveis, envelope.acoes_disponiveis);\nconst acoesValidas = acoes === undefined || (Array.isArray(acoes) && acoes.every(acao => typeof acao === 'string' && acao.trim() !== ''));\nif (!acoesValidas) erros.push('acoes_disponiveis, quando informado, deve ser array de strings não vazias.');\n\nreturn {\n  json: {\n    meta: {\n      schema_version: '1.0',\n      versao_evento: Number.isSafeInteger(envelope.versao) ? envelope.versao : null,\n      id_evento: idEvento,\n      tenant_id: inteiroPositivo(envelope.tenant_id),\n      ocorrido_em: texto(envelope.ocorrido_em),\n      recebido_em: texto($json.meta?.recebido_em),\n      correlation_id: correlationId,\n      correlation_id_fonte: correlationFonte,\n      correlation_id_fallback_desenvolvimento: false,\n      execution_id: taskRunId,\n      n8n_execution_id: String($execution.id),\n      origem: ORIGEM_DO_ADAPTADOR,\n      origem_verificada: $json.meta?.origem_verificada === true,\n      tipo_recebido: tipoRecebido,\n      validacao: { valido: erros.length === 0, erros }\n    },\n    evento: {\n      tipo,\n      acao: tipo === 'instalacao' ? texto(dados.acao) : tipo === 'aprovacao_registrada' ? texto(dados.decisao) : '',\n      estado: ''\n    },\n    repositorio: {\n      owner: repositorioSeparavel ? partesRepositorio[0] : '',\n      nome: repositorioSeparavel ? partesRepositorio[1] : '',\n      full_name: nomeRepositorio\n    },\n    pr: {\n      id: null,\n      numero: numeroPr,\n      titulo: '',\n      url: urlPr,\n      sha: texto(dados.sha),\n      autor: { id: '', login: texto(dados.autor_pr), tipo: '' }\n    },\n    risco: {\n      nivel: nivelRisco(dados.nivel_risco),\n      nivel_original: nivelRisco(dados.nivel_risco_original),\n      motivo,\n      motivos,\n      explicacao: texto(dados.explicacao),\n      score: null\n    },\n    execucao: {\n      status: '',\n      falha_recuperavel: tipo === 'falha_recuperavel' || falhaExplicita === true,\n      diagnostico: primeiro(dados.diagnostico) ?? null,\n      etapa: texto(dados.etapa),\n      tentativa: inteiroPositivo(dados.tentativa)\n    },\n    acoes_disponiveis: acoesValidas && Array.isArray(acoes) ? [...acoes] : [],\n    recibo: { hash: texto(dados.receipt_hash), url: texto(dados.url_recibo) },\n    aprovacao: {\n      id: inteiroPositivo(dados.id_aprovacao),\n      decisao: texto(dados.decisao),\n      login_github: texto(dados.login_github),\n      origem: texto(dados.origem)\n    },\n    dependencias: Array.isArray(dados.dependencias) ? dados.dependencias : [],\n    instalacao: {\n      acao: tipo === 'instalacao' ? texto(dados.acao) : '',\n      conta: texto(dados.conta),\n      repositorios: Array.isArray(dados.repositorios) ? dados.repositorios : []\n    },\n    dados,\n    original\n  }\n};\n"
+        "jsCode": "const VERSAO_SUPORTADA = 1;\nconst ORIGEM_DO_ADAPTADOR = 'aprova-core';\nconst TIPOS_EVENTO = {\n  analise_concluida: 'analise_concluida',\n  aguardando_aprovacao: 'aguardando_aprovacao',\n  aprovacao_registrada: 'aprovacao_registrada',\n  dependencia_nova: 'dependencia_nova',\n  falha_recuperavel: 'falha_recuperavel',\n  relatorio_periodico: 'relatorio_periodico',\n  instalacao: 'instalacao'\n};\nconst NIVEIS_RISCO = { baixo: 'BAIXO', medio: 'MEDIO', alto: 'ALTO' };\nconst ehObjeto = valor => valor !== null && typeof valor === 'object' && !Array.isArray(valor);\nconst objeto = valor => ehObjeto(valor) ? valor : {};\nconst primeiro = (...valores) => valores.find(valor => valor !== undefined && valor !== null);\nconst texto = valor => typeof valor === 'string' ? valor : '';\nconst inteiroPositivo = valor => Number.isSafeInteger(valor) && valor > 0 ? valor : null;\nconst uuidValido = valor => typeof valor === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor);\nconst nivelRisco = valor => typeof valor === 'string' && Object.prototype.hasOwnProperty.call(NIVEIS_RISCO, valor) ? NIVEIS_RISCO[valor] : texto(valor);\nconst instanteUTCValido = valor => {\n  if (typeof valor !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|\\+00:00)$/i.test(valor)) return false;\n  const instante = new Date(valor);\n  return Number.isFinite(instante.getTime()) && instante.toISOString().slice(0, 19) === valor.slice(0, 19).toUpperCase();\n};\n\nconst original = $json.original;\nconst envelope = objeto(original);\nconst dados = objeto(envelope.dados);\nconst metaExterna = objeto(envelope.meta);\nconst erros = [];\nconst tipoRecebido = texto(envelope.tipo_evento);\nconst tipo = Object.prototype.hasOwnProperty.call(TIPOS_EVENTO, tipoRecebido) ? TIPOS_EVENTO[tipoRecebido] : tipoRecebido;\nconst taskRunId = texto(dados.task_run_id);\nconst idEvento = texto(envelope.id_evento);\n\nif (envelope.versao !== VERSAO_SUPORTADA) erros.push('versao deve ser o inteiro 1; versão ausente ou não suportada.');\nif (!uuidValido(envelope.id_evento)) erros.push('id_evento obrigatório e deve ser UUID.');\nif (!tipoRecebido.trim()) erros.push('tipo_evento obrigatório e deve ser texto não vazio.');\nif (!instanteUTCValido(envelope.ocorrido_em)) erros.push('ocorrido_em obrigatório e deve ser RFC 3339 em UTC.');\nif (inteiroPositivo(envelope.tenant_id) === null) erros.push('tenant_id obrigatório e deve ser inteiro positivo seguro.');\nif (!ehObjeto(envelope.dados)) erros.push('dados obrigatório e deve ser objeto JSON.');\nif (dados.task_run_id !== undefined && !uuidValido(dados.task_run_id)) erros.push('dados.task_run_id, quando informado, deve ser UUID.');\n\nconst correlacaoInformada = primeiro(metaExterna.correlation_id, envelope.correlation_id, envelope.correlationId);\nconst temCorrelacaoInformada = correlacaoInformada !== undefined;\nif (temCorrelacaoInformada && (typeof correlacaoInformada !== 'string' || !correlacaoInformada.trim())) erros.push('correlation_id informado deve ser texto não vazio.');\nconst correlationId = temCorrelacaoInformada ? texto(correlacaoInformada) : taskRunId || idEvento;\nconst correlationFonte = temCorrelacaoInformada ? 'correlation_id' : taskRunId ? 'dados.task_run_id' : 'id_evento';\n\nconst nomeRepositorio = texto(dados.repositorio);\nconst partesRepositorio = nomeRepositorio.split('/');\nconst repositorioSeparavel = partesRepositorio.length === 2 && partesRepositorio.every(parte => parte.length > 0);\nconst urlPr = texto(dados.url_pr);\nconst numeroNaUrl = /^https:\\/\\/github\\.com\\/[^/]+\\/[^/]+\\/pull\\/([1-9]\\d*)(?:[/?#]|$)/i.exec(urlPr);\nconst numeroPr = inteiroPositivo(dados.numero_pr) ?? (numeroNaUrl ? inteiroPositivo(Number(numeroNaUrl[1])) : null);\nconst motivos = Array.isArray(dados.motivos) ? dados.motivos : [];\nconst motivo = motivos.map(item => texto(objeto(item).descricao)).filter(Boolean).join('\\n') || texto(dados.explicacao);\nconst falhaExplicita = dados.falha_recuperavel;\nif (falhaExplicita !== undefined && typeof falhaExplicita !== 'boolean') erros.push('dados.falha_recuperavel, quando informado, deve ser booleano.');\nif (tipo === 'falha_recuperavel' && falhaExplicita === false) erros.push('dados.falha_recuperavel=false contradiz o tipo falha_recuperavel.');\nconst acoes = primeiro(dados.acoes_disponiveis, envelope.acoes_disponiveis);\nconst acoesValidas = acoes === undefined || (Array.isArray(acoes) && acoes.every(acao => typeof acao === 'string' && acao.trim() !== ''));\nif (!acoesValidas) erros.push('acoes_disponiveis, quando informado, deve ser array de strings não vazias.');\n\nreturn {\n  json: {\n    meta: {\n      schema_version: '1.0',\n      versao_evento: Number.isSafeInteger(envelope.versao) ? envelope.versao : null,\n      id_evento: idEvento,\n      tenant_id: inteiroPositivo(envelope.tenant_id),\n      ocorrido_em: texto(envelope.ocorrido_em),\n      recebido_em: texto($json.meta?.recebido_em),\n      correlation_id: correlationId,\n      correlation_id_fonte: correlationFonte,\n      correlation_id_fallback_desenvolvimento: false,\n      execution_id: taskRunId,\n      n8n_execution_id: String($execution.id),\n      origem: ORIGEM_DO_ADAPTADOR,\n      origem_verificada: $json.meta?.origem_verificada === true,\n      tipo_recebido: tipoRecebido,\n      validacao: { valido: erros.length === 0, erros }\n    },\n    evento: {\n      tipo,\n      acao: tipo === 'instalacao' ? texto(dados.acao) : tipo === 'aprovacao_registrada' ? texto(dados.decisao) : '',\n      estado: ''\n    },\n    repositorio: {\n      owner: repositorioSeparavel ? partesRepositorio[0] : '',\n      nome: repositorioSeparavel ? partesRepositorio[1] : '',\n      full_name: nomeRepositorio\n    },\n    pr: {\n      id: null,\n      numero: numeroPr,\n      titulo: '',\n      url: urlPr,\n      sha: texto(dados.sha),\n      autor: { id: '', login: texto(dados.autor_pr), tipo: '' }\n    },\n    risco: {\n      nivel: nivelRisco(dados.nivel_risco),\n      nivel_original: nivelRisco(dados.nivel_risco_original),\n      motivo,\n      motivos,\n      explicacao: texto(dados.explicacao),\n      score: null\n    },\n    execucao: {\n      status: '',\n      falha_recuperavel: tipo === 'falha_recuperavel' || falhaExplicita === true,\n      diagnostico: primeiro(dados.diagnostico) ?? null,\n      etapa: texto(dados.etapa),\n      tentativa: inteiroPositivo(dados.tentativa)\n    },\n    acoes_disponiveis: acoesValidas && Array.isArray(acoes) ? [...acoes] : [],\n    recibo: { hash: texto(dados.receipt_hash), url: texto(dados.url_recibo) },\n    aprovacao: {\n      id: inteiroPositivo(dados.id_aprovacao),\n      decisao: texto(dados.decisao),\n      login_github: texto(dados.login_github),\n      origem: texto(dados.origem)\n    },\n    dependencias: Array.isArray(dados.dependencias) ? dados.dependencias : [],\n    instalacao: {\n      acao: tipo === 'instalacao' ? texto(dados.acao) : '',\n      conta: texto(dados.conta),\n      repositorios: Array.isArray(dados.repositorios) ? dados.repositorios : []\n    },\n    dados,\n    original\n  }\n};\n"
       },
       "id": "c49cc2ab-7823-4e59-85bc-958fe0494702",
       "name": "04 | Normalizar Evento aPRova",
@@ -498,7 +498,7 @@
     },
     {
       "parameters": {
-        "content": "## Entrada de eventos aPRova\nAssinatura HMAC do núcleo verificada sobre o corpo bruto; janela de cinco minutos. Contrato backend v1 normalizado para 1.0 sem recalcular risco.\n\n202 após validação; deduplicação persistida no n8n por tenant_id + id_evento (últimas 10.000 chaves). Tipos desconhecidos preservados sem integração.\n\naguardando_aprovacao e falha_recuperavel chamam a Central do Slack sem aguardar sua conclusão. As demais saídas permanecem como pontos de extensão.\n\nN8N_SEGREDO_EVENTOS precisa estar disponível no container e ser o mesmo usado pelo emissor. Histórico depende da persistência do n8n. O núcleo continua sendo a fonte da verdade.",
+        "content": "## Entrada de eventos aPRova\nAssinatura HMAC do núcleo verificada sobre o corpo bruto; janela de cinco minutos. Contrato backend v1 normalizado para 1.0 sem recalcular risco.\n\n202 após validação; deduplicação persistida no n8n por tenant_id + id_evento (últimas 10.000 chaves). Tipos desconhecidos preservados sem integração.\n\naguardando_aprovacao e falha_recuperavel chamam a Central do Slack sem aguardar sua conclusão. As demais saídas permanecem como pontos de extensão.\n\nN8N_SEGREDO_EVENTOS precisa estar disponível no container e ser o mesmo usado pelo emissor. Histórico depende da persistência do n8n. O núcleo continua sendo a fonte da verdade.\n\nrelatorio_periodico consulta GET /reports/weekly com HMAC de N8N_SEGREDO_ACOES sobre a query exata. tenant_id identifica a instalação; dados.inicio é opcional. Resultado em relatorio_semanal, preservando o evento. O núcleo ainda não emite esse evento: o solicitante deve enviar um envelope v1 assinado.\n\nA Central envia decisões humanas a POST /acoes-remotas. Reexecução ainda indisponível no backend.",
         "height": 650,
         "width": 1100,
         "color": 5
@@ -628,8 +628,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        2848,
-        656
+        3472,
+        592
       ]
     },
     {
@@ -679,14 +679,6 @@
       "name": "Call 'aPRova | Dependências | Consulta OSV'"
     },
     {
-      "id": "0305f74b-11ac-4cfc-ab4f-250fb6aef950",
-      "name": "09 | Executar Sugestão no Trello",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.3,
-      "position": [
-        2848,
-        960
-      ],
       "parameters": {
         "source": "database",
         "workflowId": {
@@ -707,8 +699,87 @@
           "waitForSubWorkflow": false
         }
       },
+      "id": "0305f74b-11ac-4cfc-ab4f-250fb6aef950",
+      "name": "09 | Executar Sugestão no Trello",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        2848,
+        960
+      ],
       "notes": "Após importar trello-sugestao-movimentacao.json, selecione o workflow importado neste nó. CONFIGURE_WORKFLOW_TRELLO é um marcador de configuração, não o ID de uma instalação.",
       "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nif ($json.meta?.origem_verificada !== true || $json.evento?.tipo !== 'relatorio_periodico') {\n  throw new Error('Consulta semanal exige evento autenticado relatorio_periodico.');\n}\nconst tenant = $json.meta.tenant_id;\nif (!Number.isSafeInteger(tenant) || tenant <= 0) throw new Error('tenant_id inválido.');\nconst inicio = $json.dados?.inicio;\nif (inicio !== undefined && (typeof inicio !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(inicio) ||\n    !Number.isFinite(Date.parse(inicio + 'T00:00:00Z')) ||\n    new Date(inicio + 'T00:00:00Z').toISOString().slice(0, 10) !== inicio)) {\n  throw new Error('inicio deve ser uma data válida AAAA-MM-DD.');\n}\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) throw new Error('N8N_SEGREDO_ACOES indisponível.');\nconst query = 'installation_id=' + tenant + (inicio === undefined ? '' : '&inicio=' + inicio);\nconst timestamp = Math.floor(Date.now() / 1000).toString();\nconst base = ($env.APROVA_API_URL || 'http://host.docker.internal:8080').replace(/\\/+$/, '');\nreturn { json: { ...$json, requisicao_relatorio: {\n  url: base + '/reports/weekly?' + query,\n  headers: {\n    'X-Aprova-Timestamp': timestamp,\n    'X-Aprova-Assinatura': 'sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.' + query).digest('hex'),\n  },\n} } };"
+      },
+      "id": "78312bb2-5850-455d-9a48-74453c5d5a61",
+      "name": "10 | Assinar Consulta Semanal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2480,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.requisicao_relatorio.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Aprova-Timestamp",
+              "value": "={{ $json.requisicao_relatorio.headers['X-Aprova-Timestamp'] }}"
+            },
+            {
+              "name": "X-Aprova-Assinatura",
+              "value": "={{ $json.requisicao_relatorio.headers['X-Aprova-Assinatura'] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "GET"
+      },
+      "id": "133f4107-fbd0-47c6-86a7-a0c073e15a82",
+      "name": "11 | Consultar Relatório Semanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2720,
+        544
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origem = $('10 | Assinar Consulta Semanal').item.json;\nconst { requisicao_relatorio, ...evento } = origem;\nconst corpo = $json.body;\nconst contagens = ['total_execucoes', 'concluidas', 'rejeitadas', 'falhas', 'em_andamento',\n  'exigiram_aprovacao_humana', 'risco_medio', 'revertidas'];\nconst valido = $json.statusCode === 200 && corpo && !Array.isArray(corpo) &&\n  corpo.installation_id === evento.meta.tenant_id &&\n  contagens.every(c => Number.isSafeInteger(corpo[c]) && corpo[c] >= 0) &&\n  typeof corpo.inicio === 'string' && typeof corpo.fim === 'string' &&\n  Number.isFinite(Date.parse(corpo.inicio)) && Number.isFinite(Date.parse(corpo.fim)) &&\n  Date.parse(corpo.fim) - Date.parse(corpo.inicio) === 7 * 86400000 &&\n  (!evento.dados?.inicio || corpo.inicio.slice(0, 10) === evento.dados.inicio) &&\n  (corpo.taxa_sucesso === null || (typeof corpo.taxa_sucesso === 'number' &&\n    Number.isFinite(corpo.taxa_sucesso) && corpo.taxa_sucesso >= 0 && corpo.taxa_sucesso <= 1));\nreturn { json: { ...evento, relatorio_semanal: {\n  status: valido ? 'disponivel' : 'indisponivel',\n  status_http: Number.isInteger($json.statusCode) ? $json.statusCode : null,\n  dados: valido ? corpo : null,\n  mensagem: valido ? 'Relatório obtido do núcleo.' : 'Consulta sem resposta válida; métricas indisponíveis.',\n} } };"
+      },
+      "id": "fce73ee9-c274-44f4-9d18-9c095ea6ad58",
+      "name": "12 | Normalizar Relatório Semanal",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        544
+      ]
     }
   ],
   "connections": {
@@ -940,6 +1011,39 @@
         [
           {
             "node": "09 | Executar Sugestão no Trello",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07E | relatorio_periodico | Conectar workflow": {
+      "main": [
+        [
+          {
+            "node": "10 | Assinar Consulta Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 | Assinar Consulta Semanal": {
+      "main": [
+        [
+          {
+            "node": "11 | Consultar Relatório Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 | Consultar Relatório Semanal": {
+      "main": [
+        [
+          {
+            "node": "12 | Normalizar Relatório Semanal",
             "type": "main",
             "index": 0
           }
