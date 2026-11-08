@@ -2,19 +2,13 @@ package eventos
 
 import (
 	"regexp"
-	"slices"
-	"strings"
 	"time"
 
+	"github.com/Azulpasta/aPRova/internal/nomesgithub"
 	"github.com/go-playground/validator/v10"
 )
 
-var (
-	formatoDoLogin       = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,38}$`)
-	formatoDoRepositorio = regexp.MustCompile(`^[A-Za-z0-9._-]{1,100}$`)
-	formatoHexMinusculo  = regexp.MustCompile(`^[0-9a-f]+$`)
-	nomesReservados      = []string{".", ".."}
-)
+var formatoHexMinusculo = regexp.MustCompile(`^[0-9a-f]+$`)
 
 var validador = novoValidador()
 
@@ -35,15 +29,11 @@ func novoValidador() *validator.Validate {
 }
 
 func repositorioValido(campo validator.FieldLevel) bool {
-	dono, nome, separado := strings.Cut(campo.Field().String(), "/")
-	return separado &&
-		formatoDoLogin.MatchString(dono) &&
-		formatoDoRepositorio.MatchString(nome) &&
-		!slices.Contains(nomesReservados, nome)
+	return nomesgithub.RepositorioValido(campo.Field().String())
 }
 
 func loginValido(campo validator.FieldLevel) bool {
-	return formatoDoLogin.MatchString(campo.Field().String())
+	return nomesgithub.LoginValido(campo.Field().String())
 }
 
 func hexMinusculo(campo validator.FieldLevel) bool {
