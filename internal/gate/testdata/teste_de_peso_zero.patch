@@ -1,0 +1,11 @@
+@@ -100,3 +100,10 @@ func TestDistanciaNegativaRetornaErro(t *testing.T) {
+ 		t.Errorf("esperado ErrDistanciaInvalida, obtido %v", err)
+ 	}
+ }
++
++func TestPesoZeroRetornaErro(t *testing.T) {
++	valor, err := Calcular(0, 100)
++	if !errors.Is(err, ErrPesoInvalido) {
++		t.Errorf("peso zero e entrada invalida: esperado ErrPesoInvalido, obtido valor %v e erro %v", valor, err)
++	}
++}

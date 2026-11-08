@@ -1,0 +1,19 @@
+@@ -1,15 +1,15 @@
+ [project]
+ name = "frete"
+-version = "0.1.0"
++version = "0.2.0"
+ description = "Calculo de frete por faixa de peso e distancia (repositorio de testes do aPRova)"
+ requires-python = ">=3.9"
+ dependencies = []
+ 
+ [project.optional-dependencies]
+-dev = ["pytest>=7.0"]
++dev = ["pytest>=8.3"]
+ 
+ [build-system]
+-requires = ["setuptools>=61"]
++requires = ["setuptools>=70"]
+ build-backend = "setuptools.build_meta"
+ 
+ [tool.setuptools.packages.find]
