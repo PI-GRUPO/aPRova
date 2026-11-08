@@ -132,10 +132,17 @@ func (c *conducao) pedidoAoSandbox() sandbox.PedidoExecucao {
 	return sandbox.PedidoExecucao{
 		URLRepositorio: "https://github.com/" + c.taskRun.Repositorio,
 		SHA:            c.taskRun.SHAHead,
-		Linguagem:      sandbox.LinguagemGo,
+		Linguagem:      c.linguagemDoRepositorio(),
 		TaskRunID:      c.taskRun.ID,
 		Diretorio:      c.opcoes.Diretorios[c.taskRun.Repositorio],
 	}
+}
+
+func (c *conducao) linguagemDoRepositorio() sandbox.Linguagem {
+	if linguagem, configurada := c.opcoes.Linguagens[c.taskRun.Repositorio]; configurada {
+		return linguagem
+	}
+	return sandbox.LinguagemGo
 }
 
 func diagnosticoDoSandbox(resultado sandbox.ResultadoSandbox) string {

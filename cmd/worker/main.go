@@ -75,6 +75,7 @@ func executar() error {
 		Publicador:    worker.NovoPublicadorPRProvisorio(slog.Default()),
 		Eventos:       emissorDeEventos,
 		Diretorios:    configuracao.SandboxDiretorios,
+		Linguagens:    linguagensDoSandbox(configuracao),
 		URLPublica:    configuracao.URLPublica,
 		MaxTentativas: configuracao.WorkerMaxTentativas,
 	})
@@ -119,9 +120,19 @@ func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, e
 	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
 }
 
+func linguagensDoSandbox(configuracao config.Configuracao) map[string]sandbox.Linguagem {
+	linguagens := make(map[string]sandbox.Linguagem, len(configuracao.SandboxLinguagens))
+	for repositorio, linguagem := range configuracao.SandboxLinguagens {
+		linguagens[repositorio] = sandbox.Linguagem(linguagem)
+	}
+	return linguagens
+}
+
 func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.ConfiguracaoExecutor {
-	imagens := map[sandbox.Linguagem]string{sandbox.LinguagemGo: configuracao.SandboxImagemGo}
-	imagens[sandbox.LinguagemPython] = configuracao.SandboxImagemPython
+	imagens := map[sandbox.Linguagem]string{
+		sandbox.LinguagemGo:     configuracao.SandboxImagemGo,
+		sandbox.LinguagemPython: configuracao.SandboxImagemPython,
+	}
 
 	return sandbox.ConfiguracaoExecutor{
 		Tipo:  configuracao.SandboxExecutor,
