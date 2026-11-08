@@ -11,6 +11,7 @@ import (
 var diretoriosDoSandbox = []string{
 	"internal/sandbox/",
 	"imagens/go/",
+	"imagens/python/",
 	"cmd/sandbox/",
 	".github/workflows/",
 	"tests/integration/",
