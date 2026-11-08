@@ -34,6 +34,8 @@ const origemDocker = "padrão do docker-compose local, ver .env.example"
 
 var formatoDoNomeDeRede = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
+var linguagensComImagem = []string{"go", "python"}
+
 var nomesDosNiveisDeLog = []string{"debug", "info", "warn", "error"}
 
 var niveisDeLogPorNome = map[string]slog.Level{
@@ -90,6 +92,7 @@ type Configuracao struct {
 
 	GitHubAppSlug       string
 	SandboxDiretorios   map[string]string
+	SandboxLinguagens   map[string]string
 	SandboxRedeLocal    string
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
@@ -144,6 +147,7 @@ func Carregar() (Configuracao, error) {
 
 		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
 		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
+		SandboxLinguagens:   leitura.linguagensDoSandbox("SANDBOX_LINGUAGENS"),
 		SandboxRedeLocal:    leitura.nomeDeRede("SANDBOX_REDE_LOCAL", redeLocalPadrao),
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
@@ -324,6 +328,29 @@ func (l *leitor) diretoriosDoSandbox(nome string) map[string]string {
 	return diretorios
 }
 
+func (l *leitor) linguagensDoSandbox(nome string) map[string]string {
+	linguagens := map[string]string{}
+
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return linguagens
+	}
+
+	for _, entrada := range strings.Split(valor, ",") {
+		repositorio, linguagem, valido := interpretarLinguagem(entrada)
+		if !valido {
+			l.registrarPendencia("%s espera pares dono/repositorio=linguagem separados por vírgula, com linguagem entre %s; entrada %q é inválida", nome, strings.Join(linguagensComImagem, ", "), strings.TrimSpace(entrada))
+			return nil
+		}
+		if _, repetido := linguagens[repositorio]; repetido {
+			l.registrarPendencia("%s define o repositório %q mais de uma vez", nome, repositorio)
+			return nil
+		}
+		linguagens[repositorio] = linguagem
+	}
+	return linguagens
+}
+
 func interpretarDiretorio(entrada string) (string, string, bool) {
 	repositorio, diretorio, separado := strings.Cut(strings.TrimSpace(entrada), "=")
 	repositorio = strings.TrimSpace(repositorio)
@@ -333,6 +360,16 @@ func interpretarDiretorio(entrada string) (string, string, bool) {
 	valido := separado && temDono && dono != "" && nome != "" && diretorio != "" &&
 		!path.IsAbs(diretorio) && !slices.Contains(strings.Split(diretorio, "/"), "..")
 	return repositorio, diretorio, valido
+}
+
+func interpretarLinguagem(entrada string) (string, string, bool) {
+	repositorio, linguagem, separado := strings.Cut(strings.TrimSpace(entrada), "=")
+	repositorio = strings.TrimSpace(repositorio)
+	linguagem = strings.TrimSpace(linguagem)
+
+	dono, nome, temDono := strings.Cut(repositorio, "/")
+	valido := separado && temDono && dono != "" && nome != "" && slices.Contains(linguagensComImagem, linguagem)
+	return repositorio, linguagem, valido
 }
 
 func interpretarVinculo(entrada string) (string, string, bool) {
