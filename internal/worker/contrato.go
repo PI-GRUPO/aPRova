@@ -11,6 +11,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/domain"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
@@ -44,40 +45,18 @@ type ConsultaDePermissao interface {
 	PermissaoNoRepositorio(ctx context.Context, installationID int64, dono, repositorio, login string) (platform.Permissao, error)
 }
 
-// Motivo é uma regra acionada pelo gate, com nome estável e descrição curta.
-type Motivo struct {
-	Nome      string
-	Descricao string
-}
-
-// EntradaAvaliacao é o que o gate recebe: o task_run, o contexto do PR e o
-// resultado do sandbox.
-type EntradaAvaliacao struct {
-	TaskRun  domain.TaskRun
-	Contexto platform.ContextoPR
-	Sandbox  sandbox.ResultadoSandbox
-}
-
-// Avaliacao é a decisão do gate: os níveis, os motivos e a explicação em
-// português.
-type Avaliacao struct {
-	NivelDeterministico domain.NivelRisco
-	Nivel               domain.NivelRisco
-	Motivos             []Motivo
-	Explicacao          string
-}
-
-// AvaliadorRisco decide o nível de risco de um pull request.
+// AvaliadorRisco decide o nível de risco de um pull request. O gate.Gate é a
+// implementação.
 type AvaliadorRisco interface {
-	Avaliar(ctx context.Context, entrada EntradaAvaliacao) (Avaliacao, error)
+	Avaliar(ctx context.Context, entrada gate.Entrada) (gate.Resultado, error)
 }
 
-// PedidoRecibo é o que o recibo registra: o task_run, a avaliação e o
+// PedidoRecibo é o que o recibo registra: o task_run, o gate gravado e o
 // resultado do sandbox.
 type PedidoRecibo struct {
-	TaskRun   domain.TaskRun
-	Avaliacao Avaliacao
-	Sandbox   sandbox.ResultadoSandbox
+	TaskRun domain.TaskRun
+	Gate    domain.GateDeRisco
+	Sandbox sandbox.ResultadoSandbox
 }
 
 // ReciboEmitido identifica o recibo de um task_run e o SHA-256 do conteúdo

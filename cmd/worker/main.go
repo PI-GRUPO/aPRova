@@ -11,6 +11,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/config"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
@@ -70,7 +71,7 @@ func executar() error {
 		LeitorDePR:    clienteGitHub,
 		Permissoes:    clienteGitHub,
 		Sandbox:       executorSandbox,
-		Avaliador:     worker.AvaliadorRiscoProvisorio{},
+		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
 		Recibos:       worker.NovoEmissorReciboProvisorio(slog.Default()),
 		Publicador:    worker.NovoPublicadorPRProvisorio(slog.Default()),
 		Eventos:       emissorDeEventos,

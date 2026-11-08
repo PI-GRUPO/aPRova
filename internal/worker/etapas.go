@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
@@ -157,64 +158,75 @@ func (c *conducao) avaliarRisco() (passo, error) {
 	if err != nil {
 		return passo{}, fmt.Errorf("ler o resultado do sandbox para a avaliação: %w", err)
 	}
+
+	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+	if errors.Is(err, domain.ErrNaoEncontrado) {
+		var resultado passo
+		gravado, resultado, err = c.avaliarPelaPrimeiraVez(resultadoSandbox)
+		if resultado.parar {
+			return resultado, err
+		}
+	}
+	if err != nil {
+		return passo{}, err
+	}
+
+	return c.concluirAvaliacao(gravado, resultadoSandbox)
+}
+
+func (c *conducao) avaliarPelaPrimeiraVez(resultadoSandbox sandbox.ResultadoSandbox) (domain.GateDeRisco, passo, error) {
 	if resultado, err := c.lerContexto(); err != nil || resultado.parar {
-		return resultado, err
+		return domain.GateDeRisco{}, resultado, err
 	}
 
-	avaliacao, err := c.opcoes.Avaliador.Avaliar(c.ctx, EntradaAvaliacao{TaskRun: c.taskRun, Contexto: *c.contexto, Sandbox: resultadoSandbox})
+	avaliacao, err := c.opcoes.Avaliador.Avaliar(c.ctx, gate.Entrada{Arquivos: c.contexto.Arquivos, Sandbox: resultadoSandbox})
 	if err != nil {
-		return c.novaTentativa("avaliador de risco: " + err.Error())
+		resultado, err := c.novaTentativa("avaliador de risco: " + err.Error())
+		return domain.GateDeRisco{}, resultado, err
 	}
 
-	gate, err := c.gateDe(avaliacao)
+	novo := domain.GateDeRisco{
+		TaskRunID:           c.taskRun.ID,
+		NivelDeterministico: avaliacao.Nivel,
+		Nivel:               avaliacao.Nivel,
+		Motivo:              textoDosMotivos(avaliacao.Motivos),
+		Motivos:             avaliacao.Motivos,
+		DependenciasNovas:   avaliacao.Dependencias,
+	}
+	err = c.opcoes.Armazenamento.GravarGateDeRisco(c.ctx, novo)
+	if errors.Is(err, domain.ErrDuplicado) {
+		gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+		return gravado, seguir, err
+	}
+	return novo, seguir, err
+}
+
+func (c *conducao) concluirAvaliacao(gravado domain.GateDeRisco, resultadoSandbox sandbox.ResultadoSandbox) (passo, error) {
+	recibo, err := c.obterRecibo(PedidoRecibo{TaskRun: c.taskRun, Gate: gravado, Sandbox: resultadoSandbox})
 	if err != nil {
 		return passo{}, err
 	}
-	avaliacao.NivelDeterministico, avaliacao.Nivel = gate.NivelDeterministico, gate.Nivel
 
-	recibo, err := c.obterRecibo(PedidoRecibo{TaskRun: c.taskRun, Avaliacao: avaliacao, Sandbox: resultadoSandbox})
-	if err != nil {
-		return passo{}, err
-	}
-
-	c.emitirAnaliseConcluida(avaliacao, recibo)
-	if gate.Nivel != domain.RiscoAlto {
-		return seguir, c.transicionar(domain.EstadoAplicando, "risco "+string(gate.Nivel))
+	c.emitirAnaliseConcluida(gravado, recibo)
+	c.emitirDependenciaNova(gravado)
+	if gravado.Nivel != domain.RiscoAlto {
+		return seguir, c.transicionar(domain.EstadoAplicando, "risco "+string(gravado.Nivel))
 	}
 	if err := c.transicionar(domain.EstadoAguardandoAprovacao, "risco alto"); err != nil {
 		return passo{}, err
 	}
-	c.emitirAguardandoAprovacao(avaliacao, recibo)
+	c.emitirAguardandoAprovacao(gravado, recibo)
 	return seguir, nil
 }
 
-func (c *conducao) gateDe(avaliacao Avaliacao) (domain.GateDeRisco, error) {
-	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
-	if !errors.Is(err, domain.ErrNaoEncontrado) {
-		return gravado, err
-	}
-
-	gate := domain.GateDeRisco{
-		TaskRunID:           c.taskRun.ID,
-		NivelDeterministico: avaliacao.NivelDeterministico,
-		Nivel:               avaliacao.Nivel,
-		Motivo:              textoDosMotivos(avaliacao.Motivos),
-	}
-	err = c.opcoes.Armazenamento.GravarGateDeRisco(c.ctx, gate)
-	if errors.Is(err, domain.ErrDuplicado) {
-		return c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
-	}
-	return gate, err
-}
-
-func textoDosMotivos(motivos []Motivo) string {
+func textoDosMotivos(motivos []domain.MotivoDeRisco) string {
 	if len(motivos) == 0 {
 		return motivoSemRegraAcionada
 	}
 
 	linhas := make([]string, 0, len(motivos))
 	for _, motivo := range motivos {
-		linhas = append(linhas, motivo.Nome+": "+motivo.Descricao)
+		linhas = append(linhas, motivo.ID+": "+motivo.Descricao)
 	}
 	return truncar(strings.Join(linhas, "\n"), tamanhoMaximoDoMotivo)
 }
@@ -278,7 +290,7 @@ func (c *conducao) revisorPodeDecidir(revisor string) (bool, error) {
 }
 
 func (c *conducao) aplicarDecisao(aprovacao domain.AprovacaoRegistrada) error {
-	gate, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
 	if err != nil {
 		return fmt.Errorf("ler o gate do task_run aprovado: %w", err)
 	}
@@ -291,7 +303,7 @@ func (c *conducao) aplicarDecisao(aprovacao domain.AprovacaoRegistrada) error {
 		return err
 	}
 
-	c.emitirAprovacaoRegistrada(aprovacao, gate)
+	c.emitirAprovacaoRegistrada(aprovacao, gravado)
 	return nil
 }
 
@@ -303,20 +315,17 @@ func origemDe(aprovacao domain.AprovacaoRegistrada) domain.OrigemAprovacao {
 }
 
 func (c *conducao) aplicar() (passo, error) {
-	gate, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
 	if err != nil {
 		return passo{}, fmt.Errorf("ler o gate do task_run a publicar: %w", err)
 	}
 
-	recibo, err := c.obterRecibo(PedidoRecibo{
-		TaskRun:   c.taskRun,
-		Avaliacao: Avaliacao{NivelDeterministico: gate.NivelDeterministico, Nivel: gate.Nivel},
-	})
+	recibo, err := c.obterRecibo(PedidoRecibo{TaskRun: c.taskRun, Gate: gravado})
 	if err != nil {
 		return passo{}, err
 	}
 
-	if err := c.opcoes.Publicador.Publicar(c.ctx, Publicacao{TaskRun: c.taskRun, Gate: gate, Recibo: recibo}); err != nil {
+	if err := c.opcoes.Publicador.Publicar(c.ctx, Publicacao{TaskRun: c.taskRun, Gate: gravado, Recibo: recibo}); err != nil {
 		return c.tratarErroDoGitHub(err)
 	}
 	return seguir, c.transicionar(domain.EstadoConcluido, "resultado publicado")
