@@ -335,12 +335,42 @@ push novo cria outro `task_run`, e o anterior encerra em `falhou` com o motivo
 | `WORKER_MAX_TENTATIVAS` | `3` | tentativas de uma falha transitória (infraestrutura do sandbox, 5xx ou limite do GitHub) antes de `falhou` e do evento `falha_recuperavel` |
 | `GITHUB_APP_SLUG` | vazio | nome do app no GitHub; o review que o próprio app publica a partir do Slack só vale quando o revisor é `<slug>[bot]` |
 
-O gate de risco, o recibo assinado e a publicação no GitHub ainda não existem.
-Até lá, o worker usa implementações provisórias: o avaliador classifica todo
-PR como risco alto ("gate de risco ainda não implementado"), e o recibo e a
-publicação só vão para o log. Na dúvida, o sistema bloqueia e espera um humano.
+O recibo assinado e a publicação no GitHub ainda não existem. Até lá, o worker
+usa implementações provisórias, que só registram no log o que fariam.
 Um `SIGTERM` para de pegar trabalho novo, espera as etapas em andamento por até
 30 segundos e devolve à fila as que não terminaram.
+
+## Gate de risco
+
+`internal/gate` é a camada determinística do gate: recebe os arquivos alterados
+do PR e o resultado do sandbox e devolve o nível, os motivos e as dependências
+novas. É lógica pura, sem rede, banco, relógio, aleatoriedade ou modelo de IA. A
+mesma entrada produz sempre a mesma saída, byte a byte, em qualquer ordem de
+arquivos, porque o recibo assina esse resultado.
+
+| Motivo | Nível | Dispara quando |
+| --- | --- | --- |
+| `falha_sandbox` | alto | `tipo_falha` é `teste` ou `compilacao` |
+| `muitos_arquivos` | alto | o PR altera mais de `GATE_MAX_ARQUIVOS` arquivos (padrão 20) |
+| `configuracao_ci` | alto | altera `.github/workflows/`, `Dockerfile`, `Makefile`, Compose ou arquivo de build equivalente |
+| `dependencia_nova` | alto | acrescenta dependência em `go.mod`, `requirements*.txt`, `pyproject.toml` ou `pom.xml` |
+| `segredo_versionado` | alto | versiona `.env`, chave privada ou credencial; `.env.example` não conta |
+| `area_sensivel` | médio | altera um caminho de `GATE_CAMINHOS_SENSIVEIS` |
+| `codigo_sem_teste` | médio | altera código Go, Python ou Java sem alterar nenhum teste |
+
+O nível final é o maior entre os motivos; sem motivo, é baixo. Todas as regras
+rodam sempre, para o comentário e os eventos saírem completos. Mudar a versão de
+uma dependência que já existe não é dependência nova. Se o GitHub omitir o diff
+de um manifesto, ou uma linha adicionada não puder ser interpretada, a regra
+`dependencia_nova` dispara assim mesmo: na dúvida, o gate bloqueia.
+
+`GATE_CAMINHOS_SENSIVEIS` aceita, separados por vírgula, diretórios terminados em
+barra, que valem em qualquer profundidade, e padrões de nome de arquivo. O padrão
+é `auth/,security/,payments/,migrations/,db/,database/,*.sql`.
+
+O motor grava a decisão em `risk_gates`: os níveis, os motivos em `rules_hit` e as
+dependências em `new_dependencies`. Na retomada, o gate não é chamado de novo: os
+eventos são montados a partir do que foi gravado.
 
 ## Eventos para o n8n
 

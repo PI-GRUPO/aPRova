@@ -15,14 +15,14 @@
     "motivos": [
       {
         "nome": "area_sensivel",
-        "descricao": "go/frete/frete.go calcula o valor cobrado do cliente"
+        "descricao": "o PR altera um caminho sensível"
       },
       {
-        "nome": "falha_nos_testes",
-        "descricao": "TestCalcularPesoZero falhou no sandbox: esperava ErrPesoInvalido, obteve 10.00"
+        "nome": "falha_sandbox",
+        "descricao": "os testes ou a compilação falharam no sandbox"
       }
     ],
-    "explicacao": "O novo teste de peso zero falhou: frete.Calcular(0, 100) devolve a tarifa base de 10,00 em vez de recusar o peso. A versão Python e a Java recusam peso zero, então a Go diverge. O PR fica bloqueado até um humano com permissão de escrita decidir.",
+    "explicacao": "Risco alto: o PR altera um caminho sensível; os testes ou a compilação falharam no sandbox.",
     "receipt_hash": "4e8a2c6f0b1d3e5f7a9c1e3b5d7f9a0c2e4f6a8b0d2c4e6f8a0b1c3d5e7f9a1b",
     "url_recibo": "https://aprova.example.com/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b"
   }

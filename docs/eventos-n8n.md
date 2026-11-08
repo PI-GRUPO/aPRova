@@ -98,11 +98,23 @@ quem só quer os casos graves filtra por `nivel_risco`.
 | `sha` | texto | sim | `3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3` | commit analisado, 40 caracteres hexadecimais minúsculos |
 | `nivel_risco` | texto | sim | `medio` | `baixo`, `medio` ou `alto` |
 | `motivos` | lista de objetos | sim | veja abaixo | regras acionadas; lista vazia quando nenhuma regra acionou |
-| `motivos[].nome` | texto | sim | `sem_teste_para_alteracao` | identificador estável da regra |
-| `motivos[].descricao` | texto | sim | `go/frete/frete.go mudou e nenhum teste Go cobre o caminho alterado` | frase curta para mostrar a pessoas |
-| `explicacao` | texto | sim | `O PR muda a faixa de peso em frete.Calcular...` | explicação em português, até 4000 caracteres |
+| `motivos[].nome` | texto | sim | `codigo_sem_teste` | identificador estável da regra; a lista está abaixo |
+| `motivos[].descricao` | texto | sim | `o PR altera código sem alterar nenhum teste` | frase curta para mostrar a pessoas |
+| `explicacao` | texto | sim | `Risco medio: o PR altera código sem alterar nenhum teste.` | hoje é o nível e as descrições dos motivos; até 4000 caracteres |
 | `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do recibo assinado, 64 caracteres hexadecimais minúsculos |
 | `url_recibo` | texto (URL) | sim | `https://aprova.example.com/recibos/2b6d8f0a-...` | onde o recibo pode ser conferido |
+
+Os valores possíveis de `motivos[].nome` são os das regras do gate:
+
+| Identificador | Nível | Quando dispara |
+| --- | --- | --- |
+| `falha_sandbox` | alto | os testes falharam ou o projeto não compilou |
+| `muitos_arquivos` | alto | o PR altera mais arquivos que o limite (20 por padrão) |
+| `configuracao_ci` | alto | o PR altera workflow, Dockerfile, Makefile ou arquivo de build equivalente |
+| `dependencia_nova` | alto | o PR acrescenta dependência, ou o diff do manifesto não pôde ser lido |
+| `segredo_versionado` | alto | o PR versiona `.env`, chave privada ou arquivo equivalente |
+| `area_sensivel` | medio | o PR altera um caminho sensível, como `auth/` ou `migrations/` |
+| `codigo_sem_teste` | medio | o PR altera código sem alterar nenhum teste |
 
 O domínio `aprova.example.com` dos exemplos é provisório: o endereço público
 do núcleo ainda não existe. Quando existir, ele vai na variável
@@ -140,7 +152,11 @@ feedback ao revisor.
 
 ### `dependencia_nova`
 
-Emitido quando o PR adiciona dependências.
+Emitido quando o PR adiciona dependências, junto com o `analise_concluida`,
+qualquer que seja o nível final. Mudar a versão de uma dependência que já existe
+não conta. Quando o GitHub omite o diff de um manifesto, o gate bloqueia com o
+motivo `dependencia_nova`, mas este evento não sai, porque não há como saber
+quais são as dependências.
 
 | Campo | Tipo | Obrigatório | Exemplo | Observação |
 | --- | --- | --- | --- | --- |
