@@ -50,6 +50,9 @@ func repositorioPythonDeTeste(t *testing.T, comRequisitos bool) string {
 	t.Helper()
 
 	diretorio := t.TempDir()
+	if err := os.WriteFile(filepath.Join(diretorio, "frete.py"), []byte("TAXA = 1\n"), 0o600); err != nil {
+		t.Fatalf("criar frete.py: %v", err)
+	}
 	if comRequisitos {
 		err := os.WriteFile(
 			filepath.Join(diretorio, arquivoDeRequisitos),
@@ -392,5 +395,119 @@ func TestExecutarPythonUsaAmbienteRestrito(t *testing.T) {
 		if !slices.Contains(comando.Ambiente, exigida) {
 			t.Errorf("ambiente não contém %q: %v", exigida, comando.Ambiente)
 		}
+	}
+}
+
+func TestExecutarPythonComConftestQuebradoEhCompilacao(t *testing.T) {
+	saida := "ImportError while loading conftest '/tmp/aprova/repositorio/conftest.py'.\nSyntaxError: invalid syntax\n"
+
+	resultado, _ := executarPythonDeTeste(
+		t,
+		repositorioPythonDeTeste(t, false),
+		map[string]processo.Execucao{"pytest": {CodigoSaida: saidaErroDeUso, Saida: []byte(saida)}},
+		"",
+		10*time.Minute,
+	)
+
+	if resultado.TipoFalha != sandbox.FalhaCompilacao || resultado.Compilou {
+		t.Errorf("conftest.py que não carrega é culpa do PR: %+v", resultado)
+	}
+	if !strings.Contains(resultado.SaidaBruta, "SyntaxError") {
+		t.Errorf("a saída do pytest precisa chegar ao resultado: %q", resultado.SaidaBruta)
+	}
+}
+
+func TestExecutarPythonComErroDeUsoSemConftestEhInfraestrutura(t *testing.T) {
+	resultado, _ := executarPythonDeTeste(
+		t,
+		repositorioPythonDeTeste(t, false),
+		map[string]processo.Execucao{"pytest": {CodigoSaida: saidaErroDeUso, Saida: []byte("error: unrecognized arguments: --json-report\n")}},
+		"",
+		10*time.Minute,
+	)
+
+	if resultado.TipoFalha != sandbox.FalhaInfraestrutura {
+		t.Errorf("plugin ausente na imagem não é culpa do PR: %+v", resultado)
+	}
+}
+
+func TestExecutarPythonSemArquivoPythonNaoRodaNadaEEhInfraestrutura(t *testing.T) {
+	diretorio := t.TempDir()
+	if err := os.WriteFile(filepath.Join(diretorio, "frete.go"), []byte("package frete\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resultado, rodador := executarPythonDeTeste(t, diretorio, nil, "", 10*time.Minute)
+
+	if resultado.TipoFalha != sandbox.FalhaInfraestrutura || !strings.Contains(resultado.SaidaBruta, "sem arquivos Python") {
+		t.Errorf("diretório errado não pode virar aprovação com zero testes: %+v", resultado)
+	}
+	if len(rodador.rodados) != 0 {
+		t.Errorf("nada do PR pode rodar nesse caso: %+v", rodador.rodados)
+	}
+}
+
+func TestExecutarPythonNaoContaArquivoDentroDoGit(t *testing.T) {
+	diretorio := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(diretorio, ".git", "hooks"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(diretorio, ".git", "hooks", "gancho.py"), []byte("x = 1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resultado, rodador := executarPythonDeTeste(t, diretorio, nil, "", 10*time.Minute)
+
+	if !strings.Contains(resultado.SaidaBruta, "sem arquivos Python") || len(rodador.rodados) != 0 {
+		t.Errorf(".git não faz do diretório um projeto Python: %+v, rodados %+v", resultado, rodador.rodados)
+	}
+}
+
+func TestExecutarPythonNaoContaLinkSimbolico(t *testing.T) {
+	diretorio := t.TempDir()
+	if err := os.Symlink("/usr/lib/python3/fora.py", filepath.Join(diretorio, "link.py")); err != nil {
+		t.Fatal(err)
+	}
+
+	resultado, rodador := executarPythonDeTeste(t, diretorio, nil, "", 10*time.Minute)
+
+	if !strings.Contains(resultado.SaidaBruta, "sem arquivos Python") || len(rodador.rodados) != 0 {
+		t.Errorf("link não faz do diretório um projeto Python: %+v, rodados %+v", resultado, rodador.rodados)
+	}
+}
+
+func TestExecutarPythonSoAceitaOSinalDeConftestComOCodigoDeErroDeUso(t *testing.T) {
+	resultado, _ := executarPythonDeTeste(
+		t,
+		repositorioPythonDeTeste(t, false),
+		map[string]processo.Execucao{"pytest": {CodigoSaida: 0, Saida: []byte("um teste imprimiu: while loading conftest\n3 passed")}},
+		relatorioSoPassando,
+		10*time.Minute,
+	)
+
+	if resultado.TipoFalha != sandbox.FalhaNenhuma {
+		t.Errorf("a frase impressa por um teste não muda o veredito: %+v", resultado)
+	}
+}
+
+func TestExecutarPythonEncontraArquivoPythonEmSubdiretorio(t *testing.T) {
+	diretorio := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(diretorio, "src", "frete"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(diretorio, "src", "frete", "calculo.py"), []byte("x = 1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	resultado, _ := executarPythonDeTeste(
+		t,
+		diretorio,
+		map[string]processo.Execucao{"pytest": {CodigoSaida: 0, Saida: []byte("3 passed")}},
+		relatorioSoPassando,
+		10*time.Minute,
+	)
+
+	if resultado.TipoFalha != sandbox.FalhaNenhuma {
+		t.Errorf("projeto com o código em subdiretório precisa rodar: %+v", resultado)
 	}
 }
