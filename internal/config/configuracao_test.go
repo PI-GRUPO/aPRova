@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log/slog"
 	"maps"
+	"slices"
 	"strings"
 	"testing"
 
@@ -26,6 +27,7 @@ func ambienteLimpo(t *testing.T) {
 		"N8N_SEGREDO_ACOES", "SLACK_GITHUB_VINCULOS", "SANDBOX_IMAGEM_GO", "SANDBOX_IMAGEM_PYTHON",
 		"N8N_SEGREDO_EVENTOS", "APROVA_URL_PUBLICA", "WORKER_CONCORRENCIA", "WORKER_MAX_TENTATIVAS",
 		"SANDBOX_DIRETORIOS", "SANDBOX_LINGUAGENS", "GITHUB_APP_SLUG", "SANDBOX_REDE_LOCAL",
+		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -469,5 +471,56 @@ func TestLoggerDosProcessosLevaOsAtributosDoContexto(t *testing.T) {
 	}
 	if strings.Contains(texto, "abaixo-do-nivel") {
 		t.Errorf("o nível configurado continua valendo: %s", texto)
+	}
+}
+
+func TestLimitesDoGateFicamParaOPadraoDoGateQuandoAusentes(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+	if configuracao.GateMaxArquivos != 0 || configuracao.GateCaminhosSensiveis != nil {
+		t.Errorf("sem as variáveis, valem os padrões do gate: %d e %v", configuracao.GateMaxArquivos, configuracao.GateCaminhosSensiveis)
+	}
+}
+
+func TestCarregarLeOsLimitesDoGate(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("GATE_MAX_ARQUIVOS", "50")
+	t.Setenv("GATE_CAMINHOS_SENSIVEIS", " financeiro/ , *.tf ")
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+	if configuracao.GateMaxArquivos != 50 {
+		t.Errorf("limite lido errado: %d", configuracao.GateMaxArquivos)
+	}
+	if !slices.Equal(configuracao.GateCaminhosSensiveis, []string{"financeiro/", "*.tf"}) {
+		t.Errorf("caminhos lidos errado: %v", configuracao.GateCaminhosSensiveis)
+	}
+}
+
+func TestCarregarRecusaLimitesDoGateInvalidos(t *testing.T) {
+	casos := map[string]string{
+		"GATE_MAX_ARQUIVOS=0":                "GATE_MAX_ARQUIVOS",
+		"GATE_MAX_ARQUIVOS=-3":               "GATE_MAX_ARQUIVOS",
+		"GATE_MAX_ARQUIVOS=vinte":            "GATE_MAX_ARQUIVOS",
+		"GATE_CAMINHOS_SENSIVEIS=auth/,,db/": "GATE_CAMINHOS_SENSIVEIS",
+		"GATE_CAMINHOS_SENSIVEIS=[quebrado":  "GATE_CAMINHOS_SENSIVEIS",
+	}
+
+	for atribuicao, variavel := range casos {
+		t.Run(atribuicao, func(t *testing.T) {
+			ambienteMinimoValido(t)
+			nome, valor, _ := strings.Cut(atribuicao, "=")
+			t.Setenv(nome, valor)
+
+			if _, err := Carregar(); err == nil || !strings.Contains(err.Error(), variavel) {
+				t.Errorf("esperava erro nomeando %s, obtive %v", variavel, err)
+			}
+		})
 	}
 }
