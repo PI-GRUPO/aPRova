@@ -121,6 +121,7 @@ func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, e
 
 func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.ConfiguracaoExecutor {
 	imagens := map[sandbox.Linguagem]string{sandbox.LinguagemGo: configuracao.SandboxImagemGo}
+	imagens[sandbox.LinguagemPython] = configuracao.SandboxImagemPython
 
 	return sandbox.ConfiguracaoExecutor{
 		Tipo:  configuracao.SandboxExecutor,
