@@ -18,6 +18,8 @@ var ErrTrocaDeUsuarioNegada = errors.New("processo: não foi possível rodar os 
 const (
 	esperaAposEncerrarPadrao = 5 * time.Second
 	tempoLimiteDaLimpeza     = 10 * time.Second
+
+	encerrarTodosOsProcessosDoUsuario = "kill -KILL -1"
 )
 
 // Credencial identifica o usuário e o grupo com que os comandos rodam.
@@ -117,7 +119,7 @@ func (r *RodadorDoSistema) encerrarTodosDoUsuario() error {
 	ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDaLimpeza)
 	defer cancelar()
 
-	encerrador := exec.CommandContext(ctx, "kill", "-KILL", "-1")
+	encerrador := exec.CommandContext(ctx, "sh", "-c", encerrarTodosOsProcessosDoUsuario)
 	encerrador.Env = []string{}
 	encerrador.SysProcAttr = r.atributosDoProcesso()
 
