@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -28,9 +29,14 @@ const (
 	caminhoDosExecutaveis = "/usr/local/bin:/usr/bin:/bin"
 	nomeDoPytest          = "pytest"
 
+	extensaoPython          = ".py"
+	diretorioDoGit          = ".git"
+	sinalDeConftestQuebrado = "while loading conftest"
+
 	saidaTodosPassaram  = 0
 	saidaTestesFalharam = 1
 	saidaInterrompido   = 2
+	saidaErroDeUso      = 4
 	saidaSemTestes      = 5
 )
 
@@ -66,9 +72,14 @@ func Nova(opcoes Opcoes) *Linguagem {
 }
 
 // Executar instala as dependências (se houver requirements.txt na raiz do
-// projeto), roda o pytest e classifica o desfecho. prazoFinal é o instante em
-// que o resultado já precisa ter sido entregue.
+// projeto), roda o pytest e classifica o desfecho. Diretório sem nenhum
+// arquivo Python é falha de infraestrutura, sem rodar nada. prazoFinal é o
+// instante em que o resultado já precisa ter sido entregue.
 func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal time.Time) sandbox.ResultadoSandbox {
+	if !temArquivoPython(diretorio) {
+		return infraestrutura("diretório do projeto sem arquivos Python")
+	}
+
 	python, falha := l.prepararDependencias(ctx, diretorio)
 	if falha != nil {
 		return *falha
@@ -82,16 +93,12 @@ func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal t
 	return l.rodarTestes(ctx, diretorio, python, timeout)
 }
 
-// prepararDependencias devolve o python que roda os testes: o do sistema
-// quando não há requirements.txt, o de um venv com as dependências quando há.
 func (l *Linguagem) prepararDependencias(ctx context.Context, diretorio string) (string, *sandbox.ResultadoSandbox) {
 	if !existeRequisitosNaRaiz(diretorio) {
 		return binarioPython, nil
 	}
 
 	venv := filepath.Join(l.diretorioDeCache, "venv")
-	// O pytest e o plugin de relatório vêm da imagem; o venv os enxerga por
-	// --system-site-packages e só acrescenta o que o requirements.txt pede.
 	criacao := l.rodar(ctx, diretorio, binarioPython, argumentoDeModulo, "venv", "--system-site-packages", venv)
 	if !concluiu(criacao) {
 		falha := infraestrutura(descreverInterrupcao("python -m venv", criacao), criacao.Saida)
@@ -144,21 +151,18 @@ func (l *Linguagem) ambiente() []string {
 	}
 }
 
-// caminhoDoRelatorio tem sufixo aleatório para que o código do PR não consiga
-// plantar um relatório antes da execução.
 func (l *Linguagem) caminhoDoRelatorio() string {
 	sufixo := make([]byte, 8)
 	_, _ = rand.Read(sufixo)
 	return filepath.Join(l.diretorioDeCache, "relatorio-"+hex.EncodeToString(sufixo)+".json")
 }
 
-// classificarTeste decide o tipo de falha cruzando o código de saída do
-// pytest, que vem do processo, com o relatório, que o código do PR consegue
-// escrever. Qualquer divergência entre os dois vira infraestrutura: o PR pode
-// no máximo reprovar a si mesmo, nunca aprovar com uma falha escondida.
 func (l *Linguagem) classificarTeste(teste processo.Execucao, caminhoDoRelatorio string) sandbox.ResultadoSandbox {
 	if teste.Erro != nil || teste.PrazoEsgotado {
 		return infraestrutura(descreverInterrupcao("pytest", teste), teste.Saida)
+	}
+	if conftestNaoCarregou(teste) {
+		return falhaDeCompilacao(teste)
 	}
 
 	apurada, err := l.apurarRelatorio(caminhoDoRelatorio, teste.CodigoSaida)
@@ -201,12 +205,20 @@ func resultadoDoPytest(teste processo.Execucao, apurada apuracao) sandbox.Result
 	case teste.CodigoSaida == saidaSemTestes && apurada.passaram+apurada.falharam == 0:
 		resultado.TipoFalha = sandbox.FalhaNenhuma
 	case teste.CodigoSaida == saidaInterrompido && apurada.coletaFalhou:
-		return sandbox.ResultadoSandbox{Compilou: false, SaidaBruta: string(teste.Saida), TipoFalha: sandbox.FalhaCompilacao}
+		return falhaDeCompilacao(teste)
 	default:
 		return infraestrutura(fmt.Sprintf("pytest saiu com código %d, que o relatório não explica", teste.CodigoSaida), teste.Saida)
 	}
 
 	return resultado
+}
+
+func conftestNaoCarregou(teste processo.Execucao) bool {
+	return teste.CodigoSaida == saidaErroDeUso && strings.Contains(string(teste.Saida), sinalDeConftestQuebrado)
+}
+
+func falhaDeCompilacao(teste processo.Execucao) sandbox.ResultadoSandbox {
+	return sandbox.ResultadoSandbox{Compilou: false, SaidaBruta: string(teste.Saida), TipoFalha: sandbox.FalhaCompilacao}
 }
 
 func concluiu(execucao processo.Execucao) bool {
@@ -222,6 +234,24 @@ func descreverInterrupcao(etapa string, execucao processo.Execucao) string {
 	default:
 		return fmt.Sprintf("%s falhou com código %d", etapa, execucao.CodigoSaida)
 	}
+}
+
+func temArquivoPython(diretorio string) bool {
+	encontrou := false
+	_ = filepath.WalkDir(diretorio, func(_ string, entrada fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case entrada.IsDir() && entrada.Name() == diretorioDoGit:
+			return fs.SkipDir
+		case entrada.Type().IsRegular() && filepath.Ext(entrada.Name()) == extensaoPython:
+			encontrou = true
+			return fs.SkipAll
+		default:
+			return nil
+		}
+	})
+	return encontrou
 }
 
 func existeRequisitosNaRaiz(diretorio string) bool {

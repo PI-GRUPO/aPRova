@@ -8,8 +8,6 @@ import (
 
 const resultadoDeColetaQueFalhou = "failed"
 
-// errRelatorioInvalido indica que o arquivo não é um relatório do
-// pytest-json-report utilizável. O resultado nunca é montado a partir dele.
 var errRelatorioInvalido = errors.New("python: relatório do pytest inválido")
 
 type relatorioPytest struct {
@@ -36,9 +34,6 @@ type apuracao struct {
 	coletaFalhou bool
 }
 
-// apurar lê o JSON do pytest-json-report. Passou é passed mais xpassed; falhou
-// é failed mais error (erro em fixture também reprova); xfailed e skipped não
-// entram em nenhum dos dois.
 func apurar(bruto []byte) (apuracao, error) {
 	var lido relatorioPytest
 	if err := json.Unmarshal(bruto, &lido); err != nil {
