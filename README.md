@@ -183,6 +183,17 @@ feedback, suas ligações no Core/Central e leitura de
 marcadores `CONFIGURE_WORKFLOW_FEEDBACK`; credenciais e valores locais ficam
 fora dos JSONs. Futuras sincronizações exigem autorização explícita.
 
+Também estão disponíveis o onboarding funcional em
+[`onboarding-repositorio.json`](workflows/n8n/onboarding-repositorio.json)
+e sua chamada no Core por `CONFIGURE_WORKFLOW_ONBOARDING`. Ele identifica
+a branch, consulta proteção, cria/reutiliza lista Trello e resume no Slack;
+não cria cards. A proteção real ainda exige autenticação de leitura e o
+Check definitivo do backend; a emissão automática de `instalacao` também
+está pendente. O export vem inativo, com destinos portáteis e integrações
+desabilitadas até configurar a importação. O workflow manual de testes não
+foi exportado. Veja a
+[explicação e as pendências](docs/central-slack-implementacao.md#onboarding-de-repositório).
+
 Os workflows usam a API do aPRova para acessar funcionalidades do projeto;
 não acessam diretamente o PostgreSQL. Para executar esses workflows, a API
 precisa estar acessível e com suas dependências em execução. Quando a API

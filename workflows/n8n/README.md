@@ -1,7 +1,7 @@
 # Workflows do n8n
 
 Guia de execução e configuração. Estado local e pendências atualizados em
-**2026-11-07**; detalhes dos nós e contratos em
+**2026-11-08**; detalhes dos nós e contratos em
 [Central do Slack](../../docs/central-slack-implementacao.md) e
 [eventos do núcleo](../../docs/eventos-n8n.md).
 
@@ -17,6 +17,7 @@ Guia de execução e configuração. Estado local e pendências atualizados em
 | `slack-consulta-metricas.json` | DM e menção no canal autorizado; somente consultas. |
 | `consulta-relatorio-semanal.json` | Ferramenta de GET assinado e validação de métricas. |
 | `feedback-motivo-aprovacao.json` | Motivo de aprovação ALTO, contexto assinado e envio bloqueado até endpoint/vínculo reais. |
+| `onboarding-repositorio.json` | Consulta de proteção por repositório, criação/reutilização de lista Trello e resumo Slack. |
 
 JSONs são portáteis e inativos, sem segredos, credenciais pessoais ou dados
 fixados. `../exemplos/` contém payloads de eventos, não workflows importáveis.
@@ -26,6 +27,13 @@ estão nos exports. As chamadas de feedback usam `CONFIGURE_WORKFLOW_FEEDBACK`,
 para selecionar a importação daquele ambiente. A correção de paginação
 `before` dos comentários Trello continua no repositório, mas não na instância,
 que ainda usa `page`; foi preservada nesta sincronização.
+
+O onboarding funcional e sua ligação no Core também estão nos exports.
+O nó `07L` usa `CONFIGURE_WORKFLOW_ONBOARDING`; selecionar a importação no
+ambiente de destino. O arquivo usa a versão publicada, com integrações
+Trello/Slack desabilitadas até configurar destinos e credenciais. O workflow
+manual de testes permanece somente na instância, fora da rota de eventos
+e dos exports.
 
 **Não reimportar/exportar indiscriminadamente:** preservar essas diferenças.
 Novos exports dependem de autorização explícita do usuário.
@@ -76,7 +84,7 @@ segredos e IDs Slack estão carregados; instalação positiva já está no
 GitHub estão no `.env` do núcleo. Falta validar autenticação/permissões no
 GitHub real; não é mais pendência obter essas credenciais ou o installation ID.
 
-`SLACK_GITHUB_VINCULOS` ainda não está configurado na API. O Compose não
+`SLACK_GITHUB_VINCULOS` ainda precisa ser preenchido no `.env` local. O Compose
 repassa essa variável ao n8n; o feedback também pode ter vínculo no próprio
 nó de configuração. Não presumir que ambiente da API é ambiente do n8n.
 
@@ -88,12 +96,14 @@ docker compose --profile automacao up -d --no-deps --force-recreate n8n-aprova
 
 O volume é preservado. Alterar uma credencial no editor não exige recriação.
 API e worker precisam ser iniciados/recarregados separadamente.
-Nesta revisão, a API retornou conexão recusada a partir do n8n.
+Na validação local do onboarding, `/health` e `/ready` responderam 200 a
+partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 
 ## Importar em outra instalação
 
 1. Importe os JSONs pelo menu **Import from File**, incluindo
-   `feedback-motivo-aprovacao.json` antes de configurar as chamadas.
+   `feedback-motivo-aprovacao.json` e `onboarding-repositorio.json` antes de
+   configurar as chamadas.
 2. Associe Slack aos formulários da Central e aos envios do assistente;
    Gemini ao modelo; Trello aos nós `04`, `07`, `10`, `13`.
 3. Configure o ambiente acima. As credenciais GitHub são da API/worker;
@@ -104,11 +114,19 @@ Nesta revisão, a API retornou conexão recusada a partir do n8n.
    (`07I | Solicitar Motivo da Aprovação`) e na Central (`07G`), substituindo
    `CONFIGURE_WORKFLOW_FEEDBACK`. Associe `slackApi` aos nós `08`/`15` do
    feedback; mantenha envio à API bloqueado enquanto o endpoint não existir.
+   No Core `07L`, substitua `CONFIGURE_WORKFLOW_ONBOARDING` pelo onboarding
+   importado, mantendo modo `each` e espera pelo resultado habilitada.
 5. Crie no projeto a Data Table `aprova_osv_por_analise`, com colunas String
    `chave`/`contexto`. A definição está em
    `recursos/tabela-contexto-osv.json`, que não é workflow importável.
 6. No Trello `02`, substitua `CONFIGURE_ID_*` pelos IDs do quadro/listas
    daquele ambiente; adapte o mapeamento se o Kanban for diferente.
+   No onboarding `02`, configure `quadro_id`, `quadro_nome` e
+   `slack_canal_id` com os destinos de teste daquele ambiente, associe
+   `trelloOAuth1Api` em `10`/`13` e `slackApi` em `17`, e só então habilite
+   `trello_habilitado`/`slack_habilitado`. Nome e App ID do Check continuam
+   pendentes até a publicação definitiva pelo backend; não preencher com
+   dados fictícios para liberar prontidão.
 7. Recrie o n8n para carregar variáveis e configure as URLs públicas.
    Valide antes de publicar; subworkflows devem estar disponíveis antes do Core.
 
@@ -134,8 +152,8 @@ IA fornece somente `inicio` à consulta; instalação, destino, método e
 assinatura ficam fora do seu controle. Não existem consultas de PR pendente
 ou detalhe de execução, nem ferramentas de ação. Não há ramo de simulação.
 
-Falta API acessível, teste com métricas reais e tratamento de falhas/cota do
-modelo com aviso ao usuário. Para múltiplas equipes, falta autorização por
+Falta validar os endpoints de negócio com métricas reais e tratar falhas/cota
+do modelo com aviso ao usuário. Para múltiplas equipes, falta autorização por
 usuário/instalação e revisão de memória/retenção/concorrência.
 
 ## Digest semanal
@@ -198,6 +216,44 @@ A reexecução ainda não tem executor. O worker já emite análise, espera de
 aprovação, decisão e falha recuperável; faltam eventos de dependência e
 instalação, gate/calibração definitivos, recibos e publicação definitivos.
 SLA com dois limites configuráveis ainda não tem workflow.
+
+## Onboarding de Repositório
+
+`instalacao` segue pelo Core `06 → 07K → 07L`, após assinatura, normalização
+e deduplicação. O subworkflow recebe `meta`, `evento` e `instalacao`, aceita
+`instalado`/`repositorios_adicionados`, separa a lista de repositórios e
+processa um por vez. A branch é a padrão consultada no GitHub.
+
+Consulta somente leitura da proteção clássica, com três resultados:
+`protecao_confirmada`, `check_obrigatorio_pendente` e
+`verificacao_indisponivel`. Só o primeiro habilita prontidão. O adaptador
+atual não autentica no GitHub e não cobre rulesets; no teste real, a branch
+foi identificada e a proteção retornou 401. Não existe endpoint equivalente
+na API. A integração deverá ganhar leitura autenticada e a identidade exata
+do Check do produto, cuja publicação ainda é provisória no backend.
+
+No Trello, cria ou reutiliza lista `owner/repo` no quadro configurado.
+Não cria cards, move cards ou comenta. Arquivamento, nomes ambíguos e falhas
+de leitura impedem criar outra lista. O Slack recebe branch, estado da
+proteção, situação Trello e ação necessária, pela credencial do bot.
+
+Validados localmente: evento assinado até Core/onboarding, identificação de
+branch, lista criada/reutilizada no único quadro de teste, envio confirmado
+ao único canal utilizado nos testes e 25 cenários isolados. O workflow de
+testes não foi exportado; fixtures de proteção não são confirmação real.
+Os testes do export podem ser executados sem rede:
+
+```sh
+node --test workflows/n8n/tests/onboarding-repositorio.test.cjs
+```
+
+Faltam emissão automática do evento pelo backend, publicação definitiva do
+Check, autenticação de leitura, cobertura de rulesets/bypasses, mapeamento
+por equipe, exclusão de criações concorrentes e recuperação parcial.
+Reprocessamento sequencial reutiliza a lista, mas a criação não tem trava
+entre execuções; deduplicação do Core não recupera uma notificação perdida.
+Detalhes de nós, evidência e configuração estão na
+[documentação central](../../docs/central-slack-implementacao.md#onboarding-de-repositório).
 
 ## Verificação e produção
 

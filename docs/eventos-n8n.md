@@ -28,7 +28,7 @@ As implementações importáveis de entrada e da Central do Slack já estão em
 `workflows/n8n/`. O estado de implementação, a configuração e as pendências
 da operação remota estão em [central-slack-implementacao.md](central-slack-implementacao.md).
 
-### Estado atual — 2026-11-07
+### Estado atual — 2026-11-08
 
 O worker atual já conecta o emissor e produz `analise_concluida`,
 `aguardando_aprovacao`, `aprovacao_registrada` e `falha_recuperavel`
@@ -50,8 +50,9 @@ validar o relatório real e o disparo agendado.
 
 App ID, chave privada válida, webhook secret e slug GitHub já estão no
 `.env` do núcleo. Falta validar instalação/permissões reais, configurar
-`SLACK_GITHUB_VINCULOS` e disponibilizar API/worker. Nesta revisão,
-`/health` e `/ready` retornaram conexão recusada a partir do n8n.
+`SLACK_GITHUB_VINCULOS` e validar API/worker. No teste do onboarding,
+`/health` e `/ready` responderam 200 a partir do n8n; isso não comprova
+os endpoints de negócio ou a emissão automática de eventos.
 Configuração disponível não comprova integração real.
 
 O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
@@ -252,6 +253,28 @@ O botão de reexecutar envia ao `POST /acoes-remotas` um pedido do tipo
 
 Emitido quando o GitHub App é instalado, removido ou ganha ou perde
 repositórios. O `tenant_id` do envelope é o `installation_id` dessa instalação.
+
+Na instância, a saída `instalacao` do Core chama o workflow funcional
+`aPRova | Onboarding de Repositório`, pelos nós `07K → 07L`. O contrato
+abaixo é o envelope do emissor; o subworkflow consome a saída do normalizador:
+`evento.tipo`, `evento.acao`, `instalacao.acao`, `instalacao.conta`,
+`instalacao.repositorios` e `meta` com autenticação/validação. A emissão
+automática deste evento pelo backend ainda não foi implementada.
+
+Somente `instalado` e `repositorios_adicionados` geram ações, um repositório
+por vez. Consulta a branch padrão e sua proteção, cria/reutiliza a lista
+`owner/repo` no Trello e resume no Slack. Não cria cards ou altera regras
+no GitHub. Distingue proteção confirmada, Check obrigatório pendente e
+verificação indisponível; apenas a primeira confirma prontidão. A consulta
+real ainda retorna 401, sem confirmação de proteção. Detalhes, configuração,
+testes e pendências estão na
+[documentação central](central-slack-implementacao.md#onboarding-de-repositório).
+
+O export funcional é `workflows/n8n/onboarding-repositorio.json`; selecione
+a importação em `CONFIGURE_WORKFLOW_ONBOARDING` no Core. Os exports ficam
+inativos e sem credenciais ou IDs locais; configure e valide os destinos
+antes de habilitar Trello/Slack. O workflow manual de testes não foi exportado
+nem conectado à rota real. O envelope v1 permanece inalterado.
 
 | Campo | Tipo | Obrigatório | Exemplo | Observação |
 | --- | --- | --- | --- | --- |
