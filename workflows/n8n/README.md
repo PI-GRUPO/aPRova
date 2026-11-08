@@ -22,21 +22,16 @@ Guia de execução e configuração. Estado local e pendências atualizados em
 JSONs são portáteis e inativos, sem segredos, credenciais pessoais ou dados
 fixados. `../exemplos/` contém payloads de eventos, não workflows importáveis.
 
-Feedback, suas ligações no Core/Central e Digest com instalação pelo ambiente
-estão nos exports. As chamadas de feedback usam `CONFIGURE_WORKFLOW_FEEDBACK`,
-para selecionar a importação daquele ambiente. A correção de paginação
-`before` dos comentários Trello continua no repositório, mas não na instância,
-que ainda usa `page`; foi preservada nesta sincronização.
+Instância e exports usam referências `APROVA_*` entre subworkflows.
+A correção de paginação Trello com cursor `before` foi aplicada à instância
+nesta etapa. Nós manuais de inspeção permanecem somente na instância;
+o workflow manual de onboarding também não é exportado. Suas referências
+de canal/quadro/subworkflow usam as mesmas variáveis e ele continua inativo.
 
-O onboarding funcional e sua ligação no Core também estão nos exports.
-O nó `07L` usa `CONFIGURE_WORKFLOW_ONBOARDING`; selecionar a importação no
-ambiente de destino. O arquivo usa a versão publicada, com integrações
-Trello/Slack desabilitadas até configurar destinos e credenciais. O workflow
-manual de testes permanece somente na instância, fora da rota de eventos
-e dos exports.
-
-**Não reimportar/exportar indiscriminadamente:** preservar essas diferenças.
-Novos exports dependem de autorização explícita do usuário.
+O estado original foi preservado: oito workflows de produção ativos e
+Digest inativo. Os nove exports continuam inativos. Backups, credenciais e
+IDs locais ficam fora do versionamento. Novas sincronizações exigem revisão
+das diferenças e autorização para alterar a instância.
 
 ## Executar localmente
 
@@ -85,8 +80,7 @@ GitHub estão no `.env` do núcleo. Falta validar autenticação/permissões no
 GitHub real; não é mais pendência obter essas credenciais ou o installation ID.
 
 `SLACK_GITHUB_VINCULOS` ainda precisa ser preenchido no `.env` local. O Compose
-repassa essa variável ao n8n; o feedback também pode ter vínculo no próprio
-nó de configuração. Não presumir que ambiente da API é ambiente do n8n.
+repassa essa variável ao n8n; o feedback usa exclusivamente a mesma fonte da API. Não presumir que ambiente da API é ambiente do n8n.
 
 Ao alterar variáveis, recrie somente o serviço:
 
@@ -108,25 +102,18 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
    Gemini ao modelo; Trello aos nós `04`, `07`, `10`, `13`.
 3. Configure o ambiente acima. As credenciais GitHub são da API/worker;
    não copiá-las aos workflows.
-4. Copie os IDs das importações para as variáveis de chamadas. No Core,
-   selecione Trello no nó `09`, substituindo `CONFIGURE_WORKFLOW_TRELLO`;
-   execute por item e sem aguardar. Selecione também o feedback no Core
-   (`07I | Solicitar Motivo da Aprovação`) e na Central (`07G`), substituindo
-   `CONFIGURE_WORKFLOW_FEEDBACK`. Associe `slackApi` aos nós `08`/`15` do
-   feedback; mantenha envio à API bloqueado enquanto o endpoint não existir.
-   No Core `07L`, substitua `CONFIGURE_WORKFLOW_ONBOARDING` pelo onboarding
-   importado, mantendo modo `each` e espera pelo resultado habilitada.
-5. Crie no projeto a Data Table `aprova_osv_por_analise`, com colunas String
-   `chave`/`contexto`. A definição está em
-   `recursos/tabela-contexto-osv.json`, que não é workflow importável.
-6. No Trello `02`, substitua `CONFIGURE_ID_*` pelos IDs do quadro/listas
-   daquele ambiente; adapte o mapeamento se o Kanban for diferente.
-   No onboarding `02`, configure `quadro_id`, `quadro_nome` e
-   `slack_canal_id` com os destinos de teste daquele ambiente, associe
-   `trelloOAuth1Api` em `10`/`13` e `slackApi` em `17`, e só então habilite
-   `trello_habilitado`/`slack_habilitado`. Nome e App ID do Check continuam
-   pendentes até a publicação definitiva pelo backend; não preencher com
-   dados fictícios para liberar prontidão.
+4. Copie os IDs gerados pela importação para `APROVA_SLACK_WORKFLOW_ID`,
+   `APROVA_OSV_WORKFLOW_ID`, `APROVA_TRELLO_WORKFLOW_ID`,
+   `APROVA_FEEDBACK_WORKFLOW_ID`, `APROVA_ONBOARDING_WORKFLOW_ID` e
+   `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID`. As chamadas já usam expressões;
+   preserve `each`, conexões e opções de espera. Associe `slackApi` aos nós
+   `08`/`15` do feedback e mantenha a API de feedback desabilitada.
+5. Crie a Data Table `aprova_osv_por_analise`, com colunas String
+   `chave`/`contexto`, conforme `recursos/tabela-contexto-osv.json`.
+6. Preencha quadro/listas `APROVA_TRELLO_*` e canal de onboarding.
+   Associe Trello ao onboarding `10`/`13` e Slack ao `17`.
+   Só habilite as flags de onboarding após conferir destinos e credenciais.
+   Nome/App ID do Check continuam pendentes; não usar dados fictícios.
 7. Recrie o n8n para carregar variáveis e configure as URLs públicas.
    Valide antes de publicar; subworkflows devem estar disponíveis antes do Core.
 
@@ -199,7 +186,7 @@ Falta emissão automática de dependências e contexto na review do núcleo.
 Trello exige link completo da PR na descrição de um único card. Pesquisa,
 revalida e comenta, sem mover. Marcador tenant/evento evita duplicidade
 sequencial; não resolve concorrência. Falha Slack não desfaz comentário.
-Falta aplicar o cursor `before` na instância e definir recuperação de avisos.
+Cursor `before` aplicado na instância; falta definir recuperação de avisos.
 
 Feedback recebe decisão aprovada de risco original
 ALTO e mostra três motivos. Core o chama; Central encaminha cliques após
@@ -280,8 +267,136 @@ importa workflows nem faz deploy do n8n.
 Baixe uma cópia do JSON e revise antes de versionar: remover segredos, dados
 fixados, referências pessoais e valores locais; manter leitura de ambiente
 para instalação/endereço/segredos e configurar chamadas na instalação alvo.
-Preservar correções locais ainda ausentes da instância, como paginação Trello.
+Comparar correções locais e preservar o cursor `before` do Trello.
 Nunca incluir `.env`, credenciais ou conteúdo de `.n8n/`.
 
 Os exports desta revisão foram autorizados; futuras sincronizações também
-exigem autorização. Não sobrescrever o Trello corrigido com a versão local.
+exigem autorização. Não sobrescrever correções com versões antigas de qualquer origem.
+
+## Contrato de configuração — 2026-11-08
+
+Valores vazios não autorizam publicar integrações. IDs vêm da instalação de
+destino, nunca dos exports de outra pessoa. Recriar somente `n8n-aprova`
+após mudar seu ambiente; preservar `.n8n/`. API/worker leem o ambiente ao
+iniciar: reiniciar apenas o processo afetado se já estiver em execução.
+O `.env` existente foi preservado e recebeu somente configurações com
+correspondência inequívoca na instância. Nenhum vínculo de pessoa foi inferido.
+
+| Variável | Consumidor / finalidade | Padrão / obrigatoriedade | Origem | Recarga |
+| --- | --- | --- | --- | --- |
+| `N8N_URL_BASE` | Compose → editor (`N8N_EDITOR_BASE_URL`) | `http://localhost:5978/`, opcional | URL do editor | n8n |
+| `N8N_WEBHOOK_URL_PUBLICA` | Compose → `WEBHOOK_URL` do n8n | `N8N_URL_BASE`, opcional | HTTPS público/túnel para Slack | n8n |
+| `N8N_WEBHOOK_URL` | Go e emissão de eventos | vazio desliga; completo com caminho do Core | Webhook de produção do Core | API/worker emissor |
+| `N8N_PORTA_LOCAL` | Compose / porta do host | `5978` | Operador local | n8n |
+| `GENERIC_TIMEZONE` | n8n / agendamentos | `America/Sao_Paulo` | Fuso da equipe | n8n |
+| `APROVA_API_URL` | Workflows → API | `http://host.docker.internal:8080`; necessário para consultas/ações | Rede da API | n8n |
+| `APROVA_CHAT_INSTALLATION_ID` | Consulta semanal e Digest | `0` bloqueia; positivo obrigatório para consultas | Instalação GitHub App autorizada | n8n |
+| `APROVA_SLACK_WORKFLOW_ID` | Core → Central | vazio; necessário nessa rota | ID da importação Central | n8n |
+| `APROVA_OSV_WORKFLOW_ID` | Core/Central → OSV | vazio; necessário nessa rota | ID da importação OSV | n8n |
+| `APROVA_TRELLO_WORKFLOW_ID` | Core → Trello | vazio; necessário nessa rota | ID da importação Trello | n8n |
+| `APROVA_FEEDBACK_WORKFLOW_ID` | Core/Central → feedback | vazio; necessário nessa rota | ID da importação feedback | n8n |
+| `APROVA_ONBOARDING_WORKFLOW_ID` | Core → onboarding | vazio; necessário nessa rota | ID da importação onboarding | n8n |
+| `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` | Assistente → relatório | vazio; necessário para ferramenta | ID da importação consulta | n8n |
+| `APROVA_SLACK_TEAM_ID` | Assistente/feedback: workspace permitido | vazio bloqueia | Slack workspace | n8n |
+| `APROVA_SLACK_APP_ID` | Assistente/feedback: aplicativo permitido | vazio bloqueia | Slack App | n8n |
+| `APROVA_SLACK_CANAL_CONSULTAS_ID` | Assistente/feedback: canal permitido | vazio bloqueia | Slack canal da equipe | n8n |
+| `APROVA_SLACK_CANAL_ONBOARDING_ID` | Onboarding: resumo | vazio; obrigatório se habilitado | Canal já usado pelo onboarding local | n8n |
+| `APROVA_TRELLO_QUADRO_ID` | Trello/onboarding: quadro | vazio; obrigatório para Trello | Quadro existente | n8n |
+| `APROVA_TRELLO_QUADRO_NOME` | Trello/onboarding: rótulo | `Quadro da equipe` no Trello; vazio no onboarding | Nome do quadro existente | n8n |
+| `APROVA_ONBOARDING_TRELLO_HABILITADO` | Onboarding: habilitar Trello | `false`; somente `true` habilita | Decisão do operador; estado local reaproveitado | n8n |
+| `APROVA_ONBOARDING_SLACK_HABILITADO` | Onboarding: habilitar Slack | `false`; somente `true` habilita | Decisão do operador; estado local reaproveitado | n8n |
+| `APROVA_GITHUB_CHECK_NOME` | Onboarding: identidade do Check | vazio impede confirmação de proteção | Backend definitivo (pendente) | n8n |
+| `APROVA_GITHUB_CHECK_APP_ID` | Onboarding: App do Check | vazio → `null`, pendente | App que publica o Check; não é installation ID | n8n |
+| `SLACK_GITHUB_VINCULOS` | API e feedback: identidade compartilhada | vazio sem vínculos; `USUARIO_SLACK:login_github,...` | Confirmação humana das identidades | API e n8n |
+| `N8N_SEGREDO_EVENTOS` | Go → Core, HMAC | vazio; obrigatório quando emissão habilitada | Segredo compartilhado por direção | Emissor e n8n |
+| `N8N_SEGREDO_ACOES` | n8n → API, HMAC | vazio; obrigatório para ações/consultas | Segredo compartilhado por direção | API e n8n |
+| `SLACK_SIGNING_SECRET` | Central/assistente: autenticar Slack | vazio bloqueia | Slack App / Basic Information | n8n |
+| `SLACK_INCOMING_WEBHOOK_URL` | Alertas, OSV, Trello e Digest | vazio impede envio | Incoming Webhook do Slack (segredo) | n8n |
+| `NODE_FUNCTION_ALLOW_BUILTIN` | Compose → Code | `crypto`, fixo no Compose | Requisito HMAC | n8n |
+| `N8N_BLOCK_ENV_ACCESS_IN_NODE` | Compose → Code | `false`, fixo no Compose | Permitir leitura de `$env` | n8n |
+| `APROVA_TRELLO_LISTA_BACKLOG_ID` | Trello: lista Backlog | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_BACKLOG_NOME` | Trello: rótulo da lista | `Backlog`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_DESIGN_ID` | Trello: lista Design | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_DESIGN_NOME` | Trello: rótulo da lista | `Design`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_A_FAZER_ID` | Trello: lista A Fazer | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_A_FAZER_NOME` | Trello: rótulo da lista | `A Fazer`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_EM_ANDAMENTO_ID` | Trello: lista Em andamento | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_EM_ANDAMENTO_NOME` | Trello: rótulo da lista | `Em andamento`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_REVISAO_ID` | Trello: lista Revisão de código | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_REVISAO_NOME` | Trello: rótulo da lista | `Revisão de código`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_TESTE_ID` | Trello: lista Fase de teste | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_TESTE_NOME` | Trello: rótulo da lista | `Fase de teste`, opcional | Nome da lista existente | n8n |
+| `APROVA_TRELLO_LISTA_CONCLUIDO_ID` | Trello: lista Concluído | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
+| `APROVA_TRELLO_LISTA_CONCLUIDO_NOME` | Trello: rótulo da lista | `Concluído`, opcional | Nome da lista existente | n8n |
+
+### Migração e credenciais
+
+| Anterior | Atual |
+| --- | --- |
+| `CONFIGURE_WORKFLOW_TRELLO` | `$env.APROVA_TRELLO_WORKFLOW_ID` |
+| `CONFIGURE_WORKFLOW_FEEDBACK` | `$env.APROVA_FEEDBACK_WORKFLOW_ID` |
+| `CONFIGURE_WORKFLOW_ONBOARDING` | `$env.APROVA_ONBOARDING_WORKFLOW_ID` |
+| Seleções locais Central/OSV/consulta semanal | Variáveis `APROVA_*_WORKFLOW_ID` já existentes |
+| `CONFIGURE_ID_QUADRO_TRELLO`, quadro fixo nos nós | `APROVA_TRELLO_QUADRO_ID` / `APROVA_TRELLO_QUADRO_NOME` |
+| `CONFIGURE_ID_LISTA_*`, listas fixas | `APROVA_TRELLO_LISTA_*_ID` / `APROVA_TRELLO_LISTA_*_NOME` |
+| `CONFIGURE_ID_CANAL_SLACK`, canal fixo do onboarding | `APROVA_SLACK_CANAL_ONBOARDING_ID` |
+| Flags/check fixos no onboarding | `APROVA_ONBOARDING_*_HABILITADO`, `APROVA_GITHUB_CHECK_*` |
+| `vinculosLocais` no feedback | Somente `SLACK_GITHUB_VINCULOS` |
+| Compose: `N8N_WEBHOOK_URL` recebia base do editor | `WEBHOOK_URL` recebe `N8N_WEBHOOK_URL_PUBLICA` com fallback para `N8N_URL_BASE` |
+
+Nenhuma variável existente foi renomeada no backend ou nos scripts; seus
+consumidores mantêm os contratos. Ao migrar, copiar as configurações válidas,
+substituir IDs pelas importações locais e recriar o n8n. Não copiar credenciais
+ou banco entre pessoas.
+
+Convenção de exibição: **`aPRova | Serviço`**. As credenciais existentes
+`Slack account`, `Trello account` e `Google Gemini(PaLM) Api account 4`
+passaram a `aPRova | Slack`, `aPRova | Trello`, `aPRova | Gemini`.
+Só as três usadas pelo aPRova foram alteradas; IDs, dados cifrados e vínculos
+foram preservados. As demais credenciais ficaram intactas.
+
+Em outra instalação, cadastrar/selecionar credenciais próprias dos tipos
+`slackApi`, `trelloOAuth1Api` e `googlePalmApi`, usando esses nomes de exibição,
+e associá-las aos nós indicados na importação. Formulários HTTP da Central
+usam `slackApi` como credencial predefinida; não inserir Authorization manual.
+Renomear credenciais não exige recriar serviço. Segredos OAuth, tokens e
+senhas permanecem no armazenamento cifrado do n8n. HMAC/Signing Secret são
+segredos de ambiente; IDs de workflow, instalação, quadro, lista e canal são
+configuração sem autenticação própria. O Incoming Webhook é URL secreta.
+
+### Demais configurações aceitas pelo projeto
+
+Esta tabela complementa o contrato do n8n e o `.env.example`. Valores são
+lidos ao iniciar o consumidor; scripts leem a cada execução. Não reiniciar
+PostgreSQL/Redis nesta migração: suas portas não foram alteradas.
+
+| Variável | Consumidor / finalidade | Padrão | Obrigatoriedade / origem | Recarga |
+| --- | --- | --- | --- | --- |
+| `PORT` | API / porta HTTP | `8080` | opcional; Operador | API |
+| `LOG_LEVEL` | API/worker / nível de log | `info` | opcional; Operador | API/worker |
+| `APROVA_URL_PUBLICA` | Go e script emitir-evento / links de recibo | `https://aprova.example.com` | opcional, provisório; URL pública do backend | API/worker/script |
+| `DATABASE_URL` | Go / PostgreSQL | `sem padrão no Go` | obrigatório; Compose ou provedor PostgreSQL; contém senha | API/worker |
+| `REDIS_URL` | Go / Redis | `sem padrão no Go` | obrigatório; Compose ou provedor Redis | API/worker |
+| `GITHUB_APP_ID` | Go / GitHub App | `vazio` | opcional no loader; necessário ao integrar GitHub; GitHub App settings | API/worker |
+| `GITHUB_PRIVATE_KEY_BASE64` | Go / chave privada GitHub | `vazio` | opcional no loader; necessário ao worker; Chave PEM do GitHub App em base64; segredo | API/worker |
+| `GITHUB_WEBHOOK_SECRET` | Go / autenticar webhook GitHub | `vazio` | opcional no loader; necessário ao webhook; GitHub App webhook secret | API |
+| `GITHUB_APP_SLUG` | Go / identificação do App | `vazio` | opcional; GitHub App settings | API/worker |
+| `RECEIPT_PRIVATE_KEY_BASE64` | Go / assinar recibo Ed25519 | `vazio` | opcional no loader; Gerador de chaves do projeto; segredo | API/worker |
+| `RECEIPT_PUBLIC_KEY_BASE64` | Go / conferir recibo Ed25519 | `vazio` | opcional no loader; Par da chave privada | API/worker |
+| `SANDBOX_EXECUTOR` | Go / executor do sandbox | `vazio no loader` | obrigatório ao iniciar worker (local ou azure); local ou azure conforme implantação | worker |
+| `SANDBOX_IMAGEM_GO` | Go / imagem do executor | `vazio` | necessário ao executor local; Imagem construída/publicada pela equipe | worker |
+| `SANDBOX_DIRETORIOS` | Go / subdiretórios por repositório | `vazio` | opcional; dono/repo=diretorio_relativo separados por vírgula | worker |
+| `SANDBOX_REDE_LOCAL` | Go / rede Docker | `none` | opcional; Nome de rede Docker | worker |
+| `WORKER_CONCORRENCIA` | Go / paralelismo | `4` | opcional; Inteiro positivo definido pelo operador | worker |
+| `WORKER_MAX_TENTATIVAS` | Go / limite de tentativas | `3` | opcional; Inteiro positivo definido pelo operador | worker |
+| `ANTHROPIC_API_KEY` | Go / configuração futura | `vazio` | opcional; funcionalidade futura; Provedor Anthropic; segredo | API/worker |
+| `GCP_PROJECT_ID` | Go / configuração reservada GCP | `vazio` | opcional; Projeto GCP | API/worker |
+| `GCP_REGION` | Go / região reservada GCP | `us-central1` | opcional; Operador GCP | API/worker |
+| `POSTGRES_PORT` | Compose / publicar PostgreSQL | `5432` | opcional; Porta local | postgres |
+| `REDIS_PORT` | Compose / publicar Redis | `6379` | opcional; Porta local | redis |
+| `AZURE_SUBSCRIPTION_ID` | Go / Azure assinatura | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+| `AZURE_TENANT_ID` | Go / Azure tenant | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+| `AZURE_CLIENT_ID` | Go / Azure cliente | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+| `AZURE_CLIENT_SECRET` | Go / Azure segredo do cliente | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+| `AZURE_RESOURCE_GROUP` | Go / Azure grupo de recursos | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+| `AZURE_SANDBOX_JOB_NAME` | Go / Azure job do sandbox | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |

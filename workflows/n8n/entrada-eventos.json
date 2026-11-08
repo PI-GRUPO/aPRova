@@ -679,11 +679,10 @@
     },
     {
       "parameters": {
-        "source": "database",
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "CONFIGURE_WORKFLOW_TRELLO"
+          "value": "={{ $env.APROVA_TRELLO_WORKFLOW_ID }}"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -705,9 +704,7 @@
       "position": [
         2848,
         960
-      ],
-      "notes": "Após importar trello-sugestao-movimentacao.json, selecione o workflow importado neste nó. CONFIGURE_WORKFLOW_TRELLO é um marcador de configuração, não o ID de uma instalação.",
-      "notesInFlow": true
+      ]
     },
     {
       "parameters": {
@@ -753,8 +750,7 @@
             }
           },
           "timeout": 15000
-        },
-        "method": "GET"
+        }
       },
       "id": "133f4107-fbd0-47c6-86a7-a0c073e15a82",
       "name": "11 | Consultar Relatório Semanal",
@@ -794,7 +790,7 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "CONFIGURE_WORKFLOW_FEEDBACK"
+          "value": "={{ $env.APROVA_FEEDBACK_WORKFLOW_ID }}"
         },
         "mode": "each",
         "workflowInputs": {
@@ -821,7 +817,7 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "CONFIGURE_WORKFLOW_ONBOARDING"
+          "value": "={{ $env.APROVA_ONBOARDING_WORKFLOW_ID }}"
         },
         "mode": "each",
         "options": {

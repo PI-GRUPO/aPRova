@@ -11,28 +11,28 @@
           "enableStreaming": false
         }
       },
-      "id": "fe9c6e7b-d356-4c28-a99a-1cd4f08ec468",
-      "name": "AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
         1568,
         80
-      ]
+      ],
+      "id": "fe9c6e7b-d356-4c28-a99a-1cd4f08ec468",
+      "name": "AI Agent"
     },
     {
       "parameters": {
         "modelName": "models/gemini-3.5-flash-lite",
         "options": {}
       },
-      "id": "1f6467f7-842d-460f-be0d-acbedc1791e4",
-      "name": "Google Gemini Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1.1,
       "position": [
         1440,
         320
-      ]
+      ],
+      "id": "1f6467f7-842d-460f-be0d-acbedc1791e4",
+      "name": "Google Gemini Chat Model"
     },
     {
       "parameters": {
@@ -40,14 +40,14 @@
         "sessionKey": "={{ 'consultas-reais-v1:' + $('04 | Preparar Consulta do Slack').first().json.sessionId }}",
         "contextWindowLength": 5
       },
-      "id": "5bcf8625-cc70-43cb-ad12-a03ceaba0db2",
-      "name": "Simple Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.4,
       "position": [
         1600,
         320
-      ]
+      ],
+      "id": "5bcf8625-cc70-43cb-ad12-a03ceaba0db2",
+      "name": "Simple Memory"
     },
     {
       "parameters": {
@@ -82,14 +82,14 @@
         },
         "source": "database"
       },
-      "id": "432fd5ec-4bd6-4d80-ad2f-ee90654bc8b7",
-      "name": "consultar_relatorio_semanal",
       "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
       "typeVersion": 2.2,
       "position": [
         1776,
         320
-      ]
+      ],
+      "id": "432fd5ec-4bd6-4d80-ad2f-ee90654bc8b7",
+      "name": "consultar_relatorio_semanal"
     },
     {
       "parameters": {
@@ -123,8 +123,8 @@
         1968,
         320
       ],
-      "onError": "continueRegularOutput",
       "retryOnFail": false,
+      "onError": "continueRegularOutput",
       "notes": "Somente GET /health. URL configurada pelo ambiente; nenhum argumento é controlado pelo modelo."
     },
     {
@@ -159,8 +159,8 @@
         2160,
         320
       ],
-      "onError": "continueRegularOutput",
       "retryOnFail": false,
+      "onError": "continueRegularOutput",
       "notes": "Somente GET /ready. Preserva HTTP 503 e dependências indisponíveis; não executa operações de escrita."
     },
     {
@@ -183,7 +183,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "const crypto = require('crypto');\nconst entrada = $input.first();\nconst segredo = $env.SLACK_SIGNING_SECRET;\nif (!segredo) throw new Error('SLACK_SIGNING_SECRET indisponível no ambiente.');\nconst headers = Object.fromEntries(Object.entries(entrada.json.headers ?? {}).map(([nome, valor]) => [nome.toLowerCase(), valor]));\nconst timestamp = headers['x-slack-request-timestamp'];\nconst assinatura = headers['x-slack-signature'];\nif (typeof timestamp !== 'string' || !/^\\d+$/.test(timestamp) ||\n    typeof assinatura !== 'string' || !/^v0=[0-9a-f]{64}$/.test(assinatura)) {\n  throw new Error('Cabeçalhos de assinatura Slack inválidos.');\n}\nconst segundos = Number(timestamp);\nif (!Number.isSafeInteger(segundos) || Math.abs(Date.now() / 1000 - segundos) > 300) {\n  throw new Error('Requisição Slack fora da janela de cinco minutos.');\n}\nif (!entrada.binary?.data) throw new Error('Corpo bruto indisponível no webhook.');\nconst corpo = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst esperada = 'v0=' + crypto.createHmac('sha256', segredo).update('v0:' + timestamp + ':').update(corpo).digest('hex');\nconst recebido = Buffer.from(assinatura, 'utf8');\nconst calculado = Buffer.from(esperada, 'utf8');\nif (recebido.length !== calculado.length || !crypto.timingSafeEqual(recebido, calculado)) {\n  throw new Error('Assinatura Slack inválida.');\n}\nconst envelope = JSON.parse(corpo.toString('utf8'));\nif (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) {\n  throw new Error('Envelope Slack inválido.');\n}\nif (!['url_verification', 'event_callback'].includes(envelope.type)) {\n  throw new Error('Tipo de envelope Slack não suportado.');\n}\nif (envelope.type === 'url_verification' && (typeof envelope.challenge !== 'string' || !envelope.challenge || envelope.challenge.length > 4096)) {\n  throw new Error('Challenge Slack inválido.');\n}\nreturn [{ json: { meta: { assinatura_verificada: true, recebido_em: new Date().toISOString() }, envelope } }];"
       },
       "id": "bf9f8158-3482-4621-a878-30334acc8343",
@@ -194,8 +193,8 @@
         272,
         0
       ],
-      "onError": "continueErrorOutput",
-      "retryOnFail": false
+      "retryOnFail": false,
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -282,8 +281,8 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const entrada = $input.first().json;\nif (entrada.meta?.assinatura_verificada !== true) throw new Error('Entrada Slack não autenticada.');\nconst configuracao = {\n  teamId: $env.APROVA_SLACK_TEAM_ID || '',\n  channelId: $env.APROVA_SLACK_CANAL_CONSULTAS_ID || '',\n  appId: $env.APROVA_SLACK_APP_ID || '',\n};\nif (!/^T[A-Z0-9]+$/.test(configuracao.teamId) ||\n    !/^[CG][A-Z0-9]+$/.test(configuracao.channelId) ||\n    !/^A[A-Z0-9]+$/.test(configuracao.appId)) {\n  throw new Error('Configure APROVA_SLACK_TEAM_ID, APROVA_SLACK_CANAL_CONSULTAS_ID e APROVA_SLACK_APP_ID no ambiente.');\n}\nconst envelope = entrada.envelope;\nconst evento = envelope?.event;\nif (envelope?.type !== 'event_callback' ||\n    envelope.team_id !== configuracao.teamId ||\n    envelope.api_app_id !== configuracao.appId ||\n    !evento || evento.bot_id || evento.bot_profile || evento.subtype ||\n    typeof evento.user !== 'string' || !/^[UW][A-Z0-9]+$/.test(evento.user)) return [];\nconst dm = evento.type === 'message' && evento.channel_type === 'im' &&\n  typeof evento.channel === 'string' && /^D[A-Z0-9]+$/.test(evento.channel);\nconst canal = evento.type === 'app_mention' && evento.channel === configuracao.channelId;\nif (!dm && !canal) return [];\nif (typeof envelope.event_id !== 'string' || !/^Ev[A-Za-z0-9]+$/.test(envelope.event_id)) {\n  throw new Error('Evento Slack sem identificador válido.');\n}\nif (typeof evento.ts !== 'string' || !/^\\d+\\.\\d{6}$/.test(evento.ts)) {\n  throw new Error('Identificador da mensagem Slack inválido.');\n}\nconst textoOriginal = typeof evento.text === 'string' ? evento.text : '';\nconst texto = (dm ? textoOriginal : textoOriginal.replace(/<@[UW][A-Z0-9]+>/, '')).trim();\nif (!texto) return [];\nif (texto.length > 6000) throw new Error('Pergunta excede o limite de 6000 caracteres.');\nconst tipo = dm ? 'dm' : 'canal';\nreturn [{ json: {\n  chatInput: texto,\n  sessionId: ['slack', tipo, envelope.team_id, evento.channel, evento.user].join(':'),\n  dedupe_key: envelope.team_id + ':' + envelope.event_id,\n  recebido_em: entrada.meta.recebido_em,\n  slack: {\n    tipo_conversa: tipo,\n    team_id: envelope.team_id,\n    app_id: envelope.api_app_id,\n    channel: evento.channel,\n    user: evento.user,\n    ts: evento.ts,\n    event_id: envelope.event_id,\n  },\n} }];"
+        "jsCode": "const entrada = $input.first().json;\nif (entrada.meta?.assinatura_verificada !== true) throw new Error('Entrada Slack não autenticada.');\nconst configuracao = {\n  teamId: $env.APROVA_SLACK_TEAM_ID || '',\n  channelId: $env.APROVA_SLACK_CANAL_CONSULTAS_ID || '',\n  appId: $env.APROVA_SLACK_APP_ID || '',\n};\nif (!/^T[A-Z0-9]+$/.test(configuracao.teamId) ||\n    !/^[CG][A-Z0-9]+$/.test(configuracao.channelId) ||\n    !/^A[A-Z0-9]+$/.test(configuracao.appId)) {\n  throw new Error('Configure APROVA_SLACK_TEAM_ID, APROVA_SLACK_CANAL_CONSULTAS_ID e APROVA_SLACK_APP_ID no ambiente.');\n}\nconst envelope = entrada.envelope;\nconst evento = envelope?.event;\nif (envelope?.type !== 'event_callback' ||\n    envelope.team_id !== configuracao.teamId ||\n    envelope.api_app_id !== configuracao.appId ||\n    !evento || evento.bot_id || evento.bot_profile || evento.subtype ||\n    typeof evento.user !== 'string' || !/^[UW][A-Z0-9]+$/.test(evento.user)) return [];\nconst dm = evento.type === 'message' && evento.channel_type === 'im' &&\n  typeof evento.channel === 'string' && /^D[A-Z0-9]+$/.test(evento.channel);\nconst canal = evento.type === 'app_mention' && evento.channel === configuracao.channelId;\nif (!dm && !canal) return [];\nif (typeof envelope.event_id !== 'string' || !/^Ev[A-Za-z0-9]+$/.test(envelope.event_id)) {\n  throw new Error('Evento Slack sem identificador válido.');\n}\nif (typeof evento.ts !== 'string' || !/^\\d+\\.\\d{6}$/.test(evento.ts)) {\n  throw new Error('Identificador da mensagem Slack inválido.');\n}\nconst textoOriginal = typeof evento.text === 'string' ? evento.text : '';\nconst texto = (dm ? textoOriginal : textoOriginal.replace(/<@[UW][A-Z0-9]+>/, '')).trim();\nif (!texto) return [];\nif (texto.length > 6000) throw new Error('Pergunta excede o limite de 6000 caracteres.');\nconst tipo = dm ? 'dm' : 'canal';\nreturn [{ json: {\n  chatInput: texto,\n  sessionId: ['slack', tipo, envelope.team_id, evento.channel, evento.user].join(':'),\n  dedupe_key: envelope.team_id + ':' + envelope.event_id,\n  recebido_em: entrada.meta.recebido_em,\n  slack: {\n    tipo_conversa: tipo,\n    team_id: envelope.team_id,\n    app_id: envelope.api_app_id,\n    channel: evento.channel,\n    user: evento.user,\n    ts: evento.ts,\n    event_id: envelope.event_id,\n  },\n} }];",
+        "mode": "runOnceForAllItems"
       },
       "id": "7d4b03f3-5fe4-4e42-a997-1d403f1b4ca3",
       "name": "04 | Preparar Consulta do Slack",
@@ -314,7 +313,6 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "const origem = $('04 | Preparar Consulta do Slack').first().json;\nconst texto = $json.output;\nif (typeof texto !== 'string' || !texto.trim()) throw new Error('O agente não retornou uma resposta textual.');\nif (!origem.slack?.channel || !['dm', 'canal'].includes(origem.slack.tipo_conversa)) {\n  throw new Error('Destino Slack indisponível.');\n}\nconst resposta = texto.trim().slice(0, 3500).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nreturn [{ json: { slack: origem.slack, resposta } }];"
       },
       "id": "0899d1e0-496d-4450-a138-b5bac8e59ff0",

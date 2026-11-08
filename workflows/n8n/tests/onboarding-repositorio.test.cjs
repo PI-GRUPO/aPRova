@@ -4,7 +4,7 @@ const workflow = require('../onboarding-repositorio.json');
 const core = require('../entrada-eventos.json');
 const exemplo = require('../../exemplos/instalacao.json');
 const no = prefixo => workflow.nodes.find(n => n.name.startsWith(prefixo));
-const preparar = e => new Function('$input', no('02 |').parameters.jsCode)({ all: () => [{ json: e }] });
+const preparar = e => new Function('$input', '$env', no('02 |').parameters.jsCode)({ all: () => [{ json: e }] }, {});
 function evento() {
   const normalizador = core.nodes.find(n => n.name === '04 | Normalizar Evento aPRova');
   return new Function('$json', '$execution', normalizador.parameters.jsCode)(
@@ -37,10 +37,10 @@ test('Onboarding: export portátil e integração explícita no Core', () => {
   const c = preparar(evento())[0].json.config;
   assert.equal(c.trello_habilitado, false);
   assert.equal(c.slack_habilitado, false);
-  assert.equal(c.quadro_id, 'CONFIGURE_ID_QUADRO_TRELLO');
-  assert.equal(c.slack_canal_id, 'CONFIGURE_ID_CANAL_SLACK');
+  assert.equal(c.quadro_id, '');
+  assert.equal(c.slack_canal_id, '');
   const chamada = core.nodes.find(n => n.name === '07L | Onboarding de Repositório');
-  assert.equal(chamada.parameters.workflowId.value, 'CONFIGURE_WORKFLOW_ONBOARDING');
+  assert.equal(chamada.parameters.workflowId.value, '={{ $env.APROVA_ONBOARDING_WORKFLOW_ID }}');
   assert.equal(chamada.parameters.mode, 'each');
   assert.equal(chamada.parameters.options.waitForSubWorkflow, true);
   assert.equal(core.connections['07K | instalacao | Conectar workflow'].main[0][0].node, chamada.name);

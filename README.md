@@ -154,7 +154,7 @@ criar um `.env`:
 | Variável | Padrão local | Uso |
 | --- | --- | --- |
 | `N8N_PORTA_LOCAL` | `5978` | Porta publicada no host; o container usa `5678` |
-| `N8N_URL_BASE` | `http://localhost:5978/` | Endereço externo do editor e base dos webhooks |
+| `N8N_URL_BASE` | `http://localhost:5978/` | Endereço externo do editor; fallback para a base pública dos webhooks |
 | `GENERIC_TIMEZONE` | `America/Sao_Paulo` | Fuso dos agendamentos dos workflows |
 
 Ao mudar a porta, ajuste também a URL base. Esses endereços são para execução
@@ -179,13 +179,12 @@ servidor posteriormente.
 O estado atual e as pendências estão na
 [documentação central](docs/central-slack-implementacao.md). Os exports incluem
 feedback, suas ligações no Core/Central e leitura de
-`APROVA_CHAT_INSTALLATION_ID` pelo Digest. Selecione o feedback importado nos
-marcadores `CONFIGURE_WORKFLOW_FEEDBACK`; credenciais e valores locais ficam
+`APROVA_CHAT_INSTALLATION_ID` pelo Digest. Configure `APROVA_FEEDBACK_WORKFLOW_ID` com o ID do feedback importado; credenciais e valores locais ficam
 fora dos JSONs. Futuras sincronizações exigem autorização explícita.
 
 Também estão disponíveis o onboarding funcional em
 [`onboarding-repositorio.json`](workflows/n8n/onboarding-repositorio.json)
-e sua chamada no Core por `CONFIGURE_WORKFLOW_ONBOARDING`. Ele identifica
+e sua chamada no Core por `APROVA_ONBOARDING_WORKFLOW_ID`. Ele identifica
 a branch, consulta proteção, cria/reutiliza lista Trello e resume no Slack;
 não cria cards. A proteção real ainda exige autenticação de leitura e o
 Check definitivo do backend; a emissão automática de `instalacao` também

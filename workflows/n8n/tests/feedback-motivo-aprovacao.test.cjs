@@ -44,7 +44,7 @@ test('Feedback: export portátil e chamadas preservam autenticação e rotas ant
     assert.equal(n.webhookId, undefined);
   }
   for (const w of [core, central]) {
-    const chamada = w.nodes.find(n => n.parameters.workflowId?.value === 'CONFIGURE_WORKFLOW_FEEDBACK');
+    const chamada = w.nodes.find(n => n.parameters.workflowId?.value === '={{ $env.APROVA_FEEDBACK_WORKFLOW_ID }}');
     assert.ok(chamada);
     assert.equal(chamada.parameters.mode, 'each');
     assert.equal(chamada.parameters.options.waitForSubWorkflow, false);

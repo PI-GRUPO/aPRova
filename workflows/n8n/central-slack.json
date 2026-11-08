@@ -703,7 +703,7 @@
         "workflowId": {
           "__rl": true,
           "mode": "id",
-          "value": "CONFIGURE_WORKFLOW_FEEDBACK"
+          "value": "={{ $env.APROVA_FEEDBACK_WORKFLOW_ID }}"
         },
         "mode": "each",
         "workflowInputs": {

@@ -17,8 +17,7 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
-        "jsCode": "const entradas=$input.all();\nif(entradas.length!==1) throw new Error('Receber um evento normalizado por execução; chamador no modo each.');\nconst e=entradas[0].json;\nif(e.evento?.tipo!=='instalacao' || !['instalado','repositorios_adicionados'].includes(e.evento?.acao)) return [];\nif(e.meta?.origem_verificada!==true || e.meta?.validacao?.valido!==true || e.meta?.versao_evento!==1 || !Number.isSafeInteger(e.meta?.tenant_id) || e.meta.tenant_id<=0 || !/^[0-9a-f-]{36}$/i.test(e.meta?.id_evento||'')) throw new Error('Evento sem validação/autenticação do Core.');\nif(!Array.isArray(e.instalacao?.repositorios) || e.instalacao.acao!==e.evento.acao) throw new Error('Instalação normalizada inválida.');\nconst repos=[...new Set(e.instalacao.repositorios)];\nif(repos.some(r=>typeof r!=='string'||!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(r))) throw new Error('Lista de repositórios inválida; evento inteiro recusado antes de efeitos.');\nconst config={check_nome:'',app_id:null,trello_habilitado:false,quadro_id:'CONFIGURE_ID_QUADRO_TRELLO',quadro_nome:'CONFIGURE_NOME_QUADRO_TRELLO',slack_habilitado:false,slack_canal_id:'CONFIGURE_ID_CANAL_SLACK'};\nreturn repos.map(repositorio=>({json:{meta:e.meta,acao:e.evento.acao,conta:e.instalacao.conta,repositorio,config,trello:{status:config.trello_habilitado?'consultar':'desabilitado'}}}));"
+        "jsCode": "const entradas=$input.all();\nif(entradas.length!==1) throw new Error('Receber um evento normalizado por execução; chamador no modo each.');\nconst e=entradas[0].json;\nif(e.evento?.tipo!=='instalacao' || !['instalado','repositorios_adicionados'].includes(e.evento?.acao)) return [];\nif(e.meta?.origem_verificada!==true || e.meta?.validacao?.valido!==true || e.meta?.versao_evento!==1 || !Number.isSafeInteger(e.meta?.tenant_id) || e.meta.tenant_id<=0 || !/^[0-9a-f-]{36}$/i.test(e.meta?.id_evento||'')) throw new Error('Evento sem validação/autenticação do Core.');\nif(!Array.isArray(e.instalacao?.repositorios) || e.instalacao.acao!==e.evento.acao) throw new Error('Instalação normalizada inválida.');\nconst repos=[...new Set(e.instalacao.repositorios)];\nif(repos.some(r=>typeof r!=='string'||!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(r))) throw new Error('Lista de repositórios inválida; evento inteiro recusado antes de efeitos.');\nconst config={check_nome:($env.APROVA_GITHUB_CHECK_NOME || ''),app_id:($env.APROVA_GITHUB_CHECK_APP_ID ? Number($env.APROVA_GITHUB_CHECK_APP_ID) : null),trello_habilitado:($env.APROVA_ONBOARDING_TRELLO_HABILITADO === 'true'),quadro_id:($env.APROVA_TRELLO_QUADRO_ID || ''),quadro_nome:($env.APROVA_TRELLO_QUADRO_NOME || ''),slack_habilitado:($env.APROVA_ONBOARDING_SLACK_HABILITADO === 'true'),slack_canal_id:($env.APROVA_SLACK_CANAL_ONBOARDING_ID || '')};\nreturn repos.map(repositorio=>({json:{meta:e.meta,acao:e.evento.acao,conta:e.instalacao.conta,repositorio,config,trello:{status:config.trello_habilitado?'consultar':'desabilitado'}}}));"
       },
       "id": "45aadd90-eb98-462a-b55d-fb5ddd374a56",
       "name": "02 | Validar e separar repositórios",
@@ -28,11 +27,10 @@
         240,
         0
       ],
-      "notes": "Configurar quadro_id, quadro_nome e slack_canal_id deste ambiente antes de habilitar as integrações. check_nome e app_id permanecem vazios até o backend publicar o Check definitivo. Não inserir segredos nos parâmetros. Os checks verificacao/sandbox/banco do CI não identificam o Check do produto. Consulte docs/central-slack-implementacao.md."
+      "notes": "Configuração local: quadro reaproveitado da integração Trello. Nome exato e App ID do Check ficam vazios até o backend publicar Check real. Não confundir os checks verificacao/sandbox/banco do CI com o Check do produto aPRova. Configure canal de teste confirmado antes de habilitar Slack. Sem leitura autenticada GitHub, indisponibilidade é esperada. Nenhum segredo deve ser colocado neste nó."
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "return $input.all();"
       },
       "id": "e53bbfe5-b348-4953-87b4-42e0d81d31db",
@@ -61,7 +59,6 @@
           ]
         },
         "options": {
-          "timeout": 10000,
           "redirect": {
             "redirect": {
               "followRedirects": false
@@ -73,7 +70,8 @@
               "neverError": true,
               "responseFormat": "json"
             }
-          }
+          },
+          "timeout": 10000
         }
       },
       "id": "11c6f7c3-2c7d-4c44-89fb-9d8523792ccd",
@@ -81,8 +79,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        720,
-        0
+        704,
+        128
       ],
       "onError": "continueRegularOutput"
     },
@@ -97,7 +95,7 @@
       "typeVersion": 2,
       "position": [
         960,
-        0
+        128
       ]
     },
     {
@@ -106,7 +104,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -128,7 +127,7 @@
       "typeVersion": 2.3,
       "position": [
         1200,
-        0
+        128
       ]
     },
     {
@@ -148,7 +147,6 @@
           ]
         },
         "options": {
-          "timeout": 10000,
           "redirect": {
             "redirect": {
               "followRedirects": false
@@ -160,7 +158,8 @@
               "neverError": true,
               "responseFormat": "json"
             }
-          }
+          },
+          "timeout": 10000
         }
       },
       "id": "098b9f59-b196-47a3-b5b7-e9a7c4751949",
@@ -168,11 +167,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1440,
-        0
+        1456,
+        32
       ],
-      "notes": "GET somente leitura. Quando o backend oferecer leitura autenticada, substituir esta etapa por sua API preservando statusCode/body ou adaptar somente a evidência no nó 08. Não usar /acoes-remotas para esta verificação. 404 não prova ausência; rulesets não são confirmados por este adaptador.",
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "GET somente leitura. Quando o backend oferecer leitura autenticada, substituir esta etapa por sua API preservando statusCode/body ou adaptar somente a evidência no nó 08. Não usar /acoes-remotas para esta verificação. 404 não prova ausência; rulesets não são confirmados por este adaptador."
     },
     {
       "parameters": {
@@ -184,14 +183,14 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1680,
-        0
+        1712,
+        144
       ]
     },
     {
       "parameters": {
-        "batchSize": 1,
-        "options": {}
+        "options": {},
+        "batchSize": 1
       },
       "id": "fd03b56c-2947-485e-b5ee-7d63944c9aa2",
       "name": "03 | Um repositório por vez",
@@ -208,7 +207,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -229,8 +229,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1920,
-        0
+        1936,
+        304
       ]
     },
     {
@@ -256,7 +256,6 @@
           ]
         },
         "options": {
-          "timeout": 10000,
           "redirect": {
             "redirect": {
               "followRedirects": false
@@ -268,7 +267,8 @@
               "neverError": true,
               "responseFormat": "json"
             }
-          }
+          },
+          "timeout": 10000
         }
       },
       "id": "98f887c1-b91b-488c-9fb6-9e198a161e78",
@@ -276,8 +276,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        2160,
-        0
+        2192,
+        144
       ],
       "onError": "continueRegularOutput"
     },
@@ -291,8 +291,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2400,
-        0
+        2464,
+        144
       ]
     },
     {
@@ -301,7 +301,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -322,15 +323,14 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2640,
-        0
+        2672,
+        144
       ]
     },
     {
       "parameters": {
         "authentication": "oAuth1",
         "resource": "list",
-        "operation": "create",
         "idBoard": "={{ $json.config.quadro_id }}",
         "name": "={{ $json.repositorio }}",
         "additionalFields": {
@@ -343,7 +343,7 @@
       "typeVersion": 1,
       "position": [
         2880,
-        0
+        -160
       ],
       "onError": "continueRegularOutput"
     },
@@ -357,8 +357,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3120,
-        0
+        3104,
+        -160
       ]
     },
     {
@@ -371,8 +371,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3360,
-        0
+        3424,
+        320
       ]
     },
     {
@@ -381,7 +381,8 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict"
+            "typeValidation": "strict",
+            "version": 1
           },
           "conditions": [
             {
@@ -402,22 +403,18 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        3600,
-        0
+        3632,
+        320
       ]
     },
     {
       "parameters": {
-        "authentication": "accessToken",
-        "resource": "message",
-        "operation": "post",
         "select": "channel",
         "channelId": {
           "__rl": true,
           "mode": "id",
           "value": "={{ $json.config.slack_canal_id }}"
         },
-        "messageType": "text",
         "text": "={{ $json.resumo_slack }}",
         "otherOptions": {
           "includeLinkToWorkflow": false,
@@ -431,8 +428,8 @@
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.5,
       "position": [
-        3840,
-        0
+        3872,
+        176
       ],
       "onError": "continueRegularOutput"
     },
@@ -447,7 +444,7 @@
       "typeVersion": 2,
       "position": [
         4080,
-        0
+        176
       ]
     },
     {
@@ -460,8 +457,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4320,
-        0
+        4400,
+        336
       ]
     }
   ],

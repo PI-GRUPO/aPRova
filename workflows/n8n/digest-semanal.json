@@ -221,6 +221,6 @@
     "executionOrder": "v1"
   },
   "active": false,
-  "pinData": {},
-  "description": "Digest semanal com instalação lida de APROVA_CHAT_INSTALLATION_ID no ambiente do n8n. Consulta assinada ao núcleo e publicação no Slack; ativar após validação real."
+  "description": "Digest semanal com instalação lida de APROVA_CHAT_INSTALLATION_ID no ambiente do n8n. Consulta assinada ao núcleo e publicação no Slack; ativar após validação real.",
+  "pinData": {}
 }

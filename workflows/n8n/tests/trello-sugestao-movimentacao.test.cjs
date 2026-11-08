@@ -14,19 +14,15 @@ const rodar = (prefixo, json, origem = json) => new Function('$json', '$', codig
 const rodarPaginas = (prefixo, paginas, origem) => new Function('$input', '$', codigo(prefixo))(
   { all: () => paginas.map(json => ({ json })) }, () => ({ first: () => ({ json: origem }) }),
 )[0].json;
-const ids = new Map();
-let sequencia = 0;
-const configurado = codigo('02 |').replace(/CONFIGURE_ID_[A-Z_]+/g, marcador => {
-  if (!ids.has(marcador)) ids.set(marcador, (++sequencia).toString(16).padStart(24, '0'));
-  return ids.get(marcador);
-});
+const ambiente = Object.fromEntries([...codigo('02 |').matchAll(/\$env\.(APROVA_TRELLO_\w+_ID)/g)].map((m, i) => [m[1], (i+1).toString(16).padStart(24, '0')]));
+const configurado = codigo('02 |');
 const normalizar = new Function('$json', '$execution', core.nodes.find(n => n.name.startsWith('04 |')).parameters.jsCode);
 function evento() {
   const original = JSON.parse(fs.readFileSync(path.join(raiz, '..', 'exemplos', 'analise_concluida.json')));
   return normalizar({ original, meta: { origem_verificada: true } }, { id: 'regressao' }).json;
 }
-const preparar = (entrada = evento(), code = configurado) => new Function('$input', code)(
-  { all: () => [{ json: entrada }] },
+const preparar = (entrada = evento(), code = configurado) => new Function('$input', '$env', code)(
+  { all: () => [{ json: entrada }] }, ambiente,
 )[0].json;
 const resposta = body => ({ statusCode: 200, body });
 function card(contexto, alteracoes = {}) {
@@ -48,7 +44,7 @@ function confirmar(base = comentar()) {
 }
 
 test('Trello: export bloqueia configuração pendente e aceita IDs sintéticos apenas no teste', () => {
-  assert.throws(() => preparar(evento(), codigo('02 |')), /Configure o ID/);
+  assert.throws(() => new Function('$input', '$env', configurado)({all:()=>[{json:evento()}]}, {}), /Configure o ID/);
   assert.equal(preparar().trello.status, 'pesquisar');
 });
 

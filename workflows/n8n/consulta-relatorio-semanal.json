@@ -12,14 +12,14 @@
           ]
         }
       },
-      "id": "260a9b87-558d-4622-8dc9-1dcd9d3cb320",
-      "name": "When Executed by Another Workflow",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.2,
       "position": [
         0,
         300
-      ]
+      ],
+      "id": "260a9b87-558d-4622-8dc9-1dcd9d3cb320",
+      "name": "When Executed by Another Workflow"
     },
     {
       "parameters": {
@@ -37,42 +37,42 @@
         "options": {},
         "mode": "manual"
       },
-      "id": "623d3e47-73b1-46b1-8bbb-3c8066c2eeb6",
-      "name": "01 | Configurar Instalação",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         260,
         300
-      ]
+      ],
+      "id": "623d3e47-73b1-46b1-8bbb-3c8066c2eeb6",
+      "name": "01 | Configurar Instalação"
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const installationId = $json.installation_id;\nconst entrada = $json.inicio;\n\nif (!Number.isSafeInteger(installationId) || installationId <= 0) {\n  throw new Error(\n    'Configure o installation_id real no nó 01 antes de consultar.'\n  );\n}\n\nif (typeof entrada !== 'string') {\n  throw new Error('inicio deve ser uma string AAAA-MM-DD ou vazia.');\n}\n\nconst valor = entrada.trim();\nlet inicio;\n\nif (valor === '') {\n  const agora = new Date();\n\n  inicio = new Date(Date.UTC(\n    agora.getUTCFullYear(),\n    agora.getUTCMonth(),\n    agora.getUTCDate()\n  ));\n\n  const diasDesdeSegunda = (inicio.getUTCDay() + 6) % 7;\n  inicio.setUTCDate(inicio.getUTCDate() - diasDesdeSegunda - 7);\n} else {\n  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(valor)) {\n    throw new Error('inicio deve estar no formato AAAA-MM-DD.');\n  }\n\n  inicio = new Date(valor + 'T00:00:00Z');\n\n  if (\n    !Number.isFinite(inicio.getTime()) ||\n    inicio.toISOString().slice(0, 10) !== valor\n  ) {\n    throw new Error('A data informada não existe.');\n  }\n}\n\nconst fim = new Date(inicio);\nfim.setUTCDate(fim.getUTCDate() + 7);\n\nreturn {\n  json: {\n    installation_id: installationId,\n    inicio: inicio.toISOString().slice(0, 10),\n    fim: fim.toISOString().slice(0, 10),\n  },\n};"
       },
-      "id": "39005da4-9d9a-4596-851b-55cbd323a51b",
-      "name": "02 | Validar Consulta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         520,
         300
-      ]
+      ],
+      "id": "39005da4-9d9a-4596-851b-55cbd323a51b",
+      "name": "02 | Validar Consulta"
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "const crypto = require('crypto');\n\nconst segredo = $env.N8N_SEGREDO_ACOES;\n\nif (!segredo) {\n  throw new Error('N8N_SEGREDO_ACOES indisponível no ambiente.');\n}\n\nconst base = (\n  $env.APROVA_API_URL || 'http://host.docker.internal:8080'\n).replace(/\\/+$/, '');\n\nconst query =\n  'installation_id=' + $json.installation_id +\n  '&inicio=' + $json.inicio;\n\nconst timestamp = Math.floor(Date.now() / 1000).toString();\n\nconst assinatura = 'sha256=' + crypto\n  .createHmac('sha256', segredo)\n  .update(timestamp + '.' + query)\n  .digest('hex');\n\nreturn {\n  json: {\n    installation_id: $json.installation_id,\n    inicio: $json.inicio,\n    fim: $json.fim,\n    requisicao: {\n      url: base + '/reports/weekly?' + query,\n      headers: {\n        'X-Aprova-Timestamp': timestamp,\n        'X-Aprova-Assinatura': assinatura,\n      },\n    },\n  },\n};"
       },
-      "id": "e07d80e0-d00e-41b3-b3f7-eed31093b61a",
-      "name": "03 | Assinar Consulta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         780,
         300
-      ]
+      ],
+      "id": "e07d80e0-d00e-41b3-b3f7-eed31093b61a",
+      "name": "03 | Assinar Consulta"
     },
     {
       "parameters": {
@@ -107,14 +107,14 @@
         },
         "method": "GET"
       },
-      "id": "04a12696-ca6d-4b2c-9476-de2bb92c73bd",
-      "name": "04 | Consultar Relatório Semanal",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
         1040,
         300
       ],
+      "id": "04a12696-ca6d-4b2c-9476-de2bb92c73bd",
+      "name": "04 | Consultar Relatório Semanal",
       "onError": "continueRegularOutput"
     },
     {
@@ -122,14 +122,14 @@
         "mode": "runOnceForEachItem",
         "jsCode": "const consulta = $('03 | Assinar Consulta').item.json;\n\nconst indisponivel = () => ({\n  json: {\n    status: 'indisponivel',\n    mensagem: 'Não foi possível obter um relatório válido da API.',\n    periodo_solicitado: {\n      inicio: consulta.inicio,\n      fim_exclusivo: consulta.fim,\n      fuso: 'UTC',\n    },\n    dados: null,\n  },\n});\n\nconst r = $json.body ?? $json.data;\n\nif (\n  $json.statusCode !== 200 ||\n  !r ||\n  typeof r !== 'object' ||\n  Array.isArray(r)\n) {\n  return indisponivel();\n}\n\nconst campos = [\n  'total_execucoes',\n  'concluidas',\n  'rejeitadas',\n  'falhas',\n  'em_andamento',\n  'exigiram_aprovacao_humana',\n  'risco_medio',\n  'revertidas',\n];\n\nif (\n  r.installation_id !== consulta.installation_id ||\n  r.inicio !== consulta.inicio + 'T00:00:00Z' ||\n  r.fim !== consulta.fim + 'T00:00:00Z' ||\n  campos.some(c => !Number.isSafeInteger(r[c]) || r[c] < 0)\n) {\n  return indisponivel();\n}\n\nconst finalizadas = r.concluidas + r.rejeitadas + r.falhas;\n\nif (\n  finalizadas + r.em_andamento !== r.total_execucoes ||\n  r.exigiram_aprovacao_humana > r.total_execucoes ||\n  r.risco_medio > r.total_execucoes\n) {\n  return indisponivel();\n}\n\nconst taxaValida = finalizadas === 0\n  ? r.taxa_sucesso === null\n  : typeof r.taxa_sucesso === 'number' &&\n    Number.isFinite(r.taxa_sucesso) &&\n    Math.abs(r.taxa_sucesso - r.concluidas / finalizadas) <= 0.000001;\n\nif (!taxaValida) {\n  return indisponivel();\n}\n\nreturn {\n  json: {\n    status: 'disponivel',\n    installation_id: r.installation_id,\n    periodo: {\n      inicio: r.inicio,\n      fim_exclusivo: r.fim,\n      fuso: 'UTC',\n    },\n    dados: {\n      ...Object.fromEntries(campos.map(c => [c, r[c]])),\n      taxa_sucesso: r.taxa_sucesso,\n    },\n  },\n};"
       },
-      "id": "fe95c322-3e70-4e0d-8e06-582f45ebce18",
-      "name": "05 | Validar e Retornar Relatório",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         1300,
         300
-      ]
+      ],
+      "id": "fe95c322-3e70-4e0d-8e06-582f45ebce18",
+      "name": "05 | Validar e Retornar Relatório"
     }
   ],
   "connections": {

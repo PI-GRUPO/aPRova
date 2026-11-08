@@ -63,9 +63,9 @@ específico e calibrador real. Encerramento de SLA e atualização da mensagem
 original ainda não foram implementados.
 
 Os exports incluem feedback, suas ligações no Core/Central e leitura da
-variável no Digest. As chamadas ao feedback usam o marcador
-`CONFIGURE_WORKFLOW_FEEDBACK`, que deve ser substituído pela seleção do
-workflow importado em cada ambiente. Novas sincronizações dependem de
+variável no Digest. As chamadas ao feedback usam
+`APROVA_FEEDBACK_WORKFLOW_ID`, preenchida com o ID do workflow importado
+em cada ambiente. Novas sincronizações dependem de
 autorização explícita. Estado e pendências estão na
 [documentação central](central-slack-implementacao.md) e no
 [guia do n8n](../workflows/n8n/README.md).
@@ -270,8 +270,8 @@ real ainda retorna 401, sem confirmação de proteção. Detalhes, configuraçã
 testes e pendências estão na
 [documentação central](central-slack-implementacao.md#onboarding-de-repositório).
 
-O export funcional é `workflows/n8n/onboarding-repositorio.json`; selecione
-a importação em `CONFIGURE_WORKFLOW_ONBOARDING` no Core. Os exports ficam
+O export funcional é `workflows/n8n/onboarding-repositorio.json`; configure
+`APROVA_ONBOARDING_WORKFLOW_ID` com o ID da importação. Os exports ficam
 inativos e sem credenciais ou IDs locais; configure e valide os destinos
 antes de habilitar Trello/Slack. O workflow manual de testes não foi exportado
 nem conectado à rota real. O envelope v1 permanece inalterado.
@@ -463,3 +463,24 @@ scripts/emitir-evento.sh aguardando_aprovacao "$URL" --imprimir
   API do GitHub para aprovar ou pedir alterações. O botão do Slack envia o
   pedido ao núcleo, e o núcleo confere no GitHub, a cada pedido, se a pessoa
   tem permissão de escrita no repositório.
+
+## Configuração e portabilidade — 2026-11-08
+
+`N8N_WEBHOOK_URL` permanece o destino completo dos eventos emitidos pelo
+backend, incluindo `/webhook/aprova/events`. Vazio desliga a emissão.
+`N8N_URL_BASE` configura o editor; `N8N_WEBHOOK_URL_PUBLICA` configura a base
+pública dos webhooks por `WEBHOOK_URL` nativo no Compose, com fallback para a
+URL do editor. Não confundir essas bases com o destino completo do emissor
+ou com `APROVA_URL_PUBLICA`, base dos recibos.
+
+As chamadas de subworkflows usam variáveis `APROVA_*_WORKFLOW_ID`. Destinos
+Trello/Slack e flags do onboarding também vêm do ambiente. O [guia de
+configuração](../workflows/n8n/README.md#contrato-de-configuração--2026-11-08)
+registra consumidores, padrões, origem, recarga e migração. API e feedback
+compartilham `SLACK_GITHUB_VINCULOS`; não há associações pessoais nos nós.
+
+Tokens/OAuth ficam nas credenciais do n8n (`aPRova | Serviço`); HMAC e
+Signing Secret ficam no ambiente. Exports são inativos, sem credenciais
+pessoais ou IDs locais de workflow. Esta padronização não valida fluxos com
+serviços externos nem implementa feedback, executor de reexecução, gate,
+recibos ou publicação definitivos.

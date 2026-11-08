@@ -79,11 +79,11 @@ com remoção de credenciais/referências locais e preservação dos bloqueios:
 | Diferença | Situação |
 | --- | --- |
 | Feedback | `feedback-motivo-aprovacao.json`, sem credenciais ou IDs locais. |
-| Core e Central | Chamadas ao feedback por `CONFIGURE_WORKFLOW_FEEDBACK`; selecionar a importação nos dois workflows. |
+| Core e Central | Chamadas ao feedback por `APROVA_FEEDBACK_WORKFLOW_ID`; configurar o ID da importação no ambiente. |
 | Digest | Instância e export leem `APROVA_CHAT_INSTALLATION_ID`, sem valor real no JSON. |
-| Trello | Export tem cursor `before` para comentários; instância ainda usa `page`. |
+| Trello | Export e instância usam cursor `before` para comentários. |
 | Onboarding | `onboarding-repositorio.json`, baseado na versão publicada, sem credenciais ou destinos locais; Trello/Slack desabilitados até configurar a importação. |
-| Core → onboarding | Nó `07L`, por item e aguardando retorno; selecionar a importação em `CONFIGURE_WORKFLOW_ONBOARDING`. Demais rotas preservadas. |
+| Core → onboarding | Nó `07L`, por item e aguardando retorno; configurar `APROVA_ONBOARDING_WORKFLOW_ID`. Demais rotas preservadas. |
 
 Os exports desta revisão foram autorizados. Novas sincronizações exigem
 autorização; preservar a correção Trello e a portabilidade. Na importação,
@@ -201,7 +201,7 @@ Usa a credencial Slack existente, com `chat:write`, não o Incoming Webhook
 usado por outras notificações. Falha Trello não impede o resumo; falha Slack
 não desfaz uma lista criada. Não há retry automático de criação/envio.
 
-O export mantém integrações desabilitadas e marcadores de quadro/nome/canal.
+O export mantém integrações desabilitadas por padrão e lê quadro/nome/canal das variáveis.
 Associe `trelloOAuth1Api` nos nós `10`/`13` e `slackApi` no `17`, configure
 os destinos e habilite cada integração após validação. Segredos permanecem
 em Credentials ou no ambiente; não copiar a chave privada do GitHub App
@@ -330,8 +330,8 @@ o evento inteiro não recupera automaticamente o aviso perdido. A instância
 ainda tem dois nós de inspeção manual do quadro, somente leitura, fora do
 export; não são o fluxo de eventos.
 
-Falta aplicar/validar o cursor `before` do export na instância para
-histórico extenso; definir recuperação de avisos, concorrência e mapeamento
+Cursor `before` aplicado na instância e coberto pelos testes isolados; falta
+validar histórico extenso real e definir recuperação de avisos, concorrência e mapeamento
 de quadros/listas por equipe. Somente `analise_concluida` alimenta essa
 integração; OSV, decisão e merge não alteram o card.
 
@@ -417,10 +417,10 @@ Cliques chegam pela Central após assinatura Slack. O contexto HMAC vincula
 tenant, aprovação, análise, revisor, workspace, app, canal e motivo.
 Expiração padrão 168h, configurável entre 1 e 720h.
 
-No nó `02`, `vinculosLocais` está vazio,
+No nó `02`, os vínculos vêm exclusivamente de `SLACK_GITHUB_VINCULOS`,
 `api_feedback_habilitada=false`, `caminho_api_feedback=''`. Sem vínculo
 único, termina em `configuracao_pendente` sem pergunta.
-O código aceita também `SLACK_GITHUB_VINCULOS`; o Compose atual repassa essa
+O código lê `SLACK_GITHUB_VINCULOS`; o Compose atual repassa essa
 variável ao n8n, mas é necessário preenchê-la e recriar o container para
 carregá-la. Configurar apenas o processo da API não atualiza o n8n.
 
@@ -492,3 +492,22 @@ Esta revisão não iniciou API/worker, aprovou PRs ou validou métricas reais.
 O onboarding criou uma lista no quadro de teste e enviou resumos ao canal
 usado nos testes do projeto. Esses testes não substituem a emissão real pelo
 backend nem a confirmação de proteção autenticada ainda pendentes.
+
+## Padronização aplicada — 2026-11-08
+
+Nove workflows sincronizados após comparação e backup fora do Git.
+Referências, quadro/listas, canal e flags do onboarding leem ambiente
+`APROVA_*`. A paginação Trello `before` está aplicada também na instância.
+Oito workflows continuam ativos; Digest continua inativo. As três credenciais
+usadas foram renomeadas para `aPRova | Serviço`, preservando IDs e dados
+cifrados; exports removem associações pessoais. O `.env` recebeu apenas
+configuração reaproveitada da instância, sem novos vínculos de pessoas.
+
+O [contrato de configuração](../workflows/n8n/README.md#contrato-de-configuração--2026-11-08)
+substitui as instruções anteriores de editar IDs nos nós e de manter vínculos
+locais no feedback. As evidências funcionais acima são históricas; preencher
+variáveis não valida GitHub, Slack, Trello ou Gemini. Nesta etapa só foram
+executados testes isolados e inspeção estrutural, sem disparos externos.
+Permanecem pendentes identidades Slack/GitHub, validação de permissões reais,
+endpoint de feedback, executor de reexecução e versões definitivas do Check,
+gate, recibos e publicação.
