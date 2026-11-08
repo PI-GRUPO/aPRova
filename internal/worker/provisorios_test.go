@@ -7,34 +7,17 @@ import (
 	"testing"
 
 	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
 
 func taskRunProvisorio() domain.TaskRun {
 	return domain.TaskRun{ID: "c41d7e9a-2f3b-4c8d-a5e6-0b1c2d3e4f5a", TenantID: 58291734, Repositorio: "Azulpasta/aPRova-TESTES", NumeroPR: 14}
 }
 
-func TestAvaliadorProvisorioBloqueiaSempre(t *testing.T) {
-	for _, resultado := range []sandbox.ResultadoSandbox{sucessoNoSandbox, testeFalhou, falhaDeInfra} {
-		avaliacao, err := AvaliadorRiscoProvisorio{}.Avaliar(t.Context(), EntradaAvaliacao{TaskRun: taskRunProvisorio(), Sandbox: resultado})
-
-		if err != nil {
-			t.Fatalf("avaliar: %v", err)
-		}
-		if avaliacao.Nivel != domain.RiscoAlto || avaliacao.NivelDeterministico != domain.RiscoAlto {
-			t.Errorf("na dúvida o sistema bloqueia; com sandbox %s o nível foi %s", resultado.TipoFalha, avaliacao.Nivel)
-		}
-		if len(avaliacao.Motivos) != 1 || avaliacao.Motivos[0].Descricao != "gate de risco ainda não implementado" || avaliacao.Explicacao == "" {
-			t.Errorf("o motivo precisa dizer que o gate não existe: %+v", avaliacao)
-		}
-	}
-}
-
 func TestEmissorDeReciboProvisorioSoRegistraEDevolveSempreOMesmoRecibo(t *testing.T) {
 	var saida bytes.Buffer
 	emissor := NovoEmissorReciboProvisorio(slog.New(slog.NewJSONHandler(&saida, nil)))
 
-	primeiro, err := emissor.Emitir(t.Context(), PedidoRecibo{TaskRun: taskRunProvisorio(), Avaliacao: Avaliacao{Nivel: domain.RiscoAlto}})
+	primeiro, err := emissor.Emitir(t.Context(), PedidoRecibo{TaskRun: taskRunProvisorio(), Gate: domain.GateDeRisco{Nivel: domain.RiscoAlto}})
 	if err != nil {
 		t.Fatalf("emitir: %v", err)
 	}

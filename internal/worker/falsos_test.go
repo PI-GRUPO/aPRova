@@ -11,6 +11,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/domain"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
@@ -416,20 +417,27 @@ var (
 )
 
 type avaliadorFalso struct {
-	nivel      domain.NivelRisco
-	avaliacoes int
-	entradas   []EntradaAvaliacao
+	nivel        domain.NivelRisco
+	dependencias []domain.DependenciaNova
+	erro         error
+	avaliacoes   int
+	entradas     []gate.Entrada
 }
 
-func (a *avaliadorFalso) Avaliar(_ context.Context, entrada EntradaAvaliacao) (Avaliacao, error) {
+func (a *avaliadorFalso) Avaliar(_ context.Context, entrada gate.Entrada) (gate.Resultado, error) {
 	a.avaliacoes++
 	a.entradas = append(a.entradas, entrada)
-	return Avaliacao{
-		NivelDeterministico: a.nivel,
-		Nivel:               a.nivel,
-		Motivos:             []Motivo{{Nome: "area_sensivel", Descricao: "go/frete/frete.go calcula o valor cobrado do cliente"}},
-		Explicacao:          "O PR muda o cálculo do frete.",
-	}, nil
+	if a.erro != nil {
+		return gate.Resultado{}, a.erro
+	}
+
+	resultado := gate.Resultado{Nivel: a.nivel, Motivos: []domain.MotivoDeRisco{}, Dependencias: a.dependencias}
+	if a.nivel != domain.RiscoBaixo {
+		resultado.Motivos = append(resultado.Motivos, domain.MotivoDeRisco{
+			ID: "area_sensivel", Nivel: a.nivel, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"go/frete/frete.go"},
+		})
+	}
+	return resultado, nil
 }
 
 type emissorDeReciboFalso struct {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/domain"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
@@ -51,11 +52,11 @@ func (s *sandboxContado) Executar(ctx context.Context, _ sandbox.PedidoExecucao)
 
 type avaliadorFixo struct{ nivel domain.NivelRisco }
 
-func (a avaliadorFixo) Avaliar(context.Context, worker.EntradaAvaliacao) (worker.Avaliacao, error) {
-	return worker.Avaliacao{
-		NivelDeterministico: a.nivel, Nivel: a.nivel,
-		Motivos:    []worker.Motivo{{Nome: "area_sensivel", Descricao: "go/frete/frete.go"}},
-		Explicacao: "teste de integração do worker",
+func (a avaliadorFixo) Avaliar(context.Context, gate.Entrada) (gate.Resultado, error) {
+	return gate.Resultado{
+		Nivel:        a.nivel,
+		Motivos:      []domain.MotivoDeRisco{{ID: "area_sensivel", Nivel: a.nivel, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"go/frete/frete.go"}}},
+		Dependencias: []domain.DependenciaNova{},
 	}, nil
 }
 

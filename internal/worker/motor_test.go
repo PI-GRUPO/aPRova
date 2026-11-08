@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/domain"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
 	"github.com/Azulpasta/aPRova/internal/rastro"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
@@ -504,25 +506,189 @@ func TestRetomadaReaproveitaOResultadoDaTentativaAtual(t *testing.T) {
 	}
 }
 
-func TestRetomadaReaproveitaGateEReciboExistentes(t *testing.T) {
+func gateGravado(taskRunID string) domain.GateDeRisco {
+	return domain.GateDeRisco{
+		TaskRunID: taskRunID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "dependencia_nova",
+		Motivos: []domain.MotivoDeRisco{
+			{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova", Evidencias: []string{"go/go.mod"}},
+		},
+		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
+	}
+}
+
+func TestRetomadaComGateGravadoNaoChamaOGateNemOGitHub(t *testing.T) {
 	c := novoCenario(domain.RiscoBaixo)
+	c.avaliador.erro = errors.New("o gate não pode ser chamado de novo na retomada")
+	c.leitor.erros = []error{errors.New("o GitHub não pode ser lido de novo na retomada")}
 	taskRun := c.armazenamento.novoTaskRun(14)
 	c.armazenamento.taskRuns[taskRun.ID].Estado = domain.EstadoAvaliandoRisco
 	_ = c.armazenamento.GravarResultadoDaTentativa(t.Context(), taskRun.ID, 1, sucessoNoSandbox)
-	_ = c.armazenamento.GravarGateDeRisco(t.Context(), domain.GateDeRisco{TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "area_sensivel"})
+	_ = c.armazenamento.GravarGateDeRisco(t.Context(), gateGravado(taskRun.ID))
 	c.armazenamento.recibos[taskRun.ID] = domain.Recibo{ID: "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b", NovoRecibo: domain.NovoRecibo{TaskRunID: taskRun.ID, Hash: make([]byte, 32)}}
 
 	c.conduzirTudo(t)
 
+	if c.avaliador.avaliacoes != 0 || c.leitor.leituras != 0 {
+		t.Errorf("a retomada usa só o que está gravado: %d avaliações, %d leituras", c.avaliador.avaliacoes, c.leitor.leituras)
+	}
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoAguardandoAprovacao {
-		t.Errorf("o nível gravado no gate vale sobre uma nova avaliação, terminou em %s", estado)
+		t.Errorf("o nível gravado no gate decide o caminho, terminou em %s", estado)
 	}
 	if c.chamadas.quantas("recibo") != 0 {
 		t.Error("o recibo já existia e foi emitido de novo")
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
-	if dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido); dados.URLRecibo != urlPublicaDeTeste+"/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b" || dados.NivelRisco != domain.RiscoAlto {
+	dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido)
+	if dados.URLRecibo != urlPublicaDeTeste+"/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b" || dados.NivelRisco != domain.RiscoAlto {
 		t.Errorf("o evento precisa usar o gate e o recibo gravados: %+v", dados)
+	}
+	if len(dados.Motivos) != 1 || dados.Motivos[0].Nome != "dependencia_nova" || dados.Motivos[0].Descricao != "o PR acrescenta dependência nova" {
+		t.Errorf("os motivos do evento vêm de rules_hit: %+v", dados.Motivos)
+	}
+	nova, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova)
+	if !emitido {
+		t.Fatal("a retomada também emite dependencia_nova a partir do que está gravado")
+	}
+	if deps := dadosDoEvento[eventos.DadosDependenciaNova](t, nova).Dependencias; len(deps) != 1 || deps[0].Nome != "github.com/shopspring/decimal" {
+		t.Errorf("dependências do evento: %+v", deps)
+	}
+}
+
+func TestEventoDaRetomadaEIgualAoDaPrimeiraAvaliacao(t *testing.T) {
+	dependencias := []domain.DependenciaNova{{Ecossistema: "PyPI", Nome: "requests", Versao: "2.32.3"}}
+	agora := func() time.Time { return time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC) }
+
+	primeira := novoCenario(domain.RiscoAlto)
+	primeira.opcoes.Agora = agora
+	primeira.avaliador.dependencias = dependencias
+	taskRun := primeira.armazenamento.novoTaskRun(14)
+	primeira.conduzirTudo(t)
+
+	retomada := novoCenario(domain.RiscoBaixo)
+	retomada.opcoes.Agora = agora
+	retomada.avaliador.erro = errors.New("o gate não pode ser chamado de novo na retomada")
+	retomada.armazenamento.novoTaskRun(14)
+	retomada.armazenamento.taskRuns[taskRun.ID].Estado = domain.EstadoAvaliandoRisco
+	_ = retomada.armazenamento.GravarResultadoDaTentativa(t.Context(), taskRun.ID, 1, sucessoNoSandbox)
+	_ = retomada.armazenamento.GravarGateDeRisco(t.Context(), primeira.armazenamento.gates[taskRun.ID])
+	retomada.armazenamento.recibos[taskRun.ID] = primeira.armazenamento.recibos[taskRun.ID]
+	retomada.conduzirTudo(t)
+
+	for _, tipo := range []eventos.TipoEvento{eventos.TipoAnaliseConcluida, eventos.TipoDependenciaNova, eventos.TipoAguardandoAprovacao} {
+		original, _ := primeira.eventos.doTipo(tipo)
+		repetido, emitido := retomada.eventos.doTipo(tipo)
+		if !emitido {
+			t.Fatalf("a retomada não emitiu %s", tipo)
+		}
+		corpoOriginal, err := eventos.Montar(original)
+		if err != nil {
+			t.Fatalf("montar %s: %v", tipo, err)
+		}
+		corpoRepetido, err := eventos.Montar(repetido)
+		if err != nil {
+			t.Fatalf("montar %s: %v", tipo, err)
+		}
+		if string(corpoOriginal) != string(corpoRepetido) {
+			t.Errorf("%s mudou na retomada:\n%s\n%s", tipo, corpoOriginal, corpoRepetido)
+		}
+	}
+}
+
+func TestMotivosEDependenciasDoGateSaoGravados(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.avaliador.dependencias = []domain.DependenciaNova{{Ecossistema: "Maven", Nome: "org.javamoney:moneta", Versao: "1.4.4"}}
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	gravado := c.armazenamento.gates[taskRun.ID]
+	if gravado.NivelDeterministico != domain.RiscoAlto || gravado.Nivel != domain.RiscoAlto {
+		t.Errorf("os dois níveis são iguais por enquanto: %+v", gravado)
+	}
+	if len(gravado.Motivos) != 1 || gravado.Motivos[0].ID != "area_sensivel" || !slices.Equal(gravado.Motivos[0].Evidencias, []string{"go/frete/frete.go"}) {
+		t.Errorf("motivos gravados: %+v", gravado.Motivos)
+	}
+	if !slices.Equal(gravado.DependenciasNovas, c.avaliador.dependencias) {
+		t.Errorf("dependências gravadas: %+v", gravado.DependenciasNovas)
+	}
+	if !strings.Contains(gravado.Motivo, "area_sensivel") {
+		t.Errorf("reason resume os motivos: %q", gravado.Motivo)
+	}
+}
+
+func TestDependenciaNovaEmiteOEvento(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.avaliador.dependencias = []domain.DependenciaNova{
+		{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"},
+		{Ecossistema: "PyPI", Nome: "requests", Versao: "2.32.3"},
+	}
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	pedido, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova)
+	if !emitido {
+		t.Fatalf("falta dependencia_nova; eventos: %v", c.eventos.tipos())
+	}
+	dados := dadosDoEvento[eventos.DadosDependenciaNova](t, pedido)
+	if dados.TaskRunID != taskRun.ID || dados.URLPR != "https://github.com/Azulpasta/aPRova-TESTES/pull/14" || len(dados.Dependencias) != 2 {
+		t.Errorf("dependencia_nova errado: %+v", dados)
+	}
+	if primeira := dados.Dependencias[0]; primeira.Ecossistema != "Go" || primeira.Nome != "github.com/shopspring/decimal" || primeira.Versao != "v1.4.0" {
+		t.Errorf("dependência errada: %+v", primeira)
+	}
+}
+
+func TestSemDependenciaNovaNaoHaEvento(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if _, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova); emitido {
+		t.Error("sem dependência nova não há evento")
+	}
+}
+
+func TestGateRecebeOsArquivosDoPullRequest(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if len(c.avaliador.entradas) != 1 || len(c.avaliador.entradas[0].Arquivos) != 1 || c.avaliador.entradas[0].Arquivos[0].Nome != "go/frete/frete.go" {
+		t.Errorf("o gate avalia os arquivos lidos do GitHub: %+v", c.avaliador.entradas)
+	}
+}
+
+func TestEventoSemMotivosFicaDentroDoContrato(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
+	dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido)
+	if len(dados.Motivos) != 0 || dados.Explicacao == "" {
+		t.Errorf("risco baixo sem motivos ainda precisa de uma explicação: %+v", dados)
+	}
+}
+
+func TestErroDoGateEsgotaAsTentativasSemDecidirNivel(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.avaliador.erro = fmt.Errorf("%w: tipo_falha infraestrutura", gate.ErrResultadoSemVeredito)
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoFalhou {
+		t.Errorf("sem veredito do gate o task_run não segue adiante, terminou em %s", estado)
+	}
+	if _, gravado := c.armazenamento.gates[taskRun.ID]; gravado {
+		t.Error("sem veredito não há gate gravado")
+	}
+	if c.chamadas.quantas("publicacao") != 0 {
+		t.Error("sem veredito não há publicação")
 	}
 }
 
