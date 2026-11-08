@@ -51,13 +51,14 @@ type Cliente struct {
 }
 
 type chamada struct {
-	instalacaoID  int64
-	metodo        string
-	caminho       string
-	aceita        string
-	corpo         any
-	resposta      any
-	respostaBruta *respostaBruta
+	instalacaoID   int64
+	metodo         string
+	caminho        string
+	aceita         string
+	corpo          any
+	resposta       any
+	limiteResposta int64
+	respostaBruta  *respostaBruta
 }
 
 type respostaBruta struct {
@@ -160,7 +161,11 @@ func (c *Cliente) chamar(ctx context.Context, pedido chamada) error {
 	if pedido.resposta == nil {
 		return nil
 	}
-	if err := json.NewDecoder(io.LimitReader(resposta.Body, tamanhoMaximoDaResposta)).Decode(pedido.resposta); err != nil {
+	limite := int64(tamanhoMaximoDaResposta)
+	if pedido.limiteResposta > 0 {
+		limite = pedido.limiteResposta
+	}
+	if err := json.NewDecoder(io.LimitReader(resposta.Body, limite)).Decode(pedido.resposta); err != nil {
 		return fmt.Errorf("%w: corpo ilegível em %s %s: %w", ErrRespostaInesperada, pedido.metodo, pedido.caminho, err)
 	}
 	return nil

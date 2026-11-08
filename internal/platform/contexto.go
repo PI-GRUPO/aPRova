@@ -8,22 +8,27 @@ import (
 )
 
 const (
-	tamanhoMaximoDoDiff  = 5 << 20
-	arquivosPorPagina    = 100
-	maximoDePaginas      = 30
-	tipoDeRespostaDoDiff = "application/vnd.github.diff"
+	tamanhoMaximoDoDiff             = 5 << 20
+	tamanhoMaximoDaPaginaDeArquivos = 64 << 20
+	arquivosPorPagina               = 100
+	maximoDePaginas                 = 30
+	tipoDeRespostaDoDiff            = "application/vnd.github.diff"
 )
 
 // ErrLimiteDeRequisicoes indica que a instalação esgotou o limite de
 // requisições da API do GitHub.
 var ErrLimiteDeRequisicoes = errors.New("github: limite de requisições atingido")
 
-// ArquivoAlterado é um arquivo tocado pelo pull request.
+// ArquivoAlterado é um arquivo tocado pelo pull request. NomeAnterior só vem
+// em renomeações. Patch vem vazio quando o GitHub o omite, como em arquivos
+// grandes e binários.
 type ArquivoAlterado struct {
-	Nome     string `json:"filename"`
-	Situacao string `json:"status"`
-	Adicoes  int    `json:"additions"`
-	Remocoes int    `json:"deletions"`
+	Nome         string `json:"filename"`
+	NomeAnterior string `json:"previous_filename"`
+	Situacao     string `json:"status"`
+	Adicoes      int    `json:"additions"`
+	Remocoes     int    `json:"deletions"`
+	Patch        string `json:"patch"`
 }
 
 // ContextoPR é o que o pull request muda: os arquivos e o diff unificado.
@@ -66,7 +71,8 @@ func (c *Cliente) arquivosAlterados(ctx context.Context, installationID int64, d
 			metodo:       http.MethodGet,
 			caminho: caminhoDoPullRequest(dono, repositorio, numero) +
 				"/files?per_page=" + strconv.Itoa(arquivosPorPagina) + "&page=" + strconv.Itoa(pagina),
-			resposta: &daPagina,
+			resposta:       &daPagina,
+			limiteResposta: tamanhoMaximoDaPaginaDeArquivos,
 		}); err != nil {
 			return nil, err
 		}
