@@ -30,16 +30,17 @@ test('Digest: export inativo tem somente o caminho real e nenhuma credencial ou 
 });
 
 test('Digest: configuração vazia bloqueia consulta e semana anterior funciona na virada do ano', () => {
-  assert.throws(() => new Function(codigo('02 |'))(), /Preencha installation_ids/);
+  const configurar = new Function('$env', 'Date', codigo('02 |'));
+  assert.throws(() => configurar({}, Date), /APROVA_CHAT_INSTALLATION_ID/);
   class RelogioFixo extends Date {
     constructor(...args) { super(...(args.length ? args : ['2027-01-04T12:00:00Z'])); }
   }
-  const executar = ids => new Function('Date', codigo('02 |').replace('installation_ids: []', `installation_ids: ${JSON.stringify(ids)}`))(RelogioFixo);
-  assert.deepEqual(executar([123, 123, 456]).map(i => i.json), [123, 456].map(installation_id => ({
-    installation_id, inicio: '2026-12-28', fim: '2027-01-04',
-  })));
-  for (const ids of [[0], [-1], [1.5], ['123'], Array.from({ length: 51 }, (_, i) => i + 1)]) {
-    assert.throws(() => executar(ids), /Preencha installation_ids/);
+  const executar = id => configurar({ APROVA_CHAT_INSTALLATION_ID: id }, RelogioFixo);
+  assert.deepEqual(executar('123').map(i => i.json), [{
+    installation_id: 123, inicio: '2026-12-28', fim: '2027-01-04',
+  }]);
+  for (const id of ['', '0', '-1', '1.5', 'abc', '9007199254740992']) {
+    assert.throws(() => executar(id), /APROVA_CHAT_INSTALLATION_ID/);
   }
 });
 

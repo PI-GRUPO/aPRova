@@ -168,13 +168,20 @@ pasta. Em Linux, ela precisa permitir escrita pelo usuário do container
 pasta para esse usuário. Os dados pessoais já existentes nessa pasta são
 preservados ao reiniciar o container.
 
-Os workflows exportados e revisados serão versionados como JSON em
+Os workflows exportados e revisados ficam como JSON em
 [`workflows/n8n/`](workflows/n8n/README.md). Eles não são importados
 automaticamente pelo Compose. Cada pessoa poderá importá-los no próprio n8n
 e configurar suas credenciais. Os arquivos em `workflows/exemplos/` são
 payloads de eventos para testes, não workflows importáveis. A pasta de
 workflows contém as instruções para exportar, importar e levar os JSONs ao
 servidor posteriormente.
+
+O estado atual e as pendências estão na
+[documentação central](docs/central-slack-implementacao.md). Os exports incluem
+feedback, suas ligações no Core/Central e leitura de
+`APROVA_CHAT_INSTALLATION_ID` pelo Digest. Selecione o feedback importado nos
+marcadores `CONFIGURE_WORKFLOW_FEEDBACK`; credenciais e valores locais ficam
+fora dos JSONs. Futuras sincronizações exigem autorização explícita.
 
 Os workflows usam a API do aPRova para acessar funcionalidades do projeto;
 não acessam diretamente o PostgreSQL. Para executar esses workflows, a API
@@ -183,12 +190,22 @@ roda na máquina host, os nós HTTP do n8n devem usar
 `http://host.docker.internal:8080` (ou a porta configurada da API), pois
 `localhost` dentro do container aponta para o próprio n8n.
 
-A integração usa `N8N_WEBHOOK_URL` com a URL completa do workflow e os segredos
-`N8N_SEGREDO_ACOES` e `N8N_SEGREDO_EVENTOS`, configurados no `.env` local e
-nos workflows correspondentes. Esses segredos são diferentes da chave de
-criptografia das credenciais. O Compose mínimo não injeta esses segredos
-nos workflows nem importa credenciais. Eles não são necessários para apenas
-iniciar o editor.
+A integração usa `N8N_WEBHOOK_URL` no núcleo com a URL completa do Core, e
+`N8N_SEGREDO_ACOES`/`N8N_SEGREDO_EVENTOS` no núcleo e no ambiente do n8n.
+O Compose repassa os segredos e as demais configurações a partir do `.env`
+local; os nós leem `$env`, sem valores reais nos JSONs. Credenciais do editor
+não são importadas pelo Compose; a chave de criptografia é separada desses
+segredos. Eles não são necessários para apenas abrir o editor.
+
+Consulta semanal e Digest da instância usam `APROVA_CHAT_INSTALLATION_ID`.
+O valor local já está configurado e carregado no container; o exemplo público
+continua em zero. As credenciais GitHub App estão no `.env` do núcleo, mas
+validação real ainda exige API/worker acessíveis e vínculos Slack/GitHub.
+O Digest permanece desativado. Após mudar o `.env`, recrie o n8n:
+
+```sh
+docker compose --profile automacao up -d --no-deps --force-recreate n8n-aprova
+```
 
 Para parar apenas o n8n, use `docker compose stop n8n-aprova`. Para derrubar
 os três serviços, use `docker compose --profile automacao down`. Executar

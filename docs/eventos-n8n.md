@@ -28,7 +28,7 @@ As implementações importáveis de entrada e da Central do Slack já estão em
 `workflows/n8n/`. O estado de implementação, a configuração e as pendências
 da operação remota estão em [central-slack-implementacao.md](central-slack-implementacao.md).
 
-### Estado conferido em 2026-11-07
+### Estado atual — 2026-11-07
 
 O worker atual já conecta o emissor e produz `analise_concluida`,
 `aguardando_aprovacao`, `aprovacao_registrada` e `falha_recuperavel`
@@ -43,8 +43,31 @@ com HMAC de `N8N_SEGREDO_ACOES`, sem acessar o banco. Tem agendamento próprio,
 independente dos seis tipos de evento do núcleo. O Core também aceita o
 pedido autenticado `relatorio_periodico` como extensão da automação; esse
 pedido não é um sétimo evento emitido pelo worker e apenas guarda o relatório
-na execução. Configuração, testes com métricas fictícias e pendências do
-Digest estão na documentação central e em `workflows/n8n/README.md`.
+na execução. Consulta semanal e Digest da instância leem a instalação por
+`APROVA_CHAT_INSTALLATION_ID`; o valor real está no `.env` local e carregado
+no container, sem ID fixo nos parâmetros. O Digest continua desativado até
+validar o relatório real e o disparo agendado.
+
+App ID, chave privada válida, webhook secret e slug GitHub já estão no
+`.env` do núcleo. Falta validar instalação/permissões reais, configurar
+`SLACK_GITHUB_VINCULOS` e disponibilizar API/worker. Nesta revisão,
+`/health` e `/ready` retornaram conexão recusada a partir do n8n.
+Configuração disponível não comprova integração real.
+
+O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
+Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem
+vínculo único do revisor Slack/GitHub, encerra sem pergunta. Os cliques passam
+pela autenticação da Central. O envio à API está desabilitado: faltam endpoint
+específico e calibrador real. Encerramento de SLA e atualização da mensagem
+original ainda não foram implementados.
+
+Os exports incluem feedback, suas ligações no Core/Central e leitura da
+variável no Digest. As chamadas ao feedback usam o marcador
+`CONFIGURE_WORKFLOW_FEEDBACK`, que deve ser substituído pela seleção do
+workflow importado em cada ambiente. Novas sincronizações dependem de
+autorização explícita. Estado e pendências estão na
+[documentação central](central-slack-implementacao.md) e no
+[guia do n8n](../workflows/n8n/README.md).
 
 ## Envelope
 
@@ -74,8 +97,9 @@ para o workflow certo.
 O mesmo evento pode chegar duas vezes, por exemplo quando um worker cai no
 meio de uma análise e outro a retoma. O `id_evento` é calculado a partir do
 fato (o tipo, o `task_run` e, na aprovação, o id da decisão), então se repete
-nesse caso. O nó **Remove Duplicates**, com a opção de lembrar itens de
-execuções anteriores e a chave `id_evento`, resolve isso.
+nesse caso. O Core usa **Remove Duplicates** com memória entre execuções,
+chave `tenant_id:id_evento` e histórico de 10.000 chaves. A retenção limita
+essa deduplicação; ela não substitui idempotência de ações no núcleo.
 
 A ordem de chegada também não é garantida: cada evento sai numa conexão
 própria, e um `aguardando_aprovacao` pode chegar antes do `analise_concluida`
@@ -101,17 +125,18 @@ a versão que não conhece.
 | `falha_recuperavel` | a análise falhou por infraestrutura e pode ser reexecutada | alerta de operação com o botão de reexecutar |
 | `instalacao` | o GitHub App foi instalado, removido ou mudou de repositórios | boas-vindas e cadastro da conta no n8n |
 
-Na implementação local revisada em 2026-11-02, `analise_concluida` já chama
+Na instância atual, `analise_concluida` chama
 o workflow Trello: ele procura o link completo da PR na descrição de um
 único card do quadro configurado, comenta sugerindo movimentação e replica
 o comentário confirmado no Slack. Nunca move o card. Sem vínculo ou com
 ambiguidade, registra o resultado na execução e não publica mensagem. A
 inserção do link na descrição permanece uma prática manual da equipe na
-versão atual. Configuração, inventário, testes e limites estão em
+versão atual. Configuração, inventário e limites estão em
 [central-slack-implementacao.md](central-slack-implementacao.md), na seção
 Trello. O export portátil e as instruções de importação estão em
 [workflows/n8n/README.md](../workflows/n8n/README.md). Essa integração não
-adicionou campos ao contrato de eventos nem conectou o emissor Go.
+adiciona campos ao contrato. O worker já emite esse tipo; sua validação
+integrada com o GitHub real continua pendente.
 
 Os exemplos completos de cada tipo ficam em `workflows/exemplos/`, um arquivo
 por tipo. São eles que o script de envio usa, e um teste do núcleo garante que
@@ -177,9 +202,15 @@ GitHub ou pelos botões do Slack.
 | `nivel_risco_original` | texto | sim | `alto` | o risco que bloqueou o PR |
 | `id_aprovacao` | inteiro | sim | `37` | identificador da decisão no núcleo |
 
-Use este evento para encerrar o SLA do `task_run_id` e atualizar a mensagem do
-alerta. Quando `nivel_risco_original` é `alto`, ele também dispara o pedido de
-feedback ao revisor.
+O Core encaminha este evento ao feedback. Apenas `decisao=aprovada` com
+`nivel_risco_original=alto` é elegível à pergunta; pedidos de alteração não
+disparam feedback. Vínculo e API continuam pendentes, conforme a documentação
+central. A instalação vem do tenant autenticado, sem substituição pelo ID
+global das consultas.
+
+Encerrar o SLA do `task_run_id` e atualizar a mensagem original são usos
+previstos, ainda sem implementação. Exigem correlação e persistência do
+estado/mensagem; não presumir que já ocorrem por receber este evento.
 
 ### `dependencia_nova`
 
@@ -265,17 +296,14 @@ X-Aprova-Assinatura: sha256=<hex do HMAC-SHA256 de "<timestamp>.<corpo bruto>">
 O workflow principal fica assim:
 
 ```
-Webhook → Code (confere a assinatura) → Respond to Webhook (200) → Remove Duplicates → Switch (tipo_evento)
+Webhook → assinatura → normalização/validação → resposta 202 → deduplicação → roteamento
 ```
 
-Se a assinatura não conferir, o nó Code lança um erro antes do **Respond to
-Webhook**, e o n8n responde 500. Assim o script de envio mostra que a
-assinatura foi recusada.
-
-No workflow importável deste repositório, o erro de autenticação tem uma
+No workflow do projeto, o erro de autenticação tem uma
 saída dedicada que responde **401** e encerra o caminho, sem normalizar nem
-rotear o evento. Isso evita depender da resposta padrão de cada versão do
-n8n quando um nó falha antes de responder.
+rotear. Contrato inválido recebe **400**. O **202** confirma a entrada validada,
+não a conclusão das integrações. O exemplo de Code abaixo demonstra a
+assinatura; sua exceção deve manter a rota de recusa do Core.
 
 ### Nó Code
 
@@ -337,6 +365,12 @@ segredos e permissões necessária para produção.
 - `N8N_BLOCK_ENV_ACCESS_IN_NODE` precisa estar `false` para o nó Code
   conseguir ler `$env`; não presuma o valor padrão da versão instalada.
 
+`APROVA_CHAT_INSTALLATION_ID` configura consultas iniciadas pelo Slack e
+Digest; não é segredo de autenticação nem substitui o `tenant_id` do evento.
+Seu valor fica no ambiente, não no JSON. Depois de alterar o `.env`, recrie
+`n8n-aprova` para carregar a configuração. Credenciais do GitHub pertencem
+à API/worker, sem necessidade de copiá-las ao container do n8n.
+
 ## Testar sem o núcleo
 
 O script `scripts/emitir-evento.sh` manda um evento de exemplo para qualquer
@@ -349,6 +383,9 @@ scripts/emitir-evento.sh <tipo> <url> [opções]
 ```
 
 O script é só para desenvolvimento: não use com o segredo de produção.
+Os exemplos são artificiais, não evidência de métricas ou permissões reais.
+O tenant de um exemplo não é a instalação configurada para consultas;
+o Core preserva o tenant do envelope assinado.
 
 Precisa de `bash`, `curl`, `jq` e `openssl`; se faltar algum, o script diz
 qual. O segredo vem da variável `N8N_SEGREDO_EVENTOS` ou, se ela não estiver no

@@ -1,0 +1,567 @@
+{
+  "name": "aPRova | Feedback | Motivo da Aprovação",
+  "description": "Solicita motivo de aprovação ALTO e valida respostas autenticadas do revisor. Endpoint de feedback e vínculo ainda pendentes; envio à API desabilitado.",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "42dbd82e-53b3-40fa-83cd-ed94f0d82b51",
+      "name": "01 | Receber Evento ou Resposta",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const vinculosLocais = {};\nconst configuracao = {\n  emitir_perguntas: true,\n  api_feedback_habilitada: false,\n  caminho_api_feedback: '',\n  prazo_resposta_horas: 168,\n  vinculos_slack_github: vinculosLocais,\n  team_id: $env.APROVA_SLACK_TEAM_ID || '',\n  app_id: $env.APROVA_SLACK_APP_ID || '',\n  canal_id: $env.APROVA_SLACK_CANAL_CONSULTAS_ID || '',\n};\nconst vinculosAmbiente = $env.SLACK_GITHUB_VINCULOS || '';\nfor (const par of vinculosAmbiente.split(',').map(v => v.trim()).filter(Boolean)) {\n  const partes = par.split(':').map(v => v.trim());\n  if (partes.length !== 2 || !/^[UW][A-Z0-9]+$/.test(partes[0]) ||\n      !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/.test(partes[1])) {\n    throw new Error('SLACK_GITHUB_VINCULOS inválido; esperado USUARIO_SLACK:login_github.');\n  }\n  if (configuracao.vinculos_slack_github[partes[0]] &&\n      configuracao.vinculos_slack_github[partes[0]].toLowerCase() !== partes[1].toLowerCase()) {\n    throw new Error('Vínculo Slack/GitHub conflitante.');\n  }\n  configuracao.vinculos_slack_github[partes[0]] = partes[1];\n}\nreturn { json: {\n  ...$json,\n  configuracao_feedback: configuracao,\n  rota_feedback: $json.slack ? 'resposta' : 'evento',\n} };"
+      },
+      "id": "7853decd-4021-4dfc-b72e-fd2f455b6290",
+      "name": "02 | Configurar Feedback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "route",
+              "leftValue": "={{ $json.rota_feedback === 'resposta' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4b79cfd5-6b82-4f78-bff9-93d4578fa175",
+      "name": "03 | É Resposta do Slack",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst e = $json;\nconst cfg = e.configuracao_feedback;\nconst slack = e.slack;\nif (e.meta?.assinatura_verificada !== true || slack?.type !== 'block_actions' ||\n    slack.team?.id !== cfg.team_id || slack.api_app_id !== cfg.app_id ||\n    slack.channel?.id !== cfg.canal_id ||\n    typeof slack.user?.id !== 'string' || !/^[UW][A-Z0-9]+$/.test(slack.user.id)) {\n  throw new Error('Resposta de feedback sem origem, workspace, app, canal ou usuário válidos.');\n}\nconst recusar = motivo => ({ json: {\n  ...e, feedback: { status: 'resposta_recusada', motivo },\n  retorno_slack: { channel: cfg.canal_id, user: slack.user.id },\n} });\nconst motivos = ['regra_conservadora', 'risco_aceito', 'falso_positivo'];\nconst acao = slack.actions?.[0];\nif (!Array.isArray(slack.actions) || slack.actions.length !== 1 ||\n    typeof acao?.action_id !== 'string' || typeof acao.value !== 'string' ||\n    acao.value.length > 2000 || typeof acao.action_ts !== 'string' || !/^\\d+\\.\\d+$/.test(acao.action_ts)) {\n  return recusar('Interação de feedback inválida.');\n}\nconst motivo = acao.action_id.replace(/^aprova_feedback_/, '');\nif (!motivos.includes(motivo) || acao.action_id !== 'aprova_feedback_' + motivo) {\n  return recusar('Motivo fora das três opções permitidas.');\n}\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) return recusar('Configuração de assinatura indisponível; nada foi registrado.');\nlet token;\ntry { token = JSON.parse(acao.value); } catch { return recusar('Contexto do botão inválido.'); }\nif (!token || typeof token !== 'object' || Array.isArray(token) ||\n    typeof token.contexto !== 'string' || !/^[A-Za-z0-9_-]+$/.test(token.contexto) ||\n    typeof token.assinatura !== 'string' || !/^[0-9a-f]{64}$/.test(token.assinatura)) {\n  return recusar('Token de feedback inválido.');\n}\nconst esperada = crypto.createHmac('sha256', segredo).update('aprova-feedback-v1.' + token.contexto).digest('hex');\nif (!crypto.timingSafeEqual(Buffer.from(token.assinatura, 'hex'), Buffer.from(esperada, 'hex'))) {\n  return recusar('Contexto adulterado; nada foi registrado.');\n}\nlet c;\ntry { c = JSON.parse(Buffer.from(token.contexto, 'base64url').toString('utf8')); }\ncatch { return recusar('Contexto assinado inválido.'); }\nconst agora = Math.floor(Date.now() / 1000);\nif (!c || typeof c !== 'object' || Array.isArray(c) || c.v !== 1 || c.feedback_reason !== motivo || c.team_id !== cfg.team_id ||\n    c.app_id !== cfg.app_id || c.canal_id !== cfg.canal_id ||\n    !Number.isSafeInteger(c.installation_id) || c.installation_id <= 0 ||\n    !Number.isSafeInteger(c.id_aprovacao) || c.id_aprovacao <= 0 ||\n    typeof c.task_run_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(c.task_run_id) ||\n    !Number.isSafeInteger(c.emitido_em) || !Number.isSafeInteger(c.expira_em) ||\n    c.emitido_em > agora + 300 || c.expira_em <= agora || c.expira_em <= c.emitido_em ||\n    c.expira_em - c.emitido_em > 720 * 3600) {\n  return recusar('Contexto incompatível ou prazo expirado; nada foi registrado.');\n}\nconst login = cfg.vinculos_slack_github[slack.user.id];\nif (slack.user.id !== c.usuario_slack_esperado ||\n    typeof login !== 'string' || typeof c.revisor_github !== 'string' ||\n    login.toLowerCase() !== c.revisor_github.toLowerCase()) {\n  return recusar('Somente o revisor que registrou esta aprovação pode informar o motivo.');\n}\nconst pedido = {\n  id_feedback: 'n8n:feedback:' + c.installation_id + ':' + c.id_aprovacao,\n  installation_id: c.installation_id,\n  id_aprovacao: c.id_aprovacao,\n  task_run_id: c.task_run_id,\n  usuario_slack: slack.user.id,\n  workspace_slack: slack.team.id,\n  feedback_reason: motivo,\n};\nreturn { json: {\n  ...e, feedback: { status: 'resposta_validada', motivo: 'Resposta autenticada, ainda não persistida.',\n    installation_id: c.installation_id, id_aprovacao: c.id_aprovacao,\n    task_run_id: c.task_run_id, feedback_reason: motivo },\n  pedido_feedback: pedido,\n  retorno_slack: { channel: cfg.canal_id, user: slack.user.id },\n} };"
+      },
+      "id": "973b743d-fdfd-479a-aa85-37aef5afcabb",
+      "name": "10 | Validar Clique e Contexto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "api",
+              "leftValue": "={{ $json.feedback.status === 'resposta_validada' && $json.configuracao_feedback.api_feedback_habilitada === true && !!$json.configuracao_feedback.caminho_api_feedback }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8987e27a-74ee-4a5a-9608-84a6774ec53d",
+      "name": "11 | API de Feedback Disponível",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst cfg = $json.configuracao_feedback;\nconst caminho = cfg?.caminho_api_feedback;\nconst bloqueado = typeof caminho !== 'string' || !/^\\/[A-Za-z0-9/_-]+$/.test(caminho) ||\n  ['/acoes-remotas', '/health', '/ready', '/reports/weekly'].includes(caminho.replace(/\\/+$/, '')) ||\n  /^\\/webhooks(?:\\/|$)/.test(caminho);\nif ($json.feedback?.status !== 'resposta_validada' || cfg.api_feedback_habilitada !== true || bloqueado) {\n  throw new Error('Envio de feedback bloqueado: endpoint específico ainda precisa ser implementado e configurado.');\n}\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) throw new Error('N8N_SEGREDO_ACOES indisponível.');\nif (!$env.APROVA_API_URL) throw new Error('APROVA_API_URL indisponível.');\nconst corpo = JSON.stringify($json.pedido_feedback);\nconst timestamp = Math.floor(Date.now() / 1000).toString();\nreturn { json: { ...$json, requisicao_feedback: {\n  url: $env.APROVA_API_URL.replace(/\\/+$/, '') + caminho,\n  corpo,\n  headers: {\n    'X-Aprova-Timestamp': timestamp,\n    'X-Aprova-Assinatura': 'sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.').update(corpo).digest('hex'),\n  },\n} } };"
+      },
+      "id": "90fd407f-b426-45d9-b1e4-2da3d8172ec5",
+      "name": "12 | Assinar Feedback ao Núcleo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.requisicao_feedback.url }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify($json.requisicao_feedback.headers) }}",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.requisicao_feedback.corpo }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "2ccef211-5862-46a9-97ee-c053ae12616d",
+      "name": "13 | Enviar Feedback ao Núcleo",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1344,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origem = $('10 | Validar Clique e Contexto').first().json;\nconst f = origem.feedback;\nlet status = f.status;\nlet mensagem;\nif (status === 'resposta_recusada') {\n  mensagem = f.motivo;\n} else if (origem.configuracao_feedback.api_feedback_habilitada !== true ||\n           !origem.configuracao_feedback.caminho_api_feedback) {\n  status = 'pendente_api';\n  mensagem = 'Seu motivo foi selecionado, mas NÃO foi registrado no núcleo. O endpoint de feedback ainda precisa ser implementado e habilitado. Tente novamente quando a integração estiver disponível.';\n} else {\n  const r = $json.body ?? $json.data;\n  const pedido = origem.pedido_feedback;\n  if ([200, 201].includes($json.statusCode) && r && typeof r === 'object' && !Array.isArray(r) &&\n      r.status === 'registrado' && r.installation_id === pedido.installation_id &&\n      r.id_aprovacao === pedido.id_aprovacao && r.feedback_reason === pedido.feedback_reason) {\n    status = 'registrado';\n    mensagem = 'Motivo registrado no núcleo: ' + ({\n      regra_conservadora: 'Regra conservadora demais',\n      risco_aceito: 'Risco aceito conscientemente',\n      falso_positivo: 'Falso positivo',\n    })[pedido.feedback_reason] + '. Obrigado pelo feedback.';\n  } else {\n    status = 'nao_confirmado';\n    mensagem = 'O núcleo não confirmou a gravação do feedback. Nenhuma alteração de aprovação foi solicitada. Confira o resultado antes de reenviar.';\n  }\n}\nreturn { json: { feedback: { ...f, status }, retorno_slack: origem.retorno_slack,\n  texto_retorno: mensagem.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'),\n} };"
+      },
+      "id": "7aa9ee40-2a76-4c25-9fb7-01b34acd9543",
+      "name": "14 | Preparar Retorno do Feedback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.retorno_slack.channel }}"
+        },
+        "text": "={{ $json.texto_retorno }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": false,
+          "unfurl_links": false,
+          "unfurl_media": false,
+          "ephemeral": {
+            "ephemeralValues": {
+              "user": {
+                "__rl": true,
+                "mode": "id",
+                "value": "={{ $json.retorno_slack.user }}"
+              }
+            }
+          }
+        }
+      },
+      "id": "55d269bb-0529-4d25-9768-115ee86d0050",
+      "name": "15 | Avisar Revisor no Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1792,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origem = $('14 | Preparar Retorno do Feedback').first().json;\nif ($json.ok !== true) throw new Error('Slack não confirmou o aviso ao usuário. Verifique a execução; isso não desfaz eventual gravação já confirmada pelo núcleo.');\nreturn { json: { feedback: { ...origem.feedback, notificacao_slack: 'enviada' } } };"
+      },
+      "id": "d6b21be0-c99f-4832-8761-a75252dee2b7",
+      "name": "16 | Confirmar Aviso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const f = $json.feedback;\nif (!f || typeof f.status !== 'string') throw new Error('Resultado de feedback ausente.');\nreturn { json: { feedback: {\n  status: f.status,\n  motivo: f.motivo || null,\n  installation_id: f.installation_id || null,\n  id_aprovacao: f.id_aprovacao || null,\n  task_run_id: f.task_run_id || null,\n  feedback_reason: f.feedback_reason || null,\n  mensagem_slack_ts: f.mensagem_slack_ts || null,\n  notificacao_slack: f.notificacao_slack || null,\n  registrado_no_nucleo: f.status === 'registrado',\n} } };"
+      },
+      "id": "a1fcb0cd-790d-4f8b-b571-84deaac71c71",
+      "name": "99 | Resultado do Feedback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const e = $json;\nconst cfg = e.configuracao_feedback;\nconst resultado = (status, motivo, extra = {}) => ({ json: {\n  ...e, feedback: { status, motivo, ...extra },\n} });\nif (e.meta?.origem_verificada !== true || e.meta?.validacao?.valido !== true) {\n  throw new Error('Feedback exige evento autenticado e normalizado pelo Core.');\n}\nif (e.evento?.tipo !== 'aprovacao_registrada' || e.aprovacao?.decisao !== 'aprovada' ||\n    e.risco?.nivel_original !== 'ALTO') {\n  return resultado('ignorado', 'Somente aprovação registrada de risco original ALTO solicita motivo.');\n}\nconst tenant = e.meta.tenant_id;\nconst aprovacao = e.aprovacao.id;\nconst analise = e.dados?.task_run_id || e.meta.execution_id;\nconst revisor = e.aprovacao.login_github;\nconst repositorio = e.repositorio?.full_name;\nconst numero = e.pr?.numero;\nif (!Number.isSafeInteger(tenant) || tenant <= 0 || !Number.isSafeInteger(aprovacao) || aprovacao <= 0 ||\n    typeof analise !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(analise) ||\n    typeof revisor !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}$/.test(revisor) ||\n    typeof repositorio !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\\/[A-Za-z0-9._-]{1,100}$/.test(repositorio) ||\n    !Number.isSafeInteger(numero) || numero <= 0) {\n  throw new Error('Evento de aprovação sem instalação, aprovação, análise, revisor ou PR válidos.');\n}\nif (e.dados?.task_run_id && e.meta.execution_id && e.dados.task_run_id !== e.meta.execution_id) {\n  throw new Error('Análise inconsistente no evento.');\n}\nconst base = { installation_id: tenant, id_aprovacao: aprovacao, task_run_id: analise,\n  revisor_github: revisor, repositorio, numero_pr: numero,\n  chave: tenant + ':' + aprovacao };\nif (!cfg.emitir_perguntas) return resultado('configuracao_pendente', 'Emissão de perguntas desabilitada.', base);\nif (!/^T[A-Z0-9]+$/.test(cfg.team_id) || !/^A[A-Z0-9]+$/.test(cfg.app_id) ||\n    !/^[CG][A-Z0-9]+$/.test(cfg.canal_id)) {\n  return resultado('configuracao_pendente', 'Configure workspace, app e canal Slack no ambiente.', base);\n}\nconst usuarios = Object.entries(cfg.vinculos_slack_github)\n  .filter(([usuario, login]) => /^[UW][A-Z0-9]+$/.test(usuario) &&\n    typeof login === 'string' && login.toLowerCase() === revisor.toLowerCase())\n  .map(([usuario]) => usuario);\nif (usuarios.length !== 1) {\n  return resultado('configuracao_pendente', 'Configure um vínculo único do revisor GitHub com seu usuário Slack no nó 02.', base);\n}\nreturn resultado('pronto_para_perguntar', 'Aprovação ALTO elegível.', {\n  ...base, usuario_slack_esperado: usuarios[0], team_id: cfg.team_id,\n  app_id: cfg.app_id, canal_id: cfg.canal_id,\n});"
+      },
+      "id": "06b84ad7-c154-49b5-96f2-1f1f9f7e9765",
+      "name": "04 | Validar Evento e Identificar Revisor",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "eligible",
+              "leftValue": "={{ $json.feedback.status === 'pronto_para_perguntar' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cbee9732-72be-49ba-9390-e6d84ecea2aa",
+      "name": "05 | Pode Solicitar Feedback",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.feedback.chave }}",
+        "options": {
+          "scope": "node",
+          "historySize": 10000
+        }
+      },
+      "id": "70726872-3d5a-4c2f-91ff-3f3db3a2e9ec",
+      "name": "06 | Descartar Perguntas Repetidas",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst f = $json.feedback;\nconst cfg = $json.configuracao_feedback;\nif (f?.status !== 'pronto_para_perguntar') throw new Error('Evento não elegível para pergunta.');\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) throw new Error('N8N_SEGREDO_ACOES indisponível.');\nif (!Number.isSafeInteger(cfg.prazo_resposta_horas) || cfg.prazo_resposta_horas < 1 || cfg.prazo_resposta_horas > 720) {\n  throw new Error('Prazo de resposta deve ser de 1 a 720 horas.');\n}\nconst agora = Math.floor(Date.now() / 1000);\nconst opcoes = [\n  ['regra_conservadora', 'Regra conservadora demais'],\n  ['risco_aceito', 'Risco aceito conscientemente'],\n  ['falso_positivo', 'Falso positivo'],\n];\nconst contextoBase = {\n  v: 1, installation_id: f.installation_id, id_aprovacao: f.id_aprovacao,\n  task_run_id: f.task_run_id, revisor_github: f.revisor_github,\n  usuario_slack_esperado: f.usuario_slack_esperado,\n  team_id: f.team_id, app_id: f.app_id, canal_id: f.canal_id,\n  emitido_em: agora, expira_em: agora + cfg.prazo_resposta_horas * 3600,\n};\nconst botoes = opcoes.map(([motivo, rotulo]) => {\n  const contexto = Buffer.from(JSON.stringify({ ...contextoBase, feedback_reason: motivo }), 'utf8').toString('base64url');\n  const assinatura = crypto.createHmac('sha256', segredo).update('aprova-feedback-v1.' + contexto).digest('hex');\n  const value = JSON.stringify({ contexto, assinatura });\n  if (value.length > 2000) throw new Error('Contexto excede o limite do botão Slack.');\n  return { type: 'button', action_id: 'aprova_feedback_' + motivo,\n    text: { type: 'plain_text', text: rotulo }, value };\n});\nconst aviso = cfg.api_feedback_habilitada\n  ? 'O motivo só será confirmado após o núcleo validar e persistir o feedback.'\n  : 'Integração com a API de feedback ainda pendente. O clique não será salvo em approvals nesta configuração.';\nconst pergunta = f.revisor_github + ', por que você aprovou a mudança que o gate marcou como ALTO risco?';\nreturn { json: {\n  ...$json,\n  slack_payload: {\n    channel: f.canal_id,\n    text: 'aPRova | Motivo da aprovação de ' + f.repositorio + ' #' + f.numero_pr + '. ' + pergunta + ' ' + aviso,\n    blocks: [\n      { type: 'section', text: { type: 'plain_text',\n        text: 'aPRova | Feedback da aprovação\\nPR: ' + f.repositorio + ' #' + f.numero_pr +\n          '\\nhttps://github.com/' + f.repositorio + '/pull/' + f.numero_pr +\n          '\\nRevisor GitHub: ' + f.revisor_github + '\\n\\n' + pergunta } },\n      { type: 'section', text: { type: 'mrkdwn', text: '<@' + f.usuario_slack_esperado + '> selecione um dos três motivos abaixo.' } },\n      { type: 'actions', block_id: 'aprova_feedback_v1', elements: botoes },\n      { type: 'context', elements: [{ type: 'plain_text', text: aviso }] },\n    ],\n  },\n} };"
+      },
+      "id": "4a44919c-fe82-45c5-83d0-da03dd1755bf",
+      "name": "07 | Preparar Pergunta e Botões",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.slack_payload.channel }}"
+        },
+        "messageType": "block",
+        "blocksUi": "={{ JSON.stringify({blocks: $json.slack_payload.blocks}) }}",
+        "text": "={{ $json.slack_payload.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "id": "4c7b16dc-d812-407f-ba93-6be01c209872",
+      "name": "08 | Publicar Pergunta no Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1792,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const origem = $('07 | Preparar Pergunta e Botões').first().json;\nconst ts = $json.message?.ts || $json.ts || $json.message_timestamp;\nif ($json.ok !== true || $json.channel !== origem.feedback.canal_id || typeof ts !== 'string' || !ts) {\n  throw new Error('Slack não confirmou a publicação da pergunta. Confira o canal antes de reenviar.');\n}\nreturn { json: { feedback: { ...origem.feedback,\n  status: 'pergunta_publicada', mensagem_slack_ts: ts,\n  motivo: 'Pergunta publicada; ainda não existe feedback registrado no núcleo.',\n} } };"
+      },
+      "id": "0258edc8-eff8-43d1-a91f-86fd78b0f979",
+      "name": "09 | Confirmar Publicação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "01 | Receber Evento ou Resposta": {
+      "main": [
+        [
+          {
+            "node": "02 | Configurar Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Configurar Feedback": {
+      "main": [
+        [
+          {
+            "node": "03 | É Resposta do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | É Resposta do Slack": {
+      "main": [
+        [
+          {
+            "node": "10 | Validar Clique e Contexto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "04 | Validar Evento e Identificar Revisor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 | Validar Clique e Contexto": {
+      "main": [
+        [
+          {
+            "node": "11 | API de Feedback Disponível",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 | API de Feedback Disponível": {
+      "main": [
+        [
+          {
+            "node": "12 | Assinar Feedback ao Núcleo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "14 | Preparar Retorno do Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 | Assinar Feedback ao Núcleo": {
+      "main": [
+        [
+          {
+            "node": "13 | Enviar Feedback ao Núcleo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 | Enviar Feedback ao Núcleo": {
+      "main": [
+        [
+          {
+            "node": "14 | Preparar Retorno do Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 | Preparar Retorno do Feedback": {
+      "main": [
+        [
+          {
+            "node": "15 | Avisar Revisor no Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 | Avisar Revisor no Slack": {
+      "main": [
+        [
+          {
+            "node": "16 | Confirmar Aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 | Confirmar Aviso": {
+      "main": [
+        [
+          {
+            "node": "99 | Resultado do Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | Validar Evento e Identificar Revisor": {
+      "main": [
+        [
+          {
+            "node": "05 | Pode Solicitar Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Pode Solicitar Feedback": {
+      "main": [
+        [
+          {
+            "node": "06 | Descartar Perguntas Repetidas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "99 | Resultado do Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Descartar Perguntas Repetidas": {
+      "main": [
+        [
+          {
+            "node": "07 | Preparar Pergunta e Botões",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 | Preparar Pergunta e Botões": {
+      "main": [
+        [
+          {
+            "node": "08 | Publicar Pergunta no Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 | Publicar Pergunta no Slack": {
+      "main": [
+        [
+          {
+            "node": "09 | Confirmar Publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 | Confirmar Publicação": {
+      "main": [
+        [
+          {
+            "node": "99 | Resultado do Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}

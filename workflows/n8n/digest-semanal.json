@@ -23,7 +23,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const configuracao = { installation_ids: [] };\nconst ids = [...new Set(configuracao.installation_ids)];\nif (!ids.length || ids.length > 50 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) {\n  throw new Error('Preencha installation_ids neste nó com 1 a 50 IDs reais das instalações do GitHub App.');\n}\nconst agora = new Date();\nconst hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));\nconst fim = new Date(hoje);\nfim.setUTCDate(fim.getUTCDate() - (fim.getUTCDay() + 6) % 7);\nconst inicio = new Date(fim);\ninicio.setUTCDate(inicio.getUTCDate() - 7);\nreturn ids.map(installation_id => ({ json: {\n  installation_id, inicio: inicio.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),\n} }));"
+        "jsCode": "const configuracao = { installation_ids: [Number($env.APROVA_CHAT_INSTALLATION_ID || 0)] };\nconst ids = [...new Set(configuracao.installation_ids)];\nif (!ids.length || ids.length > 50 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) {\n  throw new Error('Configure APROVA_CHAT_INSTALLATION_ID no ambiente do n8n com um ID real de instalação do GitHub App.');\n}\nconst agora = new Date();\nconst hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));\nconst fim = new Date(hoje);\nfim.setUTCDate(fim.getUTCDate() - (fim.getUTCDay() + 6) % 7);\nconst inicio = new Date(fim);\ninicio.setUTCDate(inicio.getUTCDate() - 7);\nreturn ids.map(installation_id => ({ json: {\n  installation_id, inicio: inicio.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),\n} }));"
       },
       "id": "b672e3d4-f25c-4f19-abaa-74006fd7f3cc",
       "name": "02 | Configurar Instalações",
@@ -221,5 +221,6 @@
     "executionOrder": "v1"
   },
   "active": false,
-  "pinData": {}
+  "pinData": {},
+  "description": "Digest semanal com instalação lida de APROVA_CHAT_INSTALLATION_ID no ambiente do n8n. Consulta assinada ao núcleo e publicação no Slack; ativar após validação real."
 }
