@@ -97,6 +97,9 @@ type Configuracao struct {
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
 
+	GateMaxArquivos       int
+	GateCaminhosSensiveis []string
+
 	VinculosSlackGitHub map[string]string
 }
 
@@ -151,6 +154,9 @@ func Carregar() (Configuracao, error) {
 		SandboxRedeLocal:    leitura.nomeDeRede("SANDBOX_REDE_LOCAL", redeLocalPadrao),
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
+
+		GateMaxArquivos:       leitura.inteiroPositivoOpcional("GATE_MAX_ARQUIVOS"),
+		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),
 
 		VinculosSlackGitHub: leitura.vinculosSlackGitHub("SLACK_GITHUB_VINCULOS"),
 	}
@@ -286,6 +292,31 @@ func (l *leitor) inteiroPositivo(nome string, padrao int) int {
 		return padrao
 	}
 	return numero
+}
+
+func (l *leitor) inteiroPositivoOpcional(nome string) int {
+	if l.opcional(nome, "") == "" {
+		return 0
+	}
+	return l.inteiroPositivo(nome, 0)
+}
+
+func (l *leitor) caminhosDoGate(nome string) []string {
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return nil
+	}
+
+	var caminhos []string
+	for _, entrada := range strings.Split(valor, ",") {
+		caminho := strings.TrimSpace(entrada)
+		if _, err := path.Match(caminho, "x"); err != nil || caminho == "" {
+			l.registrarPendencia("%s espera diretórios terminados em barra ou padrões de nome separados por vírgula, entrada %q é inválida", nome, caminho)
+			return nil
+		}
+		caminhos = append(caminhos, caminho)
+	}
+	return caminhos
 }
 
 func (l *leitor) urlHTTP(nome, padrao string) string {
