@@ -39,13 +39,20 @@ variável e diz onde obter o valor.
 Container Apps Jobs, que exige as seis variáveis `AZURE_*`). A imagem que roda
 os testes de repositórios Go vem de `SANDBOX_IMAGEM_GO`; veja
 [imagens/go/README.md](imagens/go/README.md) para construir a imagem e entender
-por que o código do PR não consegue forjar o próprio resultado.
+por que o código do PR não consegue forjar o próprio resultado. A de repositórios
+Python vem de `SANDBOX_IMAGEM_PYTHON`; veja
+[imagens/python/README.md](imagens/python/README.md).
 
 `SANDBOX_DIRETORIOS` diz em que diretório de cada repositório fica o projeto
 que o sandbox testa, no formato `dono/repositorio=diretorio`, separado por
 vírgula (por exemplo `Azulpasta/aPRova-TESTES=go`). Repositório sem entrada é
 testado a partir da raiz. O diretório vem sempre daqui, nunca do conteúdo do
 PR.
+
+`SANDBOX_LINGUAGENS` diz a linguagem do projeto de cada repositório, no mesmo
+formato (por exemplo `Azulpasta/aPRova-TESTES=python`), e aceita `go` e `python`.
+Repositório sem entrada é testado como Go. Como o diretório, a linguagem vem
+sempre daqui, nunca do conteúdo do PR.
 
 O executor local roda o contêiner sem rede (`SANDBOX_REDE_LOCAL=none`), e assim
 só consegue testar repositórios `file://`, como os dos testes de integração.
