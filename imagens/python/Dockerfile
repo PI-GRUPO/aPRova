@@ -9,7 +9,7 @@ COPY cmd/ cmd/
 COPY internal/ internal/
 RUN go build -trimpath -ldflags="-s -w" -o /saida/aprova-sandbox ./cmd/sandbox
 
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -17,12 +17,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_INPUT=1
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git procps \
+    && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 aprova \
     && useradd --uid 10001 --gid aprova --create-home --shell /usr/sbin/nologin aprova
 
-RUN python -m pip install --no-cache-dir pytest pytest-json-report pytest-timeout
+RUN python -m pip install --no-cache-dir pytest==9.2.0 pytest-json-report==1.5.0 pytest-timeout==2.4.0
 
 COPY --from=compilacao /saida/aprova-sandbox /usr/local/bin/aprova-sandbox
 

@@ -11,7 +11,7 @@ SQLC ?= sqlc
 # shell, para que aspas ou metacaracteres na senha não virem comando.
 export DATABASE_URL
 
-.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco run-api run-worker test lint keys verificar-token sandbox-azure consultar-permissao imagem-sandbox-go
+.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco run-api run-worker test lint keys verificar-token sandbox-azure consultar-permissao imagem-sandbox-go imagem-sandbox-python
 
 up:
 	$(COMPOSE) up -d --wait
@@ -58,6 +58,9 @@ sandbox-azure:
 
 imagem-sandbox-go:
 	docker build -f imagens/go/Dockerfile -t aprova-sandbox-go:local .
+
+imagem-sandbox-python:
+	docker build -f imagens/python/Dockerfile -t aprova-sandbox-python:local .
 
 consultar-permissao:
 	@go run ./scripts/consultar-permissao $(INSTALLATION_ID) $(REPOSITORIO) $(LOGIN)
