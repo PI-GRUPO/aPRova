@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-
 	"time"
 
 	"github.com/Azulpasta/aPRova/internal/domain"
@@ -131,12 +131,30 @@ func (r *RepositorioPostgres) BuscarGateDeRisco(ctx context.Context, taskRunID s
 	if err != nil {
 		return domain.GateDeRisco{}, traduzir("buscar gate de risco", err)
 	}
-	return domain.GateDeRisco{
+	gate := domain.GateDeRisco{
 		TaskRunID:           linha.TaskRunID,
 		NivelDeterministico: domain.NivelRisco(linha.DeterministicLevel),
 		Nivel:               domain.NivelRisco(linha.Level),
 		Motivo:              linha.Reason,
-	}, nil
+	}
+	if err := json.Unmarshal(linha.RulesHit, &gate.Motivos); err != nil {
+		return domain.GateDeRisco{}, fmt.Errorf("interpretar rules_hit do task_run %s: %w", taskRunID, err)
+	}
+	if err := json.Unmarshal(linha.NewDependencies, &gate.DependenciasNovas); err != nil {
+		return domain.GateDeRisco{}, fmt.Errorf("interpretar new_dependencies do task_run %s: %w", taskRunID, err)
+	}
+	return gate, nil
+}
+
+func jsonDaLista[T any](lista []T) ([]byte, error) {
+	if lista == nil {
+		lista = []T{}
+	}
+	corpo, err := json.Marshal(lista)
+	if err != nil {
+		return nil, fmt.Errorf("serializar lista do gate: %w", err)
+	}
+	return corpo, nil
 }
 
 // ProximaAprovacao devolve a primeira aprovação do task_run com id maior que

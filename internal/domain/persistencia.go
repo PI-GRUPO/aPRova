@@ -131,12 +131,16 @@ type Transicao struct {
 	Detalhe   string        `validate:"max=4000"`
 }
 
-// GateDeRisco é a decisão do gate para um task_run, com o motivo nomeado.
+// GateDeRisco é a decisão do gate para um task_run. Motivo resume em texto os
+// Motivos, as regras que dispararam; é a partir do que está gravado aqui que os
+// eventos da análise são montados.
 type GateDeRisco struct {
 	TaskRunID           string     `validate:"required,uuid"`
 	NivelDeterministico NivelRisco `validate:"required,oneof=baixo medio alto"`
 	Nivel               NivelRisco `validate:"required,oneof=baixo medio alto"`
 	Motivo              string     `validate:"required,max=1000"`
+	Motivos             []MotivoDeRisco
+	DependenciasNovas   []DependenciaNova
 }
 
 // NovoRecibo é o recibo assinado, pronto para ser anexado.

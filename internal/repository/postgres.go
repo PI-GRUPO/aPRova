@@ -277,11 +277,22 @@ func (r *RepositorioPostgres) GravarGateDeRisco(ctx context.Context, gate domain
 		return err
 	}
 
-	_, err := r.consultas.CreateRiskGate(ctx, db.CreateRiskGateParams{
+	motivos, err := jsonDaLista(gate.Motivos)
+	if err != nil {
+		return err
+	}
+	dependencias, err := jsonDaLista(gate.DependenciasNovas)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.consultas.CreateRiskGate(ctx, db.CreateRiskGateParams{
 		TaskRunID:          gate.TaskRunID,
 		DeterministicLevel: string(gate.NivelDeterministico),
 		Level:              string(gate.Nivel),
 		Reason:             gate.Motivo,
+		RulesHit:           motivos,
+		NewDependencies:    dependencias,
 	})
 	return traduzir("gravar gate de risco", err)
 }

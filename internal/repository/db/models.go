@@ -81,6 +81,8 @@ type RiskGate struct {
 	Level              string    `json:"level"`
 	Reason             string    `json:"reason"`
 	CreatedAt          time.Time `json:"created_at"`
+	RulesHit           []byte    `json:"rules_hit"`
+	NewDependencies    []byte    `json:"new_dependencies"`
 }
 
 type SandboxResult struct {

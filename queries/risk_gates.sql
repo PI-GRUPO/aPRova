@@ -1,6 +1,6 @@
 -- name: CreateRiskGate :one
-INSERT INTO risk_gates (tenant_id, task_run_id, deterministic_level, level, reason)
-SELECT tr.tenant_id, tr.id, sqlc.arg(deterministic_level), sqlc.arg(level), sqlc.arg(reason)
+INSERT INTO risk_gates (tenant_id, task_run_id, deterministic_level, level, reason, rules_hit, new_dependencies)
+SELECT tr.tenant_id, tr.id, sqlc.arg(deterministic_level), sqlc.arg(level), sqlc.arg(reason), sqlc.arg(rules_hit), sqlc.arg(new_dependencies)
 FROM task_runs tr
 WHERE tr.id = sqlc.arg(task_run_id)
 RETURNING *;
