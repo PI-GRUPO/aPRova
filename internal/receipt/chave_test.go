@@ -62,11 +62,11 @@ func TestAssinadorNuncaImprimeAChavePrivada(t *testing.T) {
 	slog.New(slog.NewJSONHandler(&diario, nil)).Info("assinador", "assinador", assinador)
 
 	for nome, texto := range map[string]string{
-		"%v":   fmt.Sprintf("%v", assinador),
-		"%+v":  fmt.Sprintf("%+v", assinador),
-		"%#v":  fmt.Sprintf("%#v", assinador),
-		"%s":   fmt.Sprintf("%s", assinador),
-		"slog": diario.String(),
+		"%v":     fmt.Sprintf("%v", assinador),
+		"%+v":    fmt.Sprintf("%+v", assinador),
+		"%#v":    fmt.Sprintf("%#v", assinador),
+		"String": assinador.String(),
+		"slog":   diario.String(),
 	} {
 		if vazaSegredo(texto, sementeDeTeste) {
 			t.Errorf("%s expõe a chave privada: %s", nome, texto)
