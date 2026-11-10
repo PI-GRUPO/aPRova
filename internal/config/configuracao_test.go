@@ -237,8 +237,8 @@ func TestCarregarRejeitaVinculoMalformado(t *testing.T) {
 func TestCarregarRejeitaChaveDeReciboInvalidaSemCitarOValor(t *testing.T) {
 	chaveCompleta := base64.StdEncoding.EncodeToString(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{7}, 32)))
 	casos := map[string]string{
-		"não é base64":                 "isto não é base64!!!",
-		"semente curta":                base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 31)),
+		"não é base64":                   "isto não é base64!!!",
+		"semente curta":                  base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 31)),
 		"chave de 64 bytes, não semente": chaveCompleta,
 	}
 

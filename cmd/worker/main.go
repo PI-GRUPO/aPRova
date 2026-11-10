@@ -13,6 +13,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 	"github.com/Azulpasta/aPRova/internal/worker"
@@ -108,6 +109,14 @@ func executar() error {
 	emissorDeEventos.Aguardar()
 
 	return nil
+}
+
+func montarAssinador(configuracao config.Configuracao) (*receipt.Assinador, error) {
+	assinador, err := receipt.NovoAssinador(configuracao.ReciboSemente)
+	if err != nil {
+		return nil, fmt.Errorf("o worker exige APROVA_CHAVE_RECIBO, a semente da chave que assina os recibos (gere com make keys): %w", err)
+	}
+	return assinador, nil
 }
 
 func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, error) {

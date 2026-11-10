@@ -49,8 +49,7 @@ var variaveisQueSeraoObrigatorias = []string{
 	"GITHUB_APP_ID",
 	"GITHUB_PRIVATE_KEY_BASE64",
 	"GITHUB_WEBHOOK_SECRET",
-	"RECEIPT_PRIVATE_KEY_BASE64",
-	"RECEIPT_PUBLIC_KEY_BASE64",
+	"APROVA_CHAVE_RECIBO",
 	"ANTHROPIC_API_KEY",
 }
 
@@ -66,8 +65,8 @@ type Configuracao struct {
 	GitHubChavePrivada   []byte
 	GitHubSegredoWebhook string
 
-	ReciboChavePrivada ed25519.PrivateKey
-	ReciboChavePublica ed25519.PublicKey
+	ReciboSemente        []byte
+	ReciboChavesPublicas []ed25519.PublicKey
 
 	ChaveAPIAnthropic string
 
@@ -124,8 +123,8 @@ func Carregar() (Configuracao, error) {
 		GitHubChavePrivada:   leitura.base64Opcional("GITHUB_PRIVATE_KEY_BASE64"),
 		GitHubSegredoWebhook: leitura.opcional("GITHUB_WEBHOOK_SECRET", ""),
 
-		ReciboChavePrivada: leitura.chavePrivadaEd25519("RECEIPT_PRIVATE_KEY_BASE64"),
-		ReciboChavePublica: leitura.chavePublicaEd25519("RECEIPT_PUBLIC_KEY_BASE64"),
+		ReciboSemente:        leitura.sementeEd25519("APROVA_CHAVE_RECIBO"),
+		ReciboChavesPublicas: leitura.chavesPublicasEd25519("APROVA_CHAVES_PUBLICAS_RECIBO"),
 
 		ChaveAPIAnthropic: leitura.opcional("ANTHROPIC_API_KEY", ""),
 
@@ -231,33 +230,36 @@ func (l *leitor) base64Opcional(nome string) []byte {
 	return decodificado
 }
 
-func (l *leitor) chavePrivadaEd25519(nome string) ed25519.PrivateKey {
-	bruto := l.chaveComTamanho(nome, ed25519.PrivateKeySize)
-	if bruto == nil {
+func (l *leitor) sementeEd25519(nome string) []byte {
+	valor := l.opcional(nome, "")
+	if valor == "" {
 		return nil
 	}
-	return ed25519.PrivateKey(bruto)
+
+	semente, err := base64.StdEncoding.DecodeString(valor)
+	if err != nil || len(semente) != ed25519.SeedSize {
+		l.registrarPendencia("%s precisa ser a semente Ed25519 de %d bytes em base64 (gere com make keys)", nome, ed25519.SeedSize)
+		return nil
+	}
+	return semente
 }
 
-func (l *leitor) chavePublicaEd25519(nome string) ed25519.PublicKey {
-	bruto := l.chaveComTamanho(nome, ed25519.PublicKeySize)
-	if bruto == nil {
-		return nil
-	}
-	return ed25519.PublicKey(bruto)
-}
-
-func (l *leitor) chaveComTamanho(nome string, tamanhoEsperado int) []byte {
-	bruto := l.base64Opcional(nome)
-	if bruto == nil {
+func (l *leitor) chavesPublicasEd25519(nome string) []ed25519.PublicKey {
+	valor := l.opcional(nome, "")
+	if valor == "" {
 		return nil
 	}
 
-	if len(bruto) != tamanhoEsperado {
-		l.registrarPendencia("%s deve ter %d bytes decodificados, tem %d", nome, tamanhoEsperado, len(bruto))
-		return nil
+	var chaves []ed25519.PublicKey
+	for _, entrada := range strings.Split(valor, ",") {
+		chave, err := base64.StdEncoding.DecodeString(strings.TrimSpace(entrada))
+		if err != nil || len(chave) != ed25519.PublicKeySize {
+			l.registrarPendencia("%s espera chaves públicas Ed25519 de %d bytes em base64, separadas por vírgula; entrada %q é inválida", nome, ed25519.PublicKeySize, strings.TrimSpace(entrada))
+			return nil
+		}
+		chaves = append(chaves, ed25519.PublicKey(chave))
 	}
-	return bruto
+	return chaves
 }
 
 func (l *leitor) vinculosSlackGitHub(nome string) map[string]string {

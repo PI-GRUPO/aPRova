@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	privada, publica, err := gerarParEmBase64()
+	semente, publica, err := gerarParEmBase64()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "gerar par Ed25519: %v\n", err)
 		os.Exit(1)
@@ -16,20 +16,29 @@ func main() {
 
 	fmt.Println("Cole no seu .env:")
 	fmt.Println()
-	fmt.Printf("RECEIPT_PRIVATE_KEY_BASE64=%s\n", privada)
-	fmt.Printf("RECEIPT_PUBLIC_KEY_BASE64=%s\n", publica)
+	for _, linha := range linhasDoEnv(semente, publica) {
+		fmt.Println(linha)
+	}
 	fmt.Println()
-	fmt.Println("A chave privada é segredo. A pública deve ser publicada,")
-	fmt.Println("senão ninguém consegue verificar os recibos de forma independente.")
+	fmt.Println("APROVA_CHAVE_RECIBO é a semente da chave privada: é segredo. A chave")
+	fmt.Println("pública deve ser publicada, senão ninguém consegue verificar os recibos")
+	fmt.Println("de forma independente.")
 }
 
-func gerarParEmBase64() (privadaEmBase64, publicaEmBase64 string, err error) {
+func linhasDoEnv(sementeEmBase64, publicaEmBase64 string) []string {
+	return []string{
+		"APROVA_CHAVE_RECIBO=" + sementeEmBase64,
+		"APROVA_CHAVES_PUBLICAS_RECIBO=" + publicaEmBase64,
+	}
+}
+
+func gerarParEmBase64() (sementeEmBase64, publicaEmBase64 string, err error) {
 	publica, privada, err := ed25519.GenerateKey(nil)
 	if err != nil {
 		return "", "", fmt.Errorf("gerar chave ed25519: %w", err)
 	}
 
-	return base64.StdEncoding.EncodeToString(privada),
+	return base64.StdEncoding.EncodeToString(privada.Seed()),
 		base64.StdEncoding.EncodeToString(publica),
 		nil
 }
