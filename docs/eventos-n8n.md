@@ -104,17 +104,34 @@ quem só quer os casos graves filtra por `nivel_risco`.
 | `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do recibo assinado, 64 caracteres hexadecimais minúsculos |
 | `url_recibo` | texto (URL) | sim | `https://aprova.example.com/recibos/2b6d8f0a-...` | onde o recibo pode ser conferido |
 
-Os valores possíveis de `motivos[].nome` são os das regras do gate:
+Os valores possíveis de `motivos[].nome` são os identificadores das regras do
+gate. O nível é o que a regra, sozinha, atribui ao PR; o nível do evento é o
+maior entre os motivos. A descrição é o texto que vai em `motivos[].descricao`.
 
-| Identificador | Nível | Quando dispara |
-| --- | --- | --- |
-| `falha_sandbox` | alto | os testes falharam ou o projeto não compilou |
-| `muitos_arquivos` | alto | o PR altera mais arquivos que o limite (20 por padrão) |
-| `configuracao_ci` | alto | o PR altera workflow, Dockerfile, Makefile ou arquivo de build equivalente |
-| `dependencia_nova` | alto | o PR acrescenta dependência, ou o diff do manifesto não pôde ser lido |
-| `segredo_versionado` | alto | o PR versiona `.env`, chave privada ou arquivo equivalente |
-| `area_sensivel` | medio | o PR altera um caminho sensível, como `auth/` ou `migrations/` |
-| `codigo_sem_teste` | medio | o PR altera código sem alterar nenhum teste |
+| Identificador | Nível | Descrição enviada | Quando dispara |
+| --- | --- | --- | --- |
+| `falha_sandbox` | alto | os testes ou a compilação falharam no sandbox | os testes falharam ou o projeto não compilou |
+| `muitos_arquivos` | alto | o PR altera N arquivos, acima do limite de M | o PR altera mais arquivos que o limite (20 por padrão) |
+| `configuracao_ci` | alto | o PR altera configuração de build ou de CI | o PR altera workflow, Dockerfile, Makefile ou arquivo de build equivalente |
+| `dependencia_nova` | alto | o PR acrescenta dependência nova, que precisa de revisão humana | o PR acrescenta dependência, ou o diff do manifesto não pôde ser lido |
+| `segredo_versionado` | alto | o PR versiona um arquivo que costuma guardar segredo | o PR versiona `.env`, chave privada ou arquivo equivalente |
+| `area_sensivel` | alto | o PR altera um caminho sensível | o PR altera um caminho sensível, como `auth/` ou `migrations/` |
+| `codigo_sem_teste` | medio | o PR altera código sem alterar nenhum teste | o PR altera código sem alterar nenhum teste |
+
+Os exemplos em `workflows/exemplos/` usam esses identificadores. Versões
+antigas dos exemplos traziam nomes inventados, como `falha_nos_testes` e
+`sem_teste_para_alteracao`, que o núcleo nunca envia: um workflow que compare
+`motivos[].nome` com texto fixo precisa usar a lista acima.
+
+`area_sensivel` é alto porque a calibração por histórico só pode abaixar o
+risco, nunca subir. Com a base em médio, um PR em `auth/` com os testes passando
+sairia sem aprovação humana, e nenhum dado futuro o faria voltar a exigi-la.
+
+Quando o GitHub não devolve o diff de um arquivo de dependências, o gate
+bloqueia o PR com o motivo `dependencia_nova` (evidência "não foi possível ler o
+diff"), mas o evento `dependencia_nova` **não** é enviado: ele exige ao menos
+uma dependência, e sem o diff não há o que listar. Nesse caso o PR aparece só
+em `analise_concluida` e `aguardando_aprovacao`.
 
 O domínio `aprova.example.com` dos exemplos é provisório: o endereço público
 do núcleo ainda não existe. Quando existir, ele vai na variável
