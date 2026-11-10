@@ -101,8 +101,8 @@ quem só quer os casos graves filtra por `nivel_risco`.
 | `motivos[].nome` | texto | sim | `codigo_sem_teste` | identificador estável da regra; a lista está abaixo |
 | `motivos[].descricao` | texto | sim | `o PR altera código sem alterar nenhum teste` | frase curta para mostrar a pessoas |
 | `explicacao` | texto | sim | `Risco medio: o PR altera código sem alterar nenhum teste.` | hoje é o nível e as descrições dos motivos; até 4000 caracteres |
-| `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do recibo assinado, 64 caracteres hexadecimais minúsculos |
-| `url_recibo` | texto (URL) | sim | `https://aprova.example.com/recibos/2b6d8f0a-...` | onde o recibo pode ser conferido |
+| `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do conteúdo assinado do recibo, 64 caracteres hexadecimais minúsculos; é o `hash_sha256` devolvido pela verificação |
+| `url_recibo` | texto (URL) | sim | `https://aprova.example.com/receipts/2b6d8f0a-.../verify` | endereço público que verifica o recibo e responde `valido` verdadeiro ou falso |
 
 Os valores possíveis de `motivos[].nome` são os identificadores das regras do
 gate. O nível é o que a regra, sozinha, atribui ao PR; o nível do evento é o
@@ -135,8 +135,15 @@ em `analise_concluida` e `aguardando_aprovacao`.
 
 O domínio `aprova.example.com` dos exemplos é provisório: o endereço público
 do núcleo ainda não existe. Quando existir, ele vai na variável
-`APROVA_URL_PUBLICA`, e só a base da URL muda; o caminho `/recibos/<id>`
+`APROVA_URL_PUBLICA`, e só a base da URL muda; o caminho `/receipts/<id>/verify`
 continua o mesmo, então nenhum workflow precisa ser alterado.
+
+O recibo agora é real: `url_recibo` abre a verificação pública do recibo, e
+`receipt_hash` é o SHA-256 do conteúdo assinado. Até a versão anterior deste
+contrato o caminho era `/recibos/<id>` e não respondia; um workflow que monte ou
+desmonte essa URL por conta própria precisa passar a usar
+`/receipts/<id>/verify`. Como verificar um recibo sem depender do núcleo está em
+[verificacao-recibo.md](verificacao-recibo.md).
 
 ### `aguardando_aprovacao`
 

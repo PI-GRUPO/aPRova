@@ -173,7 +173,7 @@ CORPO="$(jq -c \
 		.dados.url_pr = "https://github.com/\(.dados.repositorio)/pull/\(.dados.numero_pr // (.dados.url_pr | split("/") | last))"
 	  else . end
 	| if (.dados | has("url_recibo")) and ($sobrescritas | has("url_recibo") | not) then
-		.dados.url_recibo = "\($url_publica)/recibos/\(.dados.url_recibo | split("/recibos/") | last)"
+		.dados.url_recibo = "\($url_publica)/receipts/\(.dados.url_recibo | split("/receipts/") | last)"
 	  else . end' \
 	"${PASTA_EXEMPLOS}/${TIPO}.json")"
 ASSINATURA="sha256=$(hmac_sha256 "$SEGREDO" "${TIMESTAMP}.${CORPO}")"

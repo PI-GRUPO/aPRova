@@ -74,21 +74,30 @@ Gere o par Ed25519 e cole as duas linhas no `.env`:
 make keys
 ```
 
-A chave privada é segredo e fica só no `.env`. **A chave pública precisa ser
-publicada** — neste README, num endpoint da aplicação ou em qualquer lugar
-estável e acessível.
+| Variável | Quem usa | Conteúdo |
+| --- | --- | --- |
+| `APROVA_CHAVE_RECIBO` | worker | semente de 32 bytes da chave privada, em base64. **É segredo.** |
+| `APROVA_CHAVES_PUBLICAS_RECIBO` | API | chaves públicas aceitas na verificação, em base64, separadas por vírgula |
+
+O worker não sobe sem `APROVA_CHAVE_RECIBO`: sem ela não há como assinar, e uma
+análise sem recibo não pode existir. Uma chave malformada também derruba o
+processo na inicialização, em vez de falhar no primeiro recibo. A mensagem de
+erro nomeia a variável e nunca repete o valor.
+
+A API verifica só com chaves públicas e não precisa da privada. A lista aceita
+mais de uma chave para que, depois de uma troca, os recibos antigos continuem
+verificáveis: mantenha a chave pública antiga na lista.
+
+**A chave pública precisa ser publicada.** Ela sai em `GET /receipts/keys`, e
+vale guardá-la também num lugar que não dependa do servidor.
 
 Isso não é detalhe operacional: é o que define a garantia do projeto. Com HMAC,
 verificar um recibo exige o mesmo segredo usado para assiná-lo, então só quem
-emitiu consegue conferir — e "confie em nós" volta a ser a única resposta
+emitiu consegue conferir, e "confie em nós" volta a ser a única resposta
 possível. Com assinatura Ed25519 a chave pública basta para verificar e não
 serve para forjar, então qualquer pessoa (auditoria, cliente, o próprio autor do
 PR) confere um recibo sozinha, sem pedir acesso a nada. É essa verificação
 independente que transforma o recibo em prova, em vez de registro interno.
-
-As duas chaves são decodificadas e validadas na inicialização, não no primeiro
-uso: uma chave malformada derruba o processo no deploy, em vez de falhar no
-momento em que houvesse um recibo real para assinar.
 
 ## Subindo localmente
 
@@ -335,8 +344,8 @@ push novo cria outro `task_run`, e o anterior encerra em `falhou` com o motivo
 | `WORKER_MAX_TENTATIVAS` | `3` | tentativas de uma falha transitória (infraestrutura do sandbox, 5xx ou limite do GitHub) antes de `falhou` e do evento `falha_recuperavel` |
 | `GITHUB_APP_SLUG` | vazio | nome do app no GitHub; o review que o próprio app publica a partir do Slack só vale quando o revisor é `<slug>[bot]` |
 
-O recibo assinado e a publicação no GitHub ainda não existem. Até lá, o worker
-usa implementações provisórias, que só registram no log o que fariam.
+A publicação no GitHub ainda não existe. Até lá, o worker usa uma
+implementação provisória, que só registra no log o que publicaria.
 Um `SIGTERM` para de pegar trabalho novo, espera as etapas em andamento por até
 30 segundos e devolve à fila as que não terminaram.
 
@@ -364,6 +373,38 @@ uma dependência que já existe não é dependência nova. Se o GitHub omitir o 
 de um manifesto, ou uma linha adicionada não puder ser interpretada, a regra
 `dependencia_nova` dispara assim mesmo: na dúvida, o gate bloqueia.
 
+### Recibo verificável
+
+Toda decisão do gate sai com um recibo assinado com Ed25519 (`internal/receipt`),
+que qualquer pessoa verifica só com a chave pública, sem acesso ao banco e sem
+confiar no servidor. O recibo é assinado e verificável: o conteúdo é público, só
+não pode ser forjado.
+
+- **O que assina:** o commit analisado, o SHA-256 do diff, o resultado do
+  sandbox, os níveis, os motivos com as evidências, o instante, a chave e o elo
+  com o recibo anterior da mesma instalação.
+- **Quando:** dentro de `avaliando_risco`, antes da bifurcação. PR bloqueado
+  também tem recibo.
+- **Atomicidade:** a decisão (`risk_gates`) e o recibo (`receipts`) são gravados
+  na mesma transação. Não existe decisão gravada sem recibo; se um `task_run`
+  antigo estiver nesse estado, ele encerra em `falhou` em vez de seguir.
+- **Bytes exatos:** `receipts.payload` é `text`, e o Postgres devolve nele os
+  mesmos bytes que foram assinados. A verificação usa sempre esses bytes, nunca
+  uma releitura do JSON.
+- **Cadeia:** cada recibo cita o id e o hash do anterior. A emissão é
+  serializada por instalação com um lock de transação, então duas análises
+  simultâneas nunca pegam o mesmo anterior.
+
+| Rota | Devolve |
+| --- | --- |
+| `GET /receipts/{id}` | os bytes assinados em base64, a assinatura, o `key_id` e o conteúdo para leitura |
+| `GET /receipts/{id}/verify` | `valido` verdadeiro ou falso e, quando falso, qual verificação falhou |
+| `GET /receipts/keys` | as chaves públicas aceitas |
+
+As três são públicas e só de leitura. O passo a passo para verificar com o
+executável `cmd/verificar-recibo` e com `openssl` puro está em
+[docs/verificacao-recibo.md](docs/verificacao-recibo.md).
+
 `GATE_CAMINHOS_SENSIVEIS` aceita, separados por vírgula, diretórios terminados em
 barra, que valem em qualquer profundidade, e padrões de nome de arquivo. O padrão
 é `auth/,security/,payments/,migrations/,db/,database/,*.sql`.
@@ -382,8 +423,9 @@ desligado; com a URL preenchida, `N8N_SEGREDO_EVENTOS` é obrigatório. O contra
 [docs/eventos-n8n.md](docs/eventos-n8n.md), escrito para quem constrói os
 workflows. Os tipos Go e a verificação ficam em `internal/eventos`.
 
-`APROVA_URL_PUBLICA` é a base dos links de recibo nos eventos. Enquanto o
-núcleo não tem endereço público, fica vazia e vale `https://aprova.example.com`.
+`APROVA_URL_PUBLICA` é a base dos links de recibo nos eventos
+(`<base>/receipts/<id>/verify`). Enquanto o núcleo não tem endereço público,
+fica vazia e vale `https://aprova.example.com`.
 
 Para testar um workflow sem o núcleo, o script envia o exemplo de um tipo,
 com `id_evento` e `ocorrido_em` novos, assinado:

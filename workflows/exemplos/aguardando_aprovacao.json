@@ -24,6 +24,6 @@
     ],
     "explicacao": "Risco alto: o PR altera um caminho sensível; os testes ou a compilação falharam no sandbox.",
     "receipt_hash": "4e8a2c6f0b1d3e5f7a9c1e3b5d7f9a0c2e4f6a8b0d2c4e6f8a0b1c3d5e7f9a1b",
-    "url_recibo": "https://aprova.example.com/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b"
+    "url_recibo": "https://aprova.example.com/receipts/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b/verify"
   }
 }
