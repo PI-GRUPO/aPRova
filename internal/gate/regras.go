@@ -41,7 +41,7 @@ func (g *Gate) aplicarRegras(entrada Entrada, dependencias analiseDeManifestos) 
 	acrescentar(motivoConfiguracaoCI, domain.RiscoAlto, "o PR altera configuração de build ou de CI", arquivosQue(entrada.Arquivos, tocaConfiguracaoCI))
 	acrescentar(motivoDependenciaNova, domain.RiscoAlto, "o PR acrescenta dependência nova, que precisa de revisão humana", dependencias.evidencias)
 	acrescentar(motivoSegredoVersionado, domain.RiscoAlto, "o PR versiona um arquivo que costuma guardar segredo", arquivosQue(entrada.Arquivos, versionaSegredo))
-	acrescentar(motivoAreaSensivel, domain.RiscoMedio, "o PR altera um caminho sensível", arquivosQue(entrada.Arquivos, g.tocaCaminhoSensivel))
+	acrescentar(motivoAreaSensivel, domain.RiscoAlto, "o PR altera um caminho sensível", arquivosQue(entrada.Arquivos, g.tocaCaminhoSensivel))
 	acrescentar(motivoCodigoSemTeste, domain.RiscoMedio, "o PR altera código sem alterar nenhum teste", codigoSemTeste(entrada.Arquivos))
 
 	return motivos

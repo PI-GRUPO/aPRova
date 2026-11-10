@@ -355,7 +355,7 @@ arquivos, porque o recibo assina esse resultado.
 | `configuracao_ci` | alto | altera `.github/workflows/`, `Dockerfile`, `Makefile`, Compose ou arquivo de build equivalente |
 | `dependencia_nova` | alto | acrescenta dependência em `go.mod`, `requirements*.txt`, `pyproject.toml` ou `pom.xml` |
 | `segredo_versionado` | alto | versiona `.env`, chave privada ou credencial; `.env.example` não conta |
-| `area_sensivel` | médio | altera um caminho de `GATE_CAMINHOS_SENSIVEIS` |
+| `area_sensivel` | alto | altera um caminho de `GATE_CAMINHOS_SENSIVEIS` |
 | `codigo_sem_teste` | médio | altera código Go, Python ou Java sem alterar nenhum teste |
 
 O nível final é o maior entre os motivos; sem motivo, é baixo. Todas as regras
