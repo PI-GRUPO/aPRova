@@ -77,6 +77,9 @@ func TestDecisaoQueOutroWorkerGravouNoMeioSegueComOReciboDele(t *testing.T) {
 	if c.chamadas.quantas("recibo") != 1 {
 		t.Errorf("não se emite um segundo recibo: %d emissões", c.chamadas.quantas("recibo"))
 	}
+	if len(c.armazenamento.esperas) != 1 || c.armazenamento.esperas[0] != 0 {
+		t.Errorf("decisão já gravada não é falha: o task_run não espera para seguir, esperas = %v", c.armazenamento.esperas)
+	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
 	if dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido); !strings.Contains(dados.URLRecibo, "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b") {
 		t.Errorf("o evento aponta o recibo gravado: %s", dados.URLRecibo)
