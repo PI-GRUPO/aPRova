@@ -19,7 +19,7 @@ func ambienteLimpo(t *testing.T) {
 	for _, variavel := range []string{
 		"PORT", "LOG_LEVEL", "DATABASE_URL", "REDIS_URL",
 		"GITHUB_APP_ID", "GITHUB_PRIVATE_KEY_BASE64", "GITHUB_WEBHOOK_SECRET",
-		"RECEIPT_PRIVATE_KEY_BASE64", "RECEIPT_PUBLIC_KEY_BASE64",
+		"APROVA_CHAVE_RECIBO", "APROVA_CHAVES_PUBLICAS_RECIBO",
 		"ANTHROPIC_API_KEY", "GCP_PROJECT_ID", "GCP_REGION",
 		"SANDBOX_EXECUTOR", "N8N_WEBHOOK_URL",
 		"AZURE_SUBSCRIPTION_ID", "AZURE_TENANT_ID", "AZURE_CLIENT_ID",
@@ -234,49 +234,89 @@ func TestCarregarRejeitaVinculoMalformado(t *testing.T) {
 	}
 }
 
-func TestCarregarRejeitaChaveDeReciboQueNaoEBase64(t *testing.T) {
-	ambienteMinimoValido(t)
-	t.Setenv("RECEIPT_PRIVATE_KEY_BASE64", "isto não é base64!!!")
-
-	_, err := Carregar()
-
-	if err == nil {
-		t.Fatal("esperava erro na carga, não no primeiro uso")
+func TestCarregarRejeitaChaveDeReciboInvalidaSemCitarOValor(t *testing.T) {
+	chaveCompleta := base64.StdEncoding.EncodeToString(ed25519.NewKeyFromSeed(bytes.Repeat([]byte{7}, 32)))
+	casos := map[string]string{
+		"não é base64":                 "isto não é base64!!!",
+		"semente curta":                base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 31)),
+		"chave de 64 bytes, não semente": chaveCompleta,
 	}
-	if !strings.Contains(err.Error(), "RECEIPT_PRIVATE_KEY_BASE64") {
-		t.Errorf("o erro deve nomear a variável, obtive: %v", err)
+
+	for nome, valor := range casos {
+		t.Run(nome, func(t *testing.T) {
+			ambienteMinimoValido(t)
+			t.Setenv("APROVA_CHAVE_RECIBO", valor)
+
+			_, err := Carregar()
+
+			if err == nil {
+				t.Fatal("esperava erro na carga, não no primeiro uso")
+			}
+			if !strings.Contains(err.Error(), "APROVA_CHAVE_RECIBO") {
+				t.Errorf("o erro deve nomear a variável, obtive: %v", err)
+			}
+			if strings.Contains(err.Error(), valor) {
+				t.Errorf("o erro não pode repetir o valor da chave: %v", err)
+			}
+		})
 	}
 }
 
-func TestCarregarRejeitaChaveDeReciboComTamanhoErrado(t *testing.T) {
+func TestCarregarLeASementeDaChaveDeRecibo(t *testing.T) {
+	semente := bytes.Repeat([]byte{7}, 32)
 	ambienteMinimoValido(t)
-	t.Setenv("RECEIPT_PRIVATE_KEY_BASE64", base64.StdEncoding.EncodeToString([]byte("curta demais")))
-
-	if _, err := Carregar(); err == nil {
-		t.Fatal("esperava erro para chave Ed25519 de tamanho inválido")
-	}
-}
-
-func TestCarregarDecodificaParDeChavesUsavelParaAssinar(t *testing.T) {
-	publica, privada, err := ed25519.GenerateKey(nil)
-	if err != nil {
-		t.Fatalf("gerar par: %v", err)
-	}
-
-	ambienteMinimoValido(t)
-	t.Setenv("RECEIPT_PRIVATE_KEY_BASE64", base64.StdEncoding.EncodeToString(privada))
-	t.Setenv("RECEIPT_PUBLIC_KEY_BASE64", base64.StdEncoding.EncodeToString(publica))
+	t.Setenv("APROVA_CHAVE_RECIBO", base64.StdEncoding.EncodeToString(semente))
 
 	configuracao, err := Carregar()
 	if err != nil {
 		t.Fatalf("carregar: %v", err)
 	}
 
-	mensagem := []byte("recibo de exemplo")
-	assinatura := ed25519.Sign(configuracao.ReciboChavePrivada, mensagem)
+	if !bytes.Equal(configuracao.ReciboSemente, semente) {
+		t.Error("a semente carregada não é a configurada")
+	}
+}
 
-	if !ed25519.Verify(configuracao.ReciboChavePublica, mensagem, assinatura) {
-		t.Error("a chave pública carregada deveria verificar o que a privada carregada assinou")
+func TestCarregarLeAListaDeChavesPublicasDeRecibo(t *testing.T) {
+	primeira := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{7}, 32)).Public().(ed25519.PublicKey) //nolint:errcheck // a chave Ed25519 devolve sempre ed25519.PublicKey
+	segunda := ed25519.NewKeyFromSeed(bytes.Repeat([]byte{9}, 32)).Public().(ed25519.PublicKey)  //nolint:errcheck // a chave Ed25519 devolve sempre ed25519.PublicKey
+	ambienteMinimoValido(t)
+	t.Setenv("APROVA_CHAVES_PUBLICAS_RECIBO",
+		" "+base64.StdEncoding.EncodeToString(primeira)+" , "+base64.StdEncoding.EncodeToString(segunda))
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+
+	chaves := configuracao.ReciboChavesPublicas
+	if len(chaves) != 2 || !chaves[0].Equal(primeira) || !chaves[1].Equal(segunda) {
+		t.Errorf("chaves públicas = %v", chaves)
+	}
+}
+
+func TestCarregarAceitaChavesDeReciboAusentes(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+	if err != nil {
+		t.Fatalf("carregar: %v", err)
+	}
+	if configuracao.ReciboSemente != nil || len(configuracao.ReciboChavesPublicas) != 0 {
+		t.Error("sem as variáveis não há chave nenhuma")
+	}
+}
+
+func TestCarregarRejeitaChavePublicaDeReciboInvalida(t *testing.T) {
+	for _, valor := range []string{"isto não é base64!!!", base64.StdEncoding.EncodeToString([]byte("curta")), ","} {
+		t.Run(valor, func(t *testing.T) {
+			ambienteMinimoValido(t)
+			t.Setenv("APROVA_CHAVES_PUBLICAS_RECIBO", valor)
+
+			if _, err := Carregar(); err == nil || !strings.Contains(err.Error(), "APROVA_CHAVES_PUBLICAS_RECIBO") {
+				t.Errorf("esperava erro nomeando a variável, obtive %v", err)
+			}
+		})
 	}
 }
 
