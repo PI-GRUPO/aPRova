@@ -165,13 +165,22 @@ func TestSemMotivoONivelEBaixoEAsListasVemVazias(t *testing.T) {
 }
 
 func TestONivelFinalEOMaiorEntreOsMotivos(t *testing.T) {
-	medio := avaliar(t, sandboxPassou, alterado("internal/auth/sessao.go"), alterado("internal/auth/sessao_test.go"))
-	exigirMotivos(t, medio, domain.RiscoMedio, "area_sensivel")
+	medio := avaliar(t, sandboxPassou, alterado("internal/frete/calculo.go"))
+	exigirMotivos(t, medio, domain.RiscoMedio, "codigo_sem_teste")
 
-	alto := avaliar(t, sandboxPassou, alterado("internal/auth/sessao.go"), alterado("Dockerfile"))
-	exigirMotivos(t, alto, domain.RiscoAlto, "area_sensivel", "codigo_sem_teste", "configuracao_ci")
-	if motivoDe(t, alto, "area_sensivel").Nivel != domain.RiscoMedio || motivoDe(t, alto, "configuracao_ci").Nivel != domain.RiscoAlto {
+	alto := avaliar(t, sandboxPassou, alterado("internal/frete/calculo.go"), alterado("Dockerfile"))
+	exigirMotivos(t, alto, domain.RiscoAlto, "codigo_sem_teste", "configuracao_ci")
+	if motivoDe(t, alto, "codigo_sem_teste").Nivel != domain.RiscoMedio || motivoDe(t, alto, "configuracao_ci").Nivel != domain.RiscoAlto {
 		t.Errorf("cada motivo guarda o próprio nível: %+v", alto.Motivos)
+	}
+}
+
+func TestAreaSensivelComTestesPassandoAindaExigeAprovacaoHumana(t *testing.T) {
+	resultado := avaliar(t, sandboxPassou, alterado("internal/auth/sessao.go"), alterado("internal/auth/sessao_test.go"))
+
+	exigirMotivos(t, resultado, domain.RiscoAlto, "area_sensivel")
+	if nivel := motivoDe(t, resultado, "area_sensivel").Nivel; nivel != domain.RiscoAlto {
+		t.Errorf("nível do motivo area_sensivel = %s, a RN02 exige alto", nivel)
 	}
 }
 
@@ -422,7 +431,7 @@ func TestAreaSensivel(t *testing.T) {
 		t.Run("dispara "+nome, func(t *testing.T) {
 			resultado := avaliar(t, sandboxPassou, alterado(nome))
 
-			exigirMotivos(t, resultado, domain.RiscoMedio, "area_sensivel")
+			exigirMotivos(t, resultado, domain.RiscoAlto, "area_sensivel")
 			if evidencias := motivoDe(t, resultado, "area_sensivel").Evidencias; !slices.Equal(evidencias, []string{nome}) {
 				t.Errorf("evidências = %v", evidencias)
 			}
@@ -436,15 +445,15 @@ func TestAreaSensivel(t *testing.T) {
 	}
 
 	renomeado := platform.ArquivoAlterado{Nome: "publico/politica.md", NomeAnterior: "auth/politica.md", Situacao: "renamed"}
-	exigirMotivos(t, avaliar(t, sandboxPassou, renomeado), domain.RiscoMedio, "area_sensivel")
+	exigirMotivos(t, avaliar(t, sandboxPassou, renomeado), domain.RiscoAlto, "area_sensivel")
 }
 
 func TestListaDeCaminhosSensiveisConfiguravel(t *testing.T) {
 	gate := Novo(Limites{CaminhosSensiveis: []string{"financeiro/", "*.tf"}})
 
 	for nome, esperado := range map[string]domain.NivelRisco{
-		"src/financeiro/notas.md": domain.RiscoMedio,
-		"infra/rede.tf":           domain.RiscoMedio,
+		"src/financeiro/notas.md": domain.RiscoAlto,
+		"infra/rede.tf":           domain.RiscoAlto,
 		"auth/politica.md":        domain.RiscoBaixo,
 	} {
 		resultado, err := gate.Avaliar(t.Context(), Entrada{Arquivos: []platform.ArquivoAlterado{alterado(nome)}, Sandbox: sandboxPassou})
