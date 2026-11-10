@@ -77,7 +77,7 @@ func TestDecisaoQueOutroWorkerGravouNoMeioSegueComOReciboDele(t *testing.T) {
 	if c.chamadas.quantas("recibo") != 1 {
 		t.Errorf("não se emite um segundo recibo: %d emissões", c.chamadas.quantas("recibo"))
 	}
-	if len(c.armazenamento.esperas) != 1 || c.armazenamento.esperas[0] != 0 {
+	if len(c.armazenamento.esperas) != 0 {
 		t.Errorf("decisão já gravada não é falha: o task_run não espera para seguir, esperas = %v", c.armazenamento.esperas)
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)

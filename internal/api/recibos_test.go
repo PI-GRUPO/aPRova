@@ -164,7 +164,9 @@ func TestVerificacaoDizQualConferenciaFalhou(t *testing.T) {
 	}{
 		"conteúdo alterado no banco": {
 			func(c cenarioDeRecibos) {
-				adulterar(c, c.ids[1], func(r *domain.Recibo) { r.Conteudo = strings.Replace(r.Conteudo, `"nivel":"alto"`, `"nivel":"baixo"`, 1) })
+				adulterar(c, c.ids[1], func(r *domain.Recibo) {
+					r.Conteudo = strings.Replace(r.Conteudo, `"nivel":"alto"`, `"nivel":"baixo"`, 1)
+				})
 			},
 			"hash", []string{"falhou", "nao_verificada", "nao_verificada", "nao_verificada", "nao_verificada"},
 		},
@@ -178,7 +180,9 @@ func TestVerificacaoDizQualConferenciaFalhou(t *testing.T) {
 			"assinatura", []string{"ok", "ok", "falhou", "nao_verificada", "nao_verificada"},
 		},
 		"chave que o servidor não conhece": {
-			func(c cenarioDeRecibos) { adulterar(c, c.ids[1], func(r *domain.Recibo) { r.IDChave = "0000000000000000" }) },
+			func(c cenarioDeRecibos) {
+				adulterar(c, c.ids[1], func(r *domain.Recibo) { r.IDChave = "0000000000000000" })
+			},
 			"chave_desconhecida", []string{"ok", "falhou", "nao_verificada", "nao_verificada", "nao_verificada"},
 		},
 		"anterior apagado": {

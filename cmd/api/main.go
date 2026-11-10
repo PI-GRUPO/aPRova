@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/api"
 	"github.com/Azulpasta/aPRova/internal/config"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -75,6 +77,7 @@ func executar() error {
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
+			Recibos:             receipt.NovoVerificador(chaveiroDosRecibos(configuracao), repositorio),
 			SlugDoApp:           configuracao.GitHubAppSlug,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
@@ -99,6 +102,20 @@ func executar() error {
 	defer cancelar()
 
 	return servidorHTTP.Shutdown(contextoDesligamento)
+}
+
+func chaveiroDosRecibos(configuracao config.Configuracao) *receipt.Chaveiro {
+	publicas := configuracao.ReciboChavesPublicas
+	if assinador, err := receipt.NovoAssinador(configuracao.ReciboSemente); err == nil {
+		publicas = append([]ed25519.PublicKey{assinador.ChavePublica()}, publicas...)
+	}
+
+	chaveiro := receipt.NovoChaveiro(publicas...)
+	if len(chaveiro.Lista()) == 0 {
+		slog.Warn("nenhuma chave pública de recibo configurada, toda verificação responderá chave desconhecida",
+			"variaveis", "APROVA_CHAVES_PUBLICAS_RECIBO ou APROVA_CHAVE_RECIBO")
+	}
+	return chaveiro
 }
 
 func montarAcoesRemotas(configuracao config.Configuracao) (api.ProcessadorDeAcoesRemotas, error) {
