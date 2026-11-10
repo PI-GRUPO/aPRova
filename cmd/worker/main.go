@@ -36,6 +36,11 @@ func executar() error {
 
 	config.ConfigurarLogPadrao(configuracao)
 
+	assinador, err := montarAssinador(configuracao)
+	if err != nil {
+		return err
+	}
+
 	executorSandbox, err := sandbox.NovoExecutor(configuracaoDoSandbox(configuracao))
 	if err != nil {
 		return err
@@ -67,13 +72,19 @@ func executar() error {
 	}
 
 	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	emissorDeRecibos, err := receipt.NovoEmissor(receipt.OpcoesEmissor{Assinador: assinador, Armazenamento: repositorio})
+	if err != nil {
+		return err
+	}
+	slog.Info("recibos assinados com Ed25519", "key_id", assinador.IDChave())
+
 	motor, err := worker.NovoMotor(worker.Opcoes{
 		Armazenamento: repositorio,
 		LeitorDePR:    clienteGitHub,
 		Permissoes:    clienteGitHub,
 		Sandbox:       executorSandbox,
 		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
-		Recibos:       worker.NovoEmissorReciboProvisorio(slog.Default()),
+		Recibos:       emissorDeRecibos,
 		Publicador:    worker.NovoPublicadorPRProvisorio(slog.Default()),
 		Eventos:       emissorDeEventos,
 		Diretorios:    configuracao.SandboxDiretorios,

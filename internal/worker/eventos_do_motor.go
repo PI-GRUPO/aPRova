@@ -7,6 +7,7 @@ import (
 
 	"github.com/Azulpasta/aPRova/internal/domain"
 	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 )
 
 const (
@@ -27,7 +28,7 @@ func (c *conducao) emitir(tipo eventos.TipoEvento, dados any, partesDoFato ...st
 	})
 }
 
-func (c *conducao) resultadoDaAnalise(gravado domain.GateDeRisco, recibo ReciboEmitido) eventos.ResultadoDaAnalise {
+func (c *conducao) resultadoDaAnalise(gravado domain.GateDeRisco, recibo receipt.Emitido) eventos.ResultadoDaAnalise {
 	motivos := make([]eventos.Motivo, 0, len(gravado.Motivos))
 	for _, motivo := range gravado.Motivos {
 		motivos = append(motivos, eventos.Motivo{Nome: motivo.ID, Descricao: motivo.Descricao})
@@ -43,7 +44,7 @@ func (c *conducao) resultadoDaAnalise(gravado domain.GateDeRisco, recibo ReciboE
 		Motivos:     motivos,
 		Explicacao:  truncar(explicacaoDo(gravado), tamanhoMaximoDoTextoDoEvento),
 		ReceiptHash: hex.EncodeToString(recibo.Hash),
-		URLRecibo:   c.opcoes.URLPublica + "/recibos/" + recibo.ID,
+		URLRecibo:   c.opcoes.URLPublica + "/receipts/" + recibo.ID + "/verify",
 	}
 }
 
@@ -63,7 +64,7 @@ func (c *conducao) urlDoPR() string {
 	return "https://github.com/" + c.taskRun.Repositorio + "/pull/" + strconv.Itoa(c.taskRun.NumeroPR)
 }
 
-func (c *conducao) emitirAnaliseConcluida(gravado domain.GateDeRisco, recibo ReciboEmitido) {
+func (c *conducao) emitirAnaliseConcluida(gravado domain.GateDeRisco, recibo receipt.Emitido) {
 	c.emitir(eventos.TipoAnaliseConcluida, eventos.DadosAnaliseConcluida{
 		ResultadoDaAnalise: c.resultadoDaAnalise(gravado, recibo),
 		NivelRisco:         gravado.Nivel,
@@ -91,7 +92,7 @@ func (c *conducao) emitirDependenciaNova(gravado domain.GateDeRisco) {
 	})
 }
 
-func (c *conducao) emitirAguardandoAprovacao(gravado domain.GateDeRisco, recibo ReciboEmitido) {
+func (c *conducao) emitirAguardandoAprovacao(gravado domain.GateDeRisco, recibo receipt.Emitido) {
 	c.emitir(eventos.TipoAguardandoAprovacao, eventos.DadosAguardandoAprovacao{
 		ResultadoDaAnalise: c.resultadoDaAnalise(gravado, recibo),
 		NivelRisco:         gravado.Nivel,

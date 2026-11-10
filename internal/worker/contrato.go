@@ -13,6 +13,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
 
@@ -28,7 +29,6 @@ type Armazenamento interface {
 	GravarResultadoDaTentativa(ctx context.Context, taskRunID string, tentativa int, resultado sandbox.ResultadoSandbox) error
 	UltimoResultadoSandbox(ctx context.Context, taskRunID string) (int, sandbox.ResultadoSandbox, error)
 	BuscarGateDeRisco(ctx context.Context, taskRunID string) (domain.GateDeRisco, error)
-	GravarGateDeRisco(ctx context.Context, gate domain.GateDeRisco) error
 	BuscarReciboPorTaskRun(ctx context.Context, taskRunID string) (domain.Recibo, error)
 	ProximaAprovacao(ctx context.Context, taskRunID string, depoisDe int64) (domain.AprovacaoRegistrada, error)
 	AvancarCursorDeAprovacao(ctx context.Context, taskRunID, trabalhador string, ate int64) error
@@ -51,32 +51,18 @@ type AvaliadorRisco interface {
 	Avaliar(ctx context.Context, entrada gate.Entrada) (gate.Resultado, error)
 }
 
-// PedidoRecibo é o que o recibo registra: o task_run, o gate gravado e o
-// resultado do sandbox.
-type PedidoRecibo struct {
-	TaskRun domain.TaskRun
-	Gate    domain.GateDeRisco
-	Sandbox sandbox.ResultadoSandbox
-}
-
-// ReciboEmitido identifica o recibo de um task_run e o SHA-256 do conteúdo
-// assinado.
-type ReciboEmitido struct {
-	ID   string
-	Hash []byte
-}
-
-// EmissorRecibo assina e grava o recibo do task_run. Existe um recibo por
-// task_run: emitir de novo para o mesmo task_run devolve o mesmo recibo.
+// EmissorRecibo grava a decisão do gate e o recibo assinado dela, os dois
+// juntos ou nenhum. Decisão que já existe devolve domain.ErrDuplicado. O
+// receipt.Emissor é a implementação.
 type EmissorRecibo interface {
-	Emitir(ctx context.Context, pedido PedidoRecibo) (ReciboEmitido, error)
+	Emitir(ctx context.Context, pedido receipt.Pedido) (receipt.Emitido, error)
 }
 
 // Publicacao é o resultado de um task_run a publicar no pull request.
 type Publicacao struct {
 	TaskRun domain.TaskRun
 	Gate    domain.GateDeRisco
-	Recibo  ReciboEmitido
+	Recibo  receipt.Emitido
 }
 
 // PublicadorPR publica o Check Run e o comentário do task_run no pull
