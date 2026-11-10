@@ -120,3 +120,15 @@ func TestLerConteudoRecusaVersaoDesconhecidaCampoExtraELixo(t *testing.T) {
 		})
 	}
 }
+
+func TestLerConteudoRecusaCampoQueOFormatoNaoTem(t *testing.T) {
+	bruto, err := conteudoDeTeste("a1b2c3d4e5f60718").Serializar()
+	if err != nil {
+		t.Fatal(err)
+	}
+	comCampoExtra := bytes.Replace(bruto, []byte(`{"versao":1,`), []byte(`{"versao":1,"aprovado_por":"ninguém",`), 1)
+
+	if _, err := LerConteudo(comCampoExtra); err == nil {
+		t.Error("um campo fora do formato precisa ser recusado")
+	}
+}
