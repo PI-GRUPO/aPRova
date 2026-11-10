@@ -11,18 +11,19 @@ import (
 )
 
 const appendReceipt = `-- name: AppendReceipt :one
-INSERT INTO receipts (tenant_id, task_run_id, previous_receipt_id, payload, content_hash, signature, key_id, signed_at)
-SELECT tr.tenant_id, tr.id, $1, $2, $3,
-       $4, $5, $6
+INSERT INTO receipts (id, tenant_id, task_run_id, previous_receipt_id, payload, content_hash, signature, key_id, signed_at)
+SELECT COALESCE($1::uuid, gen_random_uuid()), tr.tenant_id, tr.id, $2, $3, $4,
+       $5, $6, $7
 FROM task_runs tr
-WHERE tr.id = $7
-  AND ($1::uuid IS NULL OR EXISTS (
+WHERE tr.id = $8
+  AND ($2::uuid IS NULL OR EXISTS (
       SELECT 1 FROM receipts anterior
-      WHERE anterior.id = $1::uuid AND anterior.tenant_id = tr.tenant_id))
+      WHERE anterior.id = $2::uuid AND anterior.tenant_id = tr.tenant_id))
 RETURNING id, tenant_id, task_run_id, previous_receipt_id, payload, content_hash, signature, key_id, signed_at, created_at
 `
 
 type AppendReceiptParams struct {
+	ID                *string   `json:"id"`
 	PreviousReceiptID *string   `json:"previous_receipt_id"`
 	Payload           string    `json:"payload"`
 	ContentHash       []byte    `json:"content_hash"`
@@ -34,6 +35,7 @@ type AppendReceiptParams struct {
 
 func (q *Queries) AppendReceipt(ctx context.Context, arg AppendReceiptParams) (Receipt, error) {
 	row := q.db.QueryRow(ctx, appendReceipt,
+		arg.ID,
 		arg.PreviousReceiptID,
 		arg.Payload,
 		arg.ContentHash,
@@ -42,6 +44,32 @@ func (q *Queries) AppendReceipt(ctx context.Context, arg AppendReceiptParams) (R
 		arg.SignedAt,
 		arg.TaskRunID,
 	)
+	var i Receipt
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.TaskRunID,
+		&i.PreviousReceiptID,
+		&i.Payload,
+		&i.ContentHash,
+		&i.Signature,
+		&i.KeyID,
+		&i.SignedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getLastReceiptOfTenant = `-- name: GetLastReceiptOfTenant :one
+SELECT r.id, r.tenant_id, r.task_run_id, r.previous_receipt_id, r.payload, r.content_hash, r.signature, r.key_id, r.signed_at, r.created_at FROM receipts r
+WHERE r.tenant_id = $1
+  AND NOT EXISTS (SELECT 1 FROM receipts sucessor WHERE sucessor.previous_receipt_id = r.id)
+ORDER BY r.signed_at DESC, r.created_at DESC, r.id DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLastReceiptOfTenant(ctx context.Context, tenantID int64) (Receipt, error) {
+	row := q.db.QueryRow(ctx, getLastReceiptOfTenant, tenantID)
 	var i Receipt
 	err := row.Scan(
 		&i.ID,
@@ -100,4 +128,13 @@ func (q *Queries) GetReceiptByTaskRun(ctx context.Context, taskRunID string) (Re
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const lockReceiptChain = `-- name: LockReceiptChain :exec
+SELECT pg_advisory_xact_lock(hashtextextended('receipts', $1::bigint))
+`
+
+func (q *Queries) LockReceiptChain(ctx context.Context, tenantID int64) error {
+	_, err := q.db.Exec(ctx, lockReceiptChain, tenantID)
+	return err
 }

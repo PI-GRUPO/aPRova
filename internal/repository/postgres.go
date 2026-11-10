@@ -303,7 +303,13 @@ func (r *RepositorioPostgres) AnexarRecibo(ctx context.Context, novo domain.Novo
 		return domain.Recibo{}, err
 	}
 
+	var id *string
+	if novo.ID != "" {
+		id = &novo.ID
+	}
+
 	linha, err := r.consultas.AppendReceipt(ctx, db.AppendReceiptParams{
+		ID:                id,
 		TaskRunID:         novo.TaskRunID,
 		PreviousReceiptID: novo.ReciboAnteriorID,
 		Payload:           novo.Conteudo,
@@ -316,6 +322,58 @@ func (r *RepositorioPostgres) AnexarRecibo(ctx context.Context, novo domain.Novo
 		return domain.Recibo{}, traduzir("anexar recibo", err)
 	}
 	return paraRecibo(linha), nil
+}
+
+// GravarDecisaoComRecibo grava a decisão do gate e o recibo dela numa só
+// transação: ou os dois ficam gravados, ou nenhum. montar recebe o último
+// recibo do tenant do task_run, ou nil quando é o primeiro, e devolve o recibo
+// assinado. A emissão é serializada por tenant, de modo que duas decisões
+// simultâneas nunca recebem o mesmo anterior. Decisão ou recibo que já existem
+// devolvem ErrDuplicado.
+func (r *RepositorioPostgres) GravarDecisaoComRecibo(ctx context.Context, gate domain.GateDeRisco, montar func(anterior *domain.Recibo) (domain.NovoRecibo, error)) (domain.Recibo, error) {
+	var gravado domain.Recibo
+
+	err := r.EmTransacao(ctx, func(tx *RepositorioPostgres) error {
+		taskRun, err := tx.BuscarTaskRun(ctx, gate.TaskRunID)
+		if err != nil {
+			return err
+		}
+		if err := tx.consultas.LockReceiptChain(ctx, taskRun.TenantID); err != nil {
+			return fmt.Errorf("serializar a emissão de recibos do tenant %d: %w", taskRun.TenantID, err)
+		}
+		if err := tx.GravarGateDeRisco(ctx, gate); err != nil {
+			return err
+		}
+
+		anterior, err := tx.ultimoReciboDoTenant(ctx, taskRun.TenantID)
+		if err != nil {
+			return err
+		}
+		novo, err := montar(anterior)
+		if err != nil {
+			return fmt.Errorf("montar o recibo do task_run %s: %w", gate.TaskRunID, err)
+		}
+
+		gravado, err = tx.AnexarRecibo(ctx, novo)
+		return err
+	})
+	if err != nil {
+		return domain.Recibo{}, err
+	}
+	return gravado, nil
+}
+
+func (r *RepositorioPostgres) ultimoReciboDoTenant(ctx context.Context, tenantID int64) (*domain.Recibo, error) {
+	linha, err := r.consultas.GetLastReceiptOfTenant(ctx, tenantID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, traduzir("buscar o último recibo do tenant", err)
+	}
+
+	ultimo := paraRecibo(linha)
+	return &ultimo, nil
 }
 
 // BuscarRecibo devolve o recibo pelo id.
@@ -655,6 +713,7 @@ func valorOuVazio(texto *string) string {
 func paraRecibo(linha db.Receipt) domain.Recibo {
 	return domain.Recibo{
 		NovoRecibo: domain.NovoRecibo{
+			ID:               linha.ID,
 			TaskRunID:        linha.TaskRunID,
 			ReciboAnteriorID: linha.PreviousReceiptID,
 			Conteudo:         linha.Payload,
@@ -663,7 +722,6 @@ func paraRecibo(linha db.Receipt) domain.Recibo {
 			IDChave:          linha.KeyID,
 			AssinadoEm:       linha.SignedAt,
 		},
-		ID:       linha.ID,
 		TenantID: linha.TenantID,
 		CriadoEm: linha.CreatedAt,
 	}

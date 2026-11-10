@@ -143,8 +143,11 @@ type GateDeRisco struct {
 	DependenciasNovas   []DependenciaNova
 }
 
-// NovoRecibo é o recibo assinado, pronto para ser anexado.
+// NovoRecibo é o recibo assinado, pronto para ser anexado. Conteudo são os
+// bytes exatos que foram assinados. ID vazio deixa o banco escolher o id; o
+// recibo assinado traz o próprio id, porque ele faz parte do conteúdo.
 type NovoRecibo struct {
+	ID               string    `validate:"omitempty,uuid"`
 	TaskRunID        string    `validate:"required,uuid"`
 	ReciboAnteriorID *string   `validate:"omitempty,uuid"`
 	Conteudo         string    `validate:"required"`
@@ -157,7 +160,6 @@ type NovoRecibo struct {
 // Recibo é o registro imutável da decisão de revisão de um task_run.
 type Recibo struct {
 	NovoRecibo
-	ID       string
 	TenantID int64
 	CriadoEm time.Time
 }

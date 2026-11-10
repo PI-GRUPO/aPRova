@@ -455,7 +455,7 @@ func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido PedidoRecibo) (R
 	if existente, existe := e.armazenamento.recibos[pedido.TaskRun.ID]; existe {
 		return ReciboEmitido{ID: existente.ID, Hash: existente.Hash}, nil
 	}
-	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{ID: recibo.ID, NovoRecibo: domain.NovoRecibo{TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash}}
+	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: recibo.ID, TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash}}
 	return recibo, nil
 }
 

@@ -524,7 +524,7 @@ func TestRetomadaComGateGravadoNaoChamaOGateNemOGitHub(t *testing.T) {
 	c.armazenamento.taskRuns[taskRun.ID].Estado = domain.EstadoAvaliandoRisco
 	_ = c.armazenamento.GravarResultadoDaTentativa(t.Context(), taskRun.ID, 1, sucessoNoSandbox)
 	_ = c.armazenamento.GravarGateDeRisco(t.Context(), gateGravado(taskRun.ID))
-	c.armazenamento.recibos[taskRun.ID] = domain.Recibo{ID: "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b", NovoRecibo: domain.NovoRecibo{TaskRunID: taskRun.ID, Hash: make([]byte, 32)}}
+	c.armazenamento.recibos[taskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b", TaskRunID: taskRun.ID, Hash: make([]byte, 32)}}
 
 	c.conduzirTudo(t)
 
