@@ -1,8 +1,8 @@
 package integracaopostgres
 
 import (
+	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -14,6 +14,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 	"github.com/Azulpasta/aPRova/internal/worker"
@@ -60,20 +61,31 @@ func (a avaliadorFixo) Avaliar(context.Context, gate.Entrada) (gate.Resultado, e
 	}, nil
 }
 
-type reciboNoBanco struct {
-	repo *repository.RepositorioPostgres
+var sementeDosRecibosDeTeste = bytes.Repeat([]byte{7}, 32)
+
+func assinadorDeTeste(t *testing.T) *receipt.Assinador {
+	t.Helper()
+
+	assinador, err := receipt.NovoAssinador(sementeDosRecibosDeTeste)
+	if err != nil {
+		t.Fatalf("montar o assinador: %v", err)
+	}
+	return assinador
 }
 
-func (r reciboNoBanco) Emitir(ctx context.Context, pedido worker.PedidoRecibo) (worker.ReciboEmitido, error) {
-	hash := sha256.Sum256([]byte(pedido.TaskRun.ID))
-	recibo, err := r.repo.AnexarRecibo(ctx, domain.NovoRecibo{
-		TaskRunID: pedido.TaskRun.ID, Conteudo: "recibo de teste", Hash: hash[:], Assinatura: make([]byte, 64),
-		IDChave: "chave-de-teste", AssinadoEm: time.Now().UTC(),
-	})
+func emissorDeRecibos(t *testing.T, repo *repository.RepositorioPostgres) *receipt.Emissor {
+	t.Helper()
+
+	emissor, err := receipt.NovoEmissor(receipt.OpcoesEmissor{Assinador: assinadorDeTeste(t), Armazenamento: repo})
 	if err != nil {
-		return worker.ReciboEmitido{}, err
+		t.Fatalf("montar o emissor de recibos: %v", err)
 	}
-	return worker.ReciboEmitido{ID: recibo.ID, Hash: recibo.Hash}, nil
+	return emissor
+}
+
+func verificadorDeRecibos(t *testing.T, repo *repository.RepositorioPostgres) *receipt.Verificador {
+	t.Helper()
+	return receipt.NovoVerificador(receipt.NovoChaveiro(assinadorDeTeste(t).ChavePublica()), repo)
 }
 
 type publicadorContado struct{ publicacoes atomic.Int64 }
@@ -102,7 +114,7 @@ func (m montagemDoWorker) novoPool(t *testing.T, nome string, nivel domain.Nivel
 		Permissoes:    permissaoDeAdmin{},
 		Sandbox:       m.sandbox,
 		Avaliador:     avaliadorFixo{nivel: nivel},
-		Recibos:       reciboNoBanco{repo: m.banco.repo},
+		Recibos:       emissorDeRecibos(t, m.banco.repo),
 		Publicador:    m.publicador,
 		Eventos:       eventosDescartados{},
 		URLPublica:    "https://aprova.example.com",

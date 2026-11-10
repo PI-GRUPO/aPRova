@@ -2,6 +2,7 @@ package integracaopostgres
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"log/slog"
 	"reflect"
@@ -14,6 +15,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 	"github.com/Azulpasta/aPRova/internal/worker"
 )
@@ -90,7 +92,7 @@ func (m montagemDoGate) rodarAte(t *testing.T, taskRunID string, estadoFinal dom
 		Permissoes:    permissaoDeAdmin{},
 		Sandbox:       m.sandbox,
 		Avaliador:     m.avaliador,
-		Recibos:       reciboNoBanco{repo: m.banco.repo},
+		Recibos:       emissorDeRecibos(t, m.banco.repo),
 		Publicador:    m.publicador,
 		Eventos:       m.eventos,
 		URLPublica:    "https://aprova.example.com",
@@ -186,8 +188,9 @@ func TestRetomadaEmAvaliandoRiscoComGateGravadoNaoChamaOGate(t *testing.T) {
 		Motivos:           []domain.MotivoDeRisco{{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova", Evidencias: []string{"go/go.mod"}}},
 		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
 	}
-	if err := banco.repo.GravarGateDeRisco(t.Context(), gravado); err != nil {
-		t.Fatalf("gravar gate: %v", err)
+	emitido, err := emissorDeRecibos(t, banco.repo).Emitir(t.Context(), receipt.Pedido{TaskRun: avaliando, Gate: gravado, Tentativa: 1, Diff: "diff"})
+	if err != nil {
+		t.Fatalf("gravar a decisão com o recibo: %v", err)
 	}
 	if err := banco.repo.Liberar(t.Context(), avaliando.ID, "worker-que-morreu", 0); err != nil {
 		t.Fatalf("liberar: %v", err)
@@ -198,6 +201,13 @@ func TestRetomadaEmAvaliandoRiscoComGateGravadoNaoChamaOGate(t *testing.T) {
 	montagem.leitor = leitorQueNaoPodeSerChamado{}
 	montagem.rodarAte(t, avaliando.ID, domain.EstadoAguardandoAprovacao)
 
+	if recibos := banco.contar(t, `SELECT count(*) FROM receipts`); recibos != 1 {
+		t.Errorf("a retomada não emite outro recibo, há %d", recibos)
+	}
+	analise, _ := montagem.eventos.doTipo(eventos.TipoAnaliseConcluida)
+	if dados, doTipo := analise.Dados.(eventos.DadosAnaliseConcluida); !doTipo || dados.URLRecibo != "https://aprova.example.com/receipts/"+emitido.ID+"/verify" || dados.ReceiptHash != hex.EncodeToString(emitido.Hash) {
+		t.Errorf("o evento da retomada aponta o recibo já gravado: %+v", analise.Dados)
+	}
 	if gates := banco.contar(t, `SELECT count(*) FROM risk_gates WHERE task_run_id = $1`, avaliando.ID); gates != 1 {
 		t.Errorf("esperava uma linha em risk_gates, há %d", gates)
 	}

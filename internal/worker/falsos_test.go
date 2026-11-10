@@ -13,6 +13,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 )
 
@@ -443,18 +444,32 @@ func (a *avaliadorFalso) Avaliar(_ context.Context, entrada gate.Entrada) (gate.
 type emissorDeReciboFalso struct {
 	armazenamento *armazenamentoFalso
 	chamadas      *registroDeChamadas
+	pedidos       []receipt.Pedido
+	falhas        []error
+	antesDeFalhar func()
 }
 
-func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido PedidoRecibo) (ReciboEmitido, error) {
+func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido receipt.Pedido) (receipt.Emitido, error) {
 	e.chamadas.anotar("recibo")
+	e.pedidos = append(e.pedidos, pedido)
+	if len(e.falhas) > 0 {
+		falha := e.falhas[0]
+		e.falhas = e.falhas[1:]
+		if e.antesDeFalhar != nil {
+			e.antesDeFalhar()
+		}
+		return receipt.Emitido{}, falha
+	}
+
 	hash := sha256.Sum256([]byte(pedido.TaskRun.ID))
-	recibo := ReciboEmitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:]}
+	recibo := receipt.Emitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:]}
 
 	e.armazenamento.mutex.Lock()
 	defer e.armazenamento.mutex.Unlock()
-	if existente, existe := e.armazenamento.recibos[pedido.TaskRun.ID]; existe {
-		return ReciboEmitido{ID: existente.ID, Hash: existente.Hash}, nil
+	if _, existe := e.armazenamento.gates[pedido.TaskRun.ID]; existe {
+		return receipt.Emitido{}, domain.ErrDuplicado
 	}
+	e.armazenamento.gates[pedido.TaskRun.ID] = pedido.Gate
 	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: recibo.ID, TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash}}
 	return recibo, nil
 }

@@ -63,6 +63,7 @@ type cenario struct {
 	avaliador     *avaliadorFalso
 	chamadas      *registroDeChamadas
 	publicador    *publicadorFalso
+	recibos       *emissorDeReciboFalso
 	eventos       *emissorDeEventosFalso
 	diario        *saidaSincronizada
 	opcoes        Opcoes
@@ -83,13 +84,14 @@ func novoCenario(nivel domain.NivelRisco, resultados ...sandbox.ResultadoSandbox
 		diario:        &saidaSincronizada{},
 	}
 	c.publicador = &publicadorFalso{chamadas: c.chamadas}
+	c.recibos = &emissorDeReciboFalso{armazenamento: c.armazenamento, chamadas: c.chamadas}
 	c.opcoes = Opcoes{
 		Armazenamento: c.armazenamento,
 		LeitorDePR:    c.leitor,
 		Permissoes:    c.permissoes,
 		Sandbox:       c.sandbox,
 		Avaliador:     c.avaliador,
-		Recibos:       &emissorDeReciboFalso{armazenamento: c.armazenamento, chamadas: c.chamadas},
+		Recibos:       c.recibos,
 		Publicador:    c.publicador,
 		Eventos:       c.eventos,
 		Diretorios:    map[string]string{"Azulpasta/aPRova-TESTES": "go"},
@@ -208,7 +210,7 @@ func TestCaminhoDeRiscoAltoParaEmAguardandoAprovacaoComRecibo(t *testing.T) {
 		t.Errorf("dados do PR errados: %+v", dados)
 	}
 	recibo := c.armazenamento.recibos[taskRun.ID]
-	if dados.ReceiptHash != hex.EncodeToString(recibo.Hash) || dados.URLRecibo != urlPublicaDeTeste+"/recibos/"+recibo.ID {
+	if dados.ReceiptHash != hex.EncodeToString(recibo.Hash) || dados.URLRecibo != urlPublicaDeTeste+"/receipts/"+recibo.ID+"/verify" {
 		t.Errorf("o evento precisa apontar o recibo emitido: hash %s, url %s", dados.ReceiptHash, dados.URLRecibo)
 	}
 	if evento.TenantID != taskRun.TenantID || evento.IDEvento != eventos.IDDoEvento(string(eventos.TipoAguardandoAprovacao), taskRun.ID) {
@@ -539,7 +541,7 @@ func TestRetomadaComGateGravadoNaoChamaOGateNemOGitHub(t *testing.T) {
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
 	dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido)
-	if dados.URLRecibo != urlPublicaDeTeste+"/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b" || dados.NivelRisco != domain.RiscoAlto {
+	if dados.URLRecibo != urlPublicaDeTeste+"/receipts/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b/verify" || dados.NivelRisco != domain.RiscoAlto {
 		t.Errorf("o evento precisa usar o gate e o recibo gravados: %+v", dados)
 	}
 	if len(dados.Motivos) != 1 || dados.Motivos[0].Nome != "dependencia_nova" || dados.Motivos[0].Descricao != "o PR acrescenta dependência nova" {
