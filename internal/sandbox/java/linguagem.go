@@ -1,3 +1,4 @@
+
 package java
 
 import (
@@ -72,18 +73,19 @@ func (l *Linguagem) executarProjeto(
 	compilacao := l.rodar(
 		ctx,
 		diretorio,
+		"-o",
 		"-B",
-		"-DskipTests",
-		"compile",
+		"test-compile",
 	)
 
 	if !concluiu(compilacao) {
-		return l.classificarFalha(compilacao, "mvn compile")
+		return l.classificarFalha(compilacao, "mvn test-compile")
 	}
 
 	testes := l.rodar(
 		ctx,
 		diretorio,
+		"-o",
 		"-B",
 		"test",
 	)
@@ -95,11 +97,37 @@ func (l *Linguagem) executarProjeto(
 		)
 	}
 
-	return sandbox.ResultadoSandbox{
-		Compilou:   true,
-		SaidaBruta: string(testes.Saida),
-		TipoFalha:  classificarTestes(testes),
+	apurada, err := apurarRelatorios(diretorio)
+	if err != nil {
+		return infraestrutura(err.Error(), testes.Saida)
 	}
+
+	resultado := sandbox.ResultadoSandbox{
+		Compilou:       true,
+		TestesPassaram: apurada.passaram,
+		TestesFalharam: apurada.falharam,
+		SaidaBruta:     string(testes.Saida),
+	}
+
+	switch {
+	case testes.CodigoSaida == 0 && apurada.falharam == 0:
+		resultado.TipoFalha = sandbox.FalhaNenhuma
+
+	case testes.CodigoSaida != 0 && apurada.falharam > 0:
+		resultado.TipoFalha = sandbox.FalhaTeste
+
+	default:
+		return infraestrutura(
+			fmt.Sprintf(
+				"resultado do Maven inconsistente: código %d, %d testes falharam",
+				testes.CodigoSaida,
+				apurada.falharam,
+			),
+			testes.Saida,
+		)
+	}
+
+	return resultado
 }
 
 func (l *Linguagem) rodar(
@@ -126,6 +154,7 @@ func (l *Linguagem) ambiente() []string {
 	return []string{
 		"PATH=" + caminhoDosExecutaveis,
 		"HOME=" + filepath.Join(l.diretorioDeCache, "home"),
+		"JAVA_HOME=/opt/java/openjdk",
 		"MAVEN_OPTS=-Dmaven.repo.local=" + filepath.Join(l.diretorioDeCache, "m2"),
 	}
 }
@@ -146,14 +175,6 @@ func (l *Linguagem) classificarFalha(
 		SaidaBruta: string(execucao.Saida),
 		TipoFalha:  sandbox.FalhaCompilacao,
 	}
-}
-
-func classificarTestes(execucao processo.Execucao) sandbox.TipoFalha {
-	if execucao.CodigoSaida == 0 {
-		return sandbox.FalhaNenhuma
-	}
-
-	return sandbox.FalhaTeste
 }
 
 func concluiu(execucao processo.Execucao) bool {

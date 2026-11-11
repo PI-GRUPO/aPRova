@@ -3,6 +3,8 @@ package java
 import (
 	"encoding/xml"
 	"fmt"
+	"io/fs"
+	"path/filepath"
 )
 
 type apuracao struct {
@@ -119,6 +121,76 @@ func apurarSuite(suite suiteTestes) (apuracao, error) {
 		parcial, err := apurarSuite(item)
 		if err != nil {
 			return apuracao{}, err
+		}
+
+		resultado.passaram += parcial.passaram
+		resultado.falharam += parcial.falharam
+	}
+
+	return resultado, nil
+}
+
+func apurarRelatorios(diretorio string) (apuracao, error) {
+	var resultado apuracao
+	var arquivos []string
+
+	err := filepath.WalkDir(diretorio, func(
+		caminho string,
+		entrada fs.DirEntry,
+		err error,
+	) error {
+		if err != nil {
+			return err
+		}
+
+		if entrada.IsDir() &&
+			filepath.Base(caminho) == "surefire-reports" &&
+			filepath.Base(filepath.Dir(caminho)) == "target" {
+
+			relatorios, err := filepath.Glob(
+				filepath.Join(caminho, "TEST-*.xml"),
+			)
+			if err != nil {
+				return err
+			}
+
+			arquivos = append(arquivos, relatorios...)
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return apuracao{}, fmt.Errorf(
+			"não foi possível localizar os relatórios Maven: %w",
+			err,
+		)
+	}
+
+	if len(arquivos) == 0 {
+		return apuracao{}, fmt.Errorf(
+			"nenhum relatório XML encontrado em target/surefire-reports",
+		)
+	}
+
+	for _, arquivo := range arquivos {
+		bruto, err := lerArquivoComSeguranca(arquivo)
+		if err != nil {
+			return apuracao{}, fmt.Errorf(
+				"não foi possível ler %s: %w",
+				arquivo,
+				err,
+			)
+		}
+
+		parcial, err := apurarRelatorio(bruto)
+		if err != nil {
+			return apuracao{}, fmt.Errorf(
+				"erro ao apurar %s: %w",
+				arquivo,
+				err,
+			)
 		}
 
 		resultado.passaram += parcial.passaram

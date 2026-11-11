@@ -11,9 +11,9 @@ import (
 	"github.com/Azulpasta/aPRova/internal/sandbox"
 	"github.com/Azulpasta/aPRova/internal/sandbox/conteiner"
 	"github.com/Azulpasta/aPRova/internal/sandbox/golang"
+	"github.com/Azulpasta/aPRova/internal/sandbox/java"
 	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
 	"github.com/Azulpasta/aPRova/internal/sandbox/python"
-	"github.com/Azulpasta/aPRova/internal/sandbox/java"
 )
 
 const (
@@ -47,7 +47,10 @@ func programa() conteiner.Programa {
 
 			sandbox.LinguagemPython: python.Nova(python.Opcoes{Rodador: rodador, DiretorioDeCache: diretorioDeCache}),
 
-			sandbox.LinguagemJava: java.Nova(java.Opcoes{Rodador: rodador}),
+			sandbox.LinguagemJava: java.Nova(java.Opcoes{
+				Rodador:          rodador,
+				DiretorioDeCache: diretorioDeCache,
+			}),
 		},
 		Agora: time.Now,
 	}

@@ -62,6 +62,7 @@ type Configuracao struct {
 	SandboxImagemGo string
 
 	SandboxImagemPython string
+	SandboxImagemJava   string
 
 	AzureSubscriptionID   string
 	AzureTenantID         string
@@ -108,6 +109,7 @@ func Carregar() (Configuracao, error) {
 		SandboxImagemGo: leitura.opcional("SANDBOX_IMAGEM_GO", ""),
 
 		SandboxImagemPython: leitura.opcional("SANDBOX_IMAGEM_PYTHON", ""),
+		SandboxImagemJava:   leitura.opcional("SANDBOX_IMAGEM_JAVA", ""),
 
 		AzureSubscriptionID:   lerVariavel("AZURE_SUBSCRIPTION_ID"),
 		AzureTenantID:         lerVariavel("AZURE_TENANT_ID"),

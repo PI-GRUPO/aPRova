@@ -13,7 +13,7 @@ const (
 	tempoLimiteRemocao  = 15 * time.Second
 
 	redePadrao            = "none"
-	montagemDoTemporario  = "/tmp:rw,exec,nosuid,nodev,size=1g"
+	montagemDoTemporario = "/tmp:rw,exec,nosuid,nodev,size=1g,uid=10001,gid=10001,mode=1777"
 	limiteCPUPadrao       = "1"
 	limiteMemoriaPadrao   = "1g"
 	limiteProcessosPadrao = "256"

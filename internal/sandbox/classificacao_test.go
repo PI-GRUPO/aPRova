@@ -129,7 +129,7 @@ func TestContainerSobeIsoladoELimitado(t *testing.T) {
 		"--pids-limit":   limiteProcessosPadrao,
 		"--cap-drop":     "ALL",
 		"--security-opt": "no-new-privileges",
-		"--tmpfs":        "/tmp:rw,exec,nosuid,nodev,size=1g",
+		"--tmpfs":        "/tmp:rw,exec,nosuid,nodev,size=1g,uid=10001,gid=10001,mode=1777",
 	}
 	for flag, esperado := range exigencias {
 		if obtido := valorDaFlag(argumentos, flag); obtido != esperado {
