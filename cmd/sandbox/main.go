@@ -49,7 +49,7 @@ func programa() conteiner.Programa {
 
 			sandbox.LinguagemJava: java.Nova(java.Opcoes{
 				Rodador:          rodador,
-				DiretorioDeCache: diretorioDeCache,
+				DiretorioDeCache: "/opt/aprova-cache",
 			}),
 		},
 		Agora: time.Now,

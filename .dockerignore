@@ -5,3 +5,9 @@
 !internal/
 **/*_test.go
 **/testdata/
+!tests/
+!tests/integration/
+!tests/integration/testdata/
+!tests/integration/testdata/java/
+!tests/integration/testdata/java/ok/
+!tests/integration/testdata/java/ok/**

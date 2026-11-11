@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	imagemDoSandboxJava    = "aprova-sandbox-java:teste-de-integracao"
-	prefixoDosVolumesJava  = "aprova-java-repos-"
-	volumeDoCacheMavenJava = "aprova-java-maven-cache"
+	imagemDoSandboxJava   = "aprova-sandbox-java:teste-de-integracao"
+	prefixoDosVolumesJava = "aprova-java-repos-"
 )
 
 var (
@@ -127,10 +126,9 @@ func executarCasoJava(t *testing.T, caso string, prazo time.Duration) sandbox.Re
 		ImagemPorLinguagem: map[sandbox.Linguagem]string{
 			sandbox.LinguagemJava: imagemDoSandboxJava,
 		},
-
 		Montagens: []string{
 			volume + ":" + pontoDeMontagem + ":ro",
-			volumeDoCacheMavenJava + ":/tmp/aprova-cache/m2:ro"},
+		},
 	})
 
 	ctx, cancelar := context.WithTimeout(t.Context(), prazo)

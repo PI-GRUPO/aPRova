@@ -17,6 +17,14 @@ RUN apt-get update \
     && groupadd --gid 10001 aprova \
     && useradd --uid 10001 --gid aprova --create-home --shell /usr/sbin/nologin aprova
 
+COPY tests/integration/testdata/java/ok /tmp/aprova-java-cache
+
+RUN mkdir -p /opt/aprova-cache/m2 /opt/aprova-cache/home \
+    && chown -R aprova:aprova /opt/aprova-cache /tmp/aprova-java-cache \
+    && su -s /bin/sh -c 'HOME=/opt/aprova-cache/home mvn -B -Dmaven.repo.local=/opt/aprova-cache/m2 -f /tmp/aprova-java-cache/pom.xml test' aprova \
+    && rm -rf /tmp/aprova-java-cache \
+    && chmod -R a+rX /opt/aprova-cache
+
 COPY --from=compilacao /saida/aprova-sandbox /usr/local/bin/aprova-sandbox
 
 WORKDIR /workspace
