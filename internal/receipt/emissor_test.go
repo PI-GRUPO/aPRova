@@ -199,3 +199,16 @@ func TestNovoEmissorExigeAssinadorEArmazenamento(t *testing.T) {
 		t.Errorf("sem armazenamento: %v", err)
 	}
 }
+
+func TestEmitirDevolveOIdDaChaveQueAssinou(t *testing.T) {
+	armazenamento := &armazenamentoFalso{}
+
+	emitido, err := emissorDeTeste(t, armazenamento).Emitir(t.Context(), pedidoDeTeste())
+	if err != nil {
+		t.Fatalf("emitir: %v", err)
+	}
+
+	if emitido.IDChave == "" || emitido.IDChave != assinadorDeTeste(t).IDChave() || emitido.IDChave != armazenamento.gravados[0].IDChave {
+		t.Errorf("o emitido traz o key_id do recibo gravado: %q", emitido.IDChave)
+	}
+}
