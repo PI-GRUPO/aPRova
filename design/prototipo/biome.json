@@ -1,0 +1,21 @@
+{
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"files": {
+		"includes": [
+			"src/**",
+			"e2e/**",
+			"scripts/**",
+			"*.ts",
+			"*.json",
+			"!src/dados",
+			"!node_modules",
+			"!dist",
+			"!test-results",
+			"!.impeccable"
+		]
+	},
+	"formatter": { "indentStyle": "tab", "lineWidth": 140 },
+	"css": { "parser": { "tailwindDirectives": true } },
+	"linter": { "enabled": true, "rules": { "recommended": true } },
+	"assist": { "actions": { "source": { "organizeImports": "on" } } }
+}

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="escuro">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="color-scheme" content="dark light" />
+		<title>aPRova</title>
+		<script>
+			(() => {
+				try {
+					const tema = localStorage.getItem("aprova-tema");
+					if (tema === "claro" || tema === "escuro") document.documentElement.dataset.tema = tema;
+				} catch {}
+			})();
+		</script>
+	</head>
+	<body>
+		<div id="raiz"></div>
+		<script type="module" src="/src/principal.tsx"></script>
+	</body>
+</html>
