@@ -41,3 +41,17 @@ profile.out
 
 # Repositórios temporários dos testes de integração do sandbox
 tests/integration/.repositorios-*
+
+# Protótipo do dashboard: dependências, build e saídas do Playwright
+design/prototipo/node_modules/
+design/prototipo/dist/
+design/prototipo/test-results/
+design/prototipo/playwright-report/
+
+# Impeccable: estado local e temporários (PRODUCT.md, DESIGN.md e
+# .impeccable/config.json continuam versionados)
+.impeccable/config.local.json
+.impeccable/questions/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/build/
