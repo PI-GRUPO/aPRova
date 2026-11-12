@@ -26,11 +26,12 @@ type Pedido struct {
 	DiffTruncado bool
 }
 
-// Emitido identifica o recibo de um task_run e o SHA-256 do conteúdo
-// assinado.
+// Emitido identifica o recibo de um task_run, o SHA-256 do conteúdo assinado
+// e o key_id da chave que o assinou.
 type Emitido struct {
-	ID   string
-	Hash []byte
+	ID      string
+	Hash    []byte
+	IDChave string
 }
 
 // Armazenamento grava a decisão do gate e o recibo dela numa só transação,
@@ -75,7 +76,7 @@ func (e *Emissor) Emitir(ctx context.Context, pedido Pedido) (Emitido, error) {
 	if err != nil {
 		return Emitido{}, fmt.Errorf("emitir o recibo do task_run %s: %w", pedido.TaskRun.ID, err)
 	}
-	return Emitido{ID: gravado.ID, Hash: gravado.Hash}, nil
+	return Emitido{ID: gravado.ID, Hash: gravado.Hash, IDChave: gravado.IDChave}, nil
 }
 
 func (e *Emissor) assinar(pedido Pedido, anterior *domain.Recibo) (domain.NovoRecibo, error) {
