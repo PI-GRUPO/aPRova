@@ -58,10 +58,13 @@ type EmissorRecibo interface {
 	Emitir(ctx context.Context, pedido receipt.Pedido) (receipt.Emitido, error)
 }
 
-// Publicacao é o resultado de um task_run a publicar no pull request.
+// Publicacao é o resultado de um task_run a publicar no pull request: a
+// decisão do gate, o resultado do sandbox em que ela se apoiou e o recibo
+// assinado.
 type Publicacao struct {
 	TaskRun domain.TaskRun
 	Gate    domain.GateDeRisco
+	Sandbox sandbox.ResultadoSandbox
 	Recibo  receipt.Emitido
 }
 
