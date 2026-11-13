@@ -110,7 +110,7 @@ func TestErroTransitorioAoPublicarOBloqueioNaoDeixaOPRSemCheckRunConcluido(t *te
 	}
 }
 
-func TestFalhaDaAnalisePublicaOCheckRunNeutralComODiagnostico(t *testing.T) {
+func TestFalhaDaAnalisePublicaOCheckRunEmFailureComODiagnostico(t *testing.T) {
 	c := novoCenario(domain.RiscoBaixo)
 	c.leitor.erros = []error{errGitHubFora, errGitHubFora, errGitHubFora}
 	taskRun := c.armazenamento.novoTaskRun(14)
@@ -122,7 +122,7 @@ func TestFalhaDaAnalisePublicaOCheckRunNeutralComODiagnostico(t *testing.T) {
 	}
 	falhas := c.publicador.falhasDe(taskRun.ID)
 	if len(falhas) != 1 || !strings.Contains(falhas[0].diagnostico, "tentativas esgotadas em mapeando_contexto") {
-		t.Errorf("o Check Run fecha como neutral com o diagnóstico: %+v", falhas)
+		t.Errorf("o Check Run fecha em failure com o diagnóstico: %+v", falhas)
 	}
 }
 
@@ -134,7 +134,7 @@ func TestErroDoGatePublicaAFalhaSemPublicarResultado(t *testing.T) {
 	c.conduzirTudo(t)
 
 	if falhas := c.publicador.falhasDe(taskRun.ID); len(falhas) != 1 {
-		t.Errorf("sem veredito o Check Run fecha como neutral: %+v", falhas)
+		t.Errorf("sem veredito o Check Run fecha em failure: %+v", falhas)
 	}
 	if c.chamadas.quantas("publicacao") != 0 {
 		t.Error("sem veredito não há resultado a publicar")
@@ -152,7 +152,7 @@ func TestFalhaAoPublicarAFalhaNaoImpedeOEncerramento(t *testing.T) {
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoFalhou {
 		t.Fatalf("o task_run encerra mesmo sem conseguir avisar o PR, está em %s", estado)
 	}
-	if !strings.Contains(strings.Join(c.diario.linhas(), "\n"), "neutral") {
+	if !strings.Contains(strings.Join(c.diario.linhas(), "\n"), "failure") {
 		t.Errorf("o diário registra que o Check Run não foi fechado: %v", c.diario.linhas())
 	}
 }

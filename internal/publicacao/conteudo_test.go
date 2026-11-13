@@ -124,7 +124,7 @@ func TestAprovacaoHumanaLevaOCheckRunASuccessComOLogin(t *testing.T) {
 	exigirTrechos(t, "o comentário", github.comentarios()[0].Corpo, "aprovado por @httpslua", "liberado")
 }
 
-func TestFalhaDaAnaliseLevaOCheckRunANeutralComODiagnostico(t *testing.T) {
+func TestFalhaDaAnaliseBloqueiaComFailureEODiagnostico(t *testing.T) {
 	github, registro := novoGitHubFalso(t), novoRegistroFalso()
 	publicador := publicadorContra(t, github, registro)
 	taskRun := taskRunDeTeste(idDoTaskRunDeConteudo, shaDoPrimeiro)
@@ -137,24 +137,29 @@ func TestFalhaDaAnaliseLevaOCheckRunANeutralComODiagnostico(t *testing.T) {
 	}
 
 	checks := github.checkRuns()
-	if len(checks) != 1 || checks[0].Situacao != "completed" || checks[0].Conclusao != "neutral" {
-		t.Fatalf("a falha conclui o mesmo Check Run como neutral: %+v", checks)
+	if len(checks) != 1 || checks[0].Situacao != "completed" || checks[0].Conclusao != "failure" {
+		t.Fatalf("na dúvida, bloqueia: a falha conclui o mesmo Check Run como failure: %+v", checks)
 	}
-	exigirTrechos(t, "o resumo", checks[0].Saida.Resumo, "tentativas esgotadas em testando_sandbox: imagem indisponível")
+	exigirTrechos(t, "o título", checks[0].Saida.Titulo, "não terminou", "bloqueado")
+	exigirTrechos(t, "o resumo", checks[0].Saida.Resumo,
+		"tentativas esgotadas em testando_sandbox: imagem indisponível", "bloqueado", "nova análise", "novo push")
+	if strings.Contains(checks[0].Saida.Resumo, "não bloqueia") {
+		t.Error("o resumo não pode dizer que a falha libera o merge")
+	}
 	if len(github.comentarios()) != 0 {
 		t.Error("a falha não comenta no PR")
 	}
 }
 
-func TestFalhaSemCheckRunAnteriorCriaOCheckRunJaNeutral(t *testing.T) {
+func TestFalhaSemCheckRunAnteriorCriaOCheckRunJaEmFailure(t *testing.T) {
 	github := novoGitHubFalso(t)
 
 	if err := publicadorContra(t, github, novoRegistroFalso()).PublicarFalha(t.Context(), taskRunDeTeste(idDoTaskRunDeConteudo, shaDoPrimeiro), "erro definitivo"); err != nil {
 		t.Fatalf("publicar a falha: %v", err)
 	}
 
-	if checks := github.checkRuns(); len(checks) != 1 || checks[0].Conclusao != "neutral" {
-		t.Errorf("o PR fica com um Check Run neutral, não em andamento para sempre: %+v", checks)
+	if checks := github.checkRuns(); len(checks) != 1 || checks[0].Conclusao != "failure" {
+		t.Errorf("o PR fica com um Check Run em failure, não em andamento para sempre: %+v", checks)
 	}
 }
 
