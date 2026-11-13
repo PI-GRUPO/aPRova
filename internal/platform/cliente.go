@@ -25,6 +25,10 @@ var (
 	// nem recurso ausente.
 	ErrRespostaInesperada = errors.New("github: resposta inesperada")
 
+	// ErrSemPermissao indica 403 que não é limite de requisições: a instalação
+	// do app não tem a permissão que a chamada exige. Repetir não adianta.
+	ErrSemPermissao = errors.New("github: o app não tem permissão para esta chamada")
+
 	// ErrPermissaoDesconhecida indica papel devolvido pelo GitHub que o aPRova
 	// não reconhece.
 	ErrPermissaoDesconhecida = errors.New("github: papel de colaborador desconhecido")
@@ -214,6 +218,8 @@ func classificarRespostaDaAPI(resposta *http.Response, pedido chamada) error {
 		return nil
 	case limiteDeRequisicoesAtingido(resposta):
 		return fmt.Errorf("%w: %s %s respondeu %d", ErrLimiteDeRequisicoes, pedido.metodo, pedido.caminho, status)
+	case status == http.StatusForbidden:
+		return fmt.Errorf("%w: %s %s respondeu %d", ErrSemPermissao, pedido.metodo, pedido.caminho, status)
 	case status == http.StatusNotFound:
 		return fmt.Errorf("%w: %s %s", ErrNaoEncontrado, pedido.metodo, pedido.caminho)
 	case status >= http.StatusInternalServerError:

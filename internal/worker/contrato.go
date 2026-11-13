@@ -60,12 +60,14 @@ type EmissorRecibo interface {
 
 // Publicacao é o resultado de um task_run a publicar no pull request: a
 // decisão do gate, o resultado do sandbox em que ela se apoiou e o recibo
-// assinado.
+// assinado. AprovadoPor é o login de quem aprovou um pull request de risco
+// alto; vazio enquanto ninguém aprovou.
 type Publicacao struct {
-	TaskRun domain.TaskRun
-	Gate    domain.GateDeRisco
-	Sandbox sandbox.ResultadoSandbox
-	Recibo  receipt.Emitido
+	TaskRun     domain.TaskRun
+	Gate        domain.GateDeRisco
+	Sandbox     sandbox.ResultadoSandbox
+	Recibo      receipt.Emitido
+	AprovadoPor string
 }
 
 // PublicadorPR publica o Check Run e o comentário do task_run no pull

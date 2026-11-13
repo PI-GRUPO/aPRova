@@ -95,18 +95,33 @@ func NovoPublicador(opcoes OpcoesPublicador) (*Publicador, error) {
 func (p *Publicador) Iniciar(ctx context.Context, taskRun domain.TaskRun) error {
 	id, err := p.checkRunConhecido(ctx, taskRun)
 	if err != nil || id != 0 {
-		return err
+		return explicar(err)
 	}
-	return p.criarCheckRun(ctx, taskRun, p.checkRunEmAndamento())
+	return explicar(p.criarCheckRun(ctx, taskRun, p.checkRunEmAndamento(taskRun)))
 }
 
 // Publicar conclui o Check Run do task_run e escreve o resultado no
 // comentário do pull request.
 func (p *Publicador) Publicar(ctx context.Context, publicacao worker.Publicacao) error {
-	if err := p.gravarCheckRun(ctx, publicacao.TaskRun, p.checkRunDoResultado(publicacao)); err != nil {
-		return err
+	resultado := p.resultado(publicacao)
+	if err := p.gravarCheckRun(ctx, publicacao.TaskRun, resultado.checkRun()); err != nil {
+		return explicar(err)
 	}
-	return p.gravarComentario(ctx, publicacao.TaskRun, textoDoComentario(publicacao))
+	return explicar(p.gravarComentario(ctx, publicacao.TaskRun, resultado.comentario()))
+}
+
+// PublicarFalha conclui o Check Run do task_run como neutral, com o
+// diagnóstico, para ele não ficar em andamento para sempre. Não comenta no
+// pull request.
+func (p *Publicador) PublicarFalha(ctx context.Context, taskRun domain.TaskRun, diagnostico string) error {
+	return explicar(p.gravarCheckRun(ctx, taskRun, p.checkRunDeFalha(taskRun, diagnostico)))
+}
+
+func explicar(err error) error {
+	if errors.Is(err, platform.ErrSemPermissao) {
+		return fmt.Errorf("%w: confira se a instalação do app concedeu checks: write e pull_requests: write neste repositório", err)
+	}
+	return err
 }
 
 func (p *Publicador) checkRunConhecido(ctx context.Context, taskRun domain.TaskRun) (int64, error) {
