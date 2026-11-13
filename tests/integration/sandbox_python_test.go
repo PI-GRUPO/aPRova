@@ -20,7 +20,7 @@ const (
 	usuarioDoCodigoDoPR     = "10001:10001"
 	tempoLimiteDoPreparo    = time.Minute
 	prefixoDosVolumesPython = "aprova-repos-"
-	prazoDoPythonQueTrava   = 85 * time.Second
+	prazoDoPythonQueTrava   = 110 * time.Second
 )
 
 var (

@@ -19,7 +19,7 @@ const (
 	tempoLimiteDoBuild    = 10 * time.Minute
 	pontoDeMontagem       = "/repositorios"
 	prazoDeUmCasoComum    = 3 * time.Minute
-	prazoDoCasoQueTrava   = 2 * time.Minute
+	prazoDoCasoQueTrava   = 150 * time.Second
 	prefixoDosRepositorio = ".repositorios-"
 )
 
