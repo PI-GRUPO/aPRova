@@ -23,7 +23,7 @@ publica).
 | Risco alto, antes de ir para `aguardando_aprovacao` | `action_required`, com `details_url` na verificação do recibo | criado ou editado |
 | Aprovação humana (`aguardando_aprovacao` → `aplicando`) | `success`, "aprovado por @login" | editado |
 | `rejeitado` | não muda: já está em `action_required` | não muda |
-| `falhou` | `neutral`, com o diagnóstico | não muda |
+| `falhou` | `failure`, com o diagnóstico | não muda |
 | Substituído por commit mais novo | nada | nada |
 
 O bloqueio de risco alto é publicado **antes** da transição para
@@ -38,15 +38,20 @@ Na aprovação, o login publicado é o de quem decidiu. O cursor de aprovação
 anteriores, de quem só tem leitura, foram puladas, e ele não anda depois da
 decisão. Por isso a próxima aprovação depois do cursor é sempre a que decidiu.
 
-### O caso do `neutral`
+### Análise que falhou: `failure`
 
-O card pede `neutral` para um task_run que falhou, para o PR não ficar com um
-check em andamento para sempre. O efeito na proteção de branch precisa ficar
-claro: o GitHub aceita `success`, `neutral` e `skipped` como conclusões que
-satisfazem um check obrigatório. **Uma análise que falha não bloqueia o
-merge.** O texto do Check Run diz isso. Se a decisão for bloquear também nesse
-caso, a troca é de `neutral` para `failure` ou `action_required`, num card
-próprio.
+Quando o task_run termina em `falhou` (GitHub fora do ar até esgotar as
+tentativas, sandbox que não roda, gate sem veredito, falta de permissão), o
+Check Run é concluído como `failure`, com o diagnóstico no resumo.
+
+O princípio do projeto é **na dúvida, bloqueia**. Uma análise que não terminou
+é dúvida: o aPRova não sabe se o pull request é seguro. Por isso o check não
+fica `neutral`. O GitHub aceita `success`, `neutral` e `skipped` como
+conclusões que satisfazem um check obrigatório, então `neutral` liberaria o
+merge sem análise.
+
+O texto do check diz o diagnóstico e o caminho: uma nova análise, que um novo
+push no pull request dispara. O botão Reexecutar vem com o dashboard.
 
 ## Onde ficam os ids
 
@@ -85,9 +90,11 @@ comentário.
 | 403 sem limite de requisições | `platform.ErrSemPermissao` | `falhou`, com o diagnóstico "confira checks: write e pull_requests: write" |
 | Outros 4xx | definitivo | `falhou`, com a resposta no detalhe |
 
-Quando o task_run falha, o motor tenta fechar o Check Run como `neutral`. Se
+Quando o task_run falha, o motor tenta fechar o Check Run como `failure`. Se
 nem isso der certo, por exemplo pelo mesmo 403, o task_run termina em `falhou`
-assim mesmo e o diário registra que o check pode ter ficado em andamento.
+assim mesmo e o diário registra que o check pode ter ficado em andamento. Um
+check em andamento também não satisfaz a proteção de branch, então o merge
+continua bloqueado.
 
 ## Permissões do app
 
@@ -108,3 +115,48 @@ maior, para não quebrar o Markdown.
 O link para `docs/verificacao-recibo.md` aponta para a branch `main`. Ele só
 abre depois que essa documentação chegar à `main`. Até lá, o link de
 verificação do recibo e o próprio passo a passo estão na `dev`.
+
+## Roteiro da demonstração
+
+O caso da demonstração é o PR #1 de `Azulpasta/aPRova-TESTES`, branch
+`teste-peso-zero`, com um teste que falha de propósito. A proteção da `main`
+desse repositório exige só o check `aPRova`, amarrado ao app pelo `app_id`, e
+tem `enforce_admins` ligado: nem um admin vê o atalho de "bypass".
+
+Para deixar o PR bloqueado antes da apresentação:
+
+1. Se o PR tiver uma aprovação, dispense-a no GitHub (na review, "Dismiss
+   review"), com o motivo "reanálise para a demonstração".
+2. Faça um commit vazio na branch e envie:
+
+   ```bash
+   git switch teste-peso-zero
+   git commit --allow-empty -m "chore: reanálise do aPRova"
+   git push
+   ```
+
+3. Com a API, o worker e o repasse do webhook rodando, o push chega como
+   `synchronize`, e o aPRova analisa o commit novo. O PR fica com:
+   - o Check Run `aPRova` em `action_required` no commit novo, por
+     `falha_sandbox`;
+   - o merge bloqueado pela proteção de branch;
+   - o comentário do aPRova editado com o commit novo, os motivos e o hash do
+     recibo.
+
+A aprovação dispensada não libera o commit novo: ela é anterior ao bloqueio, e
+o aPRova só aceita aprovação feita depois de o PR entrar em espera.
+
+Durante a apresentação, quem tem permissão de escrita aprova o PR no GitHub.
+O Check Run passa a `success` com "aprovado por @login", e o merge fica
+disponível. **Não faça o merge**: o PR #1 é o caso da demonstração e precisa
+continuar aberto. Depois, repita os passos 1 e 2 para voltar ao bloqueio.
+
+Para rodar localmente, enquanto o núcleo não tem endereço público, o webhook do
+app entrega num canal do smee.io, repassado para a API local:
+
+```bash
+make up && make migrate-up
+make run-api
+make run-worker
+npx smee-client --url <canal do smee configurado no app> --target http://localhost:<PORT>/webhooks/github
+```
