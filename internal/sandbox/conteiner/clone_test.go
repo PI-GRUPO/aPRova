@@ -94,15 +94,23 @@ func TestClonarFalhaComRepositorioInexistente(t *testing.T) {
 
 type rodadorDeGitFalso struct {
 	headDevolvido string
+	falharCopia   bool
+	erroDeInicio  error
 	comandos      []processo.Comando
 }
 
 func (r *rodadorDeGitFalso) Rodar(_ context.Context, comando processo.Comando) processo.Execucao {
 	r.comandos = append(r.comandos, comando)
-	if slices.Contains(comando.Argumentos, "rev-parse") {
+	switch {
+	case r.erroDeInicio != nil:
+		return processo.Execucao{Erro: r.erroDeInicio}
+	case slices.Contains(comando.Argumentos, "rev-parse"):
 		return processo.Execucao{Saida: []byte(r.headDevolvido + "\n")}
+	case comando.Binario == "cp" && r.falharCopia:
+		return processo.Execucao{CodigoSaida: 1, Saida: []byte("cp: sem espaço\n")}
+	default:
+		return processo.Execucao{}
 	}
-	return processo.Execucao{}
 }
 
 func TestClonarRecusaHEADDiferenteDoSHAPedido(t *testing.T) {
