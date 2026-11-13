@@ -531,6 +531,7 @@ func (r *RepositorioPostgres) VizinhosParecidos(ctx context.Context, consulta do
 			NumeroPR:     int(linha.PrNumber),
 			Similaridade: linha.Similarity,
 			Desfecho:     domain.DesfechoDoVizinho(linha.Outcome),
+			Motivos:      linha.Rules,
 		})
 	}
 	return vizinhos, nil

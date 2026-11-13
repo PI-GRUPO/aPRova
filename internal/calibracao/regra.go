@@ -95,10 +95,11 @@ func Elegivel(nivel domain.NivelRisco, motivos []domain.MotivoDeRisco) (domain.E
 	return "", "", true
 }
 
-// Decidir aplica a regra: entre os vizinhos do tenant, os mais parecidos acima
-// da similaridade mínima com desfecho conhecido têm de ser ao menos o mínimo e
-// todos aprovados e mergeados; então o nível desce um degrau. Em qualquer outro
-// caso o nível do gate é mantido.
+// Decidir aplica a regra: entre os vizinhos mais parecidos do tenant, acima da
+// similaridade mínima, nenhum pode ser negativo, com quaisquer motivos, e os
+// aprovados e mergeados com exatamente o mesmo conjunto de motivos da análise
+// têm de ser ao menos o mínimo; então o nível desce um degrau. Em qualquer
+// outro caso o nível do gate é mantido.
 func Decidir(regra Regra, entrada Entrada) Decisao {
 	mantida := func(estado domain.EstadoCalibracao, razao string, vizinhos []domain.VizinhoDaCalibracao) Decisao {
 		return Decisao{Nivel: entrada.Nivel, Motivos: slices.Clone(entrada.Motivos),
@@ -136,17 +137,24 @@ func desfechosConhecidos(regra Regra, entrada Entrada) []domain.VizinhoDaCalibra
 		doTenant = doTenant[:regra.Vizinhos]
 	}
 
+	motivosDaAnalise := idsDosMotivos(entrada.Motivos)
 	conhecidos := []domain.VizinhoDaCalibracao{}
 	for _, vizinho := range doTenant {
-		if vizinho.Similaridade >= regra.SimilaridadeMinima && desfechoConhecido(vizinho.Desfecho) {
+		if vizinho.Similaridade < regra.SimilaridadeMinima {
+			continue
+		}
+		mesmosMotivos := slices.Equal(idsSemCalibracao(vizinho.Motivos), motivosDaAnalise)
+		if desfechoNegativo(vizinho.Desfecho) || (vizinho.Desfecho == domain.VizinhoAprovadoEMergeado && mesmosMotivos) {
 			conhecidos = append(conhecidos, vizinho)
 		}
 	}
 	return conhecidos
 }
 
-func desfechoConhecido(desfecho domain.DesfechoDoVizinho) bool {
-	return desfecho == domain.VizinhoAprovadoEMergeado || desfechoNegativo(desfecho)
+func idsSemCalibracao(ids []string) []string {
+	conjunto := slices.DeleteFunc(slices.Clone(ids), func(id string) bool { return id == MotivoDaCalibracao })
+	slices.Sort(conjunto)
+	return slices.Compact(conjunto)
 }
 
 func desfechoNegativo(desfecho domain.DesfechoDoVizinho) bool {

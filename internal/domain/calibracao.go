@@ -38,7 +38,8 @@ const (
 )
 
 // VizinhoDaCalibracao é uma análise passada parecida com a atual: o task_run,
-// o pull request dele, a similaridade de cosseno e o desfecho.
+// o pull request dele, a similaridade de cosseno, o desfecho e os ids dos
+// motivos do gate determinístico dele.
 type VizinhoDaCalibracao struct {
 	TaskRunID    string            `json:"task_run_id"`
 	TenantID     int64             `json:"-"`
@@ -46,6 +47,7 @@ type VizinhoDaCalibracao struct {
 	NumeroPR     int               `json:"numero_pr"`
 	Similaridade float64           `json:"similaridade"`
 	Desfecho     DesfechoDoVizinho `json:"desfecho"`
+	Motivos      []string          `json:"motivos,omitempty"`
 }
 
 // Calibracao é o rastro da calibração de uma análise: o estado, a razão em

@@ -20,7 +20,12 @@ SELECT tr.id AS task_run_id, tr.tenant_id, tr.repository, tr.pr_number,
                  AND revisado.pr_number = tr.pr_number AND a.decision = 'aprovada' AND a.commit_sha = tr.head_sha
            ) THEN 'aprovado_e_mergeado'
            ELSE 'mergeado_sem_aprovacao'
-       END)::text AS outcome
+       END)::text AS outcome,
+       COALESCE((
+           SELECT array_agg(motivo.id ORDER BY motivo.id)
+           FROM risk_gates gate, jsonb_to_recordset(gate.rules_hit) AS motivo(id text)
+           WHERE gate.task_run_id = tr.id AND motivo.id <> 'calibracao_historico'
+       ), '{}')::text[] AS rules
 FROM (
     SELECT cm.task_run_id, cm.embedding <=> sqlc.arg(embedding)::vector AS distance
     FROM code_memory cm
