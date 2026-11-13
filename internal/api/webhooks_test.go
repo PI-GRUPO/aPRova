@@ -155,7 +155,7 @@ func (r *registroFalso) quantidadeDeRevisoes() int {
 
 func corpoReview(estado string) string {
 	return `{"action":"submitted",` +
-		`"review":{"state":"` + estado + `","user":{"login":"bob"}},` +
+		`"review":{"state":"` + estado + `","user":{"login":"bob"},"commit_id":"6be930afc83bb7213d3d4e111f2c6eb7fd008a42"},` +
 		`"pull_request":{"number":42,"head":{"sha":"abc123"}},` +
 		`"repository":{"full_name":"Azulpasta/aPRova"},"installation":{"id":777}}`
 }
@@ -305,5 +305,15 @@ func TestWebhookIgnoraRevisaoDePullRequestSemTaskRun(t *testing.T) {
 
 	if resposta.Code != http.StatusNoContent {
 		t.Errorf("revisão de PR que o aPRova não analisou deve responder 204, obtive %d", resposta.Code)
+	}
+}
+
+func TestWebhookDeRevisaoRepassaOCommitRevisado(t *testing.T) {
+	registro := novoRegistroFalso()
+
+	enviarWebhook(t, registro, entregaValida("pull_request_review", "entrega-commit-revisado", corpoReview("approved")))
+
+	if len(registro.revisoes) != 1 || registro.revisoes[0].CommitSHA != "6be930afc83bb7213d3d4e111f2c6eb7fd008a42" {
+		t.Errorf("a revisão chega com o commit que foi revisado: %+v", registro.revisoes)
 	}
 }

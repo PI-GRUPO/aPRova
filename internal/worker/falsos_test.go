@@ -47,6 +47,10 @@ func novoArmazenamentoFalso() *armazenamentoFalso {
 }
 
 func (a *armazenamentoFalso) novoTaskRun(numeroPR int) domain.TaskRun {
+	return a.novoTaskRunNoCommit(numeroPR, "3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3")
+}
+
+func (a *armazenamentoFalso) novoTaskRunNoCommit(numeroPR int, sha string) domain.TaskRun {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
@@ -57,7 +61,7 @@ func (a *armazenamentoFalso) novoTaskRun(numeroPR int) domain.TaskRun {
 		DeliveryID:  fmt.Sprintf("entrega-%d", indice),
 		Repositorio: "Azulpasta/aPRova-TESTES",
 		NumeroPR:    numeroPR,
-		SHAHead:     "3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3",
+		SHAHead:     sha,
 		Autor:       "wlaisw",
 		Acao:        "opened",
 		Estado:      domain.EstadoPendente,
@@ -255,6 +259,10 @@ func (a *armazenamentoFalso) BuscarReciboPorTaskRun(_ context.Context, taskRunID
 }
 
 func (a *armazenamentoFalso) registrarAprovacao(taskRunID string, decisao domain.DecisaoAprovacao, revisor string, origem domain.OrigemAprovacao) domain.AprovacaoRegistrada {
+	return a.registrarAprovacaoDoCommit(taskRunID, decisao, revisor, origem, a.taskRun(taskRunID).SHAHead)
+}
+
+func (a *armazenamentoFalso) registrarAprovacaoDoCommit(taskRunID string, decisao domain.DecisaoAprovacao, revisor string, origem domain.OrigemAprovacao, commit string) domain.AprovacaoRegistrada {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
@@ -262,7 +270,7 @@ func (a *armazenamentoFalso) registrarAprovacao(taskRunID string, decisao domain
 		ID: int64(len(a.aprovacoes) + 1),
 		Aprovacao: domain.Aprovacao{
 			TaskRunID: taskRunID, DeliveryID: fmt.Sprintf("review-%d", len(a.aprovacoes)+1), Decisao: decisao,
-			Revisor: revisor, Origem: origem, DecididaEm: time.Date(2026, 10, 19, 17, 48, 12, 0, time.UTC),
+			Revisor: revisor, Origem: origem, DecididaEm: time.Date(2026, 10, 19, 17, 48, 12, 0, time.UTC), CommitSHA: commit,
 		},
 	}
 	a.aprovacoes = append(a.aprovacoes, aprovacao)

@@ -374,7 +374,7 @@ func registrarAprovacaoDe(t *testing.T, banco bancoDaFila, taskRun domain.TaskRu
 
 	err := banco.repo.RegistrarAprovacao(t.Context(), domain.Aprovacao{
 		TaskRunID: taskRun.ID, DeliveryID: fmt.Sprintf("review-%d", time.Now().UnixNano()), Decisao: decisao,
-		Revisor: "Azulpasta", Origem: origem, DecididaEm: time.Now().UTC(),
+		Revisor: "Azulpasta", Origem: origem, DecididaEm: time.Now().UTC(), CommitSHA: taskRun.SHAHead,
 	})
 	if err != nil {
 		t.Fatalf("registrar aprovação: %v", err)

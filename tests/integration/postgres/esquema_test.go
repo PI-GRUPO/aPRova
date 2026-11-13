@@ -46,8 +46,8 @@ func TestCadaMigrationAplicaEReverteLimpa(t *testing.T) {
 		passos++
 	}
 
-	if passos != 16 {
-		t.Errorf("esperava 16 migrations, apliquei %d", passos)
+	if passos != 17 {
+		t.Errorf("esperava 17 migrations, apliquei %d", passos)
 	}
 
 	if err := migracao.Down(); err != nil {

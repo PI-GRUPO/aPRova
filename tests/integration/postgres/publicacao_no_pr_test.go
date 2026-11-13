@@ -214,7 +214,7 @@ func TestFluxoDeRiscoAltoBloqueiaEDepoisDaAprovacaoLiberaEConclui(t *testing.T) 
 
 	err := banco.repo.RegistrarAprovacao(t.Context(), domain.Aprovacao{
 		TaskRunID: taskRun.ID, DeliveryID: fmt.Sprintf("review-%d", time.Now().UnixNano()), Decisao: domain.DecisaoAprovada,
-		Revisor: "httpslua", Origem: domain.OrigemGitHub, DecididaEm: time.Now().UTC(),
+		Revisor: "httpslua", Origem: domain.OrigemGitHub, DecididaEm: time.Now().UTC(), CommitSHA: taskRun.SHAHead,
 	})
 	if err != nil {
 		t.Fatalf("registrar a aprovação: %v", err)
