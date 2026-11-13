@@ -174,7 +174,7 @@ func TestComentarioExplicaORiscoEComoVerificarORecibo(t *testing.T) {
 		"falha_sandbox", "1 de 11 testes falharam",
 		"compilou", "10 testes passaram", "1 teste falhou",
 		hex.EncodeToString(publicacao.Recibo.Hash), publicacao.Recibo.IDChave,
-		urlDeVerificacao(publicacao), "docs/verificacao-recibo.md",
+		urlDeVerificacao(publicacao), "https://github.com/PI-GRUPO/aPRova/blob/main/docs/verificacao-recibo.md",
 		shaDoPrimeiro[:7])
 	if strings.Contains(comentario.Corpo, shaDoPrimeiro) {
 		t.Error("o commit aparece curto no comentário")
