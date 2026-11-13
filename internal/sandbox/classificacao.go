@@ -25,3 +25,20 @@ func interpretarResultadoPublicado(stdout string) (ResultadoSandbox, bool) {
 func resultadoDeInfraestrutura(saida string, duracaoMS int64) ResultadoSandbox {
 	return ResultadoSandbox{SaidaBruta: saida, DuracaoMS: duracaoMS, TipoFalha: FalhaInfraestrutura}
 }
+
+func interpretarDesfechoDoPreparo(stdout string) (DesfechoDoPreparo, bool) {
+	linhas := strings.Split(strings.TrimSpace(stdout), "\n")
+
+	var desfecho DesfechoDoPreparo
+	if err := json.Unmarshal([]byte(linhas[len(linhas)-1]), &desfecho); err != nil {
+		return DesfechoDoPreparo{}, false
+	}
+	switch {
+	case desfecho.Pronto && desfecho.Falha == nil:
+		return desfecho, true
+	case !desfecho.Pronto && desfecho.Falha != nil && slices.Contains(tiposDeFalhaConhecidos, desfecho.Falha.TipoFalha):
+		return desfecho, true
+	default:
+		return DesfechoDoPreparo{}, false
+	}
+}

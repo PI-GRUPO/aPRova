@@ -227,7 +227,7 @@ func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.Configuraca
 
 	return sandbox.ConfiguracaoExecutor{
 		Tipo:  configuracao.SandboxExecutor,
-		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagens, Rede: configuracao.SandboxRedeLocal},
+		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagens},
 		Azure: sandbox.OpcoesExecutorAzure{
 			ImagemPorLinguagem: imagens,
 			SubscriptionID:     configuracao.AzureSubscriptionID,

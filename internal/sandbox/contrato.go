@@ -58,3 +58,11 @@ type ColetorResultado interface {
 	Gravar(ctx context.Context, taskRunID string, resultado ResultadoSandbox) error
 	Aguardar(ctx context.Context, taskRunID string) (ResultadoSandbox, error)
 }
+
+// DesfechoDoPreparo é o que a etapa preparar publica na última linha do
+// stdout: Pronto quando o código e as dependências estão no volume, ou a Falha
+// classificada que encerra a análise sem rodar os testes.
+type DesfechoDoPreparo struct {
+	Pronto bool              `json:"pronto"`
+	Falha  *ResultadoSandbox `json:"falha,omitempty"`
+}
