@@ -7,92 +7,111 @@ package db
 
 import (
 	"context"
-	"time"
 
 	pgvector "github.com/pgvector/pgvector-go"
 )
 
 const createCodeMemory = `-- name: CreateCodeMemory :one
-INSERT INTO code_memory (tenant_id, task_run_id, repository, summary, embedding, level, outcome)
-SELECT $1, $2, $3, $4,
-       $5, $6, $7
-WHERE $2::uuid IS NULL OR EXISTS (
-    SELECT 1 FROM task_runs tr
-    WHERE tr.id = $2::uuid AND tr.tenant_id = $1)
+INSERT INTO code_memory (tenant_id, task_run_id, repository, summary, embedding)
+SELECT tr.tenant_id, tr.id, tr.repository, $1, $2
+FROM task_runs tr
+WHERE tr.id = $3 AND tr.tenant_id = $4
 RETURNING id
 `
 
 type CreateCodeMemoryParams struct {
-	TenantID   int64           `json:"tenant_id"`
-	TaskRunID  *string         `json:"task_run_id"`
-	Repository string          `json:"repository"`
-	Summary    string          `json:"summary"`
-	Embedding  pgvector.Vector `json:"embedding"`
-	Level      string          `json:"level"`
-	Outcome    string          `json:"outcome"`
+	Summary   string          `json:"summary"`
+	Embedding pgvector.Vector `json:"embedding"`
+	TaskRunID string          `json:"task_run_id"`
+	TenantID  int64           `json:"tenant_id"`
 }
 
 func (q *Queries) CreateCodeMemory(ctx context.Context, arg CreateCodeMemoryParams) (int64, error) {
 	row := q.db.QueryRow(ctx, createCodeMemory,
-		arg.TenantID,
-		arg.TaskRunID,
-		arg.Repository,
 		arg.Summary,
 		arg.Embedding,
-		arg.Level,
-		arg.Outcome,
+		arg.TaskRunID,
+		arg.TenantID,
 	)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
 }
 
-const findNearestCodeMemory = `-- name: FindNearestCodeMemory :many
-SELECT id, tenant_id, task_run_id, repository, summary, level, outcome, created_at,
-       (embedding <=> $1::vector)::float8 AS distance
-FROM code_memory
-WHERE tenant_id = $2
-ORDER BY embedding <=> $1::vector
-LIMIT $3
+const findSimilarAnalyses = `-- name: FindSimilarAnalyses :many
+SELECT tr.id AS task_run_id, tr.tenant_id, tr.repository, tr.pr_number,
+       (1 - proximos.distance)::float8 AS similarity,
+       (CASE
+           WHEN revertido.pr_number IS NOT NULL THEN 'revertido'
+           WHEN desfecho.pr_number IS NULL THEN 'em_aberto'
+           WHEN NOT desfecho.merged THEN 'fechado_sem_merge'
+           WHEN desfecho.head_sha <> tr.head_sha THEN 'substituido'
+           WHEN EXISTS (
+               SELECT 1 FROM approvals a
+               JOIN task_runs revisado ON revisado.id = a.task_run_id
+               WHERE revisado.tenant_id = tr.tenant_id AND revisado.repository = tr.repository
+                 AND revisado.pr_number = tr.pr_number AND a.decision = 'aprovada' AND a.commit_sha = tr.head_sha
+           ) THEN 'aprovado_e_mergeado'
+           ELSE 'mergeado_sem_aprovacao'
+       END)::text AS outcome
+FROM (
+    SELECT cm.task_run_id, cm.embedding <=> $1::vector AS distance
+    FROM code_memory cm
+    WHERE cm.tenant_id = $2
+      AND NOT EXISTS (
+          SELECT 1 FROM task_runs proprio
+          WHERE proprio.id = cm.task_run_id
+            AND proprio.repository = $3 AND proprio.pr_number = $4)
+    ORDER BY cm.embedding <=> $1::vector
+    LIMIT $5
+) proximos
+JOIN task_runs tr ON tr.id = proximos.task_run_id
+LEFT JOIN pull_request_outcomes desfecho
+    ON desfecho.tenant_id = tr.tenant_id AND desfecho.repository = tr.repository AND desfecho.pr_number = tr.pr_number
+LEFT JOIN pull_request_reverts revertido
+    ON revertido.tenant_id = tr.tenant_id AND revertido.repository = tr.repository AND revertido.pr_number = tr.pr_number
+ORDER BY proximos.distance, tr.id
 `
 
-type FindNearestCodeMemoryParams struct {
+type FindSimilarAnalysesParams struct {
 	Embedding  pgvector.Vector `json:"embedding"`
 	TenantID   int64           `json:"tenant_id"`
+	Repository string          `json:"repository"`
+	PrNumber   int32           `json:"pr_number"`
 	MaxResults int32           `json:"max_results"`
 }
 
-type FindNearestCodeMemoryRow struct {
-	ID         int64     `json:"id"`
-	TenantID   int64     `json:"tenant_id"`
-	TaskRunID  *string   `json:"task_run_id"`
-	Repository string    `json:"repository"`
-	Summary    string    `json:"summary"`
-	Level      string    `json:"level"`
-	Outcome    string    `json:"outcome"`
-	CreatedAt  time.Time `json:"created_at"`
-	Distance   float64   `json:"distance"`
+type FindSimilarAnalysesRow struct {
+	TaskRunID  string  `json:"task_run_id"`
+	TenantID   int64   `json:"tenant_id"`
+	Repository string  `json:"repository"`
+	PrNumber   int32   `json:"pr_number"`
+	Similarity float64 `json:"similarity"`
+	Outcome    string  `json:"outcome"`
 }
 
-func (q *Queries) FindNearestCodeMemory(ctx context.Context, arg FindNearestCodeMemoryParams) ([]FindNearestCodeMemoryRow, error) {
-	rows, err := q.db.Query(ctx, findNearestCodeMemory, arg.Embedding, arg.TenantID, arg.MaxResults)
+func (q *Queries) FindSimilarAnalyses(ctx context.Context, arg FindSimilarAnalysesParams) ([]FindSimilarAnalysesRow, error) {
+	rows, err := q.db.Query(ctx, findSimilarAnalyses,
+		arg.Embedding,
+		arg.TenantID,
+		arg.Repository,
+		arg.PrNumber,
+		arg.MaxResults,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FindNearestCodeMemoryRow{}
+	items := []FindSimilarAnalysesRow{}
 	for rows.Next() {
-		var i FindNearestCodeMemoryRow
+		var i FindSimilarAnalysesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
 			&i.TaskRunID,
+			&i.TenantID,
 			&i.Repository,
-			&i.Summary,
-			&i.Level,
+			&i.PrNumber,
+			&i.Similarity,
 			&i.Outcome,
-			&i.CreatedAt,
-			&i.Distance,
 		); err != nil {
 			return nil, err
 		}

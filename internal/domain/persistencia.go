@@ -76,19 +76,6 @@ const (
 	FeedbackFalsoPositivo     MotivoFeedback = "falso_positivo"
 )
 
-// DesfechoMudanca é o que aconteceu com uma mudança depois da decisão, usado
-// pela calibração do gate.
-type DesfechoMudanca string
-
-// Desfechos guardados em code_memory, do sinal mais forte ao mais fraco.
-const (
-	DesfechoRevertidaAposMerge DesfechoMudanca = "revertida_apos_merge"
-	DesfechoAltoRiscoAprovada  DesfechoMudanca = "alto_risco_aprovada"
-	DesfechoFechadaSemMerge    DesfechoMudanca = "fechada_sem_merge"
-	DesfechoAjustadaEAprovada  DesfechoMudanca = "ajustada_e_aprovada"
-	DesfechoSemReversao        DesfechoMudanca = "sem_reversao"
-)
-
 // NovoTaskRun descreve a execução criada a partir de um webhook de pull request.
 type NovoTaskRun struct {
 	TenantID    int64     `validate:"required,gt=0"`
@@ -188,26 +175,13 @@ type AprovacaoRegistrada struct {
 	ID int64
 }
 
-// MemoriaDeCodigo é uma decisão passada guardada para a calibração do gate.
+// MemoriaDeCodigo é a assinatura de uma análise guardada no histórico da
+// calibração: o texto e o vetor dele, um por task_run.
 type MemoriaDeCodigo struct {
-	TenantID    int64   `validate:"required,gt=0"`
-	TaskRunID   *string `validate:"omitempty,uuid"`
-	Repositorio string  `validate:"required,max=200"`
-	Resumo      string  `validate:"required"`
-	Embedding   []float32
-	Nivel       NivelRisco      `validate:"required,oneof=baixo medio alto"`
-	Desfecho    DesfechoMudanca `validate:"required,oneof=revertida_apos_merge alto_risco_aprovada fechada_sem_merge ajustada_e_aprovada sem_reversao"`
-}
-
-// Vizinho é uma memória de código próxima da consultada, sem o embedding.
-type Vizinho struct {
-	ID          int64
-	TaskRunID   *string
-	Repositorio string
-	Resumo      string
-	Nivel       NivelRisco
-	Desfecho    DesfechoMudanca
-	Distancia   float64
+	TenantID  int64  `validate:"required,gt=0"`
+	TaskRunID string `validate:"required,uuid"`
+	Resumo    string `validate:"required"`
+	Embedding []float32
 }
 
 // RepositorioTaskRun cria, consulta e transiciona task_runs.

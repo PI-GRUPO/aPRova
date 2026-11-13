@@ -439,7 +439,10 @@ func (r *RepositorioPostgres) Aguardar(ctx context.Context, taskRunID string) (s
 	}
 }
 
-// GravarMemoriaDeCodigo guarda uma decisão passada para a calibração.
+// GravarMemoriaDeCodigo guarda a assinatura de uma análise no histórico da
+// calibração. Task_run inexistente ou de outro tenant devolve
+// domain.ErrNaoEncontrado; segunda assinatura do mesmo task_run devolve
+// domain.ErrDuplicado.
 func (r *RepositorioPostgres) GravarMemoriaDeCodigo(ctx context.Context, memoria domain.MemoriaDeCodigo) (int64, error) {
 	if err := validar(memoria); err != nil {
 		return 0, err
@@ -449,13 +452,10 @@ func (r *RepositorioPostgres) GravarMemoriaDeCodigo(ctx context.Context, memoria
 	}
 
 	id, err := r.consultas.CreateCodeMemory(ctx, db.CreateCodeMemoryParams{
-		TenantID:   memoria.TenantID,
-		TaskRunID:  memoria.TaskRunID,
-		Repository: memoria.Repositorio,
-		Summary:    memoria.Resumo,
-		Embedding:  pgvector.NewVector(memoria.Embedding),
-		Level:      string(memoria.Nivel),
-		Outcome:    string(memoria.Desfecho),
+		TenantID:  memoria.TenantID,
+		TaskRunID: memoria.TaskRunID,
+		Summary:   memoria.Resumo,
+		Embedding: pgvector.NewVector(memoria.Embedding),
 	})
 	if err != nil {
 		return 0, traduzir("gravar memória de código: task_run inexistente ou de outro tenant", err)
@@ -463,29 +463,34 @@ func (r *RepositorioPostgres) GravarMemoriaDeCodigo(ctx context.Context, memoria
 	return id, nil
 }
 
-// BuscarVizinhos devolve as memórias do tenant mais próximas do embedding,
-// da mais próxima para a mais distante, por distância de cosseno.
-func (r *RepositorioPostgres) BuscarVizinhos(ctx context.Context, tenantID int64, embedding []float32, limite int) ([]domain.Vizinho, error) {
-	if err := exigirDimensaoDoEmbedding(embedding); err != nil {
+// VizinhosParecidos devolve as análises do tenant mais parecidas com o
+// embedding, da mais para a menos parecida, fora do próprio pull request, com o
+// desfecho de cada uma derivado das aprovações, do fechamento e das reversões.
+func (r *RepositorioPostgres) VizinhosParecidos(ctx context.Context, consulta domain.ConsultaDeVizinhos) ([]domain.VizinhoDaCalibracao, error) {
+	if err := exigirDimensaoDoEmbedding(consulta.Embedding); err != nil {
 		return nil, err
 	}
-	if limite <= 0 || limite > 1000 {
-		return nil, fmt.Errorf("%w: limite %d fora de 1..1000", domain.ErrDadosInvalidos, limite)
+	if consulta.Limite <= 0 || consulta.Limite > 1000 {
+		return nil, fmt.Errorf("%w: limite %d fora de 1..1000", domain.ErrDadosInvalidos, consulta.Limite)
+	}
+	numero, err := numeroDePR(consulta.NumeroPR)
+	if err != nil {
+		return nil, err
 	}
 
-	var linhas []db.FindNearestCodeMemoryRow
-	err := r.EmTransacao(ctx, func(tx *RepositorioPostgres) error {
-		// Sem a varredura iterativa, o HNSW entrega só hnsw.ef_search candidatos
-		// de todos os tenants e o filtro por tenant pode deixar o resultado vazio.
+	var linhas []db.FindSimilarAnalysesRow
+	err = r.EmTransacao(ctx, func(tx *RepositorioPostgres) error {
 		if _, err := tx.conexao.Exec(ctx, "SELECT set_config('hnsw.iterative_scan', 'strict_order', true)"); err != nil {
 			return fmt.Errorf("ligar varredura iterativa do hnsw: %w", err)
 		}
 
 		var err error
-		linhas, err = tx.consultas.FindNearestCodeMemory(ctx, db.FindNearestCodeMemoryParams{
-			Embedding:  pgvector.NewVector(embedding),
-			TenantID:   tenantID,
-			MaxResults: int32(limite), //nolint:gosec // limitado a 1000 acima
+		linhas, err = tx.consultas.FindSimilarAnalyses(ctx, db.FindSimilarAnalysesParams{
+			Embedding:  pgvector.NewVector(consulta.Embedding),
+			TenantID:   consulta.TenantID,
+			Repository: consulta.Repositorio,
+			PrNumber:   numero,
+			MaxResults: int32(consulta.Limite), //nolint:gosec // limitado a 1000 acima
 		})
 		return traduzir("buscar vizinhos", err)
 	})
@@ -493,16 +498,15 @@ func (r *RepositorioPostgres) BuscarVizinhos(ctx context.Context, tenantID int64
 		return nil, err
 	}
 
-	vizinhos := make([]domain.Vizinho, 0, len(linhas))
+	vizinhos := make([]domain.VizinhoDaCalibracao, 0, len(linhas))
 	for _, linha := range linhas {
-		vizinhos = append(vizinhos, domain.Vizinho{
-			ID:          linha.ID,
-			TaskRunID:   linha.TaskRunID,
-			Repositorio: linha.Repository,
-			Resumo:      linha.Summary,
-			Nivel:       domain.NivelRisco(linha.Level),
-			Desfecho:    domain.DesfechoMudanca(linha.Outcome),
-			Distancia:   linha.Distance,
+		vizinhos = append(vizinhos, domain.VizinhoDaCalibracao{
+			TaskRunID:    linha.TaskRunID,
+			TenantID:     linha.TenantID,
+			Repositorio:  linha.Repository,
+			NumeroPR:     int(linha.PrNumber),
+			Similaridade: linha.Similarity,
+			Desfecho:     domain.DesfechoDoVizinho(linha.Outcome),
 		})
 	}
 	return vizinhos, nil

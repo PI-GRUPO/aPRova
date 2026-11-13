@@ -28,12 +28,10 @@ type Approval struct {
 type CodeMemory struct {
 	ID         int64           `json:"id"`
 	TenantID   int64           `json:"tenant_id"`
-	TaskRunID  *string         `json:"task_run_id"`
+	TaskRunID  string          `json:"task_run_id"`
 	Repository string          `json:"repository"`
 	Summary    string          `json:"summary"`
 	Embedding  pgvector.Vector `json:"embedding"`
-	Level      string          `json:"level"`
-	Outcome    string          `json:"outcome"`
 	CreatedAt  time.Time       `json:"created_at"`
 }
 
