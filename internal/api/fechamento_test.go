@@ -112,3 +112,14 @@ func TestFechamentoSemInstalacaoERecusado(t *testing.T) {
 		t.Errorf("sem installation.id: %d, %+v", resposta.Code, registro.fechamentos)
 	}
 }
+
+func TestFechamentoSemMergeIgnoraOCommitDeMergeDeTesteDoGitHub(t *testing.T) {
+	registro := novoRegistroFalso()
+	corpo := `{"action":"closed","number":42,"pull_request":{"merged":false,"merge_commit_sha":"` + commitDoMerge + `","closed_at":"` + momentoDoFechamento + `","head":{"sha":"` + headDoFechamento + `"}},"repository":{"full_name":"PI-GRUPO/aPRova"},"installation":{"id":777}}`
+
+	enviarWebhook(t, registro, entregaValida("pull_request", "entrega-merge-de-teste", corpo))
+
+	if len(registro.fechamentos) != 1 || registro.fechamentos[0].SHADoMerge != "" {
+		t.Errorf("sem merge, o merge_commit_sha do GitHub é o merge de teste e não é gravado: %+v", registro.fechamentos)
+	}
+}
