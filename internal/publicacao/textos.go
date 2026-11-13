@@ -20,7 +20,7 @@ const (
 
 	// URLDaVerificacaoIndependente é o passo a passo para verificar um recibo só
 	// com a chave pública, sem confiar no servidor do aPRova.
-	URLDaVerificacaoIndependente = "https://github.com/Azulpasta/aPRova/blob/main/docs/verificacao-recibo.md"
+	URLDaVerificacaoIndependente = "https://github.com/PI-GRUPO/aPRova/blob/main/docs/verificacao-recibo.md"
 )
 
 var nomeDoNivel = map[domain.NivelRisco]string{
