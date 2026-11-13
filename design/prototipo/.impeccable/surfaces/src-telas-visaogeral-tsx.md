@@ -18,13 +18,13 @@ Modo: Operate. Quem chega: tech lead ou revisor, no começo do dia ou entre tare
 
 ## Direction contract
 
-THESIS: a fila continua sendo o corpo da página, na largura toda e com linhas de 32px. A faixa de quatro números fica acima dela por decisão de quem pediu o protótipo, e cada número vem com barra de proporção e denominador escrito.
+THESIS: a fila continua sendo o corpo da página, na largura toda e com linhas de 36px. A faixa de quatro números fica acima dela por decisão de quem pediu o protótipo, e cada número vem com barra de proporção e denominador escrito.
 
-OWN-WORLD: livro de registro. Tinta e papel, três tons de fundo, bordas de 1px, Plex Sans para falar e Plex Mono para identificar. Cor só no selo de risco e nas barras do gráfico de risco. Tema claro em cinza neutro.
+OWN-WORLD: livro de registro. Tinta e papel, três tons de fundo, bordas de 1px, Inter para falar e Plex Mono para identificar. Linguagem base adaptada do Linear: superfícies quase pretas, Inter em pesos leves, limão só no foco e no item ativo. Cor de risco só no selo e no mapa de calor. Tema claro com os cinzas do MONOLITH.
 
 STORY: a pessoa lê quantos PRs esperam por ela e há quanto tempo, vê o motivo e a evidência de cada um na própria linha, filtra por repositório ou busca um PR, e abre a análise mais antiga.
 
-FIRST VIEWPORT: título e período no topo. Faixa de quatro métricas unidas por emenda de 1px (aguardando aprovação, taxa de bloqueio, falhas no sandbox, análises recebidas). Fila na largura toda com busca, filtro de repositório e ordenação por espera; o nível aparece uma vez, no título. Embaixo, três painéis da mesma altura: bloqueadas por desfecho, falhas por tipo e análises por dia e nível.
+FIRST VIEWPORT: título e período no topo. Faixa de quatro métricas unidas por emenda de 1px (aguardando aprovação, taxa de bloqueio, falhas no sandbox, análises recebidas). Fila na largura toda com busca, filtro de repositório e ordenação por espera; o nível aparece uma vez, no título. Embaixo, três painéis da mesma altura: bloqueadas por desfecho, falhas por tipo e o mapa de calor de análises por dia e nível.
 
 FORM: faixa de métricas, fila de registro e três painéis; escolhida entre três conceitos (A, B e C). seed: none (unavailable)
 

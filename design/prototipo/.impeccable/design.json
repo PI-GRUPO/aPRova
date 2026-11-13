@@ -1,127 +1,142 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T06:40:15Z",
+  "generatedAt": "2026-11-12T21:30:00Z",
   "title": "Design System: aPRova",
   "extensions": {
     "colorMeta": {
       "fundo-base": {
         "role": "neutral",
         "displayName": "Base",
-        "canonical": "#111214",
+        "canonical": "#08090A",
         "tonalRamp": [
-          "oklch(15% 0.002 264)",
-          "oklch(26% 0.003 264)",
-          "oklch(38% 0.003 264)",
-          "oklch(49% 0.004 264)",
-          "oklch(61% 0.004 264)",
-          "oklch(72% 0.003 264)",
-          "oklch(84% 0.003 264)",
-          "oklch(95% 0.002 264)"
+          "oklch(15% 0.001 246)",
+          "oklch(26% 0.002 246)",
+          "oklch(38% 0.002 246)",
+          "oklch(49% 0.003 246)",
+          "oklch(61% 0.003 246)",
+          "oklch(72% 0.002 246)",
+          "oklch(84% 0.002 246)",
+          "oklch(95% 0.001 246)"
         ]
       },
       "fundo-superficie": {
         "role": "neutral",
         "displayName": "Superfície",
-        "canonical": "#17181B",
+        "canonical": "#0F1011",
         "tonalRamp": [
-          "oklch(15% 0.003 271)",
-          "oklch(26% 0.004 271)",
-          "oklch(38% 0.005 271)",
-          "oklch(49% 0.006 271)",
-          "oklch(61% 0.006 271)",
-          "oklch(72% 0.005 271)",
-          "oklch(84% 0.004 271)",
-          "oklch(95% 0.003 271)"
+          "oklch(15% 0.001 248)",
+          "oklch(26% 0.002 248)",
+          "oklch(38% 0.002 248)",
+          "oklch(49% 0.003 248)",
+          "oklch(61% 0.003 248)",
+          "oklch(72% 0.002 248)",
+          "oklch(84% 0.002 248)",
+          "oklch(95% 0.001 248)"
         ]
       },
       "fundo-elevado": {
         "role": "neutral",
         "displayName": "Elevado",
-        "canonical": "#1E2024",
+        "canonical": "#161718",
         "tonalRamp": [
-          "oklch(15% 0.004 264)",
-          "oklch(26% 0.005 264)",
-          "oklch(38% 0.006 264)",
-          "oklch(49% 0.008 264)",
-          "oklch(61% 0.008 264)",
-          "oklch(72% 0.006 264)",
-          "oklch(84% 0.005 264)",
-          "oklch(95% 0.004 264)"
+          "oklch(15% 0.001 248)",
+          "oklch(26% 0.002 248)",
+          "oklch(38% 0.002 248)",
+          "oklch(49% 0.003 248)",
+          "oklch(61% 0.003 248)",
+          "oklch(72% 0.002 248)",
+          "oklch(84% 0.002 248)",
+          "oklch(95% 0.001 248)"
         ]
       },
       "borda-padrao": {
         "role": "neutral",
         "displayName": "Borda",
-        "canonical": "#2A2C31",
+        "canonical": "#23252A",
         "tonalRamp": [
-          "oklch(15% 0.004 268)",
+          "oklch(15% 0.005 268)",
           "oklch(26% 0.006 268)",
-          "oklch(38% 0.007 268)",
-          "oklch(49% 0.009 268)",
-          "oklch(61% 0.009 268)",
-          "oklch(72% 0.007 268)",
+          "oklch(38% 0.008 268)",
+          "oklch(49% 0.010 268)",
+          "oklch(61% 0.010 268)",
+          "oklch(72% 0.008 268)",
           "oklch(84% 0.006 268)",
-          "oklch(95% 0.004 268)"
+          "oklch(95% 0.005 268)"
+        ]
+      },
+      "texto-titulo": {
+        "role": "neutral",
+        "displayName": "Texto de título",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(38% 0.000 90)",
+          "oklch(49% 0.000 90)",
+          "oklch(61% 0.000 90)",
+          "oklch(72% 0.000 90)",
+          "oklch(84% 0.000 90)",
+          "oklch(95% 0.000 90)"
         ]
       },
       "texto-primario": {
         "role": "neutral",
         "displayName": "Texto primário",
-        "canonical": "#ECE9E2",
+        "canonical": "#D0D6E0",
         "tonalRamp": [
-          "oklch(15% 0.005 87)",
-          "oklch(26% 0.006 87)",
-          "oklch(38% 0.008 87)",
-          "oklch(49% 0.009 87)",
-          "oklch(61% 0.009 87)",
-          "oklch(72% 0.008 87)",
-          "oklch(84% 0.006 87)",
-          "oklch(95% 0.005 87)"
+          "oklch(15% 0.007 261)",
+          "oklch(26% 0.010 261)",
+          "oklch(38% 0.013 261)",
+          "oklch(49% 0.015 261)",
+          "oklch(61% 0.015 261)",
+          "oklch(72% 0.013 261)",
+          "oklch(84% 0.010 261)",
+          "oklch(95% 0.007 261)"
         ]
       },
       "texto-secundario": {
         "role": "neutral",
         "displayName": "Texto secundário",
-        "canonical": "#9A9EA6",
+        "canonical": "#8A8F98",
         "tonalRamp": [
-          "oklch(15% 0.006 264)",
-          "oklch(26% 0.008 264)",
-          "oklch(38% 0.010 264)",
-          "oklch(49% 0.012 264)",
-          "oklch(61% 0.012 264)",
-          "oklch(72% 0.010 264)",
-          "oklch(84% 0.008 264)",
-          "oklch(95% 0.006 264)"
+          "oklch(15% 0.007 262)",
+          "oklch(26% 0.010 262)",
+          "oklch(38% 0.012 262)",
+          "oklch(49% 0.015 262)",
+          "oklch(61% 0.015 262)",
+          "oklch(72% 0.012 262)",
+          "oklch(84% 0.010 262)",
+          "oklch(95% 0.007 262)"
         ]
       },
-      "acao-link": {
+      "acento": {
         "role": "primary",
-        "displayName": "Azul-aço",
-        "canonical": "#7FA2C8",
+        "displayName": "Lima ácido",
+        "canonical": "#E4F222",
         "tonalRamp": [
-          "oklch(15% 0.031 251)",
-          "oklch(26% 0.042 251)",
-          "oklch(38% 0.052 251)",
-          "oklch(49% 0.063 251)",
-          "oklch(61% 0.063 251)",
-          "oklch(72% 0.052 251)",
-          "oklch(84% 0.042 251)",
-          "oklch(95% 0.031 251)"
+          "oklch(15% 0.098 114)",
+          "oklch(26% 0.133 114)",
+          "oklch(38% 0.167 114)",
+          "oklch(49% 0.201 114)",
+          "oklch(61% 0.201 114)",
+          "oklch(72% 0.167 114)",
+          "oklch(84% 0.133 114)",
+          "oklch(95% 0.098 114)"
         ]
       },
       "risco-baixo": {
         "role": "tertiary",
         "displayName": "Risco baixo",
-        "canonical": "#3FB37F",
+        "canonical": "#27A644",
         "tonalRamp": [
-          "oklch(15% 0.059 160)",
-          "oklch(26% 0.079 160)",
-          "oklch(38% 0.100 160)",
-          "oklch(49% 0.120 160)",
-          "oklch(61% 0.120 160)",
-          "oklch(72% 0.100 160)",
-          "oklch(84% 0.079 160)",
-          "oklch(95% 0.059 160)"
+          "oklch(15% 0.086 147)",
+          "oklch(26% 0.115 147)",
+          "oklch(38% 0.145 147)",
+          "oklch(49% 0.175 147)",
+          "oklch(61% 0.175 147)",
+          "oklch(72% 0.145 147)",
+          "oklch(84% 0.115 147)",
+          "oklch(95% 0.086 147)"
         ]
       },
       "risco-medio": {
@@ -129,44 +144,44 @@
         "displayName": "Risco médio",
         "canonical": "#E0A43B",
         "tonalRamp": [
-          "oklch(15% 0.062 78)",
-          "oklch(26% 0.083 78)",
-          "oklch(38% 0.105 78)",
-          "oklch(49% 0.126 78)",
-          "oklch(61% 0.126 78)",
-          "oklch(72% 0.105 78)",
-          "oklch(84% 0.083 78)",
-          "oklch(95% 0.062 78)"
+          "oklch(15% 0.067 78)",
+          "oklch(26% 0.090 78)",
+          "oklch(38% 0.113 78)",
+          "oklch(49% 0.137 78)",
+          "oklch(61% 0.137 78)",
+          "oklch(72% 0.113 78)",
+          "oklch(84% 0.090 78)",
+          "oklch(95% 0.067 78)"
         ]
       },
       "risco-alto": {
         "role": "tertiary",
         "displayName": "Risco alto",
-        "canonical": "#E75D55",
+        "canonical": "#EB5757",
         "tonalRamp": [
-          "oklch(15% 0.079 26)",
-          "oklch(26% 0.106 26)",
-          "oklch(38% 0.133 26)",
-          "oklch(49% 0.160 26)",
-          "oklch(61% 0.160 26)",
-          "oklch(72% 0.133 26)",
-          "oklch(84% 0.106 26)",
-          "oklch(95% 0.079 26)"
+          "oklch(15% 0.090 24)",
+          "oklch(26% 0.121 24)",
+          "oklch(38% 0.152 24)",
+          "oklch(49% 0.183 24)",
+          "oklch(61% 0.183 24)",
+          "oklch(72% 0.152 24)",
+          "oklch(84% 0.121 24)",
+          "oklch(95% 0.090 24)"
         ]
       },
       "claro-fundo-base": {
         "role": "neutral",
         "displayName": "Base (tema claro)",
-        "canonical": "#F5F5F6",
+        "canonical": "#E9EAEC",
         "tonalRamp": [
-          "oklch(15% 0.001 286)",
-          "oklch(26% 0.001 286)",
-          "oklch(38% 0.001 286)",
-          "oklch(49% 0.001 286)",
-          "oklch(61% 0.001 286)",
-          "oklch(72% 0.001 286)",
-          "oklch(84% 0.001 286)",
-          "oklch(95% 0.001 286)"
+          "oklch(15% 0.001 265)",
+          "oklch(26% 0.002 265)",
+          "oklch(38% 0.002 265)",
+          "oklch(49% 0.003 265)",
+          "oklch(61% 0.003 265)",
+          "oklch(72% 0.002 265)",
+          "oklch(84% 0.002 265)",
+          "oklch(95% 0.001 265)"
         ]
       },
       "claro-fundo-superficie": {
@@ -187,76 +202,91 @@
       "claro-fundo-elevado": {
         "role": "neutral",
         "displayName": "Elevado (tema claro)",
-        "canonical": "#ECECEE",
+        "canonical": "#F1F2F4",
         "tonalRamp": [
-          "oklch(15% 0.001 286)",
-          "oklch(26% 0.002 286)",
-          "oklch(38% 0.002 286)",
-          "oklch(49% 0.002 286)",
-          "oklch(61% 0.002 286)",
-          "oklch(72% 0.002 286)",
-          "oklch(84% 0.002 286)",
-          "oklch(95% 0.001 286)"
+          "oklch(15% 0.001 265)",
+          "oklch(26% 0.002 265)",
+          "oklch(38% 0.002 265)",
+          "oklch(49% 0.003 265)",
+          "oklch(61% 0.003 265)",
+          "oklch(72% 0.002 265)",
+          "oklch(84% 0.002 265)",
+          "oklch(95% 0.001 265)"
         ]
       },
       "claro-borda-padrao": {
         "role": "neutral",
         "displayName": "Borda (tema claro)",
-        "canonical": "#DCDCE0",
+        "canonical": "#D3D5DA",
         "tonalRamp": [
-          "oklch(15% 0.002 286)",
-          "oklch(26% 0.003 286)",
-          "oklch(38% 0.004 286)",
-          "oklch(49% 0.005 286)",
-          "oklch(61% 0.005 286)",
-          "oklch(72% 0.004 286)",
-          "oklch(84% 0.003 286)",
-          "oklch(95% 0.002 286)"
+          "oklch(15% 0.004 269)",
+          "oklch(26% 0.005 269)",
+          "oklch(38% 0.006 269)",
+          "oklch(49% 0.007 269)",
+          "oklch(61% 0.007 269)",
+          "oklch(72% 0.006 269)",
+          "oklch(84% 0.005 269)",
+          "oklch(95% 0.004 269)"
+        ]
+      },
+      "claro-texto-titulo": {
+        "role": "neutral",
+        "displayName": "Texto de título (tema claro)",
+        "canonical": "#0F1011",
+        "tonalRamp": [
+          "oklch(15% 0.001 248)",
+          "oklch(26% 0.002 248)",
+          "oklch(38% 0.002 248)",
+          "oklch(49% 0.003 248)",
+          "oklch(61% 0.003 248)",
+          "oklch(72% 0.002 248)",
+          "oklch(84% 0.002 248)",
+          "oklch(95% 0.001 248)"
         ]
       },
       "claro-texto-primario": {
         "role": "neutral",
         "displayName": "Texto primário (tema claro)",
-        "canonical": "#111214",
+        "canonical": "#1C1E24",
         "tonalRamp": [
-          "oklch(15% 0.002 264)",
-          "oklch(26% 0.003 264)",
-          "oklch(38% 0.003 264)",
-          "oklch(49% 0.004 264)",
-          "oklch(61% 0.004 264)",
-          "oklch(72% 0.003 264)",
-          "oklch(84% 0.003 264)",
-          "oklch(95% 0.002 264)"
+          "oklch(15% 0.006 271)",
+          "oklch(26% 0.008 271)",
+          "oklch(38% 0.010 271)",
+          "oklch(49% 0.012 271)",
+          "oklch(61% 0.012 271)",
+          "oklch(72% 0.010 271)",
+          "oklch(84% 0.008 271)",
+          "oklch(95% 0.006 271)"
         ]
       },
       "claro-texto-secundario": {
         "role": "neutral",
         "displayName": "Texto secundário (tema claro)",
-        "canonical": "#5F636B",
+        "canonical": "#62666D",
         "tonalRamp": [
-          "oklch(15% 0.006 264)",
-          "oklch(26% 0.008 264)",
-          "oklch(38% 0.010 264)",
-          "oklch(49% 0.013 264)",
-          "oklch(61% 0.013 264)",
-          "oklch(72% 0.010 264)",
-          "oklch(84% 0.008 264)",
-          "oklch(95% 0.006 264)"
+          "oklch(15% 0.006 262)",
+          "oklch(26% 0.008 262)",
+          "oklch(38% 0.010 262)",
+          "oklch(49% 0.012 262)",
+          "oklch(61% 0.012 262)",
+          "oklch(72% 0.010 262)",
+          "oklch(84% 0.008 262)",
+          "oklch(95% 0.006 262)"
         ]
       },
-      "claro-acao-link": {
+      "claro-acento": {
         "role": "primary",
-        "displayName": "Azul-aço (tema claro)",
-        "canonical": "#3F6A96",
+        "displayName": "Oliva escuro (tema claro)",
+        "canonical": "#5F6600",
         "tonalRamp": [
-          "oklch(15% 0.039 250)",
-          "oklch(26% 0.052 250)",
-          "oklch(38% 0.065 250)",
-          "oklch(49% 0.079 250)",
-          "oklch(61% 0.079 250)",
-          "oklch(72% 0.065 250)",
-          "oklch(84% 0.052 250)",
-          "oklch(95% 0.039 250)"
+          "oklch(15% 0.054 114)",
+          "oklch(26% 0.073 114)",
+          "oklch(38% 0.091 114)",
+          "oklch(49% 0.110 114)",
+          "oklch(61% 0.110 114)",
+          "oklch(72% 0.091 114)",
+          "oklch(84% 0.073 114)",
+          "oklch(95% 0.054 114)"
         ]
       },
       "claro-risco-baixo": {
@@ -264,14 +294,14 @@
         "displayName": "Risco baixo (tema claro)",
         "canonical": "#1F764E",
         "tonalRamp": [
-          "oklch(15% 0.047 159)",
-          "oklch(26% 0.063 159)",
-          "oklch(38% 0.079 159)",
-          "oklch(49% 0.095 159)",
-          "oklch(61% 0.095 159)",
-          "oklch(72% 0.079 159)",
-          "oklch(84% 0.063 159)",
-          "oklch(95% 0.047 159)"
+          "oklch(15% 0.051 159)",
+          "oklch(26% 0.068 159)",
+          "oklch(38% 0.086 159)",
+          "oklch(49% 0.104 159)",
+          "oklch(61% 0.104 159)",
+          "oklch(72% 0.086 159)",
+          "oklch(84% 0.068 159)",
+          "oklch(95% 0.051 159)"
         ]
       },
       "claro-risco-medio": {
@@ -279,14 +309,14 @@
         "displayName": "Risco médio (tema claro)",
         "canonical": "#915C08",
         "tonalRamp": [
-          "oklch(15% 0.050 70)",
-          "oklch(26% 0.067 70)",
-          "oklch(38% 0.084 70)",
-          "oklch(49% 0.102 70)",
-          "oklch(61% 0.102 70)",
-          "oklch(72% 0.084 70)",
-          "oklch(84% 0.067 70)",
-          "oklch(95% 0.050 70)"
+          "oklch(15% 0.054 70)",
+          "oklch(26% 0.073 70)",
+          "oklch(38% 0.091 70)",
+          "oklch(49% 0.110 70)",
+          "oklch(61% 0.110 70)",
+          "oklch(72% 0.091 70)",
+          "oklch(84% 0.073 70)",
+          "oklch(95% 0.054 70)"
         ]
       },
       "claro-risco-alto": {
@@ -294,21 +324,21 @@
         "displayName": "Risco alto (tema claro)",
         "canonical": "#B42F28",
         "tonalRamp": [
-          "oklch(15% 0.078 28)",
-          "oklch(26% 0.104 28)",
-          "oklch(38% 0.131 28)",
-          "oklch(49% 0.158 28)",
-          "oklch(61% 0.158 28)",
-          "oklch(72% 0.131 28)",
-          "oklch(84% 0.104 28)",
-          "oklch(95% 0.078 28)"
+          "oklch(15% 0.084 28)",
+          "oklch(26% 0.113 28)",
+          "oklch(38% 0.142 28)",
+          "oklch(49% 0.171 28)",
+          "oklch(61% 0.171 28)",
+          "oklch(72% 0.142 28)",
+          "oklch(84% 0.113 28)",
+          "oklch(95% 0.084 28)"
         ]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "O valor de cada métrica."
+        "purpose": "O valor de cada métrica, na cor de título."
       },
       "headline": {
         "displayName": "Headline",
@@ -336,7 +366,7 @@
       },
       "apoio": {
         "displayName": "Apoio",
-        "purpose": "Linha de apoio da métrica, resumo do painel, contagem da fila, eixos do gráfico."
+        "purpose": "Linha de apoio da métrica, resumo do painel, contagem da fila, rótulos, totais e eixo do mapa de calor."
       },
       "identificador": {
         "displayName": "Identificador",
@@ -377,7 +407,7 @@
       "refersTo": "selo-de-risco-ponto",
       "description": "Ponto de 6px e nome do nível na cor de risco. Usado no título de uma lista em que todas as linhas têm o mesmo nível.",
       "html": "<span class=\"ds-selo-ponto ds-selo-alto\"><span class=\"ds-selo-marca\"></span><span>risco alto</span></span> <span class=\"ds-selo-ponto ds-selo-medio\"><span class=\"ds-selo-marca\"></span><span>risco médio</span></span> <span class=\"ds-selo-ponto ds-selo-baixo\"><span class=\"ds-selo-marca\"></span><span>risco baixo</span></span>",
-      "css": ".ds-selo-ponto { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--ds-cor); } .ds-selo-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-selo-alto { --ds-cor: var(--risco-alto); } .ds-selo-medio { --ds-cor: var(--risco-medio); } .ds-selo-baixo { --ds-cor: var(--risco-baixo); }"
+      "css": ".ds-selo-ponto { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 12px; line-height: 16px; font-weight: 510; white-space: nowrap; color: var(--ds-cor); } .ds-selo-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-selo-alto { --ds-cor: var(--risco-alto); } .ds-selo-medio { --ds-cor: var(--risco-medio); } .ds-selo-baixo { --ds-cor: var(--risco-baixo); }"
     },
     {
       "name": "Selo de risco, tingido",
@@ -385,7 +415,7 @@
       "refersTo": "selo-de-risco-tingido",
       "description": "Selo de 20px com tinta de 13% da cor do nível, borda de 32% e texto primário. Pronto no componente, ainda sem uso em tela.",
       "html": "<span class=\"ds-selo-tingido ds-tinta-alto\"><span class=\"ds-tinta-marca\"></span><span>alto</span></span> <span class=\"ds-selo-tingido ds-tinta-medio\"><span class=\"ds-tinta-marca\"></span><span>médio</span></span> <span class=\"ds-selo-tingido ds-tinta-baixo\"><span class=\"ds-tinta-marca\"></span><span>baixo</span></span>",
-      "css": ".ds-selo-tingido { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; margin-right: 8px; border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--texto-primario); background: color-mix(in srgb, var(--ds-cor) 13%, transparent); border: 1px solid color-mix(in srgb, var(--ds-cor) 32%, transparent); } .ds-tinta-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-tinta-alto { --ds-cor: var(--risco-alto); } .ds-tinta-medio { --ds-cor: var(--risco-medio); } .ds-tinta-baixo { --ds-cor: var(--risco-baixo); }"
+      "css": ".ds-selo-tingido { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; margin-right: 8px; border-radius: 4px; font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 12px; line-height: 16px; font-weight: 510; white-space: nowrap; color: var(--texto-primario); background: color-mix(in srgb, var(--ds-cor) 13%, transparent); border: 1px solid color-mix(in srgb, var(--ds-cor) 32%, transparent); } .ds-tinta-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-tinta-alto { --ds-cor: var(--risco-alto); } .ds-tinta-medio { --ds-cor: var(--risco-medio); } .ds-tinta-baixo { --ds-cor: var(--risco-baixo); }"
     },
     {
       "name": "Campo de busca",
@@ -393,7 +423,7 @@
       "refersTo": "campo-de-busca",
       "description": "Campo de 32px com lupa e contorno na cor do texto secundário.",
       "html": "<div class=\"ds-busca\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-busca-campo\" type=\"search\" aria-label=\"Buscar na fila\" placeholder=\"PR, branch ou motivo\"></div>",
-      "css": ".ds-busca { position: relative; width: 224px; color: var(--texto-secundario); } .ds-busca svg { position: absolute; top: 8px; left: 8px; pointer-events: none; } .ds-busca-campo { width: 100%; height: 32px; padding: 0 32px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-busca-campo::placeholder { color: var(--texto-secundario); } .ds-busca-campo:hover { border-color: var(--texto-primario); } .ds-busca-campo:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+      "css": ".ds-busca { position: relative; width: 224px; color: var(--texto-secundario); } .ds-busca svg { position: absolute; top: 8px; left: 8px; pointer-events: none; } .ds-busca-campo { width: 100%; height: 32px; padding: 0 32px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-busca-campo::placeholder { color: var(--texto-secundario); } .ds-busca-campo:hover { border-color: var(--texto-primario); } .ds-busca-campo:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }"
     },
     {
       "name": "Seleção, gatilho",
@@ -401,7 +431,7 @@
       "refersTo": "selecao-gatilho",
       "description": "Gatilho do select (Radix): mesma altura, raio e contorno do campo de busca, com seta à direita.",
       "html": "<button type=\"button\" class=\"ds-selecao\"><span>Todos os repositórios</span><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
-      "css": ".ds-selecao { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 208px; height: 32px; padding: 0 8px 0 12px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-selecao svg { color: var(--texto-secundario); } .ds-selecao:hover { border-color: var(--texto-primario); } .ds-selecao:active { background: var(--fundo-elevado); } .ds-selecao:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+      "css": ".ds-selecao { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 208px; height: 32px; padding: 0 8px 0 12px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-selecao svg { color: var(--texto-secundario); } .ds-selecao:hover { border-color: var(--texto-primario); } .ds-selecao:active { background: var(--fundo-elevado); } .ds-selecao:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }"
     },
     {
       "name": "Botão de tema",
@@ -409,15 +439,15 @@
       "refersTo": "botao-de-tema",
       "description": "Único botão da casca: alterna entre o tema escuro e o claro.",
       "html": "<button type=\"button\" class=\"ds-tema\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/></svg><span>Tema claro</span></button>",
-      "css": ".ds-tema { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tema:hover { background: var(--fundo-elevado); } .ds-tema:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+      "css": ".ds-tema { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tema:hover { background: var(--fundo-elevado); } .ds-tema:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }"
     },
     {
       "name": "Item de navegação",
       "kind": "nav",
       "refersTo": "navegacao-item",
-      "description": "Item da barra lateral, com o estado ativo em fundo elevado e peso 500.",
+      "description": "Item da barra lateral. O ativo tem fundo elevado, texto na cor de título, peso 510 e o ícone na cor do acento.",
       "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-item ds-nav-ativo\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 17 2 2 4-4\"/><path d=\"m3 7 2 2 4-4\"/><path d=\"M13 6h8\"/><path d=\"M13 12h8\"/><path d=\"M13 18h8\"/></svg><span>Análises</span></a><a href=\"#\" class=\"ds-nav-item\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M8 8h8\"/><path d=\"M8 12h8\"/><path d=\"M8 16h5\"/></svg><span>Recibos</span></a></nav>",
-      "css": ".ds-nav { display: grid; gap: 4px; width: 224px; padding: 8px; background: var(--fundo-superficie); } .ds-nav-item { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 6px; color: var(--texto-secundario); text-decoration: none; white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover, .ds-nav-ativo { background: var(--fundo-elevado); color: var(--texto-primario); } .ds-nav-ativo { font-weight: 500; } .ds-nav-item:focus-visible { outline: 2px solid var(--acao-link); outline-offset: -2px; }"
+      "css": ".ds-nav { display: grid; gap: 4px; width: 224px; padding: 8px; background: var(--fundo-superficie); } .ds-nav-item { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 6px; color: var(--texto-secundario); text-decoration: none; white-space: nowrap; font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover, .ds-nav-ativo { background: var(--fundo-elevado); color: var(--texto-primario); } .ds-nav-ativo { font-weight: 510; color: var(--texto-titulo); } .ds-nav-ativo svg { color: var(--acento); } .ds-nav-item:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }"
     },
     {
       "name": "Métrica",
@@ -425,23 +455,31 @@
       "refersTo": "metrica",
       "description": "Célula da faixa de métricas: rótulo, valor com unidade, barra de proporção e linha de apoio com fração e período.",
       "html": "<dl class=\"ds-faixa\"><div class=\"ds-metrica\"><dt class=\"ds-metrica-rotulo\">Taxa de bloqueio</dt><dd class=\"ds-metrica-linha\"><span class=\"ds-metrica-valor\">N%</span><span class=\"ds-metrica-unidade\">das avaliadas</span></dd><dd class=\"ds-metrica-barra\"><span class=\"ds-proporcao\"><span style=\"width: 40%\"></span></span></dd><dd class=\"ds-metrica-apoio\">N de M análises em D dias</dd></div><div class=\"ds-metrica\"><dt class=\"ds-metrica-rotulo\">Falhas no sandbox</dt><dd class=\"ds-metrica-linha\"><span class=\"ds-metrica-valor\">N%</span><span class=\"ds-metrica-unidade\">das execuções</span></dd><dd class=\"ds-metrica-barra\"><span class=\"ds-proporcao\"><span style=\"width: 15%\"></span></span></dd><dd class=\"ds-metrica-apoio\">N de M execuções em D dias</dd></div></dl>",
-      "css": ".ds-faixa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--borda-padrao); font-family: 'IBM Plex Sans', sans-serif; color: var(--texto-primario); font-variant-numeric: tabular-nums; } .ds-metrica { display: flex; flex-direction: column; min-width: 0; padding: 12px 16px; background: var(--fundo-superficie); } .ds-metrica dd { margin: 0; } .ds-metrica-rotulo { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--texto-secundario); } .ds-metrica-linha { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; margin-top: 4px !important; } .ds-metrica-valor { font-size: 32px; line-height: 40px; font-weight: 600; } .ds-metrica-unidade { font-size: 14px; line-height: 20px; color: var(--texto-secundario); white-space: nowrap; } .ds-metrica-barra, .ds-metrica-apoio { margin-top: 8px !important; } .ds-metrica-apoio { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-proporcao { display: block; width: 100%; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-proporcao span { display: block; height: 100%; background: var(--texto-secundario); }"
+      "css": ".ds-faixa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 12px; background: var(--borda-padrao); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; color: var(--texto-primario); font-variant-numeric: tabular-nums; } .ds-metrica { display: flex; flex-direction: column; min-width: 0; padding: 12px 16px; background: var(--fundo-superficie); } .ds-metrica dd { margin: 0; } .ds-metrica-rotulo { font-size: 12px; line-height: 16px; font-weight: 510; color: var(--texto-secundario); } .ds-metrica-linha { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; margin-top: 4px !important; } .ds-metrica-valor { font-size: 32px; line-height: 40px; font-weight: 590; letter-spacing: -0.022em; color: var(--texto-titulo); } .ds-metrica-unidade { font-size: 14px; line-height: 20px; color: var(--texto-secundario); white-space: nowrap; } .ds-metrica-barra, .ds-metrica-apoio { margin-top: 8px !important; } .ds-metrica-apoio { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-proporcao { display: block; width: 100%; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-proporcao span { display: block; height: 100%; background: var(--texto-secundario); }"
     },
     {
       "name": "Painel com tabela de contagem",
       "kind": "card",
       "refersTo": "painel",
       "description": "Bloco de superfície com faixa de cabeçalho em fundo elevado; cada linha traz rótulo, barra de proporção e número.",
-      "html": "<section class=\"ds-painel\"><header class=\"ds-painel-cabecalho\"><h2>Bloqueadas</h2><div>M por desfecho</div></header><table class=\"ds-painel-tabela\"><tbody><tr><th scope=\"row\">Aguardando</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 50%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr><tr><th scope=\"row\">Aprovadas</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 30%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr></tbody></table></section>",
-      "css": ".ds-painel { width: 320px; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-painel-cabecalho { display: flex; align-items: baseline; justify-content: space-between; column-gap: 16px; padding: 6px 12px; border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); white-space: nowrap; } .ds-painel-cabecalho h2 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; } .ds-painel-cabecalho div { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-painel-tabela { width: 100%; border-collapse: collapse; } .ds-painel-tabela tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-painel-tabela th { padding: 6px 12px; text-align: left; font-weight: 400; white-space: nowrap; } .ds-painel-meio { width: 100%; padding: 0 12px; } .ds-painel-numero { padding: 6px 12px; text-align: right; } .ds-painel-barra { display: block; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-painel-barra span { display: block; height: 100%; background: var(--texto-secundario); }"
+      "html": "<section class=\"ds-painel\"><header class=\"ds-painel-cabecalho\"><h2>Bloqueadas</h2><div>N por desfecho</div></header><table class=\"ds-painel-tabela\"><tbody><tr><th scope=\"row\">Aguardando</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 50%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr><tr><th scope=\"row\">Aprovadas</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 30%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr></tbody></table></section>",
+      "css": ".ds-painel { width: 320px; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 12px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-painel-cabecalho { display: flex; align-items: baseline; justify-content: space-between; column-gap: 16px; padding: 6px 12px; border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); white-space: nowrap; } .ds-painel-cabecalho h2 { margin: 0; color: var(--texto-titulo); font-size: 14px; line-height: 20px; font-weight: 590; } .ds-painel-cabecalho div { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-painel-tabela { width: 100%; border-collapse: collapse; } .ds-painel-tabela tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-painel-tabela th { padding: 6px 12px; text-align: left; font-weight: 400; white-space: nowrap; } .ds-painel-meio { width: 100%; padding: 0 12px; } .ds-painel-numero { padding: 6px 12px; text-align: right; } .ds-painel-barra { display: block; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-painel-barra span { display: block; height: 100%; background: var(--texto-secundario); }"
+    },
+    {
+      "name": "Mapa de calor",
+      "kind": "custom",
+      "refersTo": "mapa-de-calor-celula-vazia",
+      "description": "Matriz de 3 níveis por dia do período: células de 20px com raio de 2px, quatro passos de intensidade, nome do nível à esquerda, total à direita e escala neutra no cabeçalho do painel.",
+      "html": "<section class=\"ds-mapa\"><header class=\"ds-mapa-cabecalho\"><h2>Análises por dia e nível</h2><div class=\"ds-mapa-escala\"><span>0</span><span class=\"ds-mapa-amostras\" aria-hidden=\"true\"><span class=\"ds-mapa-amostra ds-mapa-a0\"></span><span class=\"ds-mapa-amostra ds-mapa-a1\"></span><span class=\"ds-mapa-amostra ds-mapa-a2\"></span><span class=\"ds-mapa-amostra ds-mapa-a3\"></span><span class=\"ds-mapa-amostra ds-mapa-a4\"></span></span><span>N por dia</span></div></header><figure class=\"ds-mapa-figura\"><div class=\"ds-mapa-linha ds-mapa-alto\"><span class=\"ds-mapa-rotulo\">alto</span><span class=\"ds-mapa-celulas\"><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p2\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p4\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p3\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, alto: N análises\"></span></span><span class=\"ds-mapa-total\">N</span></div><div class=\"ds-mapa-linha ds-mapa-medio\"><span class=\"ds-mapa-rotulo\">médio</span><span class=\"ds-mapa-celulas\"><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p3\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p2\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p4\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p2\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, médio: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p3\" title=\"dia, médio: N análises\"></span></span><span class=\"ds-mapa-total\">N</span></div><div class=\"ds-mapa-linha ds-mapa-baixo\"><span class=\"ds-mapa-rotulo\">baixo</span><span class=\"ds-mapa-celulas\"><span class=\"ds-mapa-celula ds-mapa-p2\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p3\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p4\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p2\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p1\" title=\"dia, baixo: N análises\"></span><span class=\"ds-mapa-celula ds-mapa-p0\" title=\"dia, baixo: N análises\"></span></span><span class=\"ds-mapa-total\">N</span></div><div class=\"ds-mapa-eixo\"><span></span><span class=\"ds-mapa-datas\"><span>primeiro dia</span><span>dia do meio</span><span>hoje</span></span><span></span></div></figure></section>",
+      "css": ".ds-mapa { width: 420px; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 12px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; } .ds-mapa-cabecalho { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; column-gap: 16px; padding: 6px 12px; border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); white-space: nowrap; } .ds-mapa-cabecalho h2 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 590; color: var(--texto-titulo); } .ds-mapa-escala { display: flex; align-items: center; gap: 6px; color: var(--texto-secundario); } .ds-mapa-amostras { display: flex; gap: 2px; } .ds-mapa-amostra { width: 10px; height: 10px; border-radius: 2px; } .ds-mapa-a0 { background: var(--fundo-superficie); } .ds-mapa-a1 { background: color-mix(in srgb, var(--texto-secundario) 40%, var(--fundo-superficie)); } .ds-mapa-a2 { background: color-mix(in srgb, var(--texto-secundario) 60%, var(--fundo-superficie)); } .ds-mapa-a3 { background: color-mix(in srgb, var(--texto-secundario) 80%, var(--fundo-superficie)); } .ds-mapa-a4 { background: color-mix(in srgb, var(--texto-secundario) 100%, var(--fundo-superficie)); } .ds-mapa-figura { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 8px 12px; } .ds-mapa-linha, .ds-mapa-eixo { display: grid; grid-template-columns: 3rem minmax(0, 1fr) 1.5rem; align-items: center; column-gap: 8px; } .ds-mapa-alto { --ds-cor: var(--risco-alto); } .ds-mapa-medio { --ds-cor: var(--risco-medio); } .ds-mapa-baixo { --ds-cor: var(--risco-baixo); } .ds-mapa-rotulo { color: var(--texto-secundario); } .ds-mapa-total { text-align: right; } .ds-mapa-celulas { display: flex; gap: 2px; } .ds-mapa-celula { flex: 1; min-width: 0; height: 20px; border-radius: 2px; } .ds-mapa-p0 { background: var(--fundo-elevado); } .ds-mapa-p1 { background: color-mix(in srgb, var(--ds-cor) 40%, var(--fundo-superficie)); } .ds-mapa-p2 { background: color-mix(in srgb, var(--ds-cor) 60%, var(--fundo-superficie)); } .ds-mapa-p3 { background: color-mix(in srgb, var(--ds-cor) 80%, var(--fundo-superficie)); } .ds-mapa-p4 { background: color-mix(in srgb, var(--ds-cor) 100%, var(--fundo-superficie)); } .ds-mapa-eixo { margin-top: 4px; color: var(--texto-secundario); } .ds-mapa-datas { display: flex; justify-content: space-between; }"
     },
     {
       "name": "Tabela com coluna ordenável",
       "kind": "custom",
       "refersTo": "tabela-linha",
-      "description": "Linhas de 32px, faixa de cabeçalho em fundo elevado, cabeçalho ordenável com seta que gira e identificadores em Plex Mono.",
+      "description": "Linhas de 32px, faixa de cabeçalho em fundo elevado, cabeçalho ordenável com seta que gira, identificadores em Plex Mono e link em texto primário sublinhado.",
       "html": "<table class=\"ds-tabela\"><thead><tr><th scope=\"col\" aria-sort=\"descending\" class=\"ds-tabela-ordena\"><button type=\"button\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/></svg><span>Espera</span></button></th><th scope=\"col\">Pull request</th><th scope=\"col\">Branch</th></tr></thead><tbody><tr><td class=\"ds-tabela-espera\">N h</td><td><a href=\"#\">repositorio <span class=\"ds-mono\">#N</span></a></td><td><span class=\"ds-mono\">nome-da-branch</span></td></tr><tr><td class=\"ds-tabela-espera\">N h</td><td><a href=\"#\">repositorio <span class=\"ds-mono\">#N</span></a></td><td><span class=\"ds-mono\">nome-da-branch</span></td></tr></tbody></table>",
-      "css": ".ds-tabela { width: 100%; border-collapse: collapse; text-align: left; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-tabela thead tr { border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); } .ds-tabela th { padding: 6px 12px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--texto-secundario); } .ds-tabela th.ds-tabela-ordena { width: 0; padding: 0; } .ds-tabela-ordena button { display: flex; flex-direction: row-reverse; align-items: center; gap: 4px; width: 100%; padding: 6px 12px; border: 0; background: none; color: var(--texto-primario); font: inherit; white-space: nowrap; cursor: pointer; } .ds-tabela-ordena svg { rotate: 180deg; transition: rotate 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela-ordena button:focus-visible { outline: 2px solid var(--acao-link); outline-offset: -2px; } .ds-tabela tbody tr { transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela tbody tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-tabela tbody tr:hover { background: var(--fundo-elevado); } .ds-tabela td { padding: 6px 12px; white-space: nowrap; } .ds-tabela-espera { text-align: right; font-weight: 500; } .ds-tabela a { color: var(--acao-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-tabela a:hover { text-decoration-thickness: 2px; } .ds-tabela a:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; } .ds-mono { font-family: 'IBM Plex Mono', monospace; } @media (prefers-reduced-motion: reduce) { .ds-tabela tbody tr, .ds-tabela-ordena svg { transition-duration: 0ms; } }"
+      "css": ".ds-tabela { width: 100%; border-collapse: collapse; text-align: left; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-tabela thead tr { border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); } .ds-tabela th { padding: 6px 12px; font-size: 12px; line-height: 16px; font-weight: 510; white-space: nowrap; color: var(--texto-secundario); } .ds-tabela th.ds-tabela-ordena { width: 0; padding: 0; } .ds-tabela-ordena button { display: flex; flex-direction: row-reverse; align-items: center; gap: 4px; width: 100%; padding: 6px 12px; border: 0; background: none; color: var(--texto-primario); font: inherit; white-space: nowrap; cursor: pointer; } .ds-tabela-ordena svg { rotate: 180deg; transition: rotate 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela-ordena button:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; } .ds-tabela tbody tr { transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela tbody tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-tabela tbody tr:hover { background: var(--fundo-elevado); } .ds-tabela td { padding: 6px 12px; white-space: nowrap; } .ds-tabela-espera { text-align: right; font-weight: 510; } .ds-tabela a { color: var(--texto-primario); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-tabela a:hover { text-decoration-thickness: 2px; } .ds-tabela a:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; } .ds-mono { font-family: 'IBM Plex Mono', monospace; } @media (prefers-reduced-motion: reduce) { .ds-tabela tbody tr, .ds-tabela-ordena svg { transition-duration: 0ms; } }"
     },
     {
       "name": "Bloco de estado da página",
@@ -449,34 +487,40 @@
       "refersTo": "estado-de-pagina",
       "description": "Bloco de erro ou de vazio: título de 16px, explicação em texto secundário e uma ação em link. Não usa cor de risco.",
       "html": "<div class=\"ds-estado\"><h2>Não foi possível carregar a visão geral</h2><p>O servidor do aPRova não respondeu a tempo. Nenhuma análise foi perdida: as decisões e os recibos continuam gravados, e o que estava bloqueado no GitHub continua bloqueado.</p><p class=\"ds-estado-acao\"><a href=\"#\">Tentar de novo</a></p></div>",
-      "css": ".ds-estado { max-width: 65ch; padding: 24px; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; } .ds-estado h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; } .ds-estado p { margin: 8px 0 0; color: var(--texto-secundario); } .ds-estado .ds-estado-acao { margin-top: 16px; } .ds-estado a { color: var(--acao-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-estado a:hover { text-decoration-thickness: 2px; } .ds-estado a:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+      "css": ".ds-estado { max-width: 65ch; padding: 24px; border: 1px solid var(--borda-padrao); border-radius: 12px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'Inter Variable', sans-serif; font-feature-settings: 'cv01', 'ss03', 'zero'; letter-spacing: -0.011em; font-size: 14px; line-height: 20px; } .ds-estado h2 { margin: 0; color: var(--texto-titulo); font-size: 16px; line-height: 24px; font-weight: 590; } .ds-estado p { margin: 8px 0 0; color: var(--texto-secundario); } .ds-estado .ds-estado-acao { margin-top: 16px; } .ds-estado a { color: var(--texto-primario); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-estado a:hover { text-decoration-thickness: 2px; } .ds-estado a:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }"
     }
   ],
   "narrative": {
     "northStar": "O livro de registro",
-    "overview": "O dashboard do aPRova é um livro de registro: cada linha é uma decisão que alguém pode ter de provar depois. A interface é sóbria como um terminal ou um painel de observabilidade. Nada nela pede atenção por conta própria; o que chama o olho é o que espera por uma pessoa.\n\nA identidade foi definida por quem pediu o protótipo e não é reinterpretada aqui. Este arquivo registra o que o código construído faz. Até agora existem a casca (navegação, moldura de página e os estados de carregamento, erro e vazio) e a tela Visão geral. Análises, Recibos e Regras aparecem na navegação, mas ainda não têm tela: os três endereços caem em \"Página não encontrada\". Nenhum componente dessas telas está descrito aqui, e os que elas trouxerem entram quando forem construídos.\n\nO tema escuro é o padrão. O claro existe e é alternável pelo botão de tema, e a escolha persiste no navegador.",
+    "overview": "O dashboard do aPRova é um livro de registro: cada linha é uma decisão que alguém pode ter de provar depois. A interface é sóbria como um terminal ou um painel de observabilidade. Nada nela pede atenção por conta própria; o que chama o olho é o que espera por uma pessoa.\n\nO livro agora é desenhado com uma paleta mais escura, adaptada da referência de estilo do Linear: fundo quase preto, três tons de superfície muito próximos, título em branco, texto em cinza frio e um único acento, um lima ácido. A referência foi adaptada, não copiada. Do aPRova ficaram a ausência total de sombra, o tema claro, as cores de risco como cores semânticas, a linha de 32px e as regras do identificador e do denominador. Do Linear não vieram o fio de 0,5px, as sombras, as pílulas, os tamanhos de 13, 15 e 17px, a escala de texto de marketing (48 a 72px) nem a Berkeley Mono.\n\nEste arquivo registra o que o código construído faz. Até agora existem a casca (navegação, moldura de página e os estados de carregamento, erro e vazio), a tela Visão geral e a tela Página não encontrada. Análises, Recibos e Regras aparecem na navegação, mas ainda não têm tela: os três endereços caem em \"Página não encontrada\". Nenhum componente dessas telas está descrito aqui, e os que elas trouxerem entram quando forem construídos.\n\nO tema escuro é o padrão. O claro existe e é alternável pelo botão de tema, e a escolha persiste no navegador.",
     "keyCharacteristics": [
-      "Escuro por padrão, denso, sem ornamento.",
+      "Escuro por padrão, denso, sem ornamento nas telas de trabalho.",
       "Superfícies separadas por borda de 1px e por três tons de fundo, nunca por sombra.",
-      "Duas famílias com papéis fixos: Plex Sans fala, Plex Mono identifica.",
-      "Cor reservada: o azul é de link e foco, e as três cores de risco só aparecem onde se fala de risco.",
+      "Duas famílias com papéis fixos: Inter fala, Plex Mono identifica.",
+      "Título e corpo têm cores diferentes: título em `texto-titulo`, corpo em `texto-primario`.",
+      "Cor reservada: o lima é de foco, item ativo e seleção, e as três cores de risco só aparecem onde se fala de risco. Link não tem cor própria.",
       "Todo número vem com unidade, período e denominador.",
-      "Um único elemento decorativo previsto: a borda inferior serrilhada do bloco do recibo, que ainda não foi construída."
+      "Dois elementos decorativos permitidos em todo o sistema: a borda inferior serrilhada do bloco do recibo, que ainda não foi construída, e a composição tipográfica da Página não encontrada."
     ],
     "rules": [
       {
-        "name": "A regra do azul",
-        "body": "O azul-aço é só para link e anel de foco. Não é cor de botão principal, de destaque nem de gráfico.",
+        "name": "A regra do acento",
+        "body": "O lima é só para o anel de foco, o item ativo da navegação (ícone na barra lateral, linha de 2px embaixo da aba no celular) e a seleção de texto. Um botão principal pode usá-lo quando existir; nenhum existe ainda. Não é cor de link, de destaque nem de gráfico. Não há mais azul no sistema.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do link",
+        "body": "Link não tem cor própria: é texto primário com sublinhado de 1px, afastado 3px, que engrossa para 2px no hover. O que diz \"isto é um link\" é o sublinhado, não a cor.",
         "section": "colors"
       },
       {
         "name": "A regra do risco",
-        "body": "Verde, âmbar e vermelho aparecem só onde se fala de risco: selo de nível, motivo, barra de gráfico de risco. Nunca como decoração, sucesso genérico ou erro de formulário. Um estado `concluido` não é verde; um erro de carregamento não é vermelho.",
+        "body": "Verde, âmbar e vermelho aparecem só onde se fala de risco: selo de nível, motivo, linha do mapa de calor. Nunca como decoração, sucesso genérico ou erro de formulário. Um estado `concluido` não é verde; um erro de carregamento não é vermelho.",
         "section": "colors"
       },
       {
         "name": "A regra do nome",
-        "body": "O nível de risco nunca é dito só pela cor: vem sempre com \"baixo\", \"médio\" ou \"alto\" escrito. Quando o selo mostra só o nome, a palavra \"risco\" continua lá para leitor de tela.",
+        "body": "O nível de risco nunca é dito só pela cor: vem sempre com \"baixo\", \"médio\" ou \"alto\" escrito. Quando o selo mostra só o nome, a palavra \"risco\" continua lá para leitor de tela. No mapa de calor, cada linha tem o nome do nível escrito à esquerda.",
         "section": "colors"
       },
       {
@@ -491,43 +535,63 @@
       },
       {
         "name": "A regra do identificador",
-        "body": "Tudo o que alguém pode copiar para um terminal ou comparar caractere a caractere é Plex Mono, e isso inclui caminho de arquivo. Todo o resto é Plex Sans. Mono não é usada para dar ar técnico a um rótulo. Na fila, a evidência só vai em Mono quando é um caminho; quando é uma frase, fica em Sans.",
+        "body": "Tudo o que alguém pode copiar para um terminal ou comparar caractere a caractere é Plex Mono, e isso inclui caminho de arquivo. Todo o resto é Inter. Mono não é usada para dar ar técnico a um rótulo. Na fila, a evidência só vai em Mono quando é um caminho; quando é uma frase, fica em Inter.",
         "section": "typography"
       },
       {
         "name": "A regra do denominador",
-        "body": "Todo número vem com unidade, período e denominador. A métrica escreve a porcentagem com \"das avaliadas\" ao lado e, embaixo, a fração e o período, no formato \"N de M análises em D dias\". A barra de proporção nunca fala sozinha: a fração está sempre escrita ao lado dela.",
+        "body": "Todo número vem com unidade, período e denominador. A métrica escreve a porcentagem com \"das avaliadas\" ao lado e, embaixo, a fração e o período, no formato \"N de M análises em D dias\". A barra de proporção nunca fala sozinha: a fração está sempre escrita ao lado dela. O mapa de calor traz a escala de 0 ao pico, com \"por dia\" escrito, e o total de cada linha.",
+        "section": "typography"
+      },
+      {
+        "name": "A regra do peso",
+        "body": "Na interface os pesos são 400, 510 e 590. Nenhum texto de tela usa 700 ou mais. A única exceção é a composição decorativa da Página não encontrada, que desenha os algarismos em 800.",
         "section": "typography"
       },
       {
         "name": "A regra da borda",
-        "body": "Superfícies se separam por borda de 1px e pela troca de fundo. Sombra difusa não separa nada aqui.",
+        "body": "Superfícies se separam por borda de 1px e pela troca de fundo. Sombra não separa nada aqui, e o fio é sempre de 1px, nunca de 0,5px.",
         "section": "elevation"
+      },
+      {
+        "name": "A regra do caminho de leitura",
+        "body": "Em tela de trabalho nada se sobrepõe, nada gira e o caminho de leitura nunca é ambíguo. Sobreposição e rotação existem só na composição da Página não encontrada, que é decorativa e fica escondida de leitor de tela.",
+        "section": "shapes"
       }
     ],
     "dos": [
       "Do usar o tema escuro como padrão e manter o claro alternável, com a escolha persistida.",
       "Do separar superfícies com borda de 1px e com a troca entre base, superfície e elevado.",
+      "Do usar o lima só no anel de foco, no item ativo da navegação e na seleção de texto.",
+      "Do escrever link como texto primário com sublinhado de 1px, que engrossa para 2px no hover.",
+      "Do pôr títulos e o valor da métrica na cor de título, e o corpo na cor primária.",
       "Do escrever em Plex Mono todo hash, `head_sha`, `key_id`, id de motivo, nome de branch, número de PR e caminho de arquivo.",
       "Do escrever o nome do nível junto da cor de risco.",
       "Do escrever o nível uma vez no título quando a lista inteira tem o mesmo nível, em vez de repeti-lo numa coluna.",
       "Do dar unidade, período e denominador a todo número, e escrever a fração ao lado de toda barra de proporção.",
-      "Do manter controle e linha de tabela em 32px de altura.",
+      "Do acompanhar toda célula de mapa de calor do rótulo da linha, da escala e do valor por célula.",
+      "Do manter controle e linha de tabela em 36px de altura.",
+      "Do usar raio de 12px nos recipientes, 6px nos controles, 4px nos selos e 2px em barras e células.",
       "Do limitar o movimento à transição curta de estado (120ms) e zerá-la com `prefers-reduced-motion: reduce`.",
       "Do registrar em `LICENSES-TERCEIROS.md` toda peça derivada de outra biblioteca.",
       "Do usar a logo de `design/marca/svg/` no topo da navegação, na versão do tema, e `icone-app-fundo-escuro-32.png` como favicon."
     ],
     "donts": [
-      "Don't usar o azul-aço em botão principal, destaque ou gráfico.",
+      "Don't usar o lima em link, destaque ou gráfico, nem trazer o azul de volta.",
+      "Don't dar cor própria a link.",
       "Don't usar cor de risco fora de risco: nem como sucesso genérico, nem como erro de formulário, nem como decoração.",
-      "Don't usar roxo, gradiente, glassmorphism ou fundo com blur.",
-      "Don't usar sombra difusa como separador, nem sombra grande.",
-      "Don't usar Inter, Roboto ou fonte do sistema no lugar da Plex.",
+      "Don't usar roxo, gradiente, glassmorphism, neumorfismo, 3D ou fundo com blur.",
+      "Don't usar sombra, de nenhum tamanho.",
+      "Don't usar fio de 0,5px.",
+      "Don't usar peso 700 ou mais na interface.",
+      "Don't usar Roboto ou fonte do sistema no lugar da Inter, nem outra mono no lugar da Plex Mono.",
       "Don't pôr card dentro de card.",
       "Don't pôr um ícone num quadradinho arredondado em cima de cada título.",
       "Don't escrever texto cinza sobre fundo colorido.",
       "Don't usar emoji na interface.",
-      "Don't usar botão em pílula nem cantos acima de 6px.",
+      "Don't usar botão em pílula nem cantos acima de 12px.",
+      "Don't deixar a cor de uma célula de mapa de calor ser a única fonte do número.",
+      "Don't sobrepor, girar ou fragmentar nada fora da composição da Página não encontrada.",
       "Don't trocar informação por frase de efeito.",
       "Don't animar a entrada de página, nem usar mola.",
       "Don't manter cor, raio, sombra, fonte ou animação de uma biblioteca de origem.",

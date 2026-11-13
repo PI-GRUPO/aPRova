@@ -28,7 +28,7 @@ nesta lista.
 | `src/componentes/CampoDeBusca.tsx` | `arc-library/search-field` | Lupa que escurece quando há texto, botão de limpar em espaço reservado, foco de volta ao campo depois de limpar | Altura de 32px; contorno na cor do texto secundário; sem animação de entrada do botão |
 | `src/componentes/Selecao.tsx` | `arc-library/select` | Estrutura sobre `@radix-ui/react-select`: gatilho, lista em `popper`, marca no item escolhido | Sem valor rolando e sem animação de abertura; sem sombra; raio de 6px; fundo elevado com borda de 1px |
 | `src/telas/FilaDeAprovacao.tsx` (barra de ferramentas) | `arc-library/filter-toolbar` | Filtros junto da coleção, contagem anunciada por `role="status"`, ação de limpar os filtros | Sem chips e sem o menu que cresce a partir do botão; filtros são um campo de busca e um select |
-| `src/componentes/BarrasPorDia.tsx` | `arc-library/bar-chart` | `figure` com tabela alternativa para leitor de tela, linha de base, eixo de valores à direita, rótulos do eixo de datas rareados | Barras empilhadas por nível de risco, em CSS puro; sem cursor de leitura, sem média e sem animação |
+| `src/componentes/MapaDeCalor.tsx` | `arc-library/bar-chart` | `figure` com tabela alternativa para leitor de tela | Virou mapa de calor de dias por nível de risco, em CSS puro; sem barras, sem cursor de leitura, sem média e sem animação |
 
 ### Texto da licença
 
@@ -70,3 +70,17 @@ Nenhum código da ARK CN foi copiado: o repositório não tem arquivo `LICENSE` 
 a base dela é Ark UI, não Radix. Ela serviu só de referência de padrão para a
 estrutura da barra lateral (cabeçalho, conteúdo que rola e rodapé numa coluna
 da altura da janela), escrita do zero em `src/componentes/Casca.tsx`.
+
+## Referências de estilo
+
+Quatro documentos de estilo orientaram o sistema visual. São descrições de
+estilo, não código: nada foi copiado deles e nenhum texto de licença se aplica.
+O que cada um trouxe está no `DESIGN.md`.
+
+- Linear, style reference ("midnight precision instrument"): linguagem base.
+- MONOLITH, system status: cinzas do tema claro.
+  https://designmd.app.br/library/monolith-status
+- Heat Map & Heatmap Style: mapa de calor da Visão geral.
+  https://designmd.app.br/library/heat-map-heatmap-style
+- Deconstructivism (Graphic): composição da página não encontrada.
+  https://designmd.app.br/library/deconstructivism
