@@ -20,12 +20,21 @@ func linhaDeResultado(t *testing.T, resultado ResultadoSandbox) string {
 	return string(linha) + "\n"
 }
 
+func comPreparoPronto(responder func(context.Context, []string) (resultadoComando, error)) func(context.Context, []string) (resultadoComando, error) {
+	return func(ctx context.Context, argumentos []string) (resultadoComando, error) {
+		if argumentos[0] == "run" && etapaDoRun(argumentos) == "preparar" {
+			return resultadoComando{saida: linhaDoPreparoPronto}, nil
+		}
+		return responder(ctx, argumentos)
+	}
+}
+
 func executarComStdout(t *testing.T, stdout, stderr string, codigo int) ResultadoSandbox {
 	t.Helper()
 
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{saida: stdout, erros: stderr, codigo: codigo}, nil
-	}}
+	})}
 
 	resultado, err := novoExecutorLocal(opcoesLocaisDeTeste(), comando).Executar(t.Context(), pedidoValido())
 	if err != nil {
@@ -92,9 +101,9 @@ func TestStdoutSemResultadoValidoEhInfraestrutura(t *testing.T) {
 }
 
 func TestDockerAusenteEFalhaDeInfraestrutura(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{}, errors.New(`exec: "docker": executable file not found in $PATH`)
-	}}
+	})}
 
 	resultado, err := novoExecutorLocal(opcoesLocaisDeTeste(), comando).Executar(t.Context(), pedidoValido())
 
@@ -107,9 +116,9 @@ func TestDockerAusenteEFalhaDeInfraestrutura(t *testing.T) {
 }
 
 func TestContainerSobeIsoladoELimitado(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{}, nil
-	}}
+	})}
 
 	if _, err := novoExecutorLocal(opcoesLocaisDeTeste(), comando).Executar(t.Context(), pedidoValido()); err != nil {
 		t.Fatalf("executar: %v", err)
@@ -166,9 +175,9 @@ func TestContainerRecebePrazoComMargemESaidaNoStdout(t *testing.T) {
 
 	for _, caso := range casos {
 		t.Run(caso.descricao, func(t *testing.T) {
-			comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+			comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 				return resultadoComando{}, nil
-			}}
+			})}
 			ctx := t.Context()
 			if caso.prazo > 0 {
 				var cancelar context.CancelFunc
@@ -196,9 +205,9 @@ func TestContainerRecebePrazoComMargemESaidaNoStdout(t *testing.T) {
 }
 
 func TestContainerMontaOsVolumesConfigurados(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{}, nil
-	}}
+	})}
 	opcoes := opcoesLocaisDeTeste()
 	opcoes.Montagens = []string{"/host/repos:/repositorios:ro"}
 
@@ -206,15 +215,15 @@ func TestContainerMontaOsVolumesConfigurados(t *testing.T) {
 		t.Fatalf("executar: %v", err)
 	}
 
-	if montagens := valoresDaFlag(comando.argumentosDoRun(t), "-v"); !slices.Equal(montagens, opcoes.Montagens) {
-		t.Errorf("montagens = %v, esperava %v", montagens, opcoes.Montagens)
+	if montagens := valoresDaFlag(comando.argumentosDoRun(t), "-v"); !slices.Contains(montagens, opcoes.Montagens[0]) {
+		t.Errorf("o preparo recebe as montagens configuradas: %v, esperava %v", montagens, opcoes.Montagens)
 	}
 }
 
 func TestContainerRecebeOPedidoPorVariaveisDeAmbiente(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{}, nil
-	}}
+	})}
 	pedido := pedidoValido()
 
 	if _, err := novoExecutorLocal(opcoesLocaisDeTeste(), comando).Executar(t.Context(), pedido); err != nil {
@@ -233,16 +242,16 @@ func TestContainerRecebeOPedidoPorVariaveisDeAmbiente(t *testing.T) {
 		}
 	}
 
-	if imagem := argumentos[len(argumentos)-1]; imagem != "imagem-de-teste" {
-		t.Errorf("a imagem da linguagem deveria ser o último argumento, obtive %q", imagem)
+	if imagem := argumentos[len(argumentos)-2]; imagem != "imagem-de-teste" || argumentos[len(argumentos)-1] != "preparar" {
+		t.Errorf("a imagem da linguagem vem antes do subcomando da etapa: %v", argumentos[len(argumentos)-2:])
 	}
 }
 
 func TestDuracaoDaExecucaoEMedida(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		time.Sleep(20 * time.Millisecond)
 		return resultadoComando{}, nil
-	}}
+	})}
 
 	resultado, err := novoExecutorLocal(opcoesLocaisDeTeste(), comando).Executar(t.Context(), pedidoValido())
 	if err != nil {
@@ -278,9 +287,9 @@ func contemVariavel(argumentos []string, atribuicao string) bool {
 }
 
 func TestContainerSemCapacidadeDeTrocarDeUsuarioDerrubaTudo(t *testing.T) {
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{}, nil
-	}}
+	})}
 	opcoes := opcoesLocaisDeTeste()
 	opcoes.SemCapacidadeDeTrocarDeUsuario = true
 

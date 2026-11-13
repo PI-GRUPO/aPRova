@@ -10,9 +10,9 @@ import (
 func executarComSaida(t *testing.T, saida string, limite int) ResultadoSandbox {
 	t.Helper()
 
-	comando := &comandoFalso{responder: func(_ context.Context, _ []string) (resultadoComando, error) {
+	comando := &comandoFalso{responder: comPreparoPronto(func(_ context.Context, _ []string) (resultadoComando, error) {
 		return resultadoComando{saida: linhaDeResultado(t, ResultadoSandbox{SaidaBruta: saida, TipoFalha: FalhaNenhuma})}, nil
-	}}
+	})}
 	opcoes := opcoesLocaisDeTeste()
 	opcoes.LimiteSaidaBytes = limite
 
