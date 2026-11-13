@@ -72,7 +72,9 @@ func Nova(opcoes Opcoes) *Linguagem {
 }
 
 // Executar instala as dependências (se houver requirements.txt na raiz do
-// projeto), roda o pytest e classifica o desfecho. Diretório sem nenhum
+// projeto), roda o pytest e classifica o desfecho, tudo num lugar só e com a
+// rede que o contêiner tiver. É o fluxo do executor da Azure até o card 61; o
+// executor local usa Preparar e Testar. Diretório sem nenhum
 // arquivo Python é falha de infraestrutura, sem rodar nada. prazoFinal é o
 // instante em que o resultado já precisa ter sido entregue.
 func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal time.Time) sandbox.ResultadoSandbox {
@@ -98,14 +100,11 @@ func (l *Linguagem) prepararDependencias(ctx context.Context, diretorio string) 
 		return binarioPython, nil
 	}
 
-	venv := filepath.Join(l.diretorioDeCache, "venv")
-	criacao := l.rodar(ctx, diretorio, binarioPython, argumentoDeModulo, "venv", "--system-site-packages", venv)
-	if !concluiu(criacao) {
-		falha := infraestrutura(descreverInterrupcao("python -m venv", criacao), criacao.Saida)
-		return "", &falha
+	pythonDoVenv, falha := l.criarVenv(ctx, diretorio)
+	if falha != nil {
+		return "", falha
 	}
 
-	pythonDoVenv := filepath.Join(venv, "bin", binarioPython)
 	instalacao := l.rodar(ctx, diretorio, pythonDoVenv, argumentoDeModulo, "pip", "install", "-r", arquivoDeRequisitos)
 	if !concluiu(instalacao) {
 		falha := infraestrutura(descreverInterrupcao("pip install", instalacao), instalacao.Saida)
