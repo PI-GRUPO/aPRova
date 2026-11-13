@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -30,7 +29,6 @@ const (
 	urlPublicaProvisoria     = "https://aprova.example.com"
 	concorrenciaPadrao       = 4
 	maximoDeTentativasPadrao = 3
-	redeLocalPadrao          = "none"
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
@@ -38,8 +36,6 @@ const origemDocker = "padrão do docker-compose local, ver .env.example"
 const maximoDeVizinhos = 1000
 
 var regraPadrao = calibracao.RegraPadrao()
-
-var formatoDoNomeDeRede = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
 var linguagensComImagem = []string{"go", "python"}
 
@@ -99,7 +95,6 @@ type Configuracao struct {
 	GitHubAppSlug       string
 	SandboxDiretorios   map[string]string
 	SandboxLinguagens   map[string]string
-	SandboxRedeLocal    string
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
 
@@ -164,7 +159,6 @@ func Carregar() (Configuracao, error) {
 		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
 		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
 		SandboxLinguagens:   leitura.linguagensDoSandbox("SANDBOX_LINGUAGENS"),
-		SandboxRedeLocal:    leitura.nomeDeRede("SANDBOX_REDE_LOCAL", redeLocalPadrao),
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
 
@@ -180,6 +174,9 @@ func Carregar() (Configuracao, error) {
 		CalibracaoTimeout:            leitura.duracaoPositiva("CALIBRACAO_TIMEOUT", calibracao.TimeoutPadrao),
 		ChaveAPIGemini:               lerVariavel("GEMINI_API_KEY"),
 	}
+
+	leitura.recusarVariavelRemovida("SANDBOX_REDE_LOCAL",
+		"a rede do sandbox local agora é fixa por etapa (preparar com rede, testar sem rede nenhuma); remova a variável do .env")
 
 	if err := leitura.erro(); err != nil {
 		return Configuracao{}, err
@@ -391,12 +388,10 @@ func (l *leitor) urlHTTP(nome, padrao string) string {
 	return valor
 }
 
-func (l *leitor) nomeDeRede(nome, padrao string) string {
-	valor := l.opcional(nome, padrao)
-	if !formatoDoNomeDeRede.MatchString(valor) {
-		l.registrarPendencia("%s espera o nome de uma rede do Docker, como none ou bridge, obtive %q", nome, valor)
+func (l *leitor) recusarVariavelRemovida(nome, motivo string) {
+	if _, presente := os.LookupEnv(nome); presente {
+		l.registrarPendencia("%s não existe mais: %s", nome, motivo)
 	}
-	return valor
 }
 
 func (l *leitor) diretoriosDoSandbox(nome string) map[string]string {
