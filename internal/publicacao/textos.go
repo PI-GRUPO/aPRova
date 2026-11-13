@@ -3,6 +3,7 @@ package publicacao
 import (
 	"encoding/hex"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -22,6 +23,17 @@ const (
 	// com a chave pública, sem confiar no servidor do aPRova.
 	URLDaVerificacaoIndependente = "https://github.com/PI-GRUPO/aPRova/blob/main/docs/verificacao-recibo.md"
 )
+
+var estadosSemSecaoDeCalibracao = []domain.EstadoCalibracao{"", domain.CalibracaoDesligada, domain.CalibracaoSemNivelAReduzir}
+
+var nomeDoDesfecho = map[domain.DesfechoDoVizinho]string{
+	domain.VizinhoAprovadoEMergeado:    "aprovado e mergeado",
+	domain.VizinhoRevertido:            "revertido",
+	domain.VizinhoFechadoSemMerge:      "fechado sem merge",
+	domain.VizinhoMergeadoSemAprovacao: "mergeado sem aprovação",
+	domain.VizinhoSubstituido:          "substituído",
+	domain.VizinhoEmAberto:             "em aberto",
+}
 
 var nomeDoNivel = map[domain.NivelRisco]string{
 	domain.RiscoBaixo: "baixo",
@@ -106,6 +118,8 @@ func (r resultado) explicacao() string {
 		return "O merge foi liberado pela aprovação de @" + r.AprovadoPor + ", que tem permissão de escrita no repositório."
 	case r.Gate.Nivel == domain.RiscoAlto:
 		return "Com risco alto, o merge está bloqueado até aprovação humana: alguém com permissão de escrita no repositório precisa aprovar este pull request."
+	case r.Gate.Calibracao.Estado == domain.CalibracaoAplicada:
+		return r.frasePorHistorico() + ". O merge está liberado, com pontos de atenção que valem uma olhada antes do merge."
 	case len(r.Gate.Motivos) > 0:
 		return "O merge está liberado, com pontos de atenção que valem uma olhada antes do merge."
 	default:
@@ -131,16 +145,63 @@ func (r resultado) comentario() string {
 }
 
 func (r resultado) secoes() string {
-	return strings.Join([]string{r.secaoDosMotivos(), r.secaoDoSandbox(), r.secaoDoRecibo()}, "\n\n")
+	secoes := []string{r.secaoDosMotivos()}
+	if calibracao, mostrar := r.secaoDaCalibracao(); mostrar {
+		secoes = append(secoes, calibracao)
+	}
+	return strings.Join(append(secoes, r.secaoDoSandbox(), r.secaoDoRecibo()), "\n\n")
+}
+
+func (r resultado) motivosDeRisco() []domain.MotivoDeRisco {
+	motivos := make([]domain.MotivoDeRisco, 0, len(r.Gate.Motivos))
+	for _, motivo := range r.Gate.Motivos {
+		if motivo.Nivel != domain.NivelInformativo {
+			motivos = append(motivos, motivo)
+		}
+	}
+	return motivos
+}
+
+func (r resultado) secaoDaCalibracao() (string, bool) {
+	calibracao := r.Gate.Calibracao
+	if slices.Contains(estadosSemSecaoDeCalibracao, calibracao.Estado) {
+		return "", false
+	}
+
+	linhas := []string{"#### Calibração por histórico"}
+	if calibracao.Estado == domain.CalibracaoAplicada {
+		linhas = append(linhas, r.frasePorHistorico()+".")
+	} else {
+		linhas = append(linhas, "O nível das regras foi mantido: "+calibracao.Razao+".")
+	}
+	for _, vizinho := range calibracao.Vizinhos {
+		linhas = append(linhas, "- "+linkDoPR(vizinho)+": similaridade "+similaridade(vizinho.Similaridade)+", "+nomeDoDesfecho[vizinho.Desfecho])
+	}
+	return strings.Join(linhas, "\n"), true
+}
+
+func (r resultado) frasePorHistorico() string {
+	return "Risco " + nomeDoNivel[r.Gate.NivelDeterministico] + " pelas regras, reduzido a " + nomeDoNivel[r.Gate.Nivel] +
+		" pelo histórico: " + r.Gate.Calibracao.Razao
+}
+
+func linkDoPR(vizinho domain.VizinhoDaCalibracao) string {
+	nome := fmt.Sprintf("%s#%d", vizinho.Repositorio, vizinho.NumeroPR)
+	return fmt.Sprintf("[%s](https://github.com/%s/pull/%d)", nome, vizinho.Repositorio, vizinho.NumeroPR)
+}
+
+func similaridade(valor float64) string {
+	return strings.Replace(fmt.Sprintf("%.4f", valor), ".", ",", 1)
 }
 
 func (r resultado) secaoDosMotivos() string {
-	if len(r.Gate.Motivos) == 0 {
+	motivos := r.motivosDeRisco()
+	if len(motivos) == 0 {
 		return "#### Motivos\nNenhuma regra do gate foi acionada."
 	}
 
 	linhas := []string{"#### Motivos"}
-	for _, motivo := range r.Gate.Motivos {
+	for _, motivo := range motivos {
 		linhas = append(linhas, "- "+codigo(motivo.ID)+" (risco "+nomeDoNivel[motivo.Nivel]+"): "+motivo.Descricao)
 		linhas = append(linhas, linhasDasEvidencias(motivo.Evidencias)...)
 	}
