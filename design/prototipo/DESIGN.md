@@ -449,7 +449,7 @@ Grade de 4px, com os passos 4, 8, 12, 16, 20, 24, 32 e 64. Há um meio passo de
 entre o ponto e o texto do selo. A linha de tabela tem 36px: texto de 14/20 com
 8px em cima e embaixo. Há também um passo de 2px, usado só entre as células e
 as linhas do mapa de calor. Desktop primeiro, com quatro pontos de quebra: `md`
-em 768px, `lg` em 1100px, `xl` em 1280px e `2xl` em 1440px.
+em 768px, `lg` em 1100px, `xl` em 1280px, `2xl` em 1440px e `3xl` em 1600px.
 
 **Casca.** A partir de 768px, a navegação é uma barra lateral de 240px sobre o
 fundo de superfície, com borda de 1px à direita e a altura do documento
@@ -467,21 +467,27 @@ cor do acento, e o rodapé da instalação some.
 **Página.** Margem de 16px nos lados, 24px no topo e 64px embaixo; a partir de
 768px, 32px nos lados e no topo. O cabeçalho tem o título e, na mesma linha de
 base, o contexto (período e hora da atualização) em texto secundário; quando
-não cabem, o contexto desce. Abaixo do cabeçalho, 32px.
+não cabem, o contexto desce. Abaixo do cabeçalho, 32px. O contexto não afirma
+o que a tela não sabe: no carregando ele diz "Atualizando…", e no erro, "Última
+atualização às HH:mm", a da última leitura que deu certo.
 
 **Visão geral.** Uma coluna com 16px entre os blocos, nesta ordem: faixa de
-métricas, fila de aprovação, painéis do período. A faixa tem 2 colunas abaixo
-de 1280px e 4 a partir daí. Os painéis são três: "Bloqueadas" (resumo "N por
-desfecho"), "Falhas por tipo" e "Análises por dia e nível", que é o mapa de
-calor. Ficam em 1 coluna no celular, 2 colunas entre 768px e 1280px (o mapa
+métricas, fila de aprovação, painéis do período e a linha do último recibo. A
+faixa tem 2 colunas abaixo de 1280px e 4 a partir daí. Os painéis são três:
+"Bloqueadas" (resumo "N no período, por desfecho", com as linhas Aguardando,
+Aprovadas e Alterações pedidas), "Falhas por tipo" e "Análises por dia e
+nível", que é o mapa de calor e ocupa sozinho a linha de baixo. Ficam em 1 coluna no celular, 2 colunas entre 768px e 1280px (o mapa
 ocupa as duas) e 3 colunas a partir de 1280px, na proporção 1 : 1 : 2.
 
 **Tabela em tela estreita.** A fila perde colunas em vez de rolar: abaixo de
-1440px somem Branch e Commit, para a Evidência caber inteira; entre 768px e
-1100px os motivos se empilham e o respiro lateral das células cai para 8px;
-abaixo de 768px, Motivos e Evidência descem para dentro da célula do pull
-request. A Evidência corta com reticências quando não cabe e mostra o texto
-inteiro no `title`. A rolagem horizontal existe só como reserva.
+1600px some Commit e abaixo de 1440px some Branch, para a Evidência caber;
+entre 768px e 1100px os motivos se empilham e o respiro lateral das células
+cai para 8px; abaixo de 1100px a Evidência desce, inteira, para dentro da
+célula do pull request, e abaixo de 768px os Motivos também. Quando a
+Evidência é um caminho e não cabe, a pasta corta com reticências e o nome do
+arquivo fica sempre inteiro ("migration…000031_parcelas.down.sql"); o caminho
+completo fica no `title`. Na versão empilhada, o caminho quebra só depois das
+barras. A rolagem horizontal existe só como reserva.
 
 **Página não encontrada.** A mensagem e o link vêm primeiro, como texto normal
 de até 65ch. A composição decorativa vem 32px abaixo e ocupa a largura inteira
@@ -566,7 +572,14 @@ composição da Página não encontrada.
 - **Célula:** respiro de 12px por 16px (20px por 20px a partir de 1280px).
   Rótulo em 12px peso 510 na cor do texto primário; valor em 32px peso 590 tabular, na cor de
   título, com a unidade em 14px secundário na mesma linha de base; barra de
-  proporção; linha de apoio em 12px secundário com a fração e o período.
+  proporção só quando o valor é uma porcentagem; linha de apoio em 12px
+  secundário com a fração e o período.
+- **As quatro células:** "Espera mais antiga" (o valor é a espera, e o apoio
+  diz qual PR é e a posição dele na fila, sem repetir a contagem da fila),
+  "Taxa de bloqueio" e "Falhas no sandbox" (porcentagens, com barra, e no apoio
+  das falhas "cada tentativa conta", porque há mais execuções que análises) e
+  "Análises recebidas" (com quantas passaram pelo gate e quantas estão em
+  andamento ou pararam antes dele).
 
 ### Proporção (`Proporcao.tsx`)
 
@@ -619,6 +632,10 @@ composição da Página não encontrada.
   (224px), select de repositório (208px) e a contagem "N de M análises" em 12px
   secundário, anunciada por `role="status"`. Abaixo de 768px a busca ocupa a
   largura inteira e o select divide a linha com a contagem.
+- **Busca:** procura em repositório, número do PR, branch, commit, id dos
+  motivos e evidências. O texto é dividido por espaços e todos os termos
+  precisam aparecer, então "falha sandbox" encontra `falha_sandbox` e
+  "migrations" encontra a evidência.
 - **Limpar filtros:** aparece só quando o filtro não devolve nenhuma linha, na
   frase que explica o vazio, com aparência de link: texto primário sublinhado.
 - **Fila vazia:** se não há nada à espera, a tabela dá lugar a uma frase em
@@ -641,8 +658,12 @@ de cor. O raio de 24px, as sombras, a escala no hover, a mola e as animações d
 entrada da referência não são usados.
 
 - **Matriz:** 3 linhas, uma por nível, na ordem alto, médio, baixo, e uma
-  coluna por dia do período (30). Cada célula tem 20px de altura e raio de 2px,
-  com 2px entre células e entre linhas. As células dividem a largura por igual.
+  coluna por dia do período (30). Cada célula tem 24px de altura, pelo menos
+  24px de largura e raio de 2px, com 2px entre células e entre linhas. O painel
+  ocupa uma linha inteira, abaixo dos outros dois; quando as 30 colunas não
+  cabem (abaixo de 900px de largura do mapa), o mapa rola na horizontal dentro
+  do painel, abre já mostrando hoje e mantém a coluna do nível fixa à
+  esquerda.
 - **Intensidade:** a célula vazia tem o fundo elevado. As outras têm a cor de
   risco da linha misturada na superfície em três passos fixos pela contagem:
   76% para uma análise, 88% para duas e 100% para três ou mais. Passos fixos,
@@ -663,9 +684,15 @@ entrada da referência não são usados.
   é um `<td>` com rótulo ("9 nov, alto: 1 análise"). A tabela é o único ponto
   de tabulação; a célula ativa vem por `aria-activedescendant` e ganha
   contorno de 2px no acento. As setas andam entre dias e níveis, Home e End vão
-  ao primeiro e ao último dia, Escape fecha a dica. As células não são
-  focáveis nem clicáveis, então não são alvos de toque e o mínimo de 24px do
-  WCAG 2.5.8 não se aplica a elas. No foco ou no ponteiro aparece uma dica
+  ao primeiro e ao último dia, Escape fecha a dica.
+- **Destino:** a célula leva às análises que ela conta. Com uma análise, a
+  célula inteira é um link para `/analises/<id>`; com duas ou mais, abre uma
+  lista (Radix Popover, `ListaDaCelula.tsx`) com cada análise, repositório,
+  número do PR e hora de chegada, cada linha um link de 32px; a vazia não é
+  clicável. Pelo teclado, Enter ou espaço na célula ativa faz o mesmo, e ao
+  fechar a lista o foco volta à grade. Os links e botões dentro das células têm
+  `tabindex="-1"`, para a grade continuar com um único ponto de tabulação. No
+  hover, a célula clicável ganha contorno de 1px na cor do título. No foco ou no ponteiro aparece uma dica
   (`role="tooltip"`, ligada por `aria-describedby`) com o mesmo texto, em 12px
   sobre fundo elevado com borda de 1px; na linha de cima ela abre para baixo,
   para não cobrir a escala, e nas pontas se alinha à borda da grade. O
@@ -693,16 +720,32 @@ entrada da referência não são usados.
   aviso de protótipo em 12px secundário.
 - **Pular para o conteúdo:** primeiro elemento focável, visível só com foco.
 
+### Último recibo (`UltimoRecibo.tsx`)
+
+Uma linha discreta no fim da Visão geral, para o diferencial do aPRova aparecer
+na tela de entrada sem disputar com a fila.
+
+- **Forma:** linha com borda de 1px em cima e 12px de respiro, sem fundo
+  próprio, em 12px secundário.
+- **Conteúdo:** "Último recibo assinado" em peso 510 primário, o repositório e
+  o PR, o nível em selo de ponto, os 16 primeiros caracteres do hash em Plex
+  Mono, "Ed25519, encadeado a" com os 8 primeiros do hash anterior, a data e
+  hora da assinatura e o link "Ver os recibos", alinhado à direita. Os hashes
+  completos ficam no `title`.
+
 ### Página e estados (`Pagina.tsx`, `Esqueleto.tsx`)
 
-- **Carregando:** blocos de esqueleto com fundo elevado, nas medidas do
-  conteúdo que vai chegar, parados. Os que ficam no lugar da faixa de métricas
-  e dos painéis têm raio de 12px; os pequenos, 4px. A lista de esqueleto, que fica
-  no lugar da fila, é um bloco de superfície com borda de 1px e raio de 12px.
-  Um texto para leitor de tela diz o que está carregando.
+- **Carregando:** blocos de esqueleto com fundo elevado, parados, com a forma
+  e a altura do que vai chegar, para a tela não pular. A faixa é um bloco só,
+  com emenda, e quatro células com rótulo, valor, barra e duas linhas de apoio.
+  A fila tem a faixa da barra de ferramentas, a do cabeçalho e cinco linhas de
+  36px. Os painéis têm a altura dos reais e raio de 12px. Um texto para leitor
+  de tela diz o que está carregando.
 - **Erro:** bloco de superfície com borda de 1px, raio de 12px e 24px de
   respiro, até 65ch: título de 16px peso 590, explicação em texto secundário e
-  o link "Tentar de novo". Não usa vermelho.
+  o link "Tentar de novo". Não usa vermelho. A explicação diz só o que é
+  verdade sem resposta do servidor: as decisões e os recibos ficam gravados no
+  servidor, e o bloqueio no GitHub não depende desta tela.
 - **Vazio:** o mesmo bloco, com título, texto e uma ação opcional.
 
 ### Composição da Página não encontrada (`src/telas/NaoEncontrada.tsx`)
