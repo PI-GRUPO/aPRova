@@ -38,6 +38,17 @@ Na aprovação, o login publicado é o de quem decidiu. O cursor de aprovação
 anteriores, de quem só tem leitura, foram puladas, e ele não anda depois da
 decisão. Por isso a próxima aprovação depois do cursor é sempre a que decidiu.
 
+### A aprovação vale para o commit revisado
+
+Cada revisão chega do GitHub com o `review.commit_id`, o commit que o revisor
+viu, e a aprovação guarda esse commit em `approvals.commit_sha`. Ela só decide
+o task_run cujo `head_sha` é esse commit. A API registra a revisão no task_run
+mais recente do PR; se o commit revisado não for o analisado, porque houve um
+push depois da revisão, a aprovação fica registrada, não decide nada, e o
+worker escreve no log os dois SHAs (`commit_revisado` e `commit_analisado`).
+Assim, uma aprovação de um commit antigo, mesmo que chegue atrasada ou seja
+reenviada, nunca libera um commit que o revisor não viu.
+
 ### Análise que falhou: `failure`
 
 Quando o task_run termina em `falhou` (GitHub fora do ar até esgotar as
@@ -143,8 +154,9 @@ Para deixar o PR bloqueado antes da apresentação:
    - o comentário do aPRova editado com o commit novo, os motivos e o hash do
      recibo.
 
-A aprovação dispensada não libera o commit novo: ela é anterior ao bloqueio, e
-o aPRova só aceita aprovação feita depois de o PR entrar em espera.
+A aprovação dispensada não libera o commit novo por dois motivos: ela é de
+outro commit, e é anterior ao bloqueio (o aPRova só aceita aprovação feita
+depois de o PR entrar em espera).
 
 Durante a apresentação, quem tem permissão de escrita aprova o PR no GitHub.
 O Check Run passa a `success` com "aprovado por @login", e o merge fica
