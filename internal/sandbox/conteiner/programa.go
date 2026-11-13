@@ -35,6 +35,9 @@ type Programa struct {
 	Rodador             processo.Rodador
 	DiretorioDeTrabalho string
 	Linguagens          map[sandbox.Linguagem]ExecutorDeLinguagem
+	DiretorioDoPreparo  string
+	Etapas              map[sandbox.Linguagem]LinguagemEmEtapas
+	PrepararDiretorio   func(caminho string) error
 	Agora               func() time.Time
 }
 
