@@ -105,8 +105,10 @@ quem só quer os casos graves filtra por `nivel_risco`.
 | `url_recibo` | texto (URL) | sim | `https://aprova.example.com/receipts/2b6d8f0a-.../verify` | endereço público que verifica o recibo e responde `valido` verdadeiro ou falso |
 
 Os valores possíveis de `motivos[].nome` são os identificadores das regras do
-gate. O nível é o que a regra, sozinha, atribui ao PR; o nível do evento é o
-maior entre os motivos. A descrição é o texto que vai em `motivos[].descricao`.
+gate. O nível é o que a regra, sozinha, atribui ao PR; sem calibração, o nível
+do evento é o maior entre os motivos. A descrição é o texto que vai em
+`motivos[].descricao`. O evento não leva o nível de cada motivo, só o da
+análise em `nivel_risco`.
 
 | Identificador | Nível | Descrição enviada | Quando dispara |
 | --- | --- | --- | --- |
@@ -117,11 +119,20 @@ maior entre os motivos. A descrição é o texto que vai em `motivos[].descricao
 | `segredo_versionado` | alto | o PR versiona um arquivo que costuma guardar segredo | o PR versiona `.env`, chave privada ou arquivo equivalente |
 | `area_sensivel` | alto | o PR altera um caminho sensível | o PR altera um caminho sensível, como `auth/` ou `migrations/` |
 | `codigo_sem_teste` | medio | o PR altera código sem alterar nenhum teste | o PR altera código sem alterar nenhum teste |
+| `calibracao_historico` | informativo | risco alto pelas regras, reduzido a médio pelo histórico: 7 casos parecidos aprovados e mergeados, nenhum revertido | a calibração por histórico desceu o nível um degrau ([calibracao.md](calibracao.md)) |
 
 Os exemplos em `workflows/exemplos/` usam esses identificadores. Versões
 antigas dos exemplos traziam nomes inventados, como `falha_nos_testes` e
 `sem_teste_para_alteracao`, que o núcleo nunca envia: um workflow que compare
 `motivos[].nome` com texto fixo precisa usar a lista acima.
+
+`calibracao_historico` não é uma regra de risco: ele explica por que
+`nivel_risco` ficou um degrau abaixo do que as regras dariam. Com
+`CALIBRACAO_LIGADA=true`, um PR com `area_sensivel` pode chegar com
+`nivel_risco` `medio`, e um com `codigo_sem_teste` com `baixo`. Um workflow que
+deduz o nível a partir dos nomes dos motivos erra nesses casos; o nível certo é
+sempre o de `nivel_risco`. Com a calibração desligada, que é o padrão, esse
+motivo nunca aparece.
 
 `area_sensivel` é alto porque a calibração por histórico só pode abaixar o
 risco, nunca subir. Com a base em médio, um PR em `auth/` com os testes passando
