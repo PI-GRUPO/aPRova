@@ -55,12 +55,12 @@ func (p *Publicador) checkRunEmAndamento(taskRun domain.TaskRun) platform.CheckR
 func (p *Publicador) checkRunDeFalha(taskRun domain.TaskRun, diagnostico string) platform.CheckRun {
 	return platform.CheckRun{
 		Situacao:    platform.CheckRunConcluido,
-		Conclusao:   platform.ConclusaoNeutra,
+		Conclusao:   platform.ConclusaoFalha,
 		ConcluidoEm: p.opcoes.Agora(),
-		Titulo:      "A análise não terminou",
+		Titulo:      "A análise não terminou: merge bloqueado",
 		Resumo: "O aPRova não conseguiu concluir a análise do commit " + codigo(shaCurto(taskRun.SHAHead)) + ".\n\n" +
 			"**Diagnóstico:** " + codigo(cortar(diagnostico, tamanhoMaximoDoDiagnostico)) + "\n\n" +
-			"O check fica neutro e não bloqueia o merge por conta própria. Um novo push no pull request dispara uma nova análise.",
+			"Sem análise concluída, o merge fica bloqueado: na dúvida, o aPRova bloqueia. O caminho é uma nova análise, que um novo push no pull request dispara.",
 	}
 }
 

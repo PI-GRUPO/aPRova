@@ -87,7 +87,7 @@ func (c *conducao) encerrarEmFalha(detalhe string) (passo, error) {
 		return passo{}, err
 	}
 	if err := c.opcoes.Publicador.PublicarFalha(c.ctx, c.taskRun, detalhe); err != nil {
-		c.diario.Warn("não foi possível concluir o Check Run como neutral, ele pode ficar em andamento no PR", "erro", err)
+		c.diario.Warn("não foi possível concluir o Check Run como failure, ele pode ficar em andamento no PR", "erro", err)
 	}
 	return pararCom(Desfecho{Liberar: true}), nil
 }

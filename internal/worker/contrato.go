@@ -72,7 +72,7 @@ type Publicacao struct {
 
 // PublicadorPR publica o Check Run e o comentário do task_run no pull
 // request. Iniciar cria o Check Run em andamento; Publicar o conclui e escreve
-// o comentário; PublicarFalha o conclui como neutral, com o diagnóstico. Tudo é
+// o comentário; PublicarFalha o conclui como failure, com o diagnóstico. Tudo é
 // idempotente por task_run: repetir não cria um segundo Check Run nem um
 // segundo comentário. Nunca faz merge.
 type PublicadorPR interface {

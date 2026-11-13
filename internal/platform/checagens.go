@@ -28,7 +28,7 @@ type ConclusaoCheckRun string
 const (
 	ConclusaoSucesso        ConclusaoCheckRun = "success"
 	ConclusaoAcaoNecessaria ConclusaoCheckRun = "action_required"
-	ConclusaoNeutra         ConclusaoCheckRun = "neutral"
+	ConclusaoFalha          ConclusaoCheckRun = "failure"
 )
 
 // CheckRun é o estado de um Check Run a criar ou atualizar. IDExterno liga o
