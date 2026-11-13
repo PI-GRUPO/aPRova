@@ -13,6 +13,7 @@ import (
 	"github.com/Azulpasta/aPRova/internal/eventos"
 	"github.com/Azulpasta/aPRova/internal/gate"
 	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/Azulpasta/aPRova/internal/publicacao"
 	"github.com/Azulpasta/aPRova/internal/receipt"
 	"github.com/Azulpasta/aPRova/internal/repository"
 	"github.com/Azulpasta/aPRova/internal/sandbox"
@@ -72,6 +73,10 @@ func executar() error {
 	}
 
 	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	publicador, err := montarPublicador(configuracao, clienteGitHub, repositorio)
+	if err != nil {
+		return err
+	}
 	emissorDeRecibos, err := receipt.NovoEmissor(receipt.OpcoesEmissor{Assinador: assinador, Armazenamento: repositorio})
 	if err != nil {
 		return err
@@ -85,7 +90,7 @@ func executar() error {
 		Sandbox:       executorSandbox,
 		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
 		Recibos:       emissorDeRecibos,
-		Publicador:    worker.NovoPublicadorPRProvisorio(slog.Default()),
+		Publicador:    publicador,
 		Eventos:       emissorDeEventos,
 		Diretorios:    configuracao.SandboxDiretorios,
 		Linguagens:    linguagensDoSandbox(configuracao),
@@ -139,6 +144,18 @@ func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, e
 		return nil, fmt.Errorf("o worker exige as credenciais do GitHub App para ler os pull requests: %w", err)
 	}
 	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
+}
+
+func montarPublicador(configuracao config.Configuracao, clienteGitHub *platform.Cliente, repositorio *repository.RepositorioPostgres) (*publicacao.Publicador, error) {
+	if configuracao.GitHubAppSlug == "" {
+		return nil, fmt.Errorf("o worker exige GITHUB_APP_SLUG, o slug do GitHub App, para reconhecer o próprio comentário no pull request")
+	}
+	return publicacao.NovoPublicador(publicacao.OpcoesPublicador{
+		GitHub:     clienteGitHub,
+		Registro:   repositorio,
+		SlugDoApp:  configuracao.GitHubAppSlug,
+		URLPublica: configuracao.URLPublica,
+	})
 }
 
 func linguagensDoSandbox(configuracao config.Configuracao) map[string]sandbox.Linguagem {
