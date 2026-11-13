@@ -140,7 +140,7 @@ func TestContextoDoPullRequestClassificaOsErrosDoGitHub(t *testing.T) {
 		"limite secundário (429)":           {http.StatusTooManyRequests, nil, ErrLimiteDeRequisicoes},
 		"limite primário esgotado (403)":    {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"0"}}, ErrLimiteDeRequisicoes},
 		"limite secundário com Retry-After": {http.StatusForbidden, http.Header{"Retry-After": {"60"}}, ErrLimiteDeRequisicoes},
-		"403 que não é limite":              {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"4999"}}, ErrRespostaInesperada},
+		"403 que não é limite":              {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"4999"}}, ErrSemPermissao},
 	}
 
 	for nome, caso := range casos {

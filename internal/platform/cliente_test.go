@@ -125,7 +125,7 @@ func TestPermissaoNoRepositorioDevolveErroEmRespostaQueNaoEhSucesso(t *testing.T
 		{http.StatusNotFound, ErrNaoEncontrado},
 		{http.StatusInternalServerError, ErrGitHubIndisponivel},
 		{http.StatusBadGateway, ErrGitHubIndisponivel},
-		{http.StatusForbidden, ErrRespostaInesperada},
+		{http.StatusForbidden, ErrSemPermissao},
 		{http.StatusUnauthorized, ErrRespostaInesperada},
 	}
 
