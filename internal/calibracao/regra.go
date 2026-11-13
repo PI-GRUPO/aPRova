@@ -21,7 +21,7 @@ const MotivoDaCalibracao = "calibracao_historico"
 
 const (
 	vizinhosPadrao           = 10
-	similaridadeMinimaPadrao = 0.90
+	similaridadeMinimaPadrao = 0.97
 	minimoDeDesfechosPadrao  = 5
 	casasDaSimilaridade      = 1e4
 )
@@ -48,7 +48,7 @@ type Regra struct {
 	MinimoDeDesfechos  int
 }
 
-// RegraPadrao devolve 10 vizinhos, similaridade mínima de 0,90 e 5 desfechos
+// RegraPadrao devolve 10 vizinhos, similaridade mínima de 0,97 e 5 desfechos
 // conhecidos.
 func RegraPadrao() Regra {
 	return Regra{Vizinhos: vizinhosPadrao, SimilaridadeMinima: similaridadeMinimaPadrao, MinimoDeDesfechos: minimoDeDesfechosPadrao}
