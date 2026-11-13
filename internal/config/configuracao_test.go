@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"log/slog"
 	"maps"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -26,14 +27,20 @@ func ambienteLimpo(t *testing.T) {
 		"AZURE_CLIENT_SECRET", "AZURE_RESOURCE_GROUP", "AZURE_SANDBOX_JOB_NAME",
 		"N8N_SEGREDO_ACOES", "SLACK_GITHUB_VINCULOS", "SANDBOX_IMAGEM_GO", "SANDBOX_IMAGEM_PYTHON",
 		"N8N_SEGREDO_EVENTOS", "APROVA_URL_PUBLICA", "WORKER_CONCORRENCIA", "WORKER_MAX_TENTATIVAS",
-		"SANDBOX_DIRETORIOS", "SANDBOX_LINGUAGENS", "GITHUB_APP_SLUG", "SANDBOX_REDE_LOCAL",
+		"SANDBOX_DIRETORIOS", "SANDBOX_LINGUAGENS", "GITHUB_APP_SLUG",
 		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 		"CALIBRACAO_LIGADA", "CALIBRACAO_VIZINHOS", "CALIBRACAO_SIMILARIDADE_MINIMA",
 		"CALIBRACAO_MINIMO_DE_DESFECHOS", "CALIBRACAO_TIMEOUT", "GEMINI_API_KEY",
 	} {
 		t.Setenv(variavel, "")
 	}
+	t.Setenv(variavelDaRedeRemovida, "")
+	if err := os.Unsetenv(variavelDaRedeRemovida); err != nil {
+		t.Fatalf("remover %s do ambiente: %v", variavelDaRedeRemovida, err)
+	}
 }
+
+const variavelDaRedeRemovida = "SANDBOX_REDE_LOCAL"
 
 func ambienteMinimoValido(t *testing.T) {
 	t.Helper()
@@ -462,41 +469,26 @@ func TestCarregarRecusaVariaveisDoWorkerInvalidas(t *testing.T) {
 	}
 }
 
-func TestRedeDoSandboxLocalFicaDesligadaPorPadrao(t *testing.T) {
-	ambienteMinimoValido(t)
-
-	configuracao, err := Carregar()
-	if err != nil {
-		t.Fatalf("carregar: %v", err)
-	}
-	if configuracao.SandboxRedeLocal != "none" {
-		t.Errorf("sem SANDBOX_REDE_LOCAL o sandbox local roda sem rede, obtive %q", configuracao.SandboxRedeLocal)
-	}
-}
-
-func TestRedeDoSandboxLocalAceitaNomeDeRedeDoDocker(t *testing.T) {
-	ambienteMinimoValido(t)
-	t.Setenv("SANDBOX_REDE_LOCAL", "bridge")
-
-	configuracao, err := Carregar()
-	if err != nil {
-		t.Fatalf("carregar: %v", err)
-	}
-	if configuracao.SandboxRedeLocal != "bridge" {
-		t.Errorf("rede lida errada: %q", configuracao.SandboxRedeLocal)
-	}
-}
-
-func TestRedeDoSandboxLocalRecusaValorQueViraOpcaoDoDocker(t *testing.T) {
-	for _, valor := range []string{"bridge --privileged", "--host", "host;rm"} {
-		t.Run(valor, func(t *testing.T) {
+func TestSandboxRedeLocalPresenteImpedeOBootMesmoVazia(t *testing.T) {
+	for _, valor := range []string{"", "none", "bridge"} {
+		t.Run("SANDBOX_REDE_LOCAL="+valor, func(t *testing.T) {
 			ambienteMinimoValido(t)
-			t.Setenv("SANDBOX_REDE_LOCAL", valor)
+			t.Setenv(variavelDaRedeRemovida, valor)
 
-			if _, err := Carregar(); err == nil || !strings.Contains(err.Error(), "SANDBOX_REDE_LOCAL") {
-				t.Errorf("esperava erro nomeando SANDBOX_REDE_LOCAL, obtive %v", err)
+			_, err := Carregar()
+
+			if err == nil || !strings.Contains(err.Error(), variavelDaRedeRemovida) || !strings.Contains(err.Error(), "fixa por etapa") {
+				t.Errorf("a variável removida impede o boot com a explicação, obtive %v", err)
 			}
 		})
+	}
+}
+
+func TestSandboxRedeLocalAusenteNaoAtrapalha(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	if _, err := Carregar(); err != nil {
+		t.Errorf("sem a variável removida, carrega: %v", err)
 	}
 }
 
