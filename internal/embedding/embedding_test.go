@@ -133,13 +133,13 @@ func TestGeminiForaDoArOuRecusandoEIndisponivelSemCitarAChave(t *testing.T) {
 
 func TestGeminiLentoEstouraOTimeout(t *testing.T) {
 	liberar := make(chan struct{})
-	t.Cleanup(func() { close(liberar) })
 	gemini := servidorDoGemini(t, func(_ http.ResponseWriter, r *http.Request) {
 		select {
 		case <-liberar:
 		case <-r.Context().Done():
 		}
 	})
+	t.Cleanup(func() { close(liberar) })
 
 	inicio := time.Now()
 	_, err := gemini.Gerar(t.Context(), "texto")
