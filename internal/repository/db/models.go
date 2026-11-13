@@ -54,6 +54,29 @@ type PullRequestComment struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 }
 
+type PullRequestOutcome struct {
+	TenantID       int64     `json:"tenant_id"`
+	Repository     string    `json:"repository"`
+	PrNumber       int32     `json:"pr_number"`
+	Merged         bool      `json:"merged"`
+	HeadSha        string    `json:"head_sha"`
+	MergeCommitSha *string   `json:"merge_commit_sha"`
+	ClosedAt       time.Time `json:"closed_at"`
+	DeliveryID     string    `json:"delivery_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type PullRequestRevert struct {
+	TenantID     int64     `json:"tenant_id"`
+	Repository   string    `json:"repository"`
+	PrNumber     int32     `json:"pr_number"`
+	RevertedByPr int32     `json:"reverted_by_pr"`
+	RevertedAt   time.Time `json:"reverted_at"`
+	DeliveryID   string    `json:"delivery_id"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 type Receipt struct {
 	ID                string    `json:"id"`
 	TenantID          int64     `json:"tenant_id"`

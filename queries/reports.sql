@@ -13,11 +13,10 @@ SELECT
         WHERE rg.task_run_id = tr.id AND rg.level = 'medio'
     )) AS medium_risk,
     (
-        SELECT count(*) FROM code_memory cm
-        WHERE cm.tenant_id = sqlc.arg(tenant_id)
-          AND cm.outcome = 'revertida_apos_merge'
-          AND cm.created_at >= sqlc.arg(starts_at)
-          AND cm.created_at < sqlc.arg(ends_at)
+        SELECT count(*) FROM pull_request_reverts rv
+        WHERE rv.tenant_id = sqlc.arg(tenant_id)
+          AND rv.reverted_at >= sqlc.arg(starts_at)
+          AND rv.reverted_at < sqlc.arg(ends_at)
     ) AS reverted
 FROM task_runs tr
 WHERE tr.tenant_id = sqlc.arg(tenant_id)

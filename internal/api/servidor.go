@@ -24,6 +24,7 @@ type Dependencia struct {
 type RegistroDeExecucoes interface {
 	RegistrarPullRequest(ctx context.Context, evento domain.EventoPullRequest) (domain.Execucao, error)
 	RegistrarRevisao(ctx context.Context, decisao domain.DecisaoDeReview) error
+	RegistrarFechamento(ctx context.Context, fechamento domain.FechamentoDePR) error
 }
 
 // ProcessadorDeAcoesRemotas decide e executa uma ação pedida por canal

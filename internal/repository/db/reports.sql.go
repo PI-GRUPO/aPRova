@@ -25,11 +25,10 @@ SELECT
         WHERE rg.task_run_id = tr.id AND rg.level = 'medio'
     )) AS medium_risk,
     (
-        SELECT count(*) FROM code_memory cm
-        WHERE cm.tenant_id = $1
-          AND cm.outcome = 'revertida_apos_merge'
-          AND cm.created_at >= $2
-          AND cm.created_at < $3
+        SELECT count(*) FROM pull_request_reverts rv
+        WHERE rv.tenant_id = $1
+          AND rv.reverted_at >= $2
+          AND rv.reverted_at < $3
     ) AS reverted
 FROM task_runs tr
 WHERE tr.tenant_id = $1

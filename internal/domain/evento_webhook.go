@@ -33,3 +33,19 @@ type Execucao struct {
 	ID           string
 	JaRegistrada bool
 }
+
+// FechamentoDePR descreve um pull request fechado, com ou sem merge. SHAHead é
+// o head no fechamento e SHADoMerge o commit do merge, vazio sem merge.
+// Reverte é o número do pull request do mesmo repositório que este reverte, ou
+// zero.
+type FechamentoDePR struct {
+	InstallationID int64  `validate:"required,gt=0"`
+	DeliveryID     string `validate:"required,max=100"`
+	Repositorio    string `validate:"required,max=200"`
+	NumeroPR       int    `validate:"required,gt=0,max=2147483647"`
+	Mergeado       bool
+	SHAHead        string    `validate:"required,hexadecimal,lowercase,len=40|len=64"`
+	SHADoMerge     string    `validate:"required_if=Mergeado true,excluded_unless=Mergeado true,omitempty,hexadecimal,lowercase,len=40|len=64"`
+	FechadoEm      time.Time `validate:"required"`
+	Reverte        int       `validate:"gte=0,max=2147483647"`
+}
