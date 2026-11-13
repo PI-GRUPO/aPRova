@@ -462,7 +462,7 @@ func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido receipt.Pedido) 
 	}
 
 	hash := sha256.Sum256([]byte(pedido.TaskRun.ID))
-	recibo := receipt.Emitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:]}
+	recibo := receipt.Emitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:], IDChave: idChaveDeTeste}
 
 	e.armazenamento.mutex.Lock()
 	defer e.armazenamento.mutex.Unlock()
@@ -470,25 +470,81 @@ func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido receipt.Pedido) 
 		return receipt.Emitido{}, domain.ErrDuplicado
 	}
 	e.armazenamento.gates[pedido.TaskRun.ID] = pedido.Gate
-	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: recibo.ID, TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash}}
+	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: recibo.ID, TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash, IDChave: recibo.IDChave}}
 	return recibo, nil
 }
 
+const idChaveDeTeste = "4f1c2a9b7e3d5c80"
+
+type falhaPublicada struct {
+	taskRunID   string
+	diagnostico string
+}
+
 type publicadorFalso struct {
-	chamadas   *registroDeChamadas
-	erros      []error
-	publicados []Publicacao
+	chamadas      *registroDeChamadas
+	errosDoInicio []error
+	erros         []error
+	errosDaFalha  []error
+	iniciados     []string
+	publicados    []Publicacao
+	falhas        []falhaPublicada
+}
+
+func proximoErro(erros *[]error) error {
+	if len(*erros) == 0 {
+		return nil
+	}
+	erro := (*erros)[0]
+	*erros = (*erros)[1:]
+	return erro
+}
+
+func (p *publicadorFalso) Iniciar(_ context.Context, taskRun domain.TaskRun) error {
+	p.chamadas.anotar("inicio")
+	if erro := proximoErro(&p.errosDoInicio); erro != nil {
+		return erro
+	}
+	p.iniciados = append(p.iniciados, taskRun.ID)
+	return nil
 }
 
 func (p *publicadorFalso) Publicar(_ context.Context, publicacao Publicacao) error {
 	p.chamadas.anotar("publicacao")
-	if len(p.erros) > 0 {
-		erro := p.erros[0]
-		p.erros = p.erros[1:]
+	if erro := proximoErro(&p.erros); erro != nil {
 		return erro
 	}
 	p.publicados = append(p.publicados, publicacao)
 	return nil
+}
+
+func (p *publicadorFalso) PublicarFalha(_ context.Context, taskRun domain.TaskRun, diagnostico string) error {
+	p.chamadas.anotar("falha")
+	if erro := proximoErro(&p.errosDaFalha); erro != nil {
+		return erro
+	}
+	p.falhas = append(p.falhas, falhaPublicada{taskRunID: taskRun.ID, diagnostico: diagnostico})
+	return nil
+}
+
+func (p *publicadorFalso) publicacoesDe(taskRunID string) []Publicacao {
+	var doTaskRun []Publicacao
+	for _, publicacao := range p.publicados {
+		if publicacao.TaskRun.ID == taskRunID {
+			doTaskRun = append(doTaskRun, publicacao)
+		}
+	}
+	return doTaskRun
+}
+
+func (p *publicadorFalso) falhasDe(taskRunID string) []falhaPublicada {
+	var doTaskRun []falhaPublicada
+	for _, falha := range p.falhas {
+		if falha.taskRunID == taskRunID {
+			doTaskRun = append(doTaskRun, falha)
+		}
+	}
+	return doTaskRun
 }
 
 type emissorDeEventosFalso struct {

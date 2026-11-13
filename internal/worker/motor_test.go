@@ -176,8 +176,12 @@ func TestCaminhoDeRiscoBaixoOuMedioTerminaConcluidoComReciboAntesDaPublicacao(t 
 
 			exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID),
 				append(slices.Clone(caminhoAteAvaliar), domain.EstadoAplicando, domain.EstadoConcluido)...)
-			if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"recibo", "publicacao"}) {
-				t.Errorf("o recibo precisa vir antes da publicação, ordem: %v", chamadas)
+			if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"inicio", "recibo", "publicacao"}) {
+				t.Errorf("o Check Run começa antes da análise e o recibo vem antes da publicação, ordem: %v", chamadas)
+			}
+			publicacao := c.publicador.publicados[0]
+			if publicacao.Sandbox != sucessoNoSandbox || publicacao.Recibo.IDChave != idChaveDeTeste || publicacao.AprovadoPor != "" {
+				t.Errorf("a publicação leva o sandbox e o key_id do recibo: %+v", publicacao)
 			}
 			if gate := c.armazenamento.gates[taskRun.ID]; gate.Nivel != nivel {
 				t.Errorf("gate gravado = %+v", gate)
@@ -196,8 +200,11 @@ func TestCaminhoDeRiscoAltoParaEmAguardandoAprovacaoComRecibo(t *testing.T) {
 	c.conduzirTudo(t)
 
 	exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID), append(slices.Clone(caminhoAteAvaliar), domain.EstadoAguardandoAprovacao)...)
-	if c.chamadas.quantas("recibo") != 1 || c.chamadas.quantas("publicacao") != 0 {
-		t.Errorf("PR bloqueado tem recibo e não publica: %v", c.chamadas.lista())
+	if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"inicio", "recibo", "publicacao"}) {
+		t.Errorf("o bloqueio é publicado antes de parar em aguardando_aprovacao, ordem: %v", chamadas)
+	}
+	if publicados := c.publicador.publicados; len(publicados) != 1 || publicados[0].Gate.Nivel != domain.RiscoAlto || publicados[0].AprovadoPor != "" {
+		t.Errorf("o bloqueio publica o risco alto sem aprovação: %+v", publicados)
 	}
 	if tipos := c.eventos.tipos(); !slices.Equal(tipos, []eventos.TipoEvento{eventos.TipoAnaliseConcluida, eventos.TipoAguardandoAprovacao}) {
 		t.Fatalf("eventos = %v", tipos)
@@ -372,8 +379,12 @@ func TestReviewAprovadoAplicaEConclui(t *testing.T) {
 
 	exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID),
 		append(slices.Clone(caminhoAteAvaliar), domain.EstadoAguardandoAprovacao, domain.EstadoAplicando, domain.EstadoConcluido)...)
-	if len(c.publicador.publicados) != 1 || c.chamadas.quantas("recibo") != 1 {
-		t.Errorf("aprovado publica uma vez, com o recibo já emitido: %v", c.chamadas.lista())
+	publicados := c.publicador.publicados
+	if len(publicados) != 2 || c.chamadas.quantas("recibo") != 1 {
+		t.Fatalf("o bloqueio e a aprovação são publicados, com o mesmo recibo: %v", c.chamadas.lista())
+	}
+	if publicados[1].AprovadoPor != "Azulpasta" || publicados[1].Recibo.IDChave != idChaveDeTeste {
+		t.Errorf("a aprovação publica o login de quem aprovou: %+v", publicados[1])
 	}
 	pedido, emitido := c.eventos.doTipo(eventos.TipoAprovacaoRegistrada)
 	if !emitido {
@@ -396,8 +407,8 @@ func TestReviewComAlteracoesSolicitadasRejeita(t *testing.T) {
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoRejeitado {
 		t.Fatalf("terminou em %s", estado)
 	}
-	if c.chamadas.quantas("publicacao") != 0 {
-		t.Error("rejeitado não publica")
+	if c.chamadas.quantas("publicacao") != 1 || c.chamadas.quantas("falha") != 0 {
+		t.Errorf("rejeitado não muda o Check Run, que já está em action_required: %v", c.chamadas.lista())
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAprovacaoRegistrada)
 	if dados := dadosDoEvento[eventos.DadosAprovacaoRegistrada](t, pedido); dados.Decisao != domain.DecisaoAlteracoesSolicitadas || dados.Origem != "github" {
@@ -425,6 +436,9 @@ func TestReviewDeQuemNaoPodeEscreverNaoTiraDaEspera(t *testing.T) {
 
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoConcluido {
 		t.Errorf("o review seguinte, de quem escreve, decide; terminou em %s", estado)
+	}
+	if ultima := c.publicador.publicados[len(c.publicador.publicados)-1]; ultima.AprovadoPor != "httpslua" {
+		t.Errorf("a aprovação publicada é a de quem decidiu, não a de quem só lê: %q", ultima.AprovadoPor)
 	}
 }
 
@@ -454,10 +468,11 @@ func TestTaskRunSubstituidoEmEsperaEncerraSemPublicar(t *testing.T) {
 	if etapa := c.armazenamento.ultimaEtapa(antigo.ID); etapa.detalhe != "substituído por commit mais novo" {
 		t.Errorf("motivo do encerramento = %q", etapa.detalhe)
 	}
-	for _, publicacao := range c.publicador.publicados {
-		if publicacao.TaskRun.ID == antigo.ID {
-			t.Error("um task_run substituído publicou no PR")
-		}
+	if publicadas := c.publicador.publicacoesDe(antigo.ID); len(publicadas) != 1 {
+		t.Errorf("o task_run antigo só publicou o bloqueio, antes de ser substituído: %d publicações", len(publicadas))
+	}
+	if falhas := c.publicador.falhasDe(antigo.ID); len(falhas) != 0 {
+		t.Errorf("substituído por commit mais novo não publica nada: %+v", falhas)
 	}
 	if estado := c.armazenamento.taskRun(novo.ID).Estado; estado != domain.EstadoAguardandoAprovacao {
 		t.Errorf("o task_run novo segue o fluxo próprio, está em %s", estado)
@@ -487,6 +502,9 @@ func TestTaskRunSubstituidoNaPublicacaoNaoSobrescreveONovo(t *testing.T) {
 	}
 	if len(c.publicador.publicados) != 1 || c.publicador.publicados[0].TaskRun.ID != novo.ID {
 		t.Errorf("só o task_run novo publica: %+v", c.publicador.publicados)
+	}
+	if falhas := c.publicador.falhasDe(antigo.ID); len(falhas) != 0 {
+		t.Errorf("substituído por commit mais novo não publica nem a falha: %+v", falhas)
 	}
 }
 

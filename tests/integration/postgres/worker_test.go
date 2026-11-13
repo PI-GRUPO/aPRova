@@ -95,6 +95,14 @@ func (p *publicadorContado) Publicar(context.Context, worker.Publicacao) error {
 	return nil
 }
 
+func (p *publicadorContado) Iniciar(context.Context, domain.TaskRun) error {
+	return nil
+}
+
+func (p *publicadorContado) PublicarFalha(context.Context, domain.TaskRun, string) error {
+	return nil
+}
+
 type eventosDescartados struct{}
 
 func (eventosDescartados) Emitir(*slog.Logger, eventos.Pedido) {}
