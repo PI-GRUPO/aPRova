@@ -21,7 +21,7 @@ func shaDoCommit(numero int) string {
 func aprovarCommit(t *testing.T, repo *repository.RepositorioPostgres, taskRun domain.TaskRun, decisao domain.DecisaoAprovacao, commit string) {
 	t.Helper()
 	err := repo.RegistrarAprovacao(t.Context(), domain.Aprovacao{
-		TaskRunID: taskRun.ID, DeliveryID: fmt.Sprintf("revisao-%s-%s-%d", taskRun.ID, commit, time.Now().UnixNano()),
+		TaskRunID: taskRun.ID, DeliveryID: fmt.Sprintf("revisao-%s-%d", commit[len(commit)-8:], time.Now().UnixNano()),
 		Decisao: decisao, Revisor: "revisora", DecididaEm: time.Now().UTC(), CommitSHA: commit,
 	})
 	if err != nil {
