@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 const commitDoPushNovo = "95eb58e1d0c4a7b3f2e6d9c8b1a0f4e3d2c1b0a9"

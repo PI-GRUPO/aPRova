@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/worker"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
 const idDoTaskRunDeConteudo = "9eaa0538-add6-4361-8bfc-e74acec86c07"

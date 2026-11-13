@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/worker"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
 // NomeDoCheckRun é o nome fixo do Check Run. A proteção de branch referencia o

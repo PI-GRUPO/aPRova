@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 func reciboGuardadoDeTeste(t *testing.T) domain.Recibo {

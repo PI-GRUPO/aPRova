@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
 )
 
 const (

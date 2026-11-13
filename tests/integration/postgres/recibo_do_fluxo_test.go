@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/receipt"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 var (

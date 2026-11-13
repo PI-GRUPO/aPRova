@@ -13,7 +13,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 // VersaoDoFormato é a versão do conteúdo assinado.

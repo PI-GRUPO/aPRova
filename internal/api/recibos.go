@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )

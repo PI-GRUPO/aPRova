@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Azulpasta/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
 	"github.com/joho/godotenv"
 )
 

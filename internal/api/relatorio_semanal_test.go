@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 type fonteDeRelatoriosFalsa struct {

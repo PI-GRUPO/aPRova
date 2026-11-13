@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/gate"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/receipt"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/worker"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
 const patchDeDependenciaNova = "@@ -1,3 +1,5 @@\n module github.com/aprova/aprova-testes/go\n \n go 1.21\n+\n+require github.com/shopspring/decimal v1.4.0\n"

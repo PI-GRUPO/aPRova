@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 type reviewPublicada struct {
@@ -41,7 +41,7 @@ func acaoAutorizadaDeTeste(tipo Tipo, justificativa string) AcaoAutorizada {
 			IDAcao:         "acao-1",
 			Tipo:           tipo,
 			UsuarioSlack:   "U-ESCRITOR",
-			Repositorio:    "Azulpasta/aPRova",
+			Repositorio:    "PI-GRUPO/aPRova",
 			NumeroPR:       42,
 			InstallationID: 7001,
 			Justificativa:  justificativa,
@@ -59,7 +59,7 @@ func TestExecutorAprovaNomeandoOHumanoQueDecidiu(t *testing.T) {
 	if err != nil {
 		t.Fatalf("aprovação não deveria falhar: %v", err)
 	}
-	esperada := reviewPublicada{7001, "Azulpasta", "aPRova", 42, platform.Review{
+	esperada := reviewPublicada{7001, "PI-GRUPO", "aPRova", 42, platform.Review{
 		Evento: platform.EventoAprovar,
 		Corpo:  "Aprovado por @erin via Slack",
 	}}

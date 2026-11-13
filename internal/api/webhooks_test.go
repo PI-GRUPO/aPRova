@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 const segredoDeTeste = "segredo-de-teste"
@@ -91,7 +91,7 @@ func enviarWebhook(t *testing.T, registro *registroFalso, e entrega) *httptest.R
 func corpoPullRequest(acao string) string {
 	return `{"action":"` + acao + `","number":42,` +
 		`"pull_request":{"head":{"sha":"abc123"},"user":{"login":"alice"}},` +
-		`"repository":{"full_name":"Azulpasta/aPRova"},"installation":{"id":777}}`
+		`"repository":{"full_name":"PI-GRUPO/aPRova"},"installation":{"id":777}}`
 }
 
 func entregaValida(evento, deliveryID, corpo string) entrega {
@@ -157,7 +157,7 @@ func corpoReview(estado string) string {
 	return `{"action":"submitted",` +
 		`"review":{"state":"` + estado + `","user":{"login":"bob"},"commit_id":"6be930afc83bb7213d3d4e111f2c6eb7fd008a42"},` +
 		`"pull_request":{"number":42,"head":{"sha":"abc123"}},` +
-		`"repository":{"full_name":"Azulpasta/aPRova"},"installation":{"id":777}}`
+		`"repository":{"full_name":"PI-GRUPO/aPRova"},"installation":{"id":777}}`
 }
 
 func TestWebhookIgnoraTipoDeEventoNaoTratado(t *testing.T) {

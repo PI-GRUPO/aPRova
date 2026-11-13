@@ -5,8 +5,8 @@ import (
 	"crypto/ed25519"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 )
 
 func TestChaveiroDaAPIJuntaAChaveAtualComAsPublicasConfiguradas(t *testing.T) {

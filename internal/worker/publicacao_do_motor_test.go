@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/gate"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 var (

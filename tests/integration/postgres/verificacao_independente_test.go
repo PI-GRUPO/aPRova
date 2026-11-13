@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/api"
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/api"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 )
 
 func (b bancoDaFila) pedirPelaAPI(t *testing.T, caminho string) *httptest.ResponseRecorder {
@@ -30,7 +30,7 @@ func construirVerificador(t *testing.T) string {
 	t.Helper()
 
 	binario := filepath.Join(t.TempDir(), "verificar-recibo")
-	construcao := exec.CommandContext(t.Context(), "go", "build", "-o", binario, "github.com/Azulpasta/aPRova/cmd/verificar-recibo")
+	construcao := exec.CommandContext(t.Context(), "go", "build", "-o", binario, "github.com/PI-GRUPO/aPRova/cmd/verificar-recibo")
 	if saida, err := construcao.CombinedOutput(); err != nil {
 		t.Fatalf("construir cmd/verificar-recibo: %v\n%s", err, saida)
 	}

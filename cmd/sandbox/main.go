@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/sandbox/conteiner"
-	"github.com/Azulpasta/aPRova/internal/sandbox/golang"
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
-	"github.com/Azulpasta/aPRova/internal/sandbox/python"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/conteiner"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/golang"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/python"
 )
 
 const (

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
 )
 
 const (

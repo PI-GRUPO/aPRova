@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 // FonteDeRecibos lê recibos guardados pelo id.

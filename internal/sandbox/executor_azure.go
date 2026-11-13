@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox/jobsazure"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/jobsazure"
 )
 
 const (

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository/db"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository/db"
 )
 
 // CheckRunDoTaskRun devolve o id do Check Run publicado para o task_run.

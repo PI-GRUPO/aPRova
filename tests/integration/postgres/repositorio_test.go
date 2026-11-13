@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 

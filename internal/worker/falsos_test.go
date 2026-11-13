@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/gate"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/receipt"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 type etapaGravada struct {

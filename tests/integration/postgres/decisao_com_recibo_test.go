@@ -5,8 +5,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/google/uuid"
 )
 

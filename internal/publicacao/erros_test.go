@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 func TestPermissaoNegadaPeloGitHubDevolveDiagnosticoClaro(t *testing.T) {

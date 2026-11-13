@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 const prazoMaximo = 24 * time.Hour

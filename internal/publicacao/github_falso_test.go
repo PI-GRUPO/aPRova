@@ -11,8 +11,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 const slugDeTeste = "a-prova"

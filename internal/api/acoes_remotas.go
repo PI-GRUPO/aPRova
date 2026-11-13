@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 )
 
 const (

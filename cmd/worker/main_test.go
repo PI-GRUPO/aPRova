@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 )
 
 func TestWorkerNaoSobeSemAChaveDeRecibo(t *testing.T) {

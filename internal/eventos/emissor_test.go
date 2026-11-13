@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 var segredoDoEmissor = []byte("segredo-do-emissor-de-teste")

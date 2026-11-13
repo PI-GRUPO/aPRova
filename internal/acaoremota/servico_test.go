@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 var momentoDeTeste = time.Date(2026, 10, 2, 15, 0, 0, 0, time.UTC)
@@ -111,7 +111,7 @@ func corpoDoPedido(t *testing.T, campos map[string]any) []byte {
 		"id_acao":         "acao-1",
 		"tipo":            "aprovar",
 		"usuario_slack":   "U-ESCRITOR",
-		"repositorio":     "Azulpasta/aPRova",
+		"repositorio":     "PI-GRUPO/aPRova",
 		"numero_pr":       42,
 		"installation_id": 7001,
 	}
@@ -158,7 +158,7 @@ func TestServicoRecusaAprovacaoDeQuemSoLeORepositorio(t *testing.T) {
 		Tipo:           TipoAprovar,
 		UsuarioSlack:   "U-LEITOR",
 		LoginGitHub:    "dave",
-		Repositorio:    "Azulpasta/aPRova",
+		Repositorio:    "PI-GRUPO/aPRova",
 		NumeroPR:       42,
 		InstallationID: 7001,
 		Decisao:        DecisaoRecusada,
@@ -213,7 +213,7 @@ func TestServicoConsultaAPermissaoDoLoginResolvidoNoRepositorioPedido(t *testing
 
 	c.servico.Processar(t.Context(), corpoDoPedido(t, nil))
 
-	esperada := []consultaDePermissao{{installationID: 7001, dono: "Azulpasta", repositorio: "aPRova", login: "erin"}}
+	esperada := []consultaDePermissao{{installationID: 7001, dono: "PI-GRUPO", repositorio: "aPRova", login: "erin"}}
 	if !slices.Equal(c.permissoes.consultas, esperada) {
 		t.Errorf("consultas = %+v, esperava %+v", c.permissoes.consultas, esperada)
 	}
@@ -302,7 +302,7 @@ func TestServicoExecutaAprovacaoDeQuemTemEscritaEmPRDeOutraPessoa(t *testing.T) 
 			IDAcao:         "acao-1",
 			Tipo:           TipoAprovar,
 			UsuarioSlack:   "U-ESCRITOR",
-			Repositorio:    "Azulpasta/aPRova",
+			Repositorio:    "PI-GRUPO/aPRova",
 			NumeroPR:       42,
 			InstallationID: 7001,
 		},

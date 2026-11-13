@@ -18,12 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/gate"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/rastro"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 const (

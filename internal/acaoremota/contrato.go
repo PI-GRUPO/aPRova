@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 // Tipo identifica a ação que o canal externo pede para executar.

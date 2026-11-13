@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/nomesgithub"
+	"github.com/PI-GRUPO/aPRova/internal/nomesgithub"
 	"github.com/go-playground/validator/v10"
 )
 

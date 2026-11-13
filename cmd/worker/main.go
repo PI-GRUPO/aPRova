@@ -9,15 +9,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/gate"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/publicacao"
-	"github.com/Azulpasta/aPRova/internal/receipt"
-	"github.com/Azulpasta/aPRova/internal/repository"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/worker"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/publicacao"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
 const limiteDoDesligamento = 30 * time.Second

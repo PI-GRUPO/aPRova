@@ -1,4 +1,4 @@
-module github.com/Azulpasta/aPRova
+module github.com/PI-GRUPO/aPRova
 
 go 1.26.0
 

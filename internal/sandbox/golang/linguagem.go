@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
 const (

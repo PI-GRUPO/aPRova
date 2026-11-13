@@ -3,8 +3,8 @@ package worker
 import (
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 func TestSandboxUsaALinguagemConfiguradaParaORepositorio(t *testing.T) {

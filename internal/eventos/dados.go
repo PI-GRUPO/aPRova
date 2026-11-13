@@ -1,6 +1,6 @@
 package eventos
 
-import "github.com/Azulpasta/aPRova/internal/domain"
+import "github.com/PI-GRUPO/aPRova/internal/domain"
 
 // Motivo é uma regra determinística acionada na análise.
 type Motivo struct {

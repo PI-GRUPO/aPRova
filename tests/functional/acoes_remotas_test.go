@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/api"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/api"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 const (
@@ -212,7 +212,7 @@ func assinar(segredo, timestamp, corpo string) string {
 
 func corpoDeAcao(idAcao, tipo, usuarioSlack string) string {
 	return `{"id_acao":"` + idAcao + `","tipo":"` + tipo + `","usuario_slack":"` + usuarioSlack + `",` +
-		`"repositorio":"Azulpasta/aPRova","numero_pr":42,"installation_id":7001}`
+		`"repositorio":"PI-GRUPO/aPRova","numero_pr":42,"installation_id":7001}`
 }
 
 func lerCorpo(t *testing.T, resposta *httptest.ResponseRecorder) string {

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 )
 
 func taskRunRecebidoEm(t *testing.T, repo *repository.RepositorioPostgres, tenant int64, recebidoEm time.Time) domain.TaskRun {

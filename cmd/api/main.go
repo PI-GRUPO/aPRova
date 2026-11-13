@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/api"
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/receipt"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/api"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )

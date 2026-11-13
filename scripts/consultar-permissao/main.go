@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 const tempoLimiteConsulta = 30 * time.Second

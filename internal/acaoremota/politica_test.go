@@ -3,7 +3,7 @@ package acaoremota
 import (
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 func TestPoliticaExigeEscritaParaCadaTipo(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 )
 
 type decisaoEmMemoria struct{ gravado domain.Recibo }

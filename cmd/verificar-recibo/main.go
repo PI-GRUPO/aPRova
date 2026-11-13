@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Azulpasta/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 )
 
 const (

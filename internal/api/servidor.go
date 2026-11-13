@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

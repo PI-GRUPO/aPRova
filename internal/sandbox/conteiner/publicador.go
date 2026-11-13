@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 const (

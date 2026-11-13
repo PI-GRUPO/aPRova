@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository/db"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository/db"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/jackc/pgx/v5"
 )
 

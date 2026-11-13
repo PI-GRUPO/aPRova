@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
 var agoraPythonDeTeste = time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)

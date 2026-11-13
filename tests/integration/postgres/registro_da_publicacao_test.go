@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/publicacao"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/publicacao"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 )
 
 var _ publicacao.Registro = (*repository.RepositorioPostgres)(nil)

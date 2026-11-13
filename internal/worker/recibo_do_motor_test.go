@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 func TestMotorEntregaAoEmissorADecisaoOSandboxEODiffAnalisado(t *testing.T) {
