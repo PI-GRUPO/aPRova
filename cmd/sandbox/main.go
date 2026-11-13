@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -18,11 +19,12 @@ import (
 )
 
 const (
-	usuarioDoCodigoDoPR    = 10001
-	diretorioDeTrabalho    = "/tmp/aprova"
-	diretorioDeCache       = "/tmp/aprova-cache"
-	permissaoDosDiretorios = 0o755
-	codigoDeUsoErrado      = 2
+	usuarioDoCodigoDoPR         = 10001
+	diretorioDeTrabalho         = "/tmp/aprova"
+	diretorioDeCache            = "/tmp/aprova-cache"
+	permissaoDoPaiCompartilhado = 0o1777
+	caminhoDosExecutaveis       = "PATH=/usr/local/bin:/usr/bin:/bin"
+	codigoDeUsoErrado           = 2
 )
 
 type etapa string
@@ -94,14 +96,25 @@ func programa() conteiner.Programa {
 			sandbox.LinguagemGo:     goLang,
 			sandbox.LinguagemPython: pythonLang,
 		},
-		PrepararDiretorio: prepararParaOCodigoDoPR,
+		PrepararDiretorio: prepararParaOCodigoDoPR(rodador),
 		Agora:             time.Now,
 	}
 }
 
-func prepararParaOCodigoDoPR(caminho string) error {
-	if err := os.MkdirAll(caminho, permissaoDosDiretorios); err != nil {
-		return err
+func prepararParaOCodigoDoPR(rodador processo.Rodador) func(caminho string) error {
+	return func(caminho string) error {
+		if err := os.Chmod(filepath.Dir(caminho), permissaoDoPaiCompartilhado); err != nil {
+			return fmt.Errorf("abrir %s para o uid do PR: %w", filepath.Dir(caminho), err)
+		}
+		criacao := rodador.Rodar(context.Background(), processo.Comando{
+			Binario: "mkdir", Argumentos: []string{"-p", caminho}, Ambiente: []string{caminhoDosExecutaveis},
+		})
+		switch {
+		case criacao.Erro != nil:
+			return criacao.Erro
+		case criacao.CodigoSaida != 0:
+			return fmt.Errorf("mkdir saiu com código %d: %s", criacao.CodigoSaida, criacao.Saida)
+		}
+		return nil
 	}
-	return os.Chown(caminho, usuarioDoCodigoDoPR, usuarioDoCodigoDoPR)
 }

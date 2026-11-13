@@ -72,7 +72,7 @@ func (p Programa) preparar(ctx context.Context, inicio time.Time) *sandbox.Resul
 	codigo, cache := p.caminhosDoPreparo()
 	for _, diretorio := range []string{codigo, cache} {
 		if err := p.PrepararDiretorio(diretorio); err != nil {
-			return comoPonteiro(falhaDeInfraestrutura(fmt.Errorf("diretório do preparo %s: %w", diretorio, err)))
+			return comoPonteiro(falhaDeExecucao(fmt.Errorf("diretório do preparo %s: %w", diretorio, err)))
 		}
 	}
 
@@ -105,7 +105,7 @@ func (p Programa) testar(ctx context.Context, inicio time.Time) sandbox.Resultad
 	}
 
 	if err := p.PrepararDiretorio(p.DiretorioDeTrabalho); err != nil {
-		return falhaDeInfraestrutura(fmt.Errorf("diretório de trabalho %s: %w", p.DiretorioDeTrabalho, err))
+		return falhaDeExecucao(fmt.Errorf("diretório de trabalho %s: %w", p.DiretorioDeTrabalho, err))
 	}
 	copia := filepath.Join(p.DiretorioDeTrabalho, subdiretorioDoRepositorio)
 	if err := p.copiar(ctx, codigo, copia); err != nil {
