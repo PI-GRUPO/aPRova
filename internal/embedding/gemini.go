@@ -124,7 +124,7 @@ func (g *Gemini) pedir(ctx context.Context, texto string) (respostaDoGemini, err
 	if err != nil {
 		return respostaDoGemini{}, err
 	}
-	defer resposta.Body.Close()
+	defer func() { _ = resposta.Body.Close() }()
 
 	if resposta.StatusCode != http.StatusOK {
 		return respostaDoGemini{}, fmt.Errorf("%s respondeu %d", modeloDoGemini, resposta.StatusCode)

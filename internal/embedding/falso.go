@@ -21,7 +21,7 @@ func (Falso) Gerar(_ context.Context, texto string) ([]float32, error) {
 		binary.BigEndian.PutUint32(semente[:], bloco)
 		resumo := sha256.Sum256(append(semente[:], texto...))
 		for indice := 0; indice+2 <= len(resumo) && len(vetor) < domain.DimensoesEmbedding; indice += 2 {
-			vetor = append(vetor, float32(int16(binary.BigEndian.Uint16(resumo[indice:])))/32768)
+			vetor = append(vetor, float32(binary.BigEndian.Uint16(resumo[indice:]))/32768-1)
 		}
 	}
 	return Normalizar(vetor)

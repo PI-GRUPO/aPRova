@@ -63,15 +63,9 @@ func executar() error {
 		return err
 	}
 
-	emissorDeEventos, err := eventos.NovoEmissor(eventos.OpcoesEmissor{
-		URL:     configuracao.URLWebhookN8N,
-		Segredo: []byte(configuracao.N8NSegredoEventos),
-	})
+	emissorDeEventos, err := montarEmissorDeEventos(configuracao)
 	if err != nil {
 		return err
-	}
-	if !emissorDeEventos.Ligado() {
-		slog.Info("N8N_WEBHOOK_URL vazia, envio de eventos ao n8n desligado")
 	}
 
 	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
@@ -90,21 +84,7 @@ func executar() error {
 		return err
 	}
 
-	motor, err := worker.NovoMotor(worker.Opcoes{
-		Armazenamento: repositorio,
-		LeitorDePR:    clienteGitHub,
-		Permissoes:    clienteGitHub,
-		Sandbox:       executorSandbox,
-		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
-		Calibrador:    calibrador,
-		Recibos:       emissorDeRecibos,
-		Publicador:    publicador,
-		Eventos:       emissorDeEventos,
-		Diretorios:    configuracao.SandboxDiretorios,
-		Linguagens:    linguagensDoSandbox(configuracao),
-		URLPublica:    configuracao.URLPublica,
-		MaxTentativas: configuracao.WorkerMaxTentativas,
-	})
+	motor, err := worker.NovoMotor(opcoesDoMotor(configuracao, repositorio, clienteGitHub, executorSandbox, calibrador, emissorDeRecibos, publicador, emissorDeEventos))
 	if err != nil {
 		return err
 	}
@@ -133,6 +113,40 @@ func executar() error {
 	emissorDeEventos.Aguardar()
 
 	return nil
+}
+
+func montarEmissorDeEventos(configuracao config.Configuracao) (*eventos.Emissor, error) {
+	emissorDeEventos, err := eventos.NovoEmissor(eventos.OpcoesEmissor{
+		URL:     configuracao.URLWebhookN8N,
+		Segredo: []byte(configuracao.N8NSegredoEventos),
+	})
+	if err != nil {
+		return nil, err
+	}
+	if !emissorDeEventos.Ligado() {
+		slog.Info("N8N_WEBHOOK_URL vazia, envio de eventos ao n8n desligado")
+	}
+	return emissorDeEventos, nil
+}
+
+func opcoesDoMotor(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, clienteGitHub *platform.Cliente,
+	executorSandbox sandbox.Executor, calibrador worker.CalibradorRisco, recibos *receipt.Emissor, publicador *publicacao.Publicador,
+	emissorDeEventos *eventos.Emissor) worker.Opcoes {
+	return worker.Opcoes{
+		Armazenamento: repositorio,
+		LeitorDePR:    clienteGitHub,
+		Permissoes:    clienteGitHub,
+		Sandbox:       executorSandbox,
+		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
+		Calibrador:    calibrador,
+		Recibos:       recibos,
+		Publicador:    publicador,
+		Eventos:       emissorDeEventos,
+		Diretorios:    configuracao.SandboxDiretorios,
+		Linguagens:    linguagensDoSandbox(configuracao),
+		URLPublica:    configuracao.URLPublica,
+		MaxTentativas: configuracao.WorkerMaxTentativas,
+	}
 }
 
 func montarCalibrador(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) (worker.CalibradorRisco, error) {
