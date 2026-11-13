@@ -34,6 +34,7 @@ type Opcoes struct {
 	Permissoes    ConsultaDePermissao
 	Sandbox       sandbox.Executor
 	Avaliador     AvaliadorRisco
+	Calibrador    CalibradorRisco
 	Recibos       EmissorRecibo
 	Publicador    PublicadorPR
 	Eventos       EmissorEventos

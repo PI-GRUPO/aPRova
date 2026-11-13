@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/gate"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
@@ -14,11 +15,12 @@ import (
 )
 
 const (
-	detalheDeSubstituido      = "substituído por commit mais novo"
-	detalheDeDecisaoSemRecibo = "decisão de risco gravada sem recibo: nada segue adiante sem o recibo assinado"
-	detalheDeAltoSemAprovacao = "risco alto em aplicando sem a aprovação que o liberou"
-	motivoSemRegraAcionada    = "nenhuma regra acionada"
-	tamanhoMaximoDoMotivo     = 1000
+	detalheDeSubstituido       = "substituído por commit mais novo"
+	detalheDeDecisaoSemRecibo  = "decisão de risco gravada sem recibo: nada segue adiante sem o recibo assinado"
+	detalheDeAltoSemAprovacao  = "risco alto em aplicando sem a aprovação que o liberou"
+	motivoSemRegraAcionada     = "nenhuma regra acionada"
+	razaoDaCalibracaoDesligada = "calibração desligada"
+	tamanhoMaximoDoMotivo      = 1000
 )
 
 var permissoesQueDecidem = []platform.Permissao{platform.PermissaoWrite, platform.PermissaoMaintain, platform.PermissaoAdmin}
@@ -203,13 +205,16 @@ func (c *conducao) decidirPelaPrimeiraVez(tentativa int, resultadoSandbox sandbo
 		return c.novaTentativa("avaliador de risco: " + err.Error())
 	}
 
+	calibrada := c.calibrar(avaliacao)
 	decisao := domain.GateDeRisco{
 		TaskRunID:           c.taskRun.ID,
 		NivelDeterministico: avaliacao.Nivel,
-		Nivel:               avaliacao.Nivel,
-		Motivo:              textoDosMotivos(avaliacao.Motivos),
-		Motivos:             avaliacao.Motivos,
+		Nivel:               calibrada.Nivel,
+		Motivo:              textoDosMotivos(calibrada.Motivos),
+		Motivos:             calibrada.Motivos,
 		DependenciasNovas:   avaliacao.Dependencias,
+		Calibracao:          calibrada.Calibracao,
+		Assinatura:          calibrada.Assinatura,
 	}
 	recibo, err := c.opcoes.Recibos.Emitir(c.ctx, receipt.Pedido{
 		TaskRun: c.taskRun, Gate: decisao, Sandbox: resultadoSandbox, Tentativa: tentativa,
@@ -223,6 +228,23 @@ func (c *conducao) decidirPelaPrimeiraVez(tentativa int, resultadoSandbox sandbo
 		return passo{}, err
 	}
 	return c.concluirAvaliacao(decisao, recibo, resultadoSandbox)
+}
+
+func (c *conducao) calibrar(avaliacao gate.Resultado) calibracao.Resultado {
+	if c.opcoes.Calibrador == nil {
+		return calibracao.Resultado{Decisao: calibracao.Decisao{
+			Nivel: avaliacao.Nivel, Motivos: avaliacao.Motivos,
+			Calibracao: domain.Calibracao{Estado: domain.CalibracaoDesligada, Razao: razaoDaCalibracaoDesligada},
+		}}
+	}
+
+	resultado := c.opcoes.Calibrador.Calibrar(c.ctx, calibracao.Pedido{
+		TaskRun: c.taskRun, Nivel: avaliacao.Nivel, Motivos: avaliacao.Motivos, Arquivos: c.contexto.Arquivos,
+	})
+	c.diario.Info("calibração por histórico",
+		"estado", resultado.Calibracao.Estado, "razao", resultado.Calibracao.Razao,
+		"nivel_deterministico", avaliacao.Nivel, "nivel", resultado.Nivel)
+	return resultado
 }
 
 func (c *conducao) concluirAvaliacao(gravado domain.GateDeRisco, recibo receipt.Emitido, resultadoSandbox sandbox.ResultadoSandbox) (passo, error) {

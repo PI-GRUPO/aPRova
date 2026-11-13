@@ -133,7 +133,9 @@ type Transicao struct {
 
 // GateDeRisco é a decisão do gate para um task_run. Motivo resume em texto os
 // Motivos, as regras que dispararam; é a partir do que está gravado aqui que os
-// eventos da análise são montados.
+// eventos da análise são montados. NivelDeterministico é o nível das regras e
+// Nivel o final, depois da calibração. Calibracao é o rastro dela, fora do
+// recibo; Assinatura, quando presente, entra no histórico da calibração.
 type GateDeRisco struct {
 	TaskRunID           string     `validate:"required,uuid"`
 	NivelDeterministico NivelRisco `validate:"required,oneof=baixo medio alto"`
@@ -141,6 +143,8 @@ type GateDeRisco struct {
 	Motivo              string     `validate:"required,max=1000"`
 	Motivos             []MotivoDeRisco
 	DependenciasNovas   []DependenciaNova
+	Calibracao          Calibracao
+	Assinatura          *AssinaturaDoPR
 }
 
 // NovoRecibo é o recibo assinado, pronto para ser anexado. Conteudo são os

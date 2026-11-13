@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/eventos"
 	"github.com/PI-GRUPO/aPRova/internal/gate"
@@ -49,6 +50,13 @@ type ConsultaDePermissao interface {
 // implementação.
 type AvaliadorRisco interface {
 	Avaliar(ctx context.Context, entrada gate.Entrada) (gate.Resultado, error)
+}
+
+// CalibradorRisco é a camada 2 do gate: pode descer o nível um degrau a partir
+// do histórico do tenant e nunca devolve erro. O calibracao.Calibrador é a
+// implementação.
+type CalibradorRisco interface {
+	Calibrar(ctx context.Context, pedido calibracao.Pedido) calibracao.Resultado
 }
 
 // EmissorRecibo grava a decisão do gate e o recibo assinado dela, os dois
