@@ -55,3 +55,20 @@ type Calibracao struct {
 	Razao    string
 	Vizinhos []VizinhoDaCalibracao
 }
+
+// AssinaturaDoPR é o texto que representa a análise no histórico e o vetor
+// dele, gravados em code_memory.
+type AssinaturaDoPR struct {
+	Texto     string
+	Embedding []float32
+}
+
+// ConsultaDeVizinhos pede ao histórico do tenant as análises mais parecidas
+// com o embedding, fora do próprio pull request.
+type ConsultaDeVizinhos struct {
+	TenantID    int64
+	Repositorio string
+	NumeroPR    int
+	Embedding   []float32
+	Limite      int
+}
