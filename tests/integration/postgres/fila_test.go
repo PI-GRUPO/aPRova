@@ -3,15 +3,16 @@ package integracaopostgres
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -314,14 +315,58 @@ func TestBuscarGateDeRiscoDoTaskRun(t *testing.T) {
 	if _, err := banco.repo.BuscarGateDeRisco(t.Context(), taskRun.ID); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Fatalf("sem gate, esperava ErrNaoEncontrado, obtive %v", err)
 	}
-	gate := domain.GateDeRisco{TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "area_sensivel: go/frete/frete.go"}
+	gate := domain.GateDeRisco{
+		TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "dependencia_nova, falha_sandbox",
+		Motivos: []domain.MotivoDeRisco{
+			{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova", Evidencias: []string{"go/go.mod"}},
+			{ID: "falha_sandbox", Nivel: domain.RiscoAlto, Descricao: "os testes falharam no sandbox", Evidencias: []string{"1 de 11 testes falharam"}},
+		},
+		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
+		Calibracao:        domain.Calibracao{Estado: domain.CalibracaoDesligada, Razao: "calibração desligada"},
+	}
 	if err := banco.repo.GravarGateDeRisco(t.Context(), gate); err != nil {
 		t.Fatalf("gravar gate: %v", err)
 	}
 
 	lido, err := banco.repo.BuscarGateDeRisco(t.Context(), taskRun.ID)
-	if err != nil || lido != gate {
-		t.Errorf("gate lido = %+v, err %v", lido, err)
+	if err != nil || !reflect.DeepEqual(lido, gate) {
+		t.Errorf("gate lido = %+v, esperava %+v, err %v", lido, gate, err)
+	}
+}
+
+func TestGateSemMotivosGravaListasVazias(t *testing.T) {
+	banco := novoBancoDaFila(t)
+	taskRun := banco.novoTaskRunDoPR(t, 14)
+
+	if err := banco.repo.GravarGateDeRisco(t.Context(), domain.GateDeRisco{
+		TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoBaixo, Nivel: domain.RiscoBaixo, Motivo: "nenhuma regra acionada",
+	}); err != nil {
+		t.Fatalf("gravar gate: %v", err)
+	}
+
+	if vazias := banco.contar(t, `SELECT count(*) FROM risk_gates WHERE task_run_id = $1 AND rules_hit = '[]'::jsonb AND new_dependencies = '[]'::jsonb`, taskRun.ID); vazias != 1 {
+		t.Error("sem motivos, as colunas precisam guardar listas vazias, não null")
+	}
+	lido, err := banco.repo.BuscarGateDeRisco(t.Context(), taskRun.ID)
+	if err != nil || lido.Motivos == nil || lido.DependenciasNovas == nil {
+		t.Errorf("a leitura devolve listas vazias, não nulas: %+v, err %v", lido, err)
+	}
+}
+
+func TestChecksDoRiskGateRecusamJSONQueNaoELista(t *testing.T) {
+	banco := novoBancoDaFila(t)
+	taskRun := banco.novoTaskRunDoPR(t, 14)
+	if err := banco.repo.GravarGateDeRisco(t.Context(), domain.GateDeRisco{
+		TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoBaixo, Nivel: domain.RiscoBaixo, Motivo: "nenhuma regra acionada",
+	}); err != nil {
+		t.Fatalf("gravar gate: %v", err)
+	}
+
+	for _, coluna := range []string{"rules_hit", "new_dependencies"} {
+		_, err := banco.pool.Exec(t.Context(), `UPDATE risk_gates SET `+coluna+` = '{"motivo":"x"}'::jsonb WHERE task_run_id = $1`, taskRun.ID)
+		if codigoPostgres(err) != "23514" {
+			t.Errorf("%s precisa recusar o que não é lista, esperava check_violation (23514), obtive %v", coluna, err)
+		}
 	}
 }
 
@@ -330,7 +375,7 @@ func registrarAprovacaoDe(t *testing.T, banco bancoDaFila, taskRun domain.TaskRu
 
 	err := banco.repo.RegistrarAprovacao(t.Context(), domain.Aprovacao{
 		TaskRunID: taskRun.ID, DeliveryID: fmt.Sprintf("review-%d", time.Now().UnixNano()), Decisao: decisao,
-		Revisor: "Azulpasta", Origem: origem, DecididaEm: time.Now().UTC(),
+		Revisor: "Azulpasta", Origem: origem, DecididaEm: time.Now().UTC(), CommitSHA: taskRun.SHAHead,
 	})
 	if err != nil {
 		t.Fatalf("registrar aprovação: %v", err)

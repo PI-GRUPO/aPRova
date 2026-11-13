@@ -14,12 +14,12 @@
     "nivel_risco": "medio",
     "motivos": [
       {
-        "nome": "sem_teste_para_alteracao",
-        "descricao": "go/frete/frete.go mudou e nenhum teste Go cobre o caminho alterado"
+        "nome": "codigo_sem_teste",
+        "descricao": "o PR altera código sem alterar nenhum teste"
       }
     ],
-    "explicacao": "O PR muda a faixa de peso em frete.Calcular, mas nenhum teste cobre peso igual a zero. Os testes existentes passaram no sandbox; o risco é médio porque um defeito nessa faixa continuaria invisível.",
+    "explicacao": "Risco medio: o PR altera código sem alterar nenhum teste.",
     "receipt_hash": "9c4e2a7f1b3d5e6f8a0b2c4d6e8f0a1b3c5d7e9f1a2b4c6d8e0f2a4b6c8d0e2f",
-    "url_recibo": "https://aprova.example.com/recibos/2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e"
+    "url_recibo": "https://aprova.example.com/receipts/2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e/verify"
   }
 }

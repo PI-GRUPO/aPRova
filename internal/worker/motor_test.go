@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -17,11 +18,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/rastro"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 const (
@@ -61,6 +63,7 @@ type cenario struct {
 	avaliador     *avaliadorFalso
 	chamadas      *registroDeChamadas
 	publicador    *publicadorFalso
+	recibos       *emissorDeReciboFalso
 	eventos       *emissorDeEventosFalso
 	diario        *saidaSincronizada
 	opcoes        Opcoes
@@ -81,13 +84,14 @@ func novoCenario(nivel domain.NivelRisco, resultados ...sandbox.ResultadoSandbox
 		diario:        &saidaSincronizada{},
 	}
 	c.publicador = &publicadorFalso{chamadas: c.chamadas}
+	c.recibos = &emissorDeReciboFalso{armazenamento: c.armazenamento, chamadas: c.chamadas}
 	c.opcoes = Opcoes{
 		Armazenamento: c.armazenamento,
 		LeitorDePR:    c.leitor,
 		Permissoes:    c.permissoes,
 		Sandbox:       c.sandbox,
 		Avaliador:     c.avaliador,
-		Recibos:       &emissorDeReciboFalso{armazenamento: c.armazenamento, chamadas: c.chamadas},
+		Recibos:       c.recibos,
 		Publicador:    c.publicador,
 		Eventos:       c.eventos,
 		Diretorios:    map[string]string{"Azulpasta/aPRova-TESTES": "go"},
@@ -172,8 +176,12 @@ func TestCaminhoDeRiscoBaixoOuMedioTerminaConcluidoComReciboAntesDaPublicacao(t 
 
 			exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID),
 				append(slices.Clone(caminhoAteAvaliar), domain.EstadoAplicando, domain.EstadoConcluido)...)
-			if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"recibo", "publicacao"}) {
-				t.Errorf("o recibo precisa vir antes da publicação, ordem: %v", chamadas)
+			if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"inicio", "recibo", "publicacao"}) {
+				t.Errorf("o Check Run começa antes da análise e o recibo vem antes da publicação, ordem: %v", chamadas)
+			}
+			publicacao := c.publicador.publicados[0]
+			if publicacao.Sandbox != sucessoNoSandbox || publicacao.Recibo.IDChave != idChaveDeTeste || publicacao.AprovadoPor != "" {
+				t.Errorf("a publicação leva o sandbox e o key_id do recibo: %+v", publicacao)
 			}
 			if gate := c.armazenamento.gates[taskRun.ID]; gate.Nivel != nivel {
 				t.Errorf("gate gravado = %+v", gate)
@@ -192,8 +200,11 @@ func TestCaminhoDeRiscoAltoParaEmAguardandoAprovacaoComRecibo(t *testing.T) {
 	c.conduzirTudo(t)
 
 	exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID), append(slices.Clone(caminhoAteAvaliar), domain.EstadoAguardandoAprovacao)...)
-	if c.chamadas.quantas("recibo") != 1 || c.chamadas.quantas("publicacao") != 0 {
-		t.Errorf("PR bloqueado tem recibo e não publica: %v", c.chamadas.lista())
+	if chamadas := c.chamadas.lista(); !slices.Equal(chamadas, []string{"inicio", "recibo", "publicacao"}) {
+		t.Errorf("o bloqueio é publicado antes de parar em aguardando_aprovacao, ordem: %v", chamadas)
+	}
+	if publicados := c.publicador.publicados; len(publicados) != 1 || publicados[0].Gate.Nivel != domain.RiscoAlto || publicados[0].AprovadoPor != "" {
+		t.Errorf("o bloqueio publica o risco alto sem aprovação: %+v", publicados)
 	}
 	if tipos := c.eventos.tipos(); !slices.Equal(tipos, []eventos.TipoEvento{eventos.TipoAnaliseConcluida, eventos.TipoAguardandoAprovacao}) {
 		t.Fatalf("eventos = %v", tipos)
@@ -206,7 +217,7 @@ func TestCaminhoDeRiscoAltoParaEmAguardandoAprovacaoComRecibo(t *testing.T) {
 		t.Errorf("dados do PR errados: %+v", dados)
 	}
 	recibo := c.armazenamento.recibos[taskRun.ID]
-	if dados.ReceiptHash != hex.EncodeToString(recibo.Hash) || dados.URLRecibo != urlPublicaDeTeste+"/recibos/"+recibo.ID {
+	if dados.ReceiptHash != hex.EncodeToString(recibo.Hash) || dados.URLRecibo != urlPublicaDeTeste+"/receipts/"+recibo.ID+"/verify" {
 		t.Errorf("o evento precisa apontar o recibo emitido: hash %s, url %s", dados.ReceiptHash, dados.URLRecibo)
 	}
 	if evento.TenantID != taskRun.TenantID || evento.IDEvento != eventos.IDDoEvento(string(eventos.TipoAguardandoAprovacao), taskRun.ID) {
@@ -368,8 +379,12 @@ func TestReviewAprovadoAplicaEConclui(t *testing.T) {
 
 	exigirEstados(t, c.armazenamento.estadosPercorridos(taskRun.ID),
 		append(slices.Clone(caminhoAteAvaliar), domain.EstadoAguardandoAprovacao, domain.EstadoAplicando, domain.EstadoConcluido)...)
-	if len(c.publicador.publicados) != 1 || c.chamadas.quantas("recibo") != 1 {
-		t.Errorf("aprovado publica uma vez, com o recibo já emitido: %v", c.chamadas.lista())
+	publicados := c.publicador.publicados
+	if len(publicados) != 2 || c.chamadas.quantas("recibo") != 1 {
+		t.Fatalf("o bloqueio e a aprovação são publicados, com o mesmo recibo: %v", c.chamadas.lista())
+	}
+	if publicados[1].AprovadoPor != "Azulpasta" || publicados[1].Recibo.IDChave != idChaveDeTeste {
+		t.Errorf("a aprovação publica o login de quem aprovou: %+v", publicados[1])
 	}
 	pedido, emitido := c.eventos.doTipo(eventos.TipoAprovacaoRegistrada)
 	if !emitido {
@@ -392,8 +407,8 @@ func TestReviewComAlteracoesSolicitadasRejeita(t *testing.T) {
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoRejeitado {
 		t.Fatalf("terminou em %s", estado)
 	}
-	if c.chamadas.quantas("publicacao") != 0 {
-		t.Error("rejeitado não publica")
+	if c.chamadas.quantas("publicacao") != 1 || c.chamadas.quantas("falha") != 0 {
+		t.Errorf("rejeitado não muda o Check Run, que já está em action_required: %v", c.chamadas.lista())
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAprovacaoRegistrada)
 	if dados := dadosDoEvento[eventos.DadosAprovacaoRegistrada](t, pedido); dados.Decisao != domain.DecisaoAlteracoesSolicitadas || dados.Origem != "github" {
@@ -421,6 +436,9 @@ func TestReviewDeQuemNaoPodeEscreverNaoTiraDaEspera(t *testing.T) {
 
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoConcluido {
 		t.Errorf("o review seguinte, de quem escreve, decide; terminou em %s", estado)
+	}
+	if ultima := c.publicador.publicados[len(c.publicador.publicados)-1]; ultima.AprovadoPor != "httpslua" {
+		t.Errorf("a aprovação publicada é a de quem decidiu, não a de quem só lê: %q", ultima.AprovadoPor)
 	}
 }
 
@@ -450,10 +468,11 @@ func TestTaskRunSubstituidoEmEsperaEncerraSemPublicar(t *testing.T) {
 	if etapa := c.armazenamento.ultimaEtapa(antigo.ID); etapa.detalhe != "substituído por commit mais novo" {
 		t.Errorf("motivo do encerramento = %q", etapa.detalhe)
 	}
-	for _, publicacao := range c.publicador.publicados {
-		if publicacao.TaskRun.ID == antigo.ID {
-			t.Error("um task_run substituído publicou no PR")
-		}
+	if publicadas := c.publicador.publicacoesDe(antigo.ID); len(publicadas) != 1 {
+		t.Errorf("o task_run antigo só publicou o bloqueio, antes de ser substituído: %d publicações", len(publicadas))
+	}
+	if falhas := c.publicador.falhasDe(antigo.ID); len(falhas) != 0 {
+		t.Errorf("substituído por commit mais novo não publica nada: %+v", falhas)
 	}
 	if estado := c.armazenamento.taskRun(novo.ID).Estado; estado != domain.EstadoAguardandoAprovacao {
 		t.Errorf("o task_run novo segue o fluxo próprio, está em %s", estado)
@@ -484,6 +503,9 @@ func TestTaskRunSubstituidoNaPublicacaoNaoSobrescreveONovo(t *testing.T) {
 	if len(c.publicador.publicados) != 1 || c.publicador.publicados[0].TaskRun.ID != novo.ID {
 		t.Errorf("só o task_run novo publica: %+v", c.publicador.publicados)
 	}
+	if falhas := c.publicador.falhasDe(antigo.ID); len(falhas) != 0 {
+		t.Errorf("substituído por commit mais novo não publica nem a falha: %+v", falhas)
+	}
 }
 
 func TestRetomadaReaproveitaOResultadoDaTentativaAtual(t *testing.T) {
@@ -504,25 +526,189 @@ func TestRetomadaReaproveitaOResultadoDaTentativaAtual(t *testing.T) {
 	}
 }
 
-func TestRetomadaReaproveitaGateEReciboExistentes(t *testing.T) {
+func gateGravado(taskRunID string) domain.GateDeRisco {
+	return domain.GateDeRisco{
+		TaskRunID: taskRunID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "dependencia_nova",
+		Motivos: []domain.MotivoDeRisco{
+			{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova", Evidencias: []string{"go/go.mod"}},
+		},
+		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
+	}
+}
+
+func TestRetomadaComGateGravadoNaoChamaOGateNemOGitHub(t *testing.T) {
 	c := novoCenario(domain.RiscoBaixo)
+	c.avaliador.erro = errors.New("o gate não pode ser chamado de novo na retomada")
+	c.leitor.erros = []error{errors.New("o GitHub não pode ser lido de novo na retomada")}
 	taskRun := c.armazenamento.novoTaskRun(14)
 	c.armazenamento.taskRuns[taskRun.ID].Estado = domain.EstadoAvaliandoRisco
 	_ = c.armazenamento.GravarResultadoDaTentativa(t.Context(), taskRun.ID, 1, sucessoNoSandbox)
-	_ = c.armazenamento.GravarGateDeRisco(t.Context(), domain.GateDeRisco{TaskRunID: taskRun.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "area_sensivel"})
-	c.armazenamento.recibos[taskRun.ID] = domain.Recibo{ID: "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b", NovoRecibo: domain.NovoRecibo{TaskRunID: taskRun.ID, Hash: make([]byte, 32)}}
+	_ = c.armazenamento.GravarGateDeRisco(t.Context(), gateGravado(taskRun.ID))
+	c.armazenamento.recibos[taskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: "8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b", TaskRunID: taskRun.ID, Hash: make([]byte, 32)}}
 
 	c.conduzirTudo(t)
 
+	if c.avaliador.avaliacoes != 0 || c.leitor.leituras != 0 {
+		t.Errorf("a retomada usa só o que está gravado: %d avaliações, %d leituras", c.avaliador.avaliacoes, c.leitor.leituras)
+	}
 	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoAguardandoAprovacao {
-		t.Errorf("o nível gravado no gate vale sobre uma nova avaliação, terminou em %s", estado)
+		t.Errorf("o nível gravado no gate decide o caminho, terminou em %s", estado)
 	}
 	if c.chamadas.quantas("recibo") != 0 {
 		t.Error("o recibo já existia e foi emitido de novo")
 	}
 	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
-	if dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido); dados.URLRecibo != urlPublicaDeTeste+"/recibos/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b" || dados.NivelRisco != domain.RiscoAlto {
+	dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido)
+	if dados.URLRecibo != urlPublicaDeTeste+"/receipts/8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b/verify" || dados.NivelRisco != domain.RiscoAlto {
 		t.Errorf("o evento precisa usar o gate e o recibo gravados: %+v", dados)
+	}
+	if len(dados.Motivos) != 1 || dados.Motivos[0].Nome != "dependencia_nova" || dados.Motivos[0].Descricao != "o PR acrescenta dependência nova" {
+		t.Errorf("os motivos do evento vêm de rules_hit: %+v", dados.Motivos)
+	}
+	nova, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova)
+	if !emitido {
+		t.Fatal("a retomada também emite dependencia_nova a partir do que está gravado")
+	}
+	if deps := dadosDoEvento[eventos.DadosDependenciaNova](t, nova).Dependencias; len(deps) != 1 || deps[0].Nome != "github.com/shopspring/decimal" {
+		t.Errorf("dependências do evento: %+v", deps)
+	}
+}
+
+func TestEventoDaRetomadaEIgualAoDaPrimeiraAvaliacao(t *testing.T) {
+	dependencias := []domain.DependenciaNova{{Ecossistema: "PyPI", Nome: "requests", Versao: "2.32.3"}}
+	agora := func() time.Time { return time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC) }
+
+	primeira := novoCenario(domain.RiscoAlto)
+	primeira.opcoes.Agora = agora
+	primeira.avaliador.dependencias = dependencias
+	taskRun := primeira.armazenamento.novoTaskRun(14)
+	primeira.conduzirTudo(t)
+
+	retomada := novoCenario(domain.RiscoBaixo)
+	retomada.opcoes.Agora = agora
+	retomada.avaliador.erro = errors.New("o gate não pode ser chamado de novo na retomada")
+	retomada.armazenamento.novoTaskRun(14)
+	retomada.armazenamento.taskRuns[taskRun.ID].Estado = domain.EstadoAvaliandoRisco
+	_ = retomada.armazenamento.GravarResultadoDaTentativa(t.Context(), taskRun.ID, 1, sucessoNoSandbox)
+	_ = retomada.armazenamento.GravarGateDeRisco(t.Context(), primeira.armazenamento.gates[taskRun.ID])
+	retomada.armazenamento.recibos[taskRun.ID] = primeira.armazenamento.recibos[taskRun.ID]
+	retomada.conduzirTudo(t)
+
+	for _, tipo := range []eventos.TipoEvento{eventos.TipoAnaliseConcluida, eventos.TipoDependenciaNova, eventos.TipoAguardandoAprovacao} {
+		original, _ := primeira.eventos.doTipo(tipo)
+		repetido, emitido := retomada.eventos.doTipo(tipo)
+		if !emitido {
+			t.Fatalf("a retomada não emitiu %s", tipo)
+		}
+		corpoOriginal, err := eventos.Montar(original)
+		if err != nil {
+			t.Fatalf("montar %s: %v", tipo, err)
+		}
+		corpoRepetido, err := eventos.Montar(repetido)
+		if err != nil {
+			t.Fatalf("montar %s: %v", tipo, err)
+		}
+		if string(corpoOriginal) != string(corpoRepetido) {
+			t.Errorf("%s mudou na retomada:\n%s\n%s", tipo, corpoOriginal, corpoRepetido)
+		}
+	}
+}
+
+func TestMotivosEDependenciasDoGateSaoGravados(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.avaliador.dependencias = []domain.DependenciaNova{{Ecossistema: "Maven", Nome: "org.javamoney:moneta", Versao: "1.4.4"}}
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	gravado := c.armazenamento.gates[taskRun.ID]
+	if gravado.NivelDeterministico != domain.RiscoAlto || gravado.Nivel != domain.RiscoAlto {
+		t.Errorf("os dois níveis são iguais por enquanto: %+v", gravado)
+	}
+	if len(gravado.Motivos) != 1 || gravado.Motivos[0].ID != "area_sensivel" || !slices.Equal(gravado.Motivos[0].Evidencias, []string{"go/frete/frete.go"}) {
+		t.Errorf("motivos gravados: %+v", gravado.Motivos)
+	}
+	if !slices.Equal(gravado.DependenciasNovas, c.avaliador.dependencias) {
+		t.Errorf("dependências gravadas: %+v", gravado.DependenciasNovas)
+	}
+	if !strings.Contains(gravado.Motivo, "area_sensivel") {
+		t.Errorf("reason resume os motivos: %q", gravado.Motivo)
+	}
+}
+
+func TestDependenciaNovaEmiteOEvento(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.avaliador.dependencias = []domain.DependenciaNova{
+		{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"},
+		{Ecossistema: "PyPI", Nome: "requests", Versao: "2.32.3"},
+	}
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	pedido, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova)
+	if !emitido {
+		t.Fatalf("falta dependencia_nova; eventos: %v", c.eventos.tipos())
+	}
+	dados := dadosDoEvento[eventos.DadosDependenciaNova](t, pedido)
+	if dados.TaskRunID != taskRun.ID || dados.URLPR != "https://github.com/Azulpasta/aPRova-TESTES/pull/14" || len(dados.Dependencias) != 2 {
+		t.Errorf("dependencia_nova errado: %+v", dados)
+	}
+	if primeira := dados.Dependencias[0]; primeira.Ecossistema != "Go" || primeira.Nome != "github.com/shopspring/decimal" || primeira.Versao != "v1.4.0" {
+		t.Errorf("dependência errada: %+v", primeira)
+	}
+}
+
+func TestSemDependenciaNovaNaoHaEvento(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if _, emitido := c.eventos.doTipo(eventos.TipoDependenciaNova); emitido {
+		t.Error("sem dependência nova não há evento")
+	}
+}
+
+func TestGateRecebeOsArquivosDoPullRequest(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if len(c.avaliador.entradas) != 1 || len(c.avaliador.entradas[0].Arquivos) != 1 || c.avaliador.entradas[0].Arquivos[0].Nome != "go/frete/frete.go" {
+		t.Errorf("o gate avalia os arquivos lidos do GitHub: %+v", c.avaliador.entradas)
+	}
+}
+
+func TestEventoSemMotivosFicaDentroDoContrato(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	pedido, _ := c.eventos.doTipo(eventos.TipoAnaliseConcluida)
+	dados := dadosDoEvento[eventos.DadosAnaliseConcluida](t, pedido)
+	if len(dados.Motivos) != 0 || dados.Explicacao == "" {
+		t.Errorf("risco baixo sem motivos ainda precisa de uma explicação: %+v", dados)
+	}
+}
+
+func TestErroDoGateEsgotaAsTentativasSemDecidirNivel(t *testing.T) {
+	c := novoCenario(domain.RiscoBaixo)
+	c.avaliador.erro = fmt.Errorf("%w: tipo_falha infraestrutura", gate.ErrResultadoSemVeredito)
+	taskRun := c.armazenamento.novoTaskRun(14)
+
+	c.conduzirTudo(t)
+
+	if estado := c.armazenamento.taskRun(taskRun.ID).Estado; estado != domain.EstadoFalhou {
+		t.Errorf("sem veredito do gate o task_run não segue adiante, terminou em %s", estado)
+	}
+	if _, gravado := c.armazenamento.gates[taskRun.ID]; gravado {
+		t.Error("sem veredito não há gate gravado")
+	}
+	if c.chamadas.quantas("publicacao") != 0 {
+		t.Error("sem veredito não há publicação")
 	}
 }
 

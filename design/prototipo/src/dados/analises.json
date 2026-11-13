@@ -1,0 +1,2818 @@
+[
+	{
+		"id": "9eaa0538-add6-4361-8bfc-e74acec86c07",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 1,
+		"head_branch": "teste-peso-zero",
+		"head_sha": "6be930afc83bb7213d3d4e111f2c6eb7fd008a42",
+		"author": "agente-frete[bot]",
+		"event_action": "opened",
+		"state": "aguardando_aprovacao",
+		"received_at": "2026-11-09T14:00:00.000Z",
+		"created_at": "2026-11-09T14:00:00.113Z",
+		"updated_at": "2026-11-09T14:00:47.411Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-09T14:00:01.858Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-09T14:00:04.021Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-09T14:00:46.626Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-09T14:00:47.411Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 1,
+				"failure_type": "teste",
+				"duration_ms": 42459,
+				"created_at": "2026-11-09T14:00:46.480Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "falha_sandbox: os testes ou a compilação falharam no sandbox",
+			"rules_hit": [
+				{
+					"id": "falha_sandbox",
+					"nivel": "alto",
+					"descricao": "os testes ou a compilação falharam no sandbox",
+					"evidencias": ["1 de 11 testes falharam"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "6d290152-af24-4462-a525-72adf3b22d6c",
+		"approval": null
+	},
+	{
+		"id": "4b314d30-8a9f-4f23-8c07-872192c4ef60",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 214,
+		"head_branch": "agente/juros-compostos",
+		"head_sha": "95eb58ee9db0d73e832151930c48c103d67d404b",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "aguardando_aprovacao",
+		"received_at": "2026-11-10T15:00:00.000Z",
+		"created_at": "2026-11-10T15:00:00.093Z",
+		"updated_at": "2026-11-10T15:01:28.936Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-10T15:00:01.074Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-10T15:00:02.106Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-10T15:01:27.878Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-10T15:01:28.936Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 85679,
+				"created_at": "2026-11-10T15:01:27.785Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "dependencia_nova: o PR acrescenta dependência nova, que precisa de revisão humana",
+			"rules_hit": [
+				{
+					"id": "dependencia_nova",
+					"nivel": "alto",
+					"descricao": "o PR acrescenta dependência nova, que precisa de revisão humana",
+					"evidencias": ["go.mod"]
+				}
+			],
+			"new_dependencies": [
+				{
+					"ecossistema": "Go",
+					"nome": "github.com/shopspring/decimal",
+					"versao": "v1.4.0"
+				}
+			]
+		},
+		"receipt_id": "4aed363f-3a40-40f5-b0c2-ce482eef57da",
+		"approval": null
+	},
+	{
+		"id": "3f2725ba-125e-4023-a508-7347f335b71a",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 97,
+		"head_branch": "agente/exportar-planilha",
+		"head_sha": "25190978788ac263cce3376ef505a445d3857a1a",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "aguardando_aprovacao",
+		"received_at": "2026-11-11T09:40:00.000Z",
+		"created_at": "2026-11-11T09:40:00.047Z",
+		"updated_at": "2026-11-11T09:40:34.056Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T09:40:00.548Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T09:40:01.575Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-11T09:40:33.316Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-11T09:40:34.056Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 31539,
+				"created_at": "2026-11-11T09:40:33.114Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "dependencia_nova: o PR acrescenta dependência nova, que precisa de revisão humana\ncodigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "dependencia_nova",
+					"nivel": "alto",
+					"descricao": "o PR acrescenta dependência nova, que precisa de revisão humana",
+					"evidencias": ["requirements.txt"]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["painel/exportacao/planilha.py"]
+				}
+			],
+			"new_dependencies": [
+				{
+					"ecossistema": "PyPI",
+					"nome": "openpyxl",
+					"versao": "3.1.5"
+				}
+			]
+		},
+		"receipt_id": "2e081c11-d8b3-4021-a511-7e267a97315b",
+		"approval": null
+	},
+	{
+		"id": "643edc0b-45a6-4e81-8922-581045006c39",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 217,
+		"head_branch": "agente/parcelamento",
+		"head_sha": "4121545625d0a4fb40293daf33d161a4a454fbbd",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "aguardando_aprovacao",
+		"received_at": "2026-11-11T13:55:00.000Z",
+		"created_at": "2026-11-11T13:55:00.141Z",
+		"updated_at": "2026-11-11T13:56:05.593Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T13:55:01.475Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T13:55:02.451Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-11T13:56:04.714Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-11T13:56:05.593Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 62077,
+				"created_at": "2026-11-11T13:56:04.528Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "area_sensivel: o PR altera um caminho sensível\ncodigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "area_sensivel",
+					"nivel": "alto",
+					"descricao": "o PR altera um caminho sensível",
+					"evidencias": [
+						"migrations/000031_parcelas.down.sql",
+						"migrations/000031_parcelas.up.sql"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/parcela.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "b06ca98a-62b0-4ffe-9b87-a7ab883e2295",
+		"approval": null
+	},
+	{
+		"id": "d9fc6089-4457-4032-8884-0d2948f68b7f",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 99,
+		"head_branch": "agente/reorganiza-rotas",
+		"head_sha": "11645dac74f56c478ba01505dd947ff6982f53c1",
+		"author": "agente-painel[bot]",
+		"event_action": "synchronize",
+		"state": "aguardando_aprovacao",
+		"received_at": "2026-11-11T16:12:00.000Z",
+		"created_at": "2026-11-11T16:12:00.054Z",
+		"updated_at": "2026-11-11T16:12:48.180Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:12:01.666Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T16:12:03.657Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-11T16:12:47.786Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-11T16:12:48.180Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 43894,
+				"created_at": "2026-11-11T16:12:47.551Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "muitos_arquivos: o PR altera 27 arquivos, acima do limite de 20\ncodigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "muitos_arquivos",
+					"nivel": "alto",
+					"descricao": "o PR altera 27 arquivos, acima do limite de 20",
+					"evidencias": [
+						"painel/rotas/rota_01.py",
+						"painel/rotas/rota_02.py",
+						"painel/rotas/rota_03.py",
+						"painel/rotas/rota_04.py",
+						"painel/rotas/rota_05.py",
+						"painel/rotas/rota_06.py",
+						"painel/rotas/rota_07.py",
+						"painel/rotas/rota_08.py",
+						"painel/rotas/rota_09.py",
+						"painel/rotas/rota_10.py",
+						"painel/rotas/rota_11.py",
+						"painel/rotas/rota_12.py",
+						"painel/rotas/rota_13.py",
+						"painel/rotas/rota_14.py",
+						"painel/rotas/rota_15.py",
+						"painel/rotas/rota_16.py",
+						"painel/rotas/rota_17.py",
+						"painel/rotas/rota_18.py",
+						"painel/rotas/rota_19.py",
+						"painel/rotas/rota_20.py",
+						"painel/rotas/rota_21.py",
+						"painel/rotas/rota_22.py",
+						"painel/rotas/rota_23.py",
+						"painel/rotas/rota_24.py",
+						"painel/rotas/rota_25.py",
+						"painel/rotas/rota_26.py",
+						"painel/rotas/rota_27.py"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": [
+						"painel/rotas/rota_01.py",
+						"painel/rotas/rota_02.py",
+						"painel/rotas/rota_03.py",
+						"painel/rotas/rota_04.py",
+						"painel/rotas/rota_05.py",
+						"painel/rotas/rota_06.py"
+					]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "d7e2ee1d-5931-4a8a-910b-8124aec72459",
+		"approval": null
+	},
+	{
+		"id": "82611152-2853-4236-b4cc-dab90c8b43b3",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 219,
+		"head_branch": "agente/arredondamento",
+		"head_sha": "2ab4d4b5090fb472ae9e851f8ca4892a73a221cc",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "avaliando_risco",
+		"received_at": "2026-11-11T16:51:00.000Z",
+		"created_at": "2026-11-11T16:51:00.076Z",
+		"updated_at": "2026-11-11T16:52:33.449Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:51:01.674Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T16:51:02.963Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-11T16:52:33.449Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 90398,
+				"created_at": "2026-11-11T16:52:33.361Z"
+			}
+		],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "3c944384-ab53-4fdc-99bd-b591d960739b",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 100,
+		"head_branch": "agente/filtro-por-bairro",
+		"head_sha": "f90867f3c227167e733ce0935ea7e508ed27798a",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "testando_sandbox",
+		"received_at": "2026-11-11T16:54:00.000Z",
+		"created_at": "2026-11-11T16:54:00.120Z",
+		"updated_at": "2026-11-11T16:54:02.226Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:54:01.024Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T16:54:02.226Z"
+			}
+		],
+		"sandbox_results": [],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "44b8c976-e793-464b-ab3a-9c3bc2fb475f",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 9,
+		"head_branch": "agente/frete-gratis",
+		"head_sha": "35717319f5782be4f427c8fc6082dcd21221c2b8",
+		"author": "agente-frete[bot]",
+		"event_action": "synchronize",
+		"state": "testando_sandbox",
+		"received_at": "2026-11-11T16:56:00.000Z",
+		"created_at": "2026-11-11T16:56:00.122Z",
+		"updated_at": "2026-11-11T16:56:02.647Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:56:00.734Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T16:56:02.647Z"
+			}
+		],
+		"sandbox_results": [],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "ba237d01-997f-4400-af50-5404fec60aaf",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 220,
+		"head_branch": "agente/remove-campo-legado",
+		"head_sha": "b235bb8548f36a2e20ae75d4ea6d6a0d04409925",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "mapeando_contexto",
+		"received_at": "2026-11-11T16:58:00.000Z",
+		"created_at": "2026-11-11T16:58:00.156Z",
+		"updated_at": "2026-11-11T16:58:00.645Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:58:00.645Z"
+			}
+		],
+		"sandbox_results": [],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "7c6db893-5b74-41f8-ba88-ed46983e1ace",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 101,
+		"head_branch": "agente/corrige-fuso",
+		"head_sha": "e7389b87417da848e9779d1573a1f1138eb7d588",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "pendente",
+		"received_at": "2026-11-11T16:59:00.000Z",
+		"created_at": "2026-11-11T16:59:00.023Z",
+		"updated_at": "2026-11-11T16:59:00.023Z",
+		"steps": [],
+		"sandbox_results": [],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "12d8a1dd-9e1a-42ef-837c-71b13af91cfa",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 218,
+		"head_branch": "agente/log-estruturado",
+		"head_sha": "fc8fa90540b45c3960e0577d207ef6d52164f354",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "aplicando",
+		"received_at": "2026-11-11T16:38:00.000Z",
+		"created_at": "2026-11-11T16:38:00.147Z",
+		"updated_at": "2026-11-11T16:38:58.478Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-11T16:38:01.077Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-11T16:38:02.550Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-11T16:38:57.931Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-11-11T16:38:58.478Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 55165,
+				"created_at": "2026-11-11T16:38:57.715Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "4c9384a3-f126-4447-9fd4-82ab9eb236e9",
+		"approval": null
+	},
+	{
+		"id": "8d698334-f4d4-499a-89b3-079602394a52",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 216,
+		"head_branch": "agente/retry-webhook",
+		"head_sha": "fe7eb48ada399f8e15a49d5a6218635d2aafbaa1",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-11-10T15:00:00.000Z",
+		"created_at": "2026-11-10T15:00:00.122Z",
+		"updated_at": "2026-11-10T15:01:17.000Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-10T15:00:01.785Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-10T15:00:03.439Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-10T15:01:15.265Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-11-10T15:01:15.795Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-10T15:01:17.000Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 71688,
+				"created_at": "2026-11-10T15:01:15.127Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "aee875d0-37c8-4b4d-9126-49fd2a4ae6b8",
+		"approval": null
+	},
+	{
+		"id": "fb69c243-48ba-4834-9d73-12427d5e5ce3",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 98,
+		"head_branch": "agente/janela-de-entrega",
+		"head_sha": "3a50a6cd3bc2b55cc5a29521791bb9af456e3686",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-10T11:00:00.000Z",
+		"created_at": "2026-11-10T11:00:00.028Z",
+		"updated_at": "2026-11-10T11:00:48.338Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-10T11:00:00.895Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-10T11:00:03.103Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-10T11:00:45.143Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-11-10T11:00:45.937Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-10T11:00:48.338Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 41875,
+				"created_at": "2026-11-10T11:00:44.978Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "3c5d4f44-fd93-4862-899c-a6f02c230e21",
+		"approval": null
+	},
+	{
+		"id": "a8c2729e-e174-4b94-9bc6-f5c928abae7b",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 8,
+		"head_branch": "agente/frete-por-faixa",
+		"head_sha": "e2e5371a2dbf7f0be690419d9732b2f1bbfedca2",
+		"author": "agente-frete[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-09T12:00:00.000Z",
+		"created_at": "2026-11-09T12:00:00.091Z",
+		"updated_at": "2026-11-09T12:00:39.757Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-09T12:00:00.507Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-09T12:00:02.250Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-09T12:00:36.664Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-11-09T12:00:37.921Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-09T12:00:39.757Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 34334,
+				"created_at": "2026-11-09T12:00:36.584Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "4b132f41-074d-463b-955e-510473e3cf92",
+		"approval": null
+	},
+	{
+		"id": "ec7203ed-57c5-4b48-a0a2-7b4e3f911d5d",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 215,
+		"head_branch": "agente/sessao-expira",
+		"head_sha": "b58535cd428085b1f1f7b474b1b962d58a4751cb",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-08T16:00:00.000Z",
+		"created_at": "2026-11-08T16:00:00.090Z",
+		"updated_at": "2026-11-08T23:43:18.495Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-08T16:00:01.383Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-08T16:00:02.490Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-08T16:01:14.999Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-08T16:01:16.233Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por marina-tl via github",
+				"created_at": "2026-11-08T23:43:16.233Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-08T23:43:18.495Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 72311,
+				"created_at": "2026-11-08T16:01:14.801Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "area_sensivel: o PR altera um caminho sensível",
+			"rules_hit": [
+				{
+					"id": "area_sensivel",
+					"nivel": "alto",
+					"descricao": "o PR altera um caminho sensível",
+					"evidencias": [
+						"internal/auth/sessao.go",
+						"internal/auth/sessao_test.go"
+					]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "b212dc29-c818-49a3-a3fd-188e59afff88",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "marina-tl",
+			"origin": "github",
+			"feedback_reason": "falso_positivo",
+			"decided_at": "2026-11-08T23:43:13.827Z"
+		}
+	},
+	{
+		"id": "03ae759d-ab60-481f-ba7b-5cf1820a6e58",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 96,
+		"head_branch": "agente/pipeline-cache",
+		"head_sha": "427c9cd565f07ed034a3de12968ffb6036435f35",
+		"author": "agente-painel[bot]",
+		"event_action": "synchronize",
+		"state": "rejeitado",
+		"received_at": "2026-11-08T13:00:00.000Z",
+		"created_at": "2026-11-08T13:00:00.135Z",
+		"updated_at": "2026-11-08T20:04:48.147Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-08T13:00:01.353Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-08T13:00:03.404Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-08T13:00:47.753Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-08T13:00:48.147Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "rejeitado",
+				"detail": "alterações solicitadas por rafael-rev via slack",
+				"created_at": "2026-11-08T20:04:48.147Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 44170,
+				"created_at": "2026-11-08T13:00:47.574Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "configuracao_ci: o PR altera configuração de build ou de CI",
+			"rules_hit": [
+				{
+					"id": "configuracao_ci",
+					"nivel": "alto",
+					"descricao": "o PR altera configuração de build ou de CI",
+					"evidencias": [".github/workflows/ci.yml", "Dockerfile"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "998ce082-d85c-44e1-9f13-9328989f55b3",
+		"approval": {
+			"decision": "alteracoes_solicitadas",
+			"reviewer": "rafael-rev",
+			"origin": "slack",
+			"feedback_reason": null,
+			"decided_at": "2026-11-08T20:04:46.149Z"
+		}
+	},
+	{
+		"id": "84954a7a-b5be-4424-8f60-5351575f12ad",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 213,
+		"head_branch": "agente/boleto-vencido",
+		"head_sha": "63fd323e6a4848254c87127938676453e0e5661a",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-11-07T15:00:00.000Z",
+		"created_at": "2026-11-07T15:00:00.118Z",
+		"updated_at": "2026-11-07T20:59:19.657Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-07T15:00:00.689Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-07T15:00:02.276Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-07T15:01:17.854Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-07T15:01:18.360Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por httpslua via github",
+				"created_at": "2026-11-07T20:59:18.360Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-07T20:59:19.657Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 145,
+				"tests_failed": 4,
+				"failure_type": "teste",
+				"duration_ms": 75403,
+				"created_at": "2026-11-07T15:01:17.679Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "falha_sandbox: os testes ou a compilação falharam no sandbox\ncodigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "falha_sandbox",
+					"nivel": "alto",
+					"descricao": "os testes ou a compilação falharam no sandbox",
+					"evidencias": ["4 de 149 testes falharam"]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/boleto.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "7a7b6f9b-cf49-42ad-9cfc-d3ef987ae0f1",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "httpslua",
+			"origin": "github",
+			"feedback_reason": "risco_aceito",
+			"decided_at": "2026-11-07T20:59:16.002Z"
+		}
+	},
+	{
+		"id": "20606d91-5f5e-4695-bd47-4b40f156c991",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 7,
+		"head_branch": "agente/peso-negativo",
+		"head_sha": "f6a6d53af6f230b4cc323ea7c087310a8fde4b1c",
+		"author": "agente-frete[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-06T14:00:00.000Z",
+		"created_at": "2026-11-06T14:00:00.100Z",
+		"updated_at": "2026-11-06T14:00:44.300Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-06T14:00:00.758Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-06T14:00:01.809Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-06T14:00:41.171Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-11-06T14:00:41.972Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-06T14:00:44.300Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 39286,
+				"created_at": "2026-11-06T14:00:41.095Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "e090e2ef-04a0-42bb-905b-24f679644fa2",
+		"approval": null
+	},
+	{
+		"id": "8fc5c76f-60c4-4f71-a323-eebaf73f0af9",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 95,
+		"head_branch": "agente/mapa-de-calor",
+		"head_sha": "c93d9644ba106e58ea9b346e9b4089ec433510de",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "falhou",
+		"received_at": "2026-11-06T10:00:00.000Z",
+		"created_at": "2026-11-06T10:00:00.128Z",
+		"updated_at": "2026-11-06T10:04:38.231Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-06T10:00:00.635Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-06T10:00:01.833Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "falhou",
+				"detail": "tentativas esgotadas em testando_sandbox: aprova: o job do sandbox não publicou resultado",
+				"created_at": "2026-11-06T10:04:38.231Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 67369,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-11-06T10:01:09.202Z"
+			},
+			{
+				"attempt": 2,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 42305,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-11-06T10:02:21.507Z"
+			},
+			{
+				"attempt": 3,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 76724,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-11-06T10:04:38.231Z"
+			}
+		],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "4bdfd1e1-fa02-4bec-8c8b-d6bf461789c6",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 212,
+		"head_branch": "agente/multa-diaria",
+		"head_sha": "c688878ea2adcdcacbc24055034e8e24992267c1",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-05T16:00:00.000Z",
+		"created_at": "2026-11-05T16:00:00.101Z",
+		"updated_at": "2026-11-05T16:01:19.515Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-05T16:00:01.782Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-05T16:00:03.528Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-05T16:01:16.455Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-11-05T16:01:17.374Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-05T16:01:19.515Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 72737,
+				"created_at": "2026-11-05T16:01:16.265Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "302be0a2-7ccb-4eea-a6e3-53fd8f327073",
+		"approval": null
+	},
+	{
+		"id": "6ebe77cc-3151-4bbf-a7f4-b4532d7e5dca",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 211,
+		"head_branch": "agente/credenciais-homologacao",
+		"head_sha": "99565b12b27852f93d34aa9a51adf4732330ea3d",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "rejeitado",
+		"received_at": "2026-11-04T12:00:00.000Z",
+		"created_at": "2026-11-04T12:00:00.141Z",
+		"updated_at": "2026-11-04T16:14:25.272Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-04T12:00:01.329Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-04T12:00:02.687Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-04T12:01:24.559Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-04T12:01:25.272Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "rejeitado",
+				"detail": "alterações solicitadas por marina-tl via github",
+				"created_at": "2026-11-04T16:14:25.272Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 81715,
+				"created_at": "2026-11-04T12:01:24.402Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "configuracao_ci: o PR altera configuração de build ou de CI\nsegredo_versionado: o PR versiona um arquivo que costuma guardar segredo",
+			"rules_hit": [
+				{
+					"id": "configuracao_ci",
+					"nivel": "alto",
+					"descricao": "o PR altera configuração de build ou de CI",
+					"evidencias": ["docker-compose.yml"]
+				},
+				{
+					"id": "segredo_versionado",
+					"nivel": "alto",
+					"descricao": "o PR versiona um arquivo que costuma guardar segredo",
+					"evidencias": [".env.producao"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "66b323c1-b4fe-4bf5-942a-819c9512fd73",
+		"approval": {
+			"decision": "alteracoes_solicitadas",
+			"reviewer": "marina-tl",
+			"origin": "github",
+			"feedback_reason": null,
+			"decided_at": "2026-11-04T16:14:24.494Z"
+		}
+	},
+	{
+		"id": "8a8e36b2-b2e7-4f68-886c-54a5817ddd9d",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 94,
+		"head_branch": "agente/ordenacao-rotas",
+		"head_sha": "72679a3e7551d3116ab729cc67233507f9f8ef63",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-11-03T15:00:00.000Z",
+		"created_at": "2026-11-03T15:00:00.081Z",
+		"updated_at": "2026-11-03T15:00:37.040Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-03T15:00:01.184Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-03T15:00:02.384Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-03T15:00:34.861Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-11-03T15:00:35.967Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-03T15:00:37.040Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 32365,
+				"created_at": "2026-11-03T15:00:34.749Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "3d8a2619-4edf-4a8f-913e-e598ac4f525f",
+		"approval": null
+	},
+	{
+		"id": "11d818bd-a000-4805-aebc-a780bd29f03f",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 6,
+		"head_branch": "agente/taxa-distancia",
+		"head_sha": "8945117e3383e5f72a254357c2a93c2277e0c8a4",
+		"author": "agente-frete[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-11-03T11:00:00.000Z",
+		"created_at": "2026-11-03T11:00:00.129Z",
+		"updated_at": "2026-11-03T18:40:46.284Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-03T11:00:01.006Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-03T11:00:02.563Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-03T11:00:43.145Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-03T11:00:44.501Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por marina-tl via slack",
+				"created_at": "2026-11-03T18:40:44.501Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-03T18:40:46.284Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"failure_type": "compilacao",
+				"duration_ms": 40342,
+				"created_at": "2026-11-03T11:00:42.905Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "falha_sandbox: os testes ou a compilação falharam no sandbox",
+			"rules_hit": [
+				{
+					"id": "falha_sandbox",
+					"nivel": "alto",
+					"descricao": "os testes ou a compilação falharam no sandbox",
+					"evidencias": ["o projeto não compilou"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "304d85ea-dddd-4722-a547-8dc63c2062bb",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "marina-tl",
+			"origin": "slack",
+			"feedback_reason": "risco_aceito",
+			"decided_at": "2026-11-03T18:40:43.886Z"
+		}
+	},
+	{
+		"id": "763c2ec6-6cac-4988-861c-950be3c5835b",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 210,
+		"head_branch": "agente/cliente-http",
+		"head_sha": "407ce393fe30e763cac1bf02ba72522b5c687be0",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-11-02T14:00:00.000Z",
+		"created_at": "2026-11-02T14:00:00.089Z",
+		"updated_at": "2026-11-02T15:15:40.029Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-02T14:00:01.213Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-02T14:00:02.699Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-02T14:01:37.530Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-11-02T14:01:38.690Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por rafael-rev via slack",
+				"created_at": "2026-11-02T15:15:38.690Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-02T15:15:40.029Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 94689,
+				"created_at": "2026-11-02T14:01:37.388Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "dependencia_nova: o PR acrescenta dependência nova, que precisa de revisão humana",
+			"rules_hit": [
+				{
+					"id": "dependencia_nova",
+					"nivel": "alto",
+					"descricao": "o PR acrescenta dependência nova, que precisa de revisão humana",
+					"evidencias": ["go.mod"]
+				}
+			],
+			"new_dependencies": [
+				{
+					"ecossistema": "Go",
+					"nome": "github.com/shopspring/decimal",
+					"versao": "v1.4.0"
+				}
+			]
+		},
+		"receipt_id": "f7d8e595-d7ce-4fa9-ba0e-9c5483c5a4d1",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "rafael-rev",
+			"origin": "slack",
+			"feedback_reason": "risco_aceito",
+			"decided_at": "2026-11-02T15:15:36.749Z"
+		}
+	},
+	{
+		"id": "6e1e52e0-cdc2-4538-b458-0b5bb36faa33",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 93,
+		"head_branch": "agente/tela-motorista",
+		"head_sha": "727e18e3ec9e93b6497093692a0588b3ba91a397",
+		"author": "agente-painel[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-11-01T13:00:00.000Z",
+		"created_at": "2026-11-01T13:00:00.082Z",
+		"updated_at": "2026-11-01T13:00:44.802Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-11-01T13:00:00.625Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-11-01T13:00:01.818Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-11-01T13:00:42.029Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-11-01T13:00:42.817Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-11-01T13:00:44.802Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 40019,
+				"created_at": "2026-11-01T13:00:41.837Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "b10d014e-172d-4e64-8986-fe121df9741b",
+		"approval": null
+	},
+	{
+		"id": "032cf465-b6d5-4bd8-a473-da99993e1de1",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 209,
+		"head_branch": "agente/estorno-parcial",
+		"head_sha": "bc4794da5bc08e5c4a926f93d1395ce3cd84881b",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "falhou",
+		"received_at": "2026-10-31T15:00:00.000Z",
+		"created_at": "2026-10-31T15:00:00.081Z",
+		"updated_at": "2026-10-31T15:00:11.676Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-31T15:00:01.141Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-31T15:00:03.297Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "falhou",
+				"detail": "substituído por commit mais novo",
+				"created_at": "2026-10-31T15:00:11.676Z"
+			}
+		],
+		"sandbox_results": [],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "27b608e9-4aa8-4972-bbd6-e9d65075ed60",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 209,
+		"head_branch": "agente/estorno-parcial",
+		"head_sha": "b9c0c688906b5d18c62960343c93d310654f21ad",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-31T16:00:00.000Z",
+		"created_at": "2026-10-31T16:00:00.144Z",
+		"updated_at": "2026-10-31T16:01:31.694Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-31T16:00:00.654Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-31T16:00:02.322Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-31T16:01:29.376Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-31T16:01:29.690Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-31T16:01:31.694Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 86905,
+				"created_at": "2026-10-31T16:01:29.227Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "578a693a-20a6-441c-baa3-a5d106795cd8",
+		"approval": null
+	},
+	{
+		"id": "6263d05a-3a34-4a19-bc16-c496d1ac01f2",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 92,
+		"head_branch": "agente/pom-relatorios",
+		"head_sha": "a0ca3023f88b56e9edf8597c83f74663224c2569",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "rejeitado",
+		"received_at": "2026-10-30T12:00:00.000Z",
+		"created_at": "2026-10-30T12:00:00.034Z",
+		"updated_at": "2026-10-30T13:26:47.131Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-30T12:00:00.579Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-30T12:00:01.713Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-30T12:00:45.796Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-10-30T12:00:47.131Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "rejeitado",
+				"detail": "alterações solicitadas por httpslua via slack",
+				"created_at": "2026-10-30T13:26:47.131Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 43981,
+				"created_at": "2026-10-30T12:00:45.694Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "dependencia_nova: o PR acrescenta dependência nova, que precisa de revisão humana",
+			"rules_hit": [
+				{
+					"id": "dependencia_nova",
+					"nivel": "alto",
+					"descricao": "o PR acrescenta dependência nova, que precisa de revisão humana",
+					"evidencias": ["pom.xml: não foi possível ler o diff"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "c36b1396-79a4-4509-8236-9f778b9b8cd6",
+		"approval": {
+			"decision": "alteracoes_solicitadas",
+			"reviewer": "httpslua",
+			"origin": "slack",
+			"feedback_reason": null,
+			"decided_at": "2026-10-30T13:26:44.352Z"
+		}
+	},
+	{
+		"id": "b6f87168-e03a-46d1-a400-f1991fec8fd3",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 5,
+		"head_branch": "agente/frete-internacional",
+		"head_sha": "48380e3f547fc8b154118414f919e9a266feef1b",
+		"author": "agente-frete[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-29T14:00:00.000Z",
+		"created_at": "2026-10-29T14:00:00.058Z",
+		"updated_at": "2026-10-29T14:00:42.858Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-29T14:00:01.625Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-29T14:00:02.973Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-29T14:00:39.931Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-29T14:00:41.235Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-29T14:00:42.858Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 36876,
+				"created_at": "2026-10-29T14:00:39.849Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "03138753-d9d7-4f33-9f13-5547c774f31b",
+		"approval": null
+	},
+	{
+		"id": "85d07204-267f-4a1e-8acb-fefcb2c786e7",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 208,
+		"head_branch": "agente/conciliacao",
+		"head_sha": "2370deeff047ef7b72e5da586cf4298b5f8ad43d",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-28T11:00:00.000Z",
+		"created_at": "2026-10-28T11:00:00.086Z",
+		"updated_at": "2026-10-28T11:01:13.273Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-28T11:00:01.043Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-28T11:00:02.211Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-28T11:01:10.957Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-28T11:01:11.494Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-28T11:01:13.273Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 68612,
+				"created_at": "2026-10-28T11:01:10.823Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "98dd13ec-6eec-4301-bc9a-723d2a3ed817",
+		"approval": null
+	},
+	{
+		"id": "c1986a81-2dbd-4876-a941-6a0ad7238085",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 91,
+		"head_branch": "agente/cache-enderecos",
+		"head_sha": "a24bf46ea62b5c7d02234746b1440b42d8df6430",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "falhou",
+		"received_at": "2026-10-27T15:00:00.000Z",
+		"created_at": "2026-10-27T15:00:00.119Z",
+		"updated_at": "2026-10-27T15:04:49.120Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-27T15:00:01.686Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-27T15:00:03.606Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "falhou",
+				"detail": "tentativas esgotadas em testando_sandbox: aprova: o job do sandbox não publicou resultado",
+				"created_at": "2026-10-27T15:04:49.120Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 64539,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-27T15:01:08.145Z"
+			},
+			{
+				"attempt": 2,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 62091,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-27T15:02:40.236Z"
+			},
+			{
+				"attempt": 3,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 68884,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-27T15:04:49.120Z"
+			}
+		],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "a215dd00-8f0b-4d6b-8509-a1169737ec77",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 207,
+		"head_branch": "agente/indice-vencimento",
+		"head_sha": "34ba0b6e3d6c8cc85d081a031858c75c2d445c60",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-10-26T13:00:00.000Z",
+		"created_at": "2026-10-26T13:00:00.049Z",
+		"updated_at": "2026-10-26T14:51:04.840Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-26T13:00:00.824Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-26T13:00:02.539Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-26T13:01:02.170Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-10-26T13:01:03.028Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por rafael-rev via github",
+				"created_at": "2026-10-26T14:51:03.028Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-26T14:51:04.840Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 59427,
+				"created_at": "2026-10-26T13:01:01.966Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "area_sensivel: o PR altera um caminho sensível\ncodigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "area_sensivel",
+					"nivel": "alto",
+					"descricao": "o PR altera um caminho sensível",
+					"evidencias": [
+						"migrations/000031_parcelas.down.sql",
+						"migrations/000031_parcelas.up.sql"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/parcela.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "48e99b9a-0762-482b-aee0-d1d5a6f9a936",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "rafael-rev",
+			"origin": "github",
+			"feedback_reason": "risco_aceito",
+			"decided_at": "2026-10-26T14:51:01.041Z"
+		}
+	},
+	{
+		"id": "0f0e452f-8430-4274-9074-8e411745b796",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 90,
+		"head_branch": "agente/notificacao-atraso",
+		"head_sha": "05b9b7d0d37730f4ff79208571f67a3d062e647f",
+		"author": "agente-painel[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-10-25T16:00:00.000Z",
+		"created_at": "2026-10-25T16:00:00.133Z",
+		"updated_at": "2026-10-25T16:00:37.590Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-25T16:00:00.555Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-25T16:00:02.297Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-25T16:00:34.799Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-25T16:00:35.269Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-25T16:00:37.590Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 32419,
+				"created_at": "2026-10-25T16:00:34.716Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "151d48e6-4718-444b-bd77-61c441c8d0ba",
+		"approval": null
+	},
+	{
+		"id": "0f0854af-2cde-485e-9051-f2578eb78aaf",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 4,
+		"head_branch": "agente/desconto-volume",
+		"head_sha": "7e564d0a6d82a68a6c4b8e96a85b4bfb884886d5",
+		"author": "agente-frete[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-24T12:00:00.000Z",
+		"created_at": "2026-10-24T12:00:00.068Z",
+		"updated_at": "2026-10-24T12:00:50.947Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-24T12:00:01.496Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-24T12:00:02.658Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-24T12:00:49.035Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-10-24T12:00:49.787Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-24T12:00:50.947Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 46275,
+				"created_at": "2026-10-24T12:00:48.933Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "298475ca-58a3-4b86-bac0-11d2a3268933",
+		"approval": null
+	},
+	{
+		"id": "6fb2e4bf-3f12-4bbc-8107-9b957edf61f6",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 206,
+		"head_branch": "agente/dockerfile-distroless",
+		"head_sha": "6ec69ac00bfeff97476dd9b93444890285f90fbb",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-22T14:00:00.000Z",
+		"created_at": "2026-10-22T14:00:00.048Z",
+		"updated_at": "2026-10-22T20:44:04.311Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-22T14:00:00.616Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-22T14:00:02.414Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-22T14:01:01.700Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-10-22T14:01:02.453Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por rafael-rev via slack",
+				"created_at": "2026-10-22T20:44:02.453Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-22T20:44:04.311Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 59122,
+				"created_at": "2026-10-22T14:01:01.536Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "configuracao_ci: o PR altera configuração de build ou de CI",
+			"rules_hit": [
+				{
+					"id": "configuracao_ci",
+					"nivel": "alto",
+					"descricao": "o PR altera configuração de build ou de CI",
+					"evidencias": [".github/workflows/ci.yml", "Dockerfile"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "73e873df-fe92-439b-b602-7ec7449f5319",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "rafael-rev",
+			"origin": "slack",
+			"feedback_reason": "falso_positivo",
+			"decided_at": "2026-10-22T20:44:00.965Z"
+		}
+	},
+	{
+		"id": "76423658-858c-408f-876f-2214cf49204f",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 89,
+		"head_branch": "agente/exporta-csv",
+		"head_sha": "d1a9989d63d939fb6776e72423408870eec80861",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-21T15:00:00.000Z",
+		"created_at": "2026-10-21T15:00:00.061Z",
+		"updated_at": "2026-10-21T15:00:52.652Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-21T15:00:01.884Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-21T15:00:03.224Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-21T15:00:50.052Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-21T15:00:50.584Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-21T15:00:52.652Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 46639,
+				"created_at": "2026-10-21T15:00:49.863Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "c7859b52-c74a-4cb6-a895-a87b76e73d58",
+		"approval": null
+	},
+	{
+		"id": "8344ee4f-77c4-481a-9c8f-c0982dfaddc7",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 205,
+		"head_branch": "agente/pix-copia-cola",
+		"head_sha": "c4bf62ad36d8798fd6e69edef366101c3141b472",
+		"author": "agente-cobranca[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-19T11:00:00.000Z",
+		"created_at": "2026-10-19T11:00:00.115Z",
+		"updated_at": "2026-10-19T11:01:11.566Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-19T11:00:01.462Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-19T11:00:03.694Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-19T11:01:08.037Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-19T11:01:08.968Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-19T11:01:11.566Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 148,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 64130,
+				"created_at": "2026-10-19T11:01:07.824Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "91f4e427-3560-4586-b59d-4d8bfb131099",
+		"approval": null
+	},
+	{
+		"id": "c23b1ff9-f95b-466c-b56e-d438bf4498ff",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 88,
+		"head_branch": "agente/agrupa-paradas",
+		"head_sha": "a4b343a743ff774040f739826af5030472b7b0dc",
+		"author": "agente-painel[bot]",
+		"event_action": "opened",
+		"state": "concluido",
+		"received_at": "2026-10-18T13:00:00.000Z",
+		"created_at": "2026-10-18T13:00:00.083Z",
+		"updated_at": "2026-10-18T19:02:51.834Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-18T13:00:01.214Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-18T13:00:02.435Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-18T13:00:48.738Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aguardando_aprovacao",
+				"detail": "risco alto",
+				"created_at": "2026-10-18T13:00:49.377Z"
+			},
+			{
+				"from_state": "aguardando_aprovacao",
+				"to_state": "aplicando",
+				"detail": "aprovado por marina-tl via slack",
+				"created_at": "2026-10-18T19:02:49.377Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-18T19:02:51.834Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 1,
+				"failure_type": "teste",
+				"duration_ms": 46152,
+				"created_at": "2026-10-18T13:00:48.587Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "alto",
+			"level": "alto",
+			"reason": "falha_sandbox: os testes ou a compilação falharam no sandbox",
+			"rules_hit": [
+				{
+					"id": "falha_sandbox",
+					"nivel": "alto",
+					"descricao": "os testes ou a compilação falharam no sandbox",
+					"evidencias": ["1 de 64 testes falharam"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "175007d7-1a04-4a43-b4e5-22ffb10badfe",
+		"approval": {
+			"decision": "aprovada",
+			"reviewer": "marina-tl",
+			"origin": "slack",
+			"feedback_reason": "regra_conservadora",
+			"decided_at": "2026-10-18T19:02:47.160Z"
+		}
+	},
+	{
+		"id": "cadb978e-89c8-4507-9d60-fc50f8c894ae",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/aPRova-TESTES",
+		"pr_number": 3,
+		"head_branch": "agente/arredonda-centavos",
+		"head_sha": "a3b03e0b221084b48be542efe1a1f69dde2a48be",
+		"author": "agente-frete[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-10-16T15:00:00.000Z",
+		"created_at": "2026-10-16T15:00:00.172Z",
+		"updated_at": "2026-10-16T15:00:52.523Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-16T15:00:01.416Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-16T15:00:03.435Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-16T15:00:49.139Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco baixo",
+				"created_at": "2026-10-16T15:00:50.344Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-16T15:00:52.523Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 10,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 45577,
+				"created_at": "2026-10-16T15:00:49.012Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "baixo",
+			"level": "baixo",
+			"reason": "nenhuma regra acionada",
+			"rules_hit": [],
+			"new_dependencies": []
+		},
+		"receipt_id": "5956acb7-40d7-4427-a8a5-643c1510b4d0",
+		"approval": null
+	},
+	{
+		"id": "902901bb-2029-4099-9fe3-25ade02f2404",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/cobranca-api",
+		"pr_number": 204,
+		"head_branch": "agente/juros-pro-rata",
+		"head_sha": "7586fa86e13a97c6a3c468795b7ecdce0d0f7db1",
+		"author": "agente-cobranca[bot]",
+		"event_action": "synchronize",
+		"state": "falhou",
+		"received_at": "2026-10-15T12:00:00.000Z",
+		"created_at": "2026-10-15T12:00:00.151Z",
+		"updated_at": "2026-10-15T12:04:10.896Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-15T12:00:01.004Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-15T12:00:02.680Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "falhou",
+				"detail": "tentativas esgotadas em testando_sandbox: aprova: o job do sandbox não publicou resultado",
+				"created_at": "2026-10-15T12:04:10.896Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 61437,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-15T12:01:04.117Z"
+			},
+			{
+				"attempt": 2,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 47183,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-15T12:02:21.300Z"
+			},
+			{
+				"attempt": 3,
+				"compiled": false,
+				"tests_passed": 0,
+				"tests_failed": 0,
+				"duration_ms": 49596,
+				"failure_type": "infraestrutura",
+				"created_at": "2026-10-15T12:04:10.896Z"
+			}
+		],
+		"risk_gate": null,
+		"receipt_id": null,
+		"approval": null
+	},
+	{
+		"id": "79e23c90-bb19-4b72-b638-34a649404568",
+		"tenant_id": 58291734,
+		"repository": "Azulpasta/painel-entregas",
+		"pr_number": 87,
+		"head_branch": "agente/tema-impressao",
+		"head_sha": "04bcf0f450f649268a745a825011c00080f9cacd",
+		"author": "agente-painel[bot]",
+		"event_action": "synchronize",
+		"state": "concluido",
+		"received_at": "2026-10-13T16:00:00.000Z",
+		"created_at": "2026-10-13T16:00:00.039Z",
+		"updated_at": "2026-10-13T16:00:40.620Z",
+		"steps": [
+			{
+				"from_state": "pendente",
+				"to_state": "mapeando_contexto",
+				"detail": "",
+				"created_at": "2026-10-13T16:00:01.105Z"
+			},
+			{
+				"from_state": "mapeando_contexto",
+				"to_state": "testando_sandbox",
+				"detail": "",
+				"created_at": "2026-10-13T16:00:02.928Z"
+			},
+			{
+				"from_state": "testando_sandbox",
+				"to_state": "avaliando_risco",
+				"detail": "",
+				"created_at": "2026-10-13T16:00:37.375Z"
+			},
+			{
+				"from_state": "avaliando_risco",
+				"to_state": "aplicando",
+				"detail": "risco medio",
+				"created_at": "2026-10-13T16:00:38.518Z"
+			},
+			{
+				"from_state": "aplicando",
+				"to_state": "concluido",
+				"detail": "resultado publicado",
+				"created_at": "2026-10-13T16:00:40.620Z"
+			}
+		],
+		"sandbox_results": [
+			{
+				"attempt": 1,
+				"compiled": true,
+				"tests_passed": 63,
+				"tests_failed": 0,
+				"failure_type": "nenhuma",
+				"duration_ms": 34362,
+				"created_at": "2026-10-13T16:00:37.290Z"
+			}
+		],
+		"risk_gate": {
+			"deterministic_level": "medio",
+			"level": "medio",
+			"reason": "codigo_sem_teste: o PR altera código sem alterar nenhum teste",
+			"rules_hit": [
+				{
+					"id": "codigo_sem_teste",
+					"nivel": "medio",
+					"descricao": "o PR altera código sem alterar nenhum teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"new_dependencies": []
+		},
+		"receipt_id": "948ed06c-88aa-41fa-ab10-7d38bb2248c5",
+		"approval": null
+	}
+]

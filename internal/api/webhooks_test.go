@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 const segredoDeTeste = "segredo-de-teste"
@@ -19,6 +19,7 @@ type registroFalso struct {
 	execucoes      map[string]domain.EventoPullRequest
 	porEntrega     map[string]string
 	revisoes       []domain.DecisaoDeReview
+	fechamentos    []domain.FechamentoDePR
 	semTaskRunNoPR bool
 }
 
@@ -46,6 +47,11 @@ func (r *registroFalso) RegistrarRevisao(_ context.Context, decisao domain.Decis
 		return domain.ErrNaoEncontrado
 	}
 	r.revisoes = append(r.revisoes, decisao)
+	return nil
+}
+
+func (r *registroFalso) RegistrarFechamento(_ context.Context, fechamento domain.FechamentoDePR) error {
+	r.fechamentos = append(r.fechamentos, fechamento)
 	return nil
 }
 
@@ -91,7 +97,7 @@ func enviarWebhook(t *testing.T, registro *registroFalso, e entrega) *httptest.R
 func corpoPullRequest(acao string) string {
 	return `{"action":"` + acao + `","number":42,` +
 		`"pull_request":{"head":{"sha":"abc123"},"user":{"login":"alice"}},` +
-		`"repository":{"full_name":"Azulpasta/aPRova"},"installation":{"id":777}}`
+		`"repository":{"full_name":"PI-GRUPO/aPRova"},"installation":{"id":777}}`
 }
 
 func entregaValida(evento, deliveryID, corpo string) entrega {
@@ -155,9 +161,9 @@ func (r *registroFalso) quantidadeDeRevisoes() int {
 
 func corpoReview(estado string) string {
 	return `{"action":"submitted",` +
-		`"review":{"state":"` + estado + `","user":{"login":"bob"}},` +
+		`"review":{"state":"` + estado + `","user":{"login":"bob"},"commit_id":"6be930afc83bb7213d3d4e111f2c6eb7fd008a42"},` +
 		`"pull_request":{"number":42,"head":{"sha":"abc123"}},` +
-		`"repository":{"full_name":"Azulpasta/aPRova"},"installation":{"id":777}}`
+		`"repository":{"full_name":"PI-GRUPO/aPRova"},"installation":{"id":777}}`
 }
 
 func TestWebhookIgnoraTipoDeEventoNaoTratado(t *testing.T) {
@@ -305,5 +311,15 @@ func TestWebhookIgnoraRevisaoDePullRequestSemTaskRun(t *testing.T) {
 
 	if resposta.Code != http.StatusNoContent {
 		t.Errorf("revisão de PR que o aPRova não analisou deve responder 204, obtive %d", resposta.Code)
+	}
+}
+
+func TestWebhookDeRevisaoRepassaOCommitRevisado(t *testing.T) {
+	registro := novoRegistroFalso()
+
+	enviarWebhook(t, registro, entregaValida("pull_request_review", "entrega-commit-revisado", corpoReview("approved")))
+
+	if len(registro.revisoes) != 1 || registro.revisoes[0].CommitSHA != "6be930afc83bb7213d3d4e111f2c6eb7fd008a42" {
+		t.Errorf("a revisão chega com o commit que foi revisado: %+v", registro.revisoes)
 	}
 }

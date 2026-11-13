@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
 )
 
 func TestLogDoSaldoDeRequisicoesLevaOsAtributosDoContexto(t *testing.T) {

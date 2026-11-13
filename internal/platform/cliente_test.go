@@ -60,7 +60,7 @@ func TestPermissaoNoRepositorioConsultaOEndpointDeColaboradorComOTokenDaInstalac
 	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"permission":"write","role_name":"write"}`)
 	tokens := &fornecedorDeTokenFalso{}
 
-	permissao, err := clienteContra(servidor, tokens).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+	permissao, err := clienteContra(servidor, tokens).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 	if err != nil {
 		t.Fatalf("consulta não deveria falhar: %v", err)
@@ -68,7 +68,7 @@ func TestPermissaoNoRepositorioConsultaOEndpointDeColaboradorComOTokenDaInstalac
 	if permissao != PermissaoWrite {
 		t.Errorf("permissão = %q, esperava write", permissao)
 	}
-	if recebida.metodo != http.MethodGet || recebida.caminho != "/repos/Azulpasta/aPRova/collaborators/erin/permission" {
+	if recebida.metodo != http.MethodGet || recebida.caminho != "/repos/PI-GRUPO/aPRova/collaborators/erin/permission" {
 		t.Errorf("chamada errada: %s %s", recebida.metodo, recebida.caminho)
 	}
 	if recebida.autorizacao != "Bearer "+tokenDeInstalacaoDeTeste || recebida.versaoDaAPI != "2022-11-28" {
@@ -98,7 +98,7 @@ func TestPermissaoNoRepositorioUsaOPapelDetalhado(t *testing.T) {
 		t.Run(caso.resposta, func(t *testing.T) {
 			servidor, _ := servidorDaAPIQueResponde(t, http.StatusOK, caso.resposta)
 
-			permissao, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+			permissao, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 			if err != nil || permissao != caso.esperada {
 				t.Errorf("obtive %q e %v, esperava %q", permissao, err, caso.esperada)
@@ -110,7 +110,7 @@ func TestPermissaoNoRepositorioUsaOPapelDetalhado(t *testing.T) {
 func TestPermissaoNoRepositorioFalhaComPapelQueNaoReconhece(t *testing.T) {
 	servidor, _ := servidorDaAPIQueResponde(t, http.StatusOK, `{"permission":"superuser","role_name":"superuser"}`)
 
-	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 	if !errors.Is(err, ErrPermissaoDesconhecida) {
 		t.Errorf("papel desconhecido não pode virar permissão, obtive %v", err)
@@ -125,7 +125,7 @@ func TestPermissaoNoRepositorioDevolveErroEmRespostaQueNaoEhSucesso(t *testing.T
 		{http.StatusNotFound, ErrNaoEncontrado},
 		{http.StatusInternalServerError, ErrGitHubIndisponivel},
 		{http.StatusBadGateway, ErrGitHubIndisponivel},
-		{http.StatusForbidden, ErrRespostaInesperada},
+		{http.StatusForbidden, ErrSemPermissao},
 		{http.StatusUnauthorized, ErrRespostaInesperada},
 	}
 
@@ -133,7 +133,7 @@ func TestPermissaoNoRepositorioDevolveErroEmRespostaQueNaoEhSucesso(t *testing.T
 		t.Run(http.StatusText(caso.status), func(t *testing.T) {
 			servidor, _ := servidorDaAPIQueResponde(t, caso.status, `{"permission":"admin","role_name":"admin"}`)
 
-			permissao, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+			permissao, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 			if !errors.Is(err, caso.esperado) {
 				t.Errorf("esperava %v, obtive %v", caso.esperado, err)
@@ -148,7 +148,7 @@ func TestPermissaoNoRepositorioDevolveErroEmRespostaQueNaoEhSucesso(t *testing.T
 func TestPermissaoNoRepositorioFalhaComCorpoQueNaoEhJSON(t *testing.T) {
 	servidor, _ := servidorDaAPIQueResponde(t, http.StatusOK, `<html>manutenção</html>`)
 
-	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 	if err == nil {
 		t.Error("corpo ilegível não pode ser tratado como permissão")
@@ -159,7 +159,7 @@ func TestPermissaoNoRepositorioNaoChamaOGitHubSemToken(t *testing.T) {
 	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"permission":"admin","role_name":"admin"}`)
 	tokens := &fornecedorDeTokenFalso{erro: ErrAppNaoInstalado}
 
-	_, err := clienteContra(servidor, tokens).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "erin")
+	_, err := clienteContra(servidor, tokens).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "erin")
 
 	if !errors.Is(err, ErrAppNaoInstalado) {
 		t.Errorf("a falha do token precisa chegar a quem chamou, obtive %v", err)
@@ -172,9 +172,9 @@ func TestPermissaoNoRepositorioNaoChamaOGitHubSemToken(t *testing.T) {
 func TestPermissaoNoRepositorioEscapaOLoginNoCaminho(t *testing.T) {
 	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"permission":"read","role_name":"read"}`)
 
-	_, _ = clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "Azulpasta", "aPRova", "../../../user")
+	_, _ = clienteContra(servidor, &fornecedorDeTokenFalso{}).PermissaoNoRepositorio(t.Context(), 7001, "PI-GRUPO", "aPRova", "../../../user")
 
-	if recebida.caminho != "/repos/Azulpasta/aPRova/collaborators/..%2F..%2F..%2Fuser/permission" {
+	if recebida.caminho != "/repos/PI-GRUPO/aPRova/collaborators/..%2F..%2F..%2Fuser/permission" {
 		t.Errorf("o login não pode mudar o endpoint chamado, caminho: %s", recebida.caminho)
 	}
 }
@@ -182,12 +182,12 @@ func TestPermissaoNoRepositorioEscapaOLoginNoCaminho(t *testing.T) {
 func TestAutorDoPullRequestDevolveOLoginDeQuemAbriu(t *testing.T) {
 	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"number":42,"user":{"login":"carol"}}`)
 
-	autor, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "Azulpasta", "aPRova", 42)
+	autor, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "PI-GRUPO", "aPRova", 42)
 
 	if err != nil || autor != "carol" {
 		t.Fatalf("esperava carol, obtive %q e %v", autor, err)
 	}
-	if recebida.metodo != http.MethodGet || recebida.caminho != "/repos/Azulpasta/aPRova/pulls/42" {
+	if recebida.metodo != http.MethodGet || recebida.caminho != "/repos/PI-GRUPO/aPRova/pulls/42" {
 		t.Errorf("chamada errada: %s %s", recebida.metodo, recebida.caminho)
 	}
 }
@@ -195,7 +195,7 @@ func TestAutorDoPullRequestDevolveOLoginDeQuemAbriu(t *testing.T) {
 func TestAutorDoPullRequestFalhaSemLogin(t *testing.T) {
 	servidor, _ := servidorDaAPIQueResponde(t, http.StatusOK, `{"number":42,"user":null}`)
 
-	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "Azulpasta", "aPRova", 42)
+	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "PI-GRUPO", "aPRova", 42)
 
 	if err == nil {
 		t.Error("PR sem autor identificável não pode passar pela regra de autoria")
@@ -205,7 +205,7 @@ func TestAutorDoPullRequestFalhaSemLogin(t *testing.T) {
 func TestAutorDoPullRequestDevolveErroQuandoOPRNaoExiste(t *testing.T) {
 	servidor, _ := servidorDaAPIQueResponde(t, http.StatusNotFound, `{"message":"Not Found"}`)
 
-	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "Azulpasta", "aPRova", 42)
+	_, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).AutorDoPullRequest(t.Context(), 7001, "PI-GRUPO", "aPRova", 42)
 
 	if !errors.Is(err, ErrNaoEncontrado) {
 		t.Errorf("esperava ErrNaoEncontrado, obtive %v", err)
@@ -215,7 +215,7 @@ func TestAutorDoPullRequestDevolveErroQuandoOPRNaoExiste(t *testing.T) {
 func TestEnviarReviewPublicaOEventoEOCorpo(t *testing.T) {
 	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"id":1}`)
 
-	err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarReview(t.Context(), 7001, "Azulpasta", "aPRova", 42, Review{
+	err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarReview(t.Context(), 7001, "PI-GRUPO", "aPRova", 42, Review{
 		Evento: EventoAprovar,
 		Corpo:  "Aprovado por @erin via Slack",
 	})
@@ -223,7 +223,7 @@ func TestEnviarReviewPublicaOEventoEOCorpo(t *testing.T) {
 	if err != nil {
 		t.Fatalf("envio não deveria falhar: %v", err)
 	}
-	if recebida.metodo != http.MethodPost || recebida.caminho != "/repos/Azulpasta/aPRova/pulls/42/reviews" {
+	if recebida.metodo != http.MethodPost || recebida.caminho != "/repos/PI-GRUPO/aPRova/pulls/42/reviews" {
 		t.Errorf("chamada errada: %s %s", recebida.metodo, recebida.caminho)
 	}
 	if recebida.corpo["event"] != "APPROVE" || recebida.corpo["body"] != "Aprovado por @erin via Slack" {
@@ -247,7 +247,7 @@ func TestEnviarReviewDevolveErroQuandoOGitHubRecusa(t *testing.T) {
 		t.Run(http.StatusText(caso.status), func(t *testing.T) {
 			servidor, recebida := servidorDaAPIQueResponde(t, caso.status, `{"message":"falhou"}`)
 
-			err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarReview(t.Context(), 7001, "Azulpasta", "aPRova", 42, Review{Evento: EventoAprovar})
+			err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarReview(t.Context(), 7001, "PI-GRUPO", "aPRova", 42, Review{Evento: EventoAprovar})
 
 			if !errors.Is(err, caso.esperado) {
 				t.Errorf("esperava %v, obtive %v", caso.esperado, err)

@@ -76,19 +76,6 @@ const (
 	FeedbackFalsoPositivo     MotivoFeedback = "falso_positivo"
 )
 
-// DesfechoMudanca é o que aconteceu com uma mudança depois da decisão, usado
-// pela calibração do gate.
-type DesfechoMudanca string
-
-// Desfechos guardados em code_memory, do sinal mais forte ao mais fraco.
-const (
-	DesfechoRevertidaAposMerge DesfechoMudanca = "revertida_apos_merge"
-	DesfechoAltoRiscoAprovada  DesfechoMudanca = "alto_risco_aprovada"
-	DesfechoFechadaSemMerge    DesfechoMudanca = "fechada_sem_merge"
-	DesfechoAjustadaEAprovada  DesfechoMudanca = "ajustada_e_aprovada"
-	DesfechoSemReversao        DesfechoMudanca = "sem_reversao"
-)
-
 // NovoTaskRun descreve a execução criada a partir de um webhook de pull request.
 type NovoTaskRun struct {
 	TenantID    int64     `validate:"required,gt=0"`
@@ -131,16 +118,27 @@ type Transicao struct {
 	Detalhe   string        `validate:"max=4000"`
 }
 
-// GateDeRisco é a decisão do gate para um task_run, com o motivo nomeado.
+// GateDeRisco é a decisão do gate para um task_run. Motivo resume em texto os
+// Motivos, as regras que dispararam; é a partir do que está gravado aqui que os
+// eventos da análise são montados. NivelDeterministico é o nível das regras e
+// Nivel o final, depois da calibração. Calibracao é o rastro dela, fora do
+// recibo; Assinatura, quando presente, entra no histórico da calibração.
 type GateDeRisco struct {
 	TaskRunID           string     `validate:"required,uuid"`
 	NivelDeterministico NivelRisco `validate:"required,oneof=baixo medio alto"`
 	Nivel               NivelRisco `validate:"required,oneof=baixo medio alto"`
 	Motivo              string     `validate:"required,max=1000"`
+	Motivos             []MotivoDeRisco
+	DependenciasNovas   []DependenciaNova
+	Calibracao          Calibracao
+	Assinatura          *AssinaturaDoPR
 }
 
-// NovoRecibo é o recibo assinado, pronto para ser anexado.
+// NovoRecibo é o recibo assinado, pronto para ser anexado. Conteudo são os
+// bytes exatos que foram assinados. ID vazio deixa o banco escolher o id; o
+// recibo assinado traz o próprio id, porque ele faz parte do conteúdo.
 type NovoRecibo struct {
+	ID               string    `validate:"omitempty,uuid"`
 	TaskRunID        string    `validate:"required,uuid"`
 	ReciboAnteriorID *string   `validate:"omitempty,uuid"`
 	Conteudo         string    `validate:"required"`
@@ -153,12 +151,12 @@ type NovoRecibo struct {
 // Recibo é o registro imutável da decisão de revisão de um task_run.
 type Recibo struct {
 	NovoRecibo
-	ID       string
 	TenantID int64
 	CriadoEm time.Time
 }
 
-// Aprovacao é a decisão de uma revisão humana sobre um task_run.
+// Aprovacao é a decisão de uma revisão humana sobre um task_run. CommitSHA é
+// o commit que o revisor viu; a aprovação só decide o task_run desse commit.
 type Aprovacao struct {
 	TaskRunID      string           `validate:"required,uuid"`
 	DeliveryID     string           `validate:"required,max=100"`
@@ -168,6 +166,7 @@ type Aprovacao struct {
 	MotivoFeedback *MotivoFeedback  `validate:"omitempty,oneof=regra_conservadora risco_aceito falso_positivo"`
 	Justificativa  *string          `validate:"omitempty,max=4000"`
 	DecididaEm     time.Time        `validate:"required"`
+	CommitSHA      string           `validate:"omitempty,len=40,hexadecimal,lowercase"`
 }
 
 // AprovacaoRegistrada é uma aprovação já gravada, com o id que a ordena.
@@ -176,26 +175,13 @@ type AprovacaoRegistrada struct {
 	ID int64
 }
 
-// MemoriaDeCodigo é uma decisão passada guardada para a calibração do gate.
+// MemoriaDeCodigo é a assinatura de uma análise guardada no histórico da
+// calibração: o texto e o vetor dele, um por task_run.
 type MemoriaDeCodigo struct {
-	TenantID    int64   `validate:"required,gt=0"`
-	TaskRunID   *string `validate:"omitempty,uuid"`
-	Repositorio string  `validate:"required,max=200"`
-	Resumo      string  `validate:"required"`
-	Embedding   []float32
-	Nivel       NivelRisco      `validate:"required,oneof=baixo medio alto"`
-	Desfecho    DesfechoMudanca `validate:"required,oneof=revertida_apos_merge alto_risco_aprovada fechada_sem_merge ajustada_e_aprovada sem_reversao"`
-}
-
-// Vizinho é uma memória de código próxima da consultada, sem o embedding.
-type Vizinho struct {
-	ID          int64
-	TaskRunID   *string
-	Repositorio string
-	Resumo      string
-	Nivel       NivelRisco
-	Desfecho    DesfechoMudanca
-	Distancia   float64
+	TenantID  int64  `validate:"required,gt=0"`
+	TaskRunID string `validate:"required,uuid"`
+	Resumo    string `validate:"required"`
+	Embedding []float32
 }
 
 // RepositorioTaskRun cria, consulta e transiciona task_runs.

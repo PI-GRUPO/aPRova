@@ -2,39 +2,41 @@ stateDiagram-v2
     [*] --> pendente : webhook validado
 
     pendente --> mapeando_contexto : worker assume
-    mapeando_contexto --> gerando : contexto montado
-    mapeando_contexto --> falhou : erro ao clonar
-
-    gerando --> testando_sandbox : diff produzido
-    gerando --> falhou : agente não produziu diff
-
-    testando_sandbox --> avaliando_risco : job concluído
-    testando_sandbox --> falhou : timeout ou erro de infra
-
+    mapeando_contexto --> testando_sandbox : arquivos e diff lidos do GitHub
+    testando_sandbox --> avaliando_risco : resultado que não é de infraestrutura
     avaliando_risco --> aplicando : risco baixo ou médio
     avaliando_risco --> aguardando_aprovacao : risco alto
-
-    aguardando_aprovacao --> aplicando : review aprovado
+    aguardando_aprovacao --> aplicando : review aprovado por quem pode escrever
     aguardando_aprovacao --> rejeitado : alterações solicitadas
-    aguardando_aprovacao --> aguardando_aprovacao : review sem decisão
+    aplicando --> concluido : resultado publicado
 
-    aplicando --> concluido : check publicado e recibo gravado
-    aplicando --> falhou : erro ao publicar
+    pendente --> falhou : substituído por commit mais novo
+    mapeando_contexto --> falhou : 404 ou tentativas esgotadas
+    gerando --> falhou : fora do fluxo principal
+    testando_sandbox --> falhou : infraestrutura até esgotar as tentativas
+    avaliando_risco --> falhou : tentativas esgotadas
+    aguardando_aprovacao --> falhou : substituído por commit mais novo
+    aplicando --> falhou : erro definitivo ao publicar
 
     rejeitado --> [*]
     concluido --> [*]
     falhou --> [*]
 
     note right of avaliando_risco
-        Recibo é gerado aqui, antes
-        da bifurcação. Toda decisão
-        tem recibo, inclusive as que
-        travam.
+        O recibo é emitido aqui, antes
+        da bifurcação. Toda decisão tem
+        recibo, inclusive as que travam.
     end note
 
     note right of aguardando_aprovacao
         Único estado não terminal que
-        espera evento externo. Dispara
-        alerta no Slack e inicia o
-        contador de SLA.
+        espera evento externo: um review
+        novo ou um commit mais novo.
+        Review sem decisão não muda nada.
+    end note
+
+    note left of gerando
+        Existe no CHECK do banco, mas
+        nenhum estado leva a ele: o PR
+        já existe quando o aPRova é acionado.
     end note

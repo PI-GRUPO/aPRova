@@ -28,15 +28,16 @@ As implementações importáveis de entrada e da Central do Slack já estão em
 `workflows/n8n/`. O estado de implementação, a configuração e as pendências
 da operação remota estão em [central-slack-implementacao.md](central-slack-implementacao.md).
 
-### Estado atual — 2026-11-08
+### Estado do código integrado — 2026-11-13
 
 O worker atual já conecta o emissor e produz `analise_concluida`,
 `aguardando_aprovacao`, `aprovacao_registrada` e `falha_recuperavel`
 (`cmd/worker/main.go` e `internal/worker/eventos_do_motor.go`). Isso é
 implementação no código; não comprova validação de ponta a ponta com o
-GitHub App real. A emissão de `dependencia_nova` e `instalacao` continua
-pendente. O gate, os recibos e a publicação do worker usam implementações
-provisórias, descritas no README principal.
+GitHub App real. O worker também emite `dependencia_nova` quando há
+dependências identificadas; `instalacao` ainda não tem emissão automática.
+O gate determinístico, os recibos assinados, a publicação no GitHub e a
+calibração opcional por histórico estão implementados no núcleo.
 
 O workflow `aPRova | Digest | Resumo Semanal` consulta `GET /reports/weekly`
 com HMAC de `N8N_SEGREDO_ACOES`, sem acessar o banco. Tem agendamento próprio,
@@ -59,7 +60,7 @@ O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
 Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem
 vínculo único do revisor Slack/GitHub, encerra sem pergunta. Os cliques passam
 pela autenticação da Central. O envio à API está desabilitado: faltam endpoint
-específico e calibrador real. Encerramento de SLA e atualização da mensagem
+específico e integração do feedback com a calibração. Encerramento de SLA e atualização da mensagem
 original ainda não foram implementados.
 
 Os exports incluem feedback, suas ligações no Core/Central e leitura da
@@ -158,16 +159,63 @@ quem só quer os casos graves filtra por `nivel_risco`.
 | `sha` | texto | sim | `3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3` | commit analisado, 40 caracteres hexadecimais minúsculos |
 | `nivel_risco` | texto | sim | `medio` | `baixo`, `medio` ou `alto` |
 | `motivos` | lista de objetos | sim | veja abaixo | regras acionadas; lista vazia quando nenhuma regra acionou |
-| `motivos[].nome` | texto | sim | `sem_teste_para_alteracao` | identificador estável da regra |
-| `motivos[].descricao` | texto | sim | `go/frete/frete.go mudou e nenhum teste Go cobre o caminho alterado` | frase curta para mostrar a pessoas |
-| `explicacao` | texto | sim | `O PR muda a faixa de peso em frete.Calcular...` | explicação em português, até 4000 caracteres |
-| `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do recibo assinado, 64 caracteres hexadecimais minúsculos |
-| `url_recibo` | texto (URL) | sim | `https://aprova.example.com/recibos/2b6d8f0a-...` | onde o recibo pode ser conferido |
+| `motivos[].nome` | texto | sim | `codigo_sem_teste` | identificador estável da regra; a lista está abaixo |
+| `motivos[].descricao` | texto | sim | `o PR altera código sem alterar nenhum teste` | frase curta para mostrar a pessoas |
+| `explicacao` | texto | sim | `Risco medio: o PR altera código sem alterar nenhum teste.` | hoje é o nível e as descrições dos motivos; até 4000 caracteres |
+| `receipt_hash` | texto | sim | `9c4e2a7f...0e2f` | SHA-256 do conteúdo assinado do recibo, 64 caracteres hexadecimais minúsculos; é o `hash_sha256` devolvido pela verificação |
+| `url_recibo` | texto (URL) | sim | `https://aprova.example.com/receipts/2b6d8f0a-.../verify` | endereço público que verifica o recibo e responde `valido` verdadeiro ou falso |
+
+Os valores possíveis de `motivos[].nome` são os identificadores das regras do
+gate. O nível é o que a regra, sozinha, atribui ao PR; sem calibração, o nível
+do evento é o maior entre os motivos. A descrição é o texto que vai em
+`motivos[].descricao`. O evento não leva o nível de cada motivo, só o da
+análise em `nivel_risco`.
+
+| Identificador | Nível | Descrição enviada | Quando dispara |
+| --- | --- | --- | --- |
+| `falha_sandbox` | alto | os testes ou a compilação falharam no sandbox | os testes falharam ou o projeto não compilou |
+| `muitos_arquivos` | alto | o PR altera N arquivos, acima do limite de M | o PR altera mais arquivos que o limite (20 por padrão) |
+| `configuracao_ci` | alto | o PR altera configuração de build ou de CI | o PR altera workflow, Dockerfile, Makefile ou arquivo de build equivalente |
+| `dependencia_nova` | alto | o PR acrescenta dependência nova, que precisa de revisão humana | o PR acrescenta dependência, ou o diff do manifesto não pôde ser lido |
+| `segredo_versionado` | alto | o PR versiona um arquivo que costuma guardar segredo | o PR versiona `.env`, chave privada ou arquivo equivalente |
+| `area_sensivel` | alto | o PR altera um caminho sensível | o PR altera um caminho sensível, como `auth/` ou `migrations/` |
+| `codigo_sem_teste` | medio | o PR altera código sem alterar nenhum teste | o PR altera código sem alterar nenhum teste |
+| `calibracao_historico` | informativo | risco alto pelas regras, reduzido a médio pelo histórico: 7 casos parecidos aprovados e mergeados, nenhum revertido | a calibração por histórico desceu o nível um degrau ([calibracao.md](calibracao.md)) |
+
+Os exemplos em `workflows/exemplos/` usam esses identificadores. Versões
+antigas dos exemplos traziam nomes inventados, como `falha_nos_testes` e
+`sem_teste_para_alteracao`, que o núcleo nunca envia: um workflow que compare
+`motivos[].nome` com texto fixo precisa usar a lista acima.
+
+`calibracao_historico` não é uma regra de risco: ele explica por que
+`nivel_risco` ficou um degrau abaixo do que as regras dariam. Com
+`CALIBRACAO_LIGADA=true`, um PR com `area_sensivel` pode chegar com
+`nivel_risco` `medio`, e um com `codigo_sem_teste` com `baixo`. Um workflow que
+deduz o nível a partir dos nomes dos motivos erra nesses casos; o nível certo é
+sempre o de `nivel_risco`. Com a calibração desligada, que é o padrão, esse
+motivo nunca aparece.
+
+`area_sensivel` é alto porque a calibração por histórico só pode abaixar o
+risco, nunca subir. Com a base em médio, um PR em `auth/` com os testes passando
+sairia sem aprovação humana, e nenhum dado futuro o faria voltar a exigi-la.
+
+Quando o GitHub não devolve o diff de um arquivo de dependências, o gate
+bloqueia o PR com o motivo `dependencia_nova` (evidência "não foi possível ler o
+diff"), mas o evento `dependencia_nova` **não** é enviado: ele exige ao menos
+uma dependência, e sem o diff não há o que listar. Nesse caso o PR aparece só
+em `analise_concluida` e `aguardando_aprovacao`.
 
 O domínio `aprova.example.com` dos exemplos é provisório: o endereço público
 do núcleo ainda não existe. Quando existir, ele vai na variável
-`APROVA_URL_PUBLICA`, e só a base da URL muda; o caminho `/recibos/<id>`
+`APROVA_URL_PUBLICA`, e só a base da URL muda; o caminho `/receipts/<id>/verify`
 continua o mesmo, então nenhum workflow precisa ser alterado.
+
+O recibo agora é real: `url_recibo` abre a verificação pública do recibo, e
+`receipt_hash` é o SHA-256 do conteúdo assinado. Até a versão anterior deste
+contrato o caminho era `/recibos/<id>` e não respondia; um workflow que monte ou
+desmonte essa URL por conta própria precisa passar a usar
+`/receipts/<id>/verify`. Como verificar um recibo sem depender do núcleo está em
+[verificacao-recibo.md](verificacao-recibo.md).
 
 ### `aguardando_aprovacao`
 
@@ -215,7 +263,11 @@ estado/mensagem; não presumir que já ocorrem por receber este evento.
 
 ### `dependencia_nova`
 
-Emitido quando o PR adiciona dependências.
+Emitido quando o PR adiciona dependências, junto com o `analise_concluida`,
+qualquer que seja o nível final. Mudar a versão de uma dependência que já existe
+não conta. Quando o GitHub omite o diff de um manifesto, o gate bloqueia com o
+motivo `dependencia_nova`, mas este evento não sai, porque não há como saber
+quais são as dependências.
 
 | Campo | Tipo | Obrigatório | Exemplo | Observação |
 | --- | --- | --- | --- | --- |
@@ -482,5 +534,5 @@ compartilham `SLACK_GITHUB_VINCULOS`; não há associações pessoais nos nós.
 Tokens/OAuth ficam nas credenciais do n8n (`aPRova | Serviço`); HMAC e
 Signing Secret ficam no ambiente. Exports são inativos, sem credenciais
 pessoais ou IDs locais de workflow. Esta padronização não valida fluxos com
-serviços externos nem implementa feedback, executor de reexecução, gate,
-recibos ou publicação definitivos.
+serviços externos nem implementa persistência de feedback ou executor de
+reexecução. Gate, recibos e publicação reais foram incorporados da `dev`.

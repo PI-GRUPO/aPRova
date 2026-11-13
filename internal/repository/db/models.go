@@ -22,17 +22,16 @@ type Approval struct {
 	DecidedAt      time.Time `json:"decided_at"`
 	CreatedAt      time.Time `json:"created_at"`
 	Origin         string    `json:"origin"`
+	CommitSha      *string   `json:"commit_sha"`
 }
 
 type CodeMemory struct {
 	ID         int64           `json:"id"`
 	TenantID   int64           `json:"tenant_id"`
-	TaskRunID  *string         `json:"task_run_id"`
+	TaskRunID  string          `json:"task_run_id"`
 	Repository string          `json:"repository"`
 	Summary    string          `json:"summary"`
 	Embedding  pgvector.Vector `json:"embedding"`
-	Level      string          `json:"level"`
-	Outcome    string          `json:"outcome"`
 	CreatedAt  time.Time       `json:"created_at"`
 }
 
@@ -42,6 +41,38 @@ type IdentityLink struct {
 	SlackUserID string    `json:"slack_user_id"`
 	GithubLogin string    `json:"github_login"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+type PullRequestComment struct {
+	TenantID   int64     `json:"tenant_id"`
+	Repository string    `json:"repository"`
+	PrNumber   int32     `json:"pr_number"`
+	CommentID  int64     `json:"comment_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type PullRequestOutcome struct {
+	TenantID       int64     `json:"tenant_id"`
+	Repository     string    `json:"repository"`
+	PrNumber       int32     `json:"pr_number"`
+	Merged         bool      `json:"merged"`
+	HeadSha        string    `json:"head_sha"`
+	MergeCommitSha *string   `json:"merge_commit_sha"`
+	ClosedAt       time.Time `json:"closed_at"`
+	DeliveryID     string    `json:"delivery_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}
+
+type PullRequestRevert struct {
+	TenantID     int64     `json:"tenant_id"`
+	Repository   string    `json:"repository"`
+	PrNumber     int32     `json:"pr_number"`
+	RevertedByPr int32     `json:"reverted_by_pr"`
+	RevertedAt   time.Time `json:"reverted_at"`
+	DeliveryID   string    `json:"delivery_id"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type Receipt struct {
@@ -75,13 +106,18 @@ type RemoteActionAttempt struct {
 }
 
 type RiskGate struct {
-	ID                 int64     `json:"id"`
-	TenantID           int64     `json:"tenant_id"`
-	TaskRunID          string    `json:"task_run_id"`
-	DeterministicLevel string    `json:"deterministic_level"`
-	Level              string    `json:"level"`
-	Reason             string    `json:"reason"`
-	CreatedAt          time.Time `json:"created_at"`
+	ID                   int64     `json:"id"`
+	TenantID             int64     `json:"tenant_id"`
+	TaskRunID            string    `json:"task_run_id"`
+	DeterministicLevel   string    `json:"deterministic_level"`
+	Level                string    `json:"level"`
+	Reason               string    `json:"reason"`
+	CreatedAt            time.Time `json:"created_at"`
+	RulesHit             []byte    `json:"rules_hit"`
+	NewDependencies      []byte    `json:"new_dependencies"`
+	CalibrationStatus    string    `json:"calibration_status"`
+	CalibrationReason    string    `json:"calibration_reason"`
+	CalibrationNeighbors []byte    `json:"calibration_neighbors"`
 }
 
 type SandboxResult struct {
@@ -115,6 +151,7 @@ type TaskRun struct {
 	LeaseExpiresAt   *time.Time `json:"lease_expires_at"`
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
+	CheckRunID       *int64     `json:"check_run_id"`
 }
 
 type TaskStep struct {

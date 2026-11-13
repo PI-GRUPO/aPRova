@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/api"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/api"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 const (
@@ -216,7 +216,7 @@ func corpoDeAcao(idAcao, tipo, usuarioSlack string) string {
 		justificativa = `,"justificativa":"Risco avaliado e aceito."`
 	}
 	return `{"id_acao":"` + idAcao + `","tipo":"` + tipo + `","usuario_slack":"` + usuarioSlack + `",` +
-		`"repositorio":"Azulpasta/aPRova","numero_pr":42,"installation_id":7001` + justificativa + `}`
+		`"repositorio":"PI-GRUPO/aPRova","numero_pr":42,"installation_id":7001` + justificativa + `}`
 }
 
 func lerCorpo(t *testing.T, resposta *httptest.ResponseRecorder) string {

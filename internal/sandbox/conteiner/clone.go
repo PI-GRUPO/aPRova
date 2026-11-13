@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
 // ErrClone indica que o repositório não pôde ser posicionado no SHA pedido.

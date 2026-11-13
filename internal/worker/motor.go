@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/rastro"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 const (
@@ -24,8 +24,9 @@ const (
 var ErrDependenciaAusente = errors.New("worker: dependência ausente")
 
 // Opcoes reúne as dependências e os ajustes do motor. Diretorios mapeia
-// dono/repositorio ao diretório do projeto dentro do repositório. URLPublica é
-// a base dos links de recibo. MaxTentativas e EsperaBase limitam as novas
+// dono/repositorio ao diretório do projeto dentro do repositório. Linguagens
+// mapeia dono/repositorio à linguagem do projeto; sem entrada, é Go. URLPublica
+// é a base dos links de recibo. MaxTentativas e EsperaBase limitam as novas
 // tentativas de falhas transitórias, com espera que dobra a cada uma.
 type Opcoes struct {
 	Armazenamento Armazenamento
@@ -33,10 +34,12 @@ type Opcoes struct {
 	Permissoes    ConsultaDePermissao
 	Sandbox       sandbox.Executor
 	Avaliador     AvaliadorRisco
+	Calibrador    CalibradorRisco
 	Recibos       EmissorRecibo
 	Publicador    PublicadorPR
 	Eventos       EmissorEventos
 	Diretorios    map[string]string
+	Linguagens    map[string]sandbox.Linguagem
 	URLPublica    string
 	MaxTentativas int
 	EsperaBase    time.Duration
@@ -156,7 +159,7 @@ func (c *conducao) avancar() (passo, error) {
 		return passo{}, err
 	}
 	if substituido {
-		return c.encerrarEmFalha(detalheDeSubstituido)
+		return c.encerrarSubstituido()
 	}
 
 	switch c.taskRun.Estado {

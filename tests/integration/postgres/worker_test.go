@@ -1,8 +1,8 @@
 package integracaopostgres
 
 import (
+	"bytes"
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -10,12 +10,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/repository"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/worker"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
 const prazoDoWorker = time.Second
@@ -51,34 +53,53 @@ func (s *sandboxContado) Executar(ctx context.Context, _ sandbox.PedidoExecucao)
 
 type avaliadorFixo struct{ nivel domain.NivelRisco }
 
-func (a avaliadorFixo) Avaliar(context.Context, worker.EntradaAvaliacao) (worker.Avaliacao, error) {
-	return worker.Avaliacao{
-		NivelDeterministico: a.nivel, Nivel: a.nivel,
-		Motivos:    []worker.Motivo{{Nome: "area_sensivel", Descricao: "go/frete/frete.go"}},
-		Explicacao: "teste de integração do worker",
+func (a avaliadorFixo) Avaliar(context.Context, gate.Entrada) (gate.Resultado, error) {
+	return gate.Resultado{
+		Nivel:        a.nivel,
+		Motivos:      []domain.MotivoDeRisco{{ID: "area_sensivel", Nivel: a.nivel, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"go/frete/frete.go"}}},
+		Dependencias: []domain.DependenciaNova{},
 	}, nil
 }
 
-type reciboNoBanco struct {
-	repo *repository.RepositorioPostgres
+var sementeDosRecibosDeTeste = bytes.Repeat([]byte{7}, 32)
+
+func assinadorDeTeste(t *testing.T) *receipt.Assinador {
+	t.Helper()
+
+	assinador, err := receipt.NovoAssinador(sementeDosRecibosDeTeste)
+	if err != nil {
+		t.Fatalf("montar o assinador: %v", err)
+	}
+	return assinador
 }
 
-func (r reciboNoBanco) Emitir(ctx context.Context, pedido worker.PedidoRecibo) (worker.ReciboEmitido, error) {
-	hash := sha256.Sum256([]byte(pedido.TaskRun.ID))
-	recibo, err := r.repo.AnexarRecibo(ctx, domain.NovoRecibo{
-		TaskRunID: pedido.TaskRun.ID, Conteudo: "recibo de teste", Hash: hash[:], Assinatura: make([]byte, 64),
-		IDChave: "chave-de-teste", AssinadoEm: time.Now().UTC(),
-	})
+func emissorDeRecibos(t *testing.T, repo *repository.RepositorioPostgres) *receipt.Emissor {
+	t.Helper()
+
+	emissor, err := receipt.NovoEmissor(receipt.OpcoesEmissor{Assinador: assinadorDeTeste(t), Armazenamento: repo})
 	if err != nil {
-		return worker.ReciboEmitido{}, err
+		t.Fatalf("montar o emissor de recibos: %v", err)
 	}
-	return worker.ReciboEmitido{ID: recibo.ID, Hash: recibo.Hash}, nil
+	return emissor
+}
+
+func verificadorDeRecibos(t *testing.T, repo *repository.RepositorioPostgres) *receipt.Verificador {
+	t.Helper()
+	return receipt.NovoVerificador(receipt.NovoChaveiro(assinadorDeTeste(t).ChavePublica()), repo)
 }
 
 type publicadorContado struct{ publicacoes atomic.Int64 }
 
 func (p *publicadorContado) Publicar(context.Context, worker.Publicacao) error {
 	p.publicacoes.Add(1)
+	return nil
+}
+
+func (p *publicadorContado) Iniciar(context.Context, domain.TaskRun) error {
+	return nil
+}
+
+func (p *publicadorContado) PublicarFalha(context.Context, domain.TaskRun, string) error {
 	return nil
 }
 
@@ -101,7 +122,7 @@ func (m montagemDoWorker) novoPool(t *testing.T, nome string, nivel domain.Nivel
 		Permissoes:    permissaoDeAdmin{},
 		Sandbox:       m.sandbox,
 		Avaliador:     avaliadorFixo{nivel: nivel},
-		Recibos:       reciboNoBanco{repo: m.banco.repo},
+		Recibos:       emissorDeRecibos(t, m.banco.repo),
 		Publicador:    m.publicador,
 		Eventos:       eventosDescartados{},
 		URLPublica:    "https://aprova.example.com",

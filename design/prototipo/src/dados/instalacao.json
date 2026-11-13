@@ -1,0 +1,12 @@
+{
+	"tenant_id": 58291734,
+	"conta": "Azulpasta",
+	"repositorios": [
+		"Azulpasta/aPRova-TESTES",
+		"Azulpasta/cobranca-api",
+		"Azulpasta/painel-entregas"
+	],
+	"periodo_dias": 30,
+	"gerado_em": "2026-11-11T17:00:00.000Z",
+	"limite_de_arquivos": 20
+}

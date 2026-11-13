@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 )
 
 func TestJustificativaRemotaPersisteNaExecucaoOriginal(t *testing.T) {

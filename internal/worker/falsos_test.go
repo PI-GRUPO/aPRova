@@ -9,10 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 type etapaGravada struct {
@@ -45,6 +47,10 @@ func novoArmazenamentoFalso() *armazenamentoFalso {
 }
 
 func (a *armazenamentoFalso) novoTaskRun(numeroPR int) domain.TaskRun {
+	return a.novoTaskRunNoCommit(numeroPR, "3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3")
+}
+
+func (a *armazenamentoFalso) novoTaskRunNoCommit(numeroPR int, sha string) domain.TaskRun {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
@@ -55,7 +61,7 @@ func (a *armazenamentoFalso) novoTaskRun(numeroPR int) domain.TaskRun {
 		DeliveryID:  fmt.Sprintf("entrega-%d", indice),
 		Repositorio: "Azulpasta/aPRova-TESTES",
 		NumeroPR:    numeroPR,
-		SHAHead:     "3f9a1c7e2b4d6f8091a3c5e7f9b1d3e5a7c9e1f3",
+		SHAHead:     sha,
 		Autor:       "wlaisw",
 		Acao:        "opened",
 		Estado:      domain.EstadoPendente,
@@ -253,6 +259,10 @@ func (a *armazenamentoFalso) BuscarReciboPorTaskRun(_ context.Context, taskRunID
 }
 
 func (a *armazenamentoFalso) registrarAprovacao(taskRunID string, decisao domain.DecisaoAprovacao, revisor string, origem domain.OrigemAprovacao) domain.AprovacaoRegistrada {
+	return a.registrarAprovacaoDoCommit(taskRunID, decisao, revisor, origem, a.taskRun(taskRunID).SHAHead)
+}
+
+func (a *armazenamentoFalso) registrarAprovacaoDoCommit(taskRunID string, decisao domain.DecisaoAprovacao, revisor string, origem domain.OrigemAprovacao, commit string) domain.AprovacaoRegistrada {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
 
@@ -260,7 +270,7 @@ func (a *armazenamentoFalso) registrarAprovacao(taskRunID string, decisao domain
 		ID: int64(len(a.aprovacoes) + 1),
 		Aprovacao: domain.Aprovacao{
 			TaskRunID: taskRunID, DeliveryID: fmt.Sprintf("review-%d", len(a.aprovacoes)+1), Decisao: decisao,
-			Revisor: revisor, Origem: origem, DecididaEm: time.Date(2026, 10, 19, 17, 48, 12, 0, time.UTC),
+			Revisor: revisor, Origem: origem, DecididaEm: time.Date(2026, 10, 19, 17, 48, 12, 0, time.UTC), CommitSHA: commit,
 		},
 	}
 	a.aprovacoes = append(a.aprovacoes, aprovacao)
@@ -416,56 +426,133 @@ var (
 )
 
 type avaliadorFalso struct {
-	nivel      domain.NivelRisco
-	avaliacoes int
-	entradas   []EntradaAvaliacao
+	nivel        domain.NivelRisco
+	dependencias []domain.DependenciaNova
+	erro         error
+	avaliacoes   int
+	entradas     []gate.Entrada
 }
 
-func (a *avaliadorFalso) Avaliar(_ context.Context, entrada EntradaAvaliacao) (Avaliacao, error) {
+func (a *avaliadorFalso) Avaliar(_ context.Context, entrada gate.Entrada) (gate.Resultado, error) {
 	a.avaliacoes++
 	a.entradas = append(a.entradas, entrada)
-	return Avaliacao{
-		NivelDeterministico: a.nivel,
-		Nivel:               a.nivel,
-		Motivos:             []Motivo{{Nome: "area_sensivel", Descricao: "go/frete/frete.go calcula o valor cobrado do cliente"}},
-		Explicacao:          "O PR muda o cálculo do frete.",
-	}, nil
+	if a.erro != nil {
+		return gate.Resultado{}, a.erro
+	}
+
+	resultado := gate.Resultado{Nivel: a.nivel, Motivos: []domain.MotivoDeRisco{}, Dependencias: a.dependencias}
+	if a.nivel != domain.RiscoBaixo {
+		resultado.Motivos = append(resultado.Motivos, domain.MotivoDeRisco{
+			ID: "area_sensivel", Nivel: a.nivel, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"go/frete/frete.go"},
+		})
+	}
+	return resultado, nil
 }
 
 type emissorDeReciboFalso struct {
 	armazenamento *armazenamentoFalso
 	chamadas      *registroDeChamadas
+	pedidos       []receipt.Pedido
+	falhas        []error
+	antesDeFalhar func()
 }
 
-func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido PedidoRecibo) (ReciboEmitido, error) {
+func (e *emissorDeReciboFalso) Emitir(_ context.Context, pedido receipt.Pedido) (receipt.Emitido, error) {
 	e.chamadas.anotar("recibo")
+	e.pedidos = append(e.pedidos, pedido)
+	if len(e.falhas) > 0 {
+		falha := e.falhas[0]
+		e.falhas = e.falhas[1:]
+		if e.antesDeFalhar != nil {
+			e.antesDeFalhar()
+		}
+		return receipt.Emitido{}, falha
+	}
+
 	hash := sha256.Sum256([]byte(pedido.TaskRun.ID))
-	recibo := ReciboEmitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:]}
+	recibo := receipt.Emitido{ID: "2b6d8f0a-4c1e-4a3b-9d5f-7e8a0b1c2d3e", Hash: hash[:], IDChave: idChaveDeTeste}
 
 	e.armazenamento.mutex.Lock()
 	defer e.armazenamento.mutex.Unlock()
-	if existente, existe := e.armazenamento.recibos[pedido.TaskRun.ID]; existe {
-		return ReciboEmitido{ID: existente.ID, Hash: existente.Hash}, nil
+	if _, existe := e.armazenamento.gates[pedido.TaskRun.ID]; existe {
+		return receipt.Emitido{}, domain.ErrDuplicado
 	}
-	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{ID: recibo.ID, NovoRecibo: domain.NovoRecibo{TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash}}
+	e.armazenamento.gates[pedido.TaskRun.ID] = pedido.Gate
+	e.armazenamento.recibos[pedido.TaskRun.ID] = domain.Recibo{NovoRecibo: domain.NovoRecibo{ID: recibo.ID, TaskRunID: pedido.TaskRun.ID, Hash: recibo.Hash, IDChave: recibo.IDChave}}
 	return recibo, nil
 }
 
+const idChaveDeTeste = "4f1c2a9b7e3d5c80"
+
+type falhaPublicada struct {
+	taskRunID   string
+	diagnostico string
+}
+
 type publicadorFalso struct {
-	chamadas   *registroDeChamadas
-	erros      []error
-	publicados []Publicacao
+	chamadas      *registroDeChamadas
+	errosDoInicio []error
+	erros         []error
+	errosDaFalha  []error
+	iniciados     []string
+	publicados    []Publicacao
+	falhas        []falhaPublicada
+}
+
+func proximoErro(erros *[]error) error {
+	if len(*erros) == 0 {
+		return nil
+	}
+	erro := (*erros)[0]
+	*erros = (*erros)[1:]
+	return erro
+}
+
+func (p *publicadorFalso) Iniciar(_ context.Context, taskRun domain.TaskRun) error {
+	p.chamadas.anotar("inicio")
+	if erro := proximoErro(&p.errosDoInicio); erro != nil {
+		return erro
+	}
+	p.iniciados = append(p.iniciados, taskRun.ID)
+	return nil
 }
 
 func (p *publicadorFalso) Publicar(_ context.Context, publicacao Publicacao) error {
 	p.chamadas.anotar("publicacao")
-	if len(p.erros) > 0 {
-		erro := p.erros[0]
-		p.erros = p.erros[1:]
+	if erro := proximoErro(&p.erros); erro != nil {
 		return erro
 	}
 	p.publicados = append(p.publicados, publicacao)
 	return nil
+}
+
+func (p *publicadorFalso) PublicarFalha(_ context.Context, taskRun domain.TaskRun, diagnostico string) error {
+	p.chamadas.anotar("falha")
+	if erro := proximoErro(&p.errosDaFalha); erro != nil {
+		return erro
+	}
+	p.falhas = append(p.falhas, falhaPublicada{taskRunID: taskRun.ID, diagnostico: diagnostico})
+	return nil
+}
+
+func (p *publicadorFalso) publicacoesDe(taskRunID string) []Publicacao {
+	var doTaskRun []Publicacao
+	for _, publicacao := range p.publicados {
+		if publicacao.TaskRun.ID == taskRunID {
+			doTaskRun = append(doTaskRun, publicacao)
+		}
+	}
+	return doTaskRun
+}
+
+func (p *publicadorFalso) falhasDe(taskRunID string) []falhaPublicada {
+	var doTaskRun []falhaPublicada
+	for _, falha := range p.falhas {
+		if falha.taskRunID == taskRunID {
+			doTaskRun = append(doTaskRun, falha)
+		}
+	}
+	return doTaskRun
 }
 
 type emissorDeEventosFalso struct {

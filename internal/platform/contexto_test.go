@@ -140,7 +140,7 @@ func TestContextoDoPullRequestClassificaOsErrosDoGitHub(t *testing.T) {
 		"limite secundário (429)":           {http.StatusTooManyRequests, nil, ErrLimiteDeRequisicoes},
 		"limite primário esgotado (403)":    {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"0"}}, ErrLimiteDeRequisicoes},
 		"limite secundário com Retry-After": {http.StatusForbidden, http.Header{"Retry-After": {"60"}}, ErrLimiteDeRequisicoes},
-		"403 que não é limite":              {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"4999"}}, ErrRespostaInesperada},
+		"403 que não é limite":              {http.StatusForbidden, http.Header{"X-Ratelimit-Remaining": {"4999"}}, ErrSemPermissao},
 	}
 
 	for nome, caso := range casos {
@@ -154,5 +154,62 @@ func TestContextoDoPullRequestClassificaOsErrosDoGitHub(t *testing.T) {
 				t.Errorf("esperava %v, obtive %v", caso.esperado, err)
 			}
 		})
+	}
+}
+
+func servidorDeArquivos(t *testing.T, arquivos []map[string]any) *httptest.Server {
+	t.Helper()
+
+	servidor := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/files") {
+			_ = json.NewEncoder(w).Encode(arquivos)
+			return
+		}
+		_, _ = w.Write([]byte(diffDoFrete))
+	}))
+	t.Cleanup(servidor.Close)
+	return servidor
+}
+
+func TestContextoTrazOPatchEONomeAnteriorDeCadaArquivo(t *testing.T) {
+	patch := "@@ -1,3 +1,4 @@\n module github.com/aprova/aprova-testes/go\n+require github.com/shopspring/decimal v1.4.0\n"
+	servidor := servidorDeArquivos(t, []map[string]any{
+		{"filename": "go/go.mod", "status": "modified", "additions": 1, "deletions": 0, "patch": patch},
+		{"filename": "go/frete/novo.go", "previous_filename": "go/frete/velho.go", "status": "renamed"},
+		{"filename": "pom.xml", "status": "modified", "additions": 9000, "deletions": 3},
+	})
+	cliente := NovoCliente(OpcoesCliente{Tokens: &fornecedorDeTokenFalso{}, URLBase: servidor.URL})
+
+	contexto, err := cliente.ContextoDoPullRequest(t.Context(), 58291734, "Azulpasta", "aPRova-TESTES", 14)
+
+	if err != nil {
+		t.Fatalf("ler contexto: %v", err)
+	}
+	if contexto.Arquivos[0].Patch != patch {
+		t.Errorf("patch lido errado: %q", contexto.Arquivos[0].Patch)
+	}
+	if contexto.Arquivos[1].NomeAnterior != "go/frete/velho.go" || contexto.Arquivos[1].Situacao != "renamed" {
+		t.Errorf("renomeação lida errado: %+v", contexto.Arquivos[1])
+	}
+	if ausente := contexto.Arquivos[2]; ausente.Patch != "" || ausente.Adicoes != 9000 {
+		t.Errorf("arquivo grande vem sem patch e com as contagens: %+v", ausente)
+	}
+}
+
+func TestContextoLePaginaDeArquivosMaiorQueOLimitePadraoDaResposta(t *testing.T) {
+	patchGrande := "@@ -1 +1 @@\n" + strings.Repeat("+linha alterada\n", 5000)
+	arquivos := make([]map[string]any, 0, 30)
+	for indice := range 30 {
+		arquivos = append(arquivos, map[string]any{"filename": fmt.Sprintf("go/frete/arquivo_%02d.go", indice), "status": "modified", "patch": patchGrande})
+	}
+	cliente := NovoCliente(OpcoesCliente{Tokens: &fornecedorDeTokenFalso{}, URLBase: servidorDeArquivos(t, arquivos).URL})
+
+	contexto, err := cliente.ContextoDoPullRequest(t.Context(), 58291734, "Azulpasta", "aPRova-TESTES", 14)
+
+	if err != nil {
+		t.Fatalf("uma página com patches grandes não pode quebrar a leitura: %v", err)
+	}
+	if len(contexto.Arquivos) != 30 || contexto.Arquivos[29].Patch != patchGrande {
+		t.Errorf("esperava os 30 arquivos com patch, obtive %d", len(contexto.Arquivos))
 	}
 }

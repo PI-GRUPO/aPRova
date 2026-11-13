@@ -11,6 +11,7 @@ import (
 var tabelasDoNucleo = []string{
 	"task_runs", "task_steps", "sandbox_results", "risk_gates", "receipts",
 	"approvals", "code_memory", "identity_links", "remote_action_attempts",
+	"pull_request_comments", "pull_request_outcomes", "pull_request_reverts",
 }
 
 func TestCadaMigrationAplicaEReverteLimpa(t *testing.T) {
@@ -45,8 +46,8 @@ func TestCadaMigrationAplicaEReverteLimpa(t *testing.T) {
 		passos++
 	}
 
-	if passos != 15 {
-		t.Errorf("esperava 15 migrations, apliquei %d", passos)
+	if passos != 21 {
+		t.Errorf("esperava 21 migrations, apliquei %d", passos)
 	}
 
 	if err := migracao.Down(); err != nil {

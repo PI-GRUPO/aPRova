@@ -38,7 +38,7 @@ func TestSaidaMaiorQueOLimiteETruncadaMantendoOFinal(t *testing.T) {
 }
 
 func TestSaidaDentroDoLimiteFicaIntacta(t *testing.T) {
-	const saida = "ok  github.com/Azulpasta/aPRova 0.01s"
+	const saida = "ok  github.com/PI-GRUPO/aPRova 0.01s"
 
 	if resultado := executarComSaida(t, saida, 1024); resultado.SaidaBruta != saida {
 		t.Errorf("saída curta não deveria mudar; obtive %q", resultado.SaidaBruta)

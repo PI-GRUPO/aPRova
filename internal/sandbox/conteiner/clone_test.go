@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
 func exigirGit(t *testing.T) {

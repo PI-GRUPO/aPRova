@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
 	"net/url"
 	"os"
@@ -15,8 +16,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/Azulpasta/aPRova/internal/rastro"
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
 	"github.com/joho/godotenv"
 )
 
@@ -32,7 +35,13 @@ const (
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
 
+const maximoDeVizinhos = 1000
+
+var regraPadrao = calibracao.RegraPadrao()
+
 var formatoDoNomeDeRede = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
+
+var linguagensComImagem = []string{"go", "python"}
 
 var nomesDosNiveisDeLog = []string{"debug", "info", "warn", "error"}
 
@@ -47,8 +56,7 @@ var variaveisQueSeraoObrigatorias = []string{
 	"GITHUB_APP_ID",
 	"GITHUB_PRIVATE_KEY_BASE64",
 	"GITHUB_WEBHOOK_SECRET",
-	"RECEIPT_PRIVATE_KEY_BASE64",
-	"RECEIPT_PUBLIC_KEY_BASE64",
+	"APROVA_CHAVE_RECIBO",
 	"ANTHROPIC_API_KEY",
 }
 
@@ -64,8 +72,8 @@ type Configuracao struct {
 	GitHubChavePrivada   []byte
 	GitHubSegredoWebhook string
 
-	ReciboChavePrivada ed25519.PrivateKey
-	ReciboChavePublica ed25519.PublicKey
+	ReciboSemente        []byte
+	ReciboChavesPublicas []ed25519.PublicKey
 
 	ChaveAPIAnthropic string
 
@@ -73,6 +81,8 @@ type Configuracao struct {
 	GCPRegiao       string
 	SandboxExecutor string
 	SandboxImagemGo string
+
+	SandboxImagemPython string
 
 	AzureSubscriptionID   string
 	AzureTenantID         string
@@ -88,11 +98,22 @@ type Configuracao struct {
 
 	GitHubAppSlug       string
 	SandboxDiretorios   map[string]string
+	SandboxLinguagens   map[string]string
 	SandboxRedeLocal    string
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
 
+	GateMaxArquivos       int
+	GateCaminhosSensiveis []string
+
 	VinculosSlackGitHub map[string]string
+
+	CalibracaoLigada             bool
+	CalibracaoVizinhos           int
+	CalibracaoSimilaridadeMinima float64
+	CalibracaoMinimoDeDesfechos  int
+	CalibracaoTimeout            time.Duration
+	ChaveAPIGemini               string
 }
 
 // Carregar lê as variáveis de ambiente, aplica os valores padrão e valida o
@@ -116,8 +137,8 @@ func Carregar() (Configuracao, error) {
 		GitHubChavePrivada:   leitura.base64Opcional("GITHUB_PRIVATE_KEY_BASE64"),
 		GitHubSegredoWebhook: leitura.opcional("GITHUB_WEBHOOK_SECRET", ""),
 
-		ReciboChavePrivada: leitura.chavePrivadaEd25519("RECEIPT_PRIVATE_KEY_BASE64"),
-		ReciboChavePublica: leitura.chavePublicaEd25519("RECEIPT_PUBLIC_KEY_BASE64"),
+		ReciboSemente:        leitura.sementeEd25519("APROVA_CHAVE_RECIBO"),
+		ReciboChavesPublicas: leitura.chavesPublicasEd25519("APROVA_CHAVES_PUBLICAS_RECIBO"),
 
 		ChaveAPIAnthropic: leitura.opcional("ANTHROPIC_API_KEY", ""),
 
@@ -125,6 +146,8 @@ func Carregar() (Configuracao, error) {
 		GCPRegiao:       leitura.opcional("GCP_REGION", regiaoPadrao),
 		SandboxExecutor: lerVariavel("SANDBOX_EXECUTOR"),
 		SandboxImagemGo: leitura.opcional("SANDBOX_IMAGEM_GO", ""),
+
+		SandboxImagemPython: leitura.opcional("SANDBOX_IMAGEM_PYTHON", ""),
 
 		AzureSubscriptionID:   lerVariavel("AZURE_SUBSCRIPTION_ID"),
 		AzureTenantID:         lerVariavel("AZURE_TENANT_ID"),
@@ -140,11 +163,22 @@ func Carregar() (Configuracao, error) {
 
 		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
 		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
+		SandboxLinguagens:   leitura.linguagensDoSandbox("SANDBOX_LINGUAGENS"),
 		SandboxRedeLocal:    leitura.nomeDeRede("SANDBOX_REDE_LOCAL", redeLocalPadrao),
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
 
+		GateMaxArquivos:       leitura.inteiroPositivoOpcional("GATE_MAX_ARQUIVOS"),
+		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),
+
 		VinculosSlackGitHub: leitura.vinculosSlackGitHub("SLACK_GITHUB_VINCULOS"),
+
+		CalibracaoLigada:             leitura.booleano("CALIBRACAO_LIGADA"),
+		CalibracaoVizinhos:           leitura.inteiroEntre("CALIBRACAO_VIZINHOS", regraPadrao.Vizinhos, 1, maximoDeVizinhos),
+		CalibracaoSimilaridadeMinima: leitura.fracao("CALIBRACAO_SIMILARIDADE_MINIMA", regraPadrao.SimilaridadeMinima),
+		CalibracaoMinimoDeDesfechos:  leitura.inteiroPositivo("CALIBRACAO_MINIMO_DE_DESFECHOS", regraPadrao.MinimoDeDesfechos),
+		CalibracaoTimeout:            leitura.duracaoPositiva("CALIBRACAO_TIMEOUT", calibracao.TimeoutPadrao),
+		ChaveAPIGemini:               lerVariavel("GEMINI_API_KEY"),
 	}
 
 	if err := leitura.erro(); err != nil {
@@ -217,33 +251,36 @@ func (l *leitor) base64Opcional(nome string) []byte {
 	return decodificado
 }
 
-func (l *leitor) chavePrivadaEd25519(nome string) ed25519.PrivateKey {
-	bruto := l.chaveComTamanho(nome, ed25519.PrivateKeySize)
-	if bruto == nil {
+func (l *leitor) sementeEd25519(nome string) []byte {
+	valor := l.opcional(nome, "")
+	if valor == "" {
 		return nil
 	}
-	return ed25519.PrivateKey(bruto)
+
+	semente, err := base64.StdEncoding.DecodeString(valor)
+	if err != nil || len(semente) != ed25519.SeedSize {
+		l.registrarPendencia("%s precisa ser a semente Ed25519 de %d bytes em base64 (gere com make keys)", nome, ed25519.SeedSize)
+		return nil
+	}
+	return semente
 }
 
-func (l *leitor) chavePublicaEd25519(nome string) ed25519.PublicKey {
-	bruto := l.chaveComTamanho(nome, ed25519.PublicKeySize)
-	if bruto == nil {
-		return nil
-	}
-	return ed25519.PublicKey(bruto)
-}
-
-func (l *leitor) chaveComTamanho(nome string, tamanhoEsperado int) []byte {
-	bruto := l.base64Opcional(nome)
-	if bruto == nil {
+func (l *leitor) chavesPublicasEd25519(nome string) []ed25519.PublicKey {
+	valor := l.opcional(nome, "")
+	if valor == "" {
 		return nil
 	}
 
-	if len(bruto) != tamanhoEsperado {
-		l.registrarPendencia("%s deve ter %d bytes decodificados, tem %d", nome, tamanhoEsperado, len(bruto))
-		return nil
+	var chaves []ed25519.PublicKey
+	for _, entrada := range strings.Split(valor, ",") {
+		chave, err := base64.StdEncoding.DecodeString(strings.TrimSpace(entrada))
+		if err != nil || len(chave) != ed25519.PublicKeySize {
+			l.registrarPendencia("%s espera chaves públicas Ed25519 de %d bytes em base64, separadas por vírgula; entrada %q é inválida", nome, ed25519.PublicKeySize, strings.TrimSpace(entrada))
+			return nil
+		}
+		chaves = append(chaves, ed25519.PublicKey(chave))
 	}
-	return bruto
+	return chaves
 }
 
 func (l *leitor) vinculosSlackGitHub(nome string) map[string]string {
@@ -278,6 +315,71 @@ func (l *leitor) inteiroPositivo(nome string, padrao int) int {
 		return padrao
 	}
 	return numero
+}
+
+func (l *leitor) booleano(nome string) bool {
+	valor := l.opcional(nome, "false")
+	ligado, err := strconv.ParseBool(valor)
+	if err != nil {
+		l.registrarPendencia("%s espera true ou false, obtive %q", nome, valor)
+		return false
+	}
+	return ligado
+}
+
+func (l *leitor) inteiroEntre(nome string, padrao, minimo, maximo int) int {
+	valor := l.opcional(nome, strconv.Itoa(padrao))
+	numero, err := strconv.Atoi(valor)
+	if err != nil || numero < minimo || numero > maximo {
+		l.registrarPendencia("%s espera um inteiro de %d a %d, obtive %q", nome, minimo, maximo, valor)
+		return padrao
+	}
+	return numero
+}
+
+func (l *leitor) fracao(nome string, padrao float64) float64 {
+	valor := l.opcional(nome, strconv.FormatFloat(padrao, 'f', -1, 64))
+	numero, err := strconv.ParseFloat(valor, 64)
+	if err != nil || math.IsNaN(numero) || numero < 0 || numero > 1 {
+		l.registrarPendencia("%s espera um número de 0 a 1, com ponto decimal, obtive %q", nome, valor)
+		return padrao
+	}
+	return numero
+}
+
+func (l *leitor) duracaoPositiva(nome string, padrao time.Duration) time.Duration {
+	valor := l.opcional(nome, padrao.String())
+	duracao, err := time.ParseDuration(valor)
+	if err != nil || duracao <= 0 {
+		l.registrarPendencia("%s espera uma duração positiva, como 5s ou 1500ms, obtive %q", nome, valor)
+		return padrao
+	}
+	return duracao
+}
+
+func (l *leitor) inteiroPositivoOpcional(nome string) int {
+	if l.opcional(nome, "") == "" {
+		return 0
+	}
+	return l.inteiroPositivo(nome, 0)
+}
+
+func (l *leitor) caminhosDoGate(nome string) []string {
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return nil
+	}
+
+	var caminhos []string
+	for _, entrada := range strings.Split(valor, ",") {
+		caminho := strings.TrimSpace(entrada)
+		if _, err := path.Match(caminho, "x"); err != nil || caminho == "" {
+			l.registrarPendencia("%s espera diretórios terminados em barra ou padrões de nome separados por vírgula, entrada %q é inválida", nome, caminho)
+			return nil
+		}
+		caminhos = append(caminhos, caminho)
+	}
+	return caminhos
 }
 
 func (l *leitor) urlHTTP(nome, padrao string) string {
@@ -320,6 +422,29 @@ func (l *leitor) diretoriosDoSandbox(nome string) map[string]string {
 	return diretorios
 }
 
+func (l *leitor) linguagensDoSandbox(nome string) map[string]string {
+	linguagens := map[string]string{}
+
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return linguagens
+	}
+
+	for _, entrada := range strings.Split(valor, ",") {
+		repositorio, linguagem, valido := interpretarLinguagem(entrada)
+		if !valido {
+			l.registrarPendencia("%s espera pares dono/repositorio=linguagem separados por vírgula, com linguagem entre %s; entrada %q é inválida", nome, strings.Join(linguagensComImagem, ", "), strings.TrimSpace(entrada))
+			return nil
+		}
+		if _, repetido := linguagens[repositorio]; repetido {
+			l.registrarPendencia("%s define o repositório %q mais de uma vez", nome, repositorio)
+			return nil
+		}
+		linguagens[repositorio] = linguagem
+	}
+	return linguagens
+}
+
 func interpretarDiretorio(entrada string) (string, string, bool) {
 	repositorio, diretorio, separado := strings.Cut(strings.TrimSpace(entrada), "=")
 	repositorio = strings.TrimSpace(repositorio)
@@ -329,6 +454,16 @@ func interpretarDiretorio(entrada string) (string, string, bool) {
 	valido := separado && temDono && dono != "" && nome != "" && diretorio != "" &&
 		!path.IsAbs(diretorio) && !slices.Contains(strings.Split(diretorio, "/"), "..")
 	return repositorio, diretorio, valido
+}
+
+func interpretarLinguagem(entrada string) (string, string, bool) {
+	repositorio, linguagem, separado := strings.Cut(strings.TrimSpace(entrada), "=")
+	repositorio = strings.TrimSpace(repositorio)
+	linguagem = strings.TrimSpace(linguagem)
+
+	dono, nome, temDono := strings.Cut(repositorio, "/")
+	valido := separado && temDono && dono != "" && nome != "" && slices.Contains(linguagensComImagem, linguagem)
+	return repositorio, linguagem, valido
 }
 
 func interpretarVinculo(entrada string) (string, string, bool) {

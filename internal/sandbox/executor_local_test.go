@@ -65,7 +65,7 @@ func valorDaFlag(argumentos []string, flag string) string {
 
 func pedidoValido() PedidoExecucao {
 	return PedidoExecucao{
-		URLRepositorio: "https://github.com/Azulpasta/aPRova.git",
+		URLRepositorio: "https://github.com/PI-GRUPO/aPRova.git",
 		SHA:            "3f2c1e0b9a8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b",
 		Linguagem:      LinguagemGo,
 		TaskRunID:      "task-run-1",

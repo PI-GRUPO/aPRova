@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +24,7 @@ type Dependencia struct {
 type RegistroDeExecucoes interface {
 	RegistrarPullRequest(ctx context.Context, evento domain.EventoPullRequest) (domain.Execucao, error)
 	RegistrarRevisao(ctx context.Context, decisao domain.DecisaoDeReview) error
+	RegistrarFechamento(ctx context.Context, fechamento domain.FechamentoDePR) error
 }
 
 // ProcessadorDeAcoesRemotas decide e executa uma ação pedida por canal
@@ -44,6 +45,7 @@ type Opcoes struct {
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
 	Relatorios          FonteDeRelatorios
+	Recibos             VerificadorDeRecibos
 	SlugDoApp           string
 	Agora               func() time.Time
 }
@@ -56,6 +58,7 @@ type Servidor struct {
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
 	relatorios          FonteDeRelatorios
+	recibos             VerificadorDeRecibos
 	slugDoApp           string
 	agora               func() time.Time
 }
@@ -74,6 +77,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
 		relatorios:          opcoes.Relatorios,
+		recibos:             opcoes.Recibos,
 		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
 	}
@@ -93,6 +97,9 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Post("/webhooks/github", s.manipularWebhookGitHub)
 	roteador.Post("/acoes-remotas", s.manipularAcaoRemota)
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
+	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
+	roteador.Get("/receipts/{id}", s.manipularRecibo)
+	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)
 
 	return roteador
 }

@@ -1,0 +1,44 @@
+[
+	{
+		"id": "falha_sandbox",
+		"nivel": "alto",
+		"descricao": "os testes ou a compilação falharam no sandbox",
+		"quando": "o resultado do sandbox é falha de teste ou de compilação"
+	},
+	{
+		"id": "muitos_arquivos",
+		"nivel": "alto",
+		"descricao": "o PR altera mais arquivos que o limite",
+		"quando": "o PR altera mais de 20 arquivos"
+	},
+	{
+		"id": "configuracao_ci",
+		"nivel": "alto",
+		"descricao": "o PR altera configuração de build ou de CI",
+		"quando": "altera workflow, Dockerfile, Makefile, Compose ou arquivo de build equivalente"
+	},
+	{
+		"id": "dependencia_nova",
+		"nivel": "alto",
+		"descricao": "o PR acrescenta dependência nova, que precisa de revisão humana",
+		"quando": "acrescenta dependência em go.mod, requirements, pyproject.toml ou pom.xml, ou o diff do manifesto não pôde ser lido"
+	},
+	{
+		"id": "segredo_versionado",
+		"nivel": "alto",
+		"descricao": "o PR versiona um arquivo que costuma guardar segredo",
+		"quando": "versiona .env, chave privada ou credencial"
+	},
+	{
+		"id": "area_sensivel",
+		"nivel": "alto",
+		"descricao": "o PR altera um caminho sensível",
+		"quando": "altera auth/, security/, payments/, migrations/, db/, database/ ou um arquivo .sql"
+	},
+	{
+		"id": "codigo_sem_teste",
+		"nivel": "medio",
+		"descricao": "o PR altera código sem alterar nenhum teste",
+		"quando": "altera código Go, Python ou Java sem alterar nenhum teste"
+	}
+]

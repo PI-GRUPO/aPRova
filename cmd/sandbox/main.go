@@ -8,10 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/sandbox"
-	"github.com/Azulpasta/aPRova/internal/sandbox/conteiner"
-	"github.com/Azulpasta/aPRova/internal/sandbox/golang"
-	"github.com/Azulpasta/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/conteiner"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/golang"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/python"
 )
 
 const (
@@ -41,7 +42,8 @@ func programa() conteiner.Programa {
 		Rodador:             rodador,
 		DiretorioDeTrabalho: diretorioDeTrabalho,
 		Linguagens: map[sandbox.Linguagem]conteiner.ExecutorDeLinguagem{
-			sandbox.LinguagemGo: golang.Nova(golang.Opcoes{Rodador: rodador, DiretorioDeCache: diretorioDeCache}),
+			sandbox.LinguagemGo:     golang.Nova(golang.Opcoes{Rodador: rodador, DiretorioDeCache: diretorioDeCache}),
+			sandbox.LinguagemPython: python.Nova(python.Opcoes{Rodador: rodador, DiretorioDeCache: diretorioDeCache}),
 		},
 		Agora: time.Now,
 	}

@@ -3,8 +3,8 @@ package integracaopostgres
 import (
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/acaoremota/contratotentativas"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota/contratotentativas"
 )
 
 func TestRegistroPostgresCumpreOContrato(t *testing.T) {

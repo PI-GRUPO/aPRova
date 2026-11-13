@@ -4,16 +4,17 @@ import (
 	"context"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"math"
 	"math/rand/v2"
 	"slices"
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -310,9 +311,6 @@ func TestOnDeleteDasFilhasSemRestricao(t *testing.T) {
 	if err := repo.Gravar(t.Context(), taskRun.ID, sandbox.ResultadoSandbox{Compilou: true, TipoFalha: sandbox.FalhaNenhuma}); err != nil {
 		t.Fatalf("gravar resultado: %v", err)
 	}
-	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, &taskRun.ID, vetorUnitario(0))); err != nil {
-		t.Fatalf("gravar memória: %v", err)
-	}
 	if _, err := repo.Reservar(t.Context(), tentativaDeExemplo(tenant, "acao-on-delete-"+taskRun.ID)); err != nil {
 		t.Fatalf("reservar tentativa: %v", err)
 	}
@@ -326,7 +324,7 @@ func TestOnDeleteDasFilhasSemRestricao(t *testing.T) {
 			t.Errorf("CASCADE: %s deveria ficar com %d linhas, ficou com %d", tabela, esperado, total)
 		}
 	}
-	for _, tabela := range []string{"code_memory", "remote_action_attempts"} {
+	for _, tabela := range []string{"remote_action_attempts"} {
 		if total := contar(t, `SELECT count(*) FROM `+tabela+` WHERE tenant_id = $1 AND task_run_id IS NULL`, tenant); total != 1 {
 			t.Errorf("SET NULL: %s deveria manter a linha com task_run_id nulo, achei %d", tabela, total)
 		}
@@ -351,7 +349,12 @@ func TestGateEAprovacaoImpedemApagarOTaskRun(t *testing.T) {
 	comAprovacao := novoTaskRun(t, repo, novoTenant())
 	registrarRevisao(t, repo, comAprovacao, "aprovacao-"+comAprovacao.ID)
 
-	for nome, taskRun := range map[string]string{"risk_gates": comGate.ID, "approvals": comAprovacao.ID} {
+	comMemoria := novoTaskRun(t, repo, novoTenant())
+	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(comMemoria.TenantID, comMemoria.ID, vetorUnitario(0))); err != nil {
+		t.Fatalf("gravar memória: %v", err)
+	}
+
+	for nome, taskRun := range map[string]string{"risk_gates": comGate.ID, "approvals": comAprovacao.ID, "code_memory": comMemoria.ID} {
 		_, err := pool.Exec(t.Context(), `DELETE FROM task_runs WHERE id = $1`, taskRun)
 		if codigoPostgres(err) != "23503" {
 			t.Errorf("RESTRICT em %s: esperava foreign_key_violation (23503), obtive %v", nome, err)
@@ -418,11 +421,35 @@ func vetorUnitario(eixo int) []float32 {
 	return vetor
 }
 
-func memoria(tenant int64, taskRunID *string, embedding []float32) domain.MemoriaDeCodigo {
-	return domain.MemoriaDeCodigo{
-		TenantID: tenant, TaskRunID: taskRunID, Repositorio: "Azulpasta/alvo", Resumo: "mudança",
-		Embedding: embedding, Nivel: domain.RiscoAlto, Desfecho: domain.DesfechoSemReversao,
+func memoria(tenant int64, taskRunID string, embedding []float32) domain.MemoriaDeCodigo {
+	return domain.MemoriaDeCodigo{TenantID: tenant, TaskRunID: taskRunID, Resumo: "motivos: area_sensivel", Embedding: embedding}
+}
+
+func taskRunDoPR(t *testing.T, repo *repository.RepositorioPostgres, tenant int64, numeroPR int, head string) domain.TaskRun {
+	t.Helper()
+
+	criado, _, err := repo.CriarTaskRun(t.Context(), domain.NovoTaskRun{
+		TenantID: tenant, DeliveryID: fmt.Sprintf("entrega-%d-%d-%d", tenant, numeroPR, time.Now().UnixNano()),
+		Repositorio: "Azulpasta/alvo", NumeroPR: numeroPR, SHAHead: head, Autor: "autora", Acao: "opened", RecebidoEm: time.Now().UTC(),
+	})
+	if err != nil {
+		t.Fatalf("criar task_run do PR %d: %v", numeroPR, err)
 	}
+	return criado
+}
+
+func analiseComVetor(t *testing.T, repo *repository.RepositorioPostgres, tenant int64, numeroPR int, head string, vetor []float32) domain.TaskRun {
+	t.Helper()
+
+	taskRun := taskRunDoPR(t, repo, tenant, numeroPR, head)
+	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, taskRun.ID, vetor)); err != nil {
+		t.Fatalf("gravar memória do PR %d: %v", numeroPR, err)
+	}
+	return taskRun
+}
+
+func consultaDeVizinhos(tenant int64, vetor []float32, limite int) domain.ConsultaDeVizinhos {
+	return domain.ConsultaDeVizinhos{TenantID: tenant, Repositorio: "Azulpasta/alvo", NumeroPR: 9999, Embedding: vetor, Limite: limite}
 }
 
 func TestBuscaVetorialDevolveOVizinhoMaisProximo(t *testing.T) {
@@ -434,34 +461,27 @@ func TestBuscaVetorialDevolveOVizinhoMaisProximo(t *testing.T) {
 	diagonal := vetorUnitario(0)
 	diagonal[1] = 1
 
-	esperado, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, quaseX))
-	if err != nil {
-		t.Fatalf("gravar: %v", err)
+	esperado := analiseComVetor(t, repo, tenant, 1, headDoPR, quaseX)
+	for numero, outro := range [][]float32{vetorUnitario(1), diagonal, vetorUnitario(2)} {
+		analiseComVetor(t, repo, tenant, numero+2, headDoPR, outro)
 	}
-	for _, outro := range [][]float32{vetorUnitario(1), diagonal, vetorUnitario(2)} {
-		if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, outro)); err != nil {
-			t.Fatalf("gravar: %v", err)
-		}
-	}
-	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(novoTenant(), nil, vetorUnitario(0))); err != nil {
-		t.Fatalf("gravar em outro tenant: %v", err)
-	}
+	analiseComVetor(t, repo, novoTenant(), 1, headDoPR, vetorUnitario(0))
 
-	vizinhos, err := repo.BuscarVizinhos(t.Context(), tenant, vetorUnitario(0), 2)
+	vizinhos, err := repo.VizinhosParecidos(t.Context(), consultaDeVizinhos(tenant, vetorUnitario(0), 2))
 	if err != nil {
 		t.Fatalf("buscar vizinhos: %v", err)
 	}
 	if len(vizinhos) != 2 {
 		t.Fatalf("esperava 2 vizinhos, obtive %d", len(vizinhos))
 	}
-	if vizinhos[0].ID != esperado {
-		t.Errorf("o mais próximo deveria ser %d, obtive %+v", esperado, vizinhos)
+	if vizinhos[0].TaskRunID != esperado.ID || vizinhos[0].TenantID != tenant {
+		t.Errorf("o mais próximo deveria ser %s, obtive %+v", esperado.ID, vizinhos)
 	}
-	if vizinhos[0].Distancia > vizinhos[1].Distancia {
+	if vizinhos[0].Similaridade < vizinhos[1].Similaridade {
 		t.Errorf("vizinhos fora de ordem: %+v", vizinhos)
 	}
-	if math.Abs(vizinhos[0].Distancia-(1-1/math.Sqrt(1.01))) > 1e-4 {
-		t.Errorf("distância de cosseno inesperada: %v", vizinhos[0].Distancia)
+	if math.Abs(vizinhos[0].Similaridade-1/math.Sqrt(1.01)) > 1e-4 {
+		t.Errorf("similaridade de cosseno inesperada: %v", vizinhos[0].Similaridade)
 	}
 }
 
@@ -469,7 +489,7 @@ func TestMemoriaDeCodigoRecusaTaskRunDeOutroTenant(t *testing.T) {
 	repo := exigirBanco(t)
 	alheio := novoTaskRun(t, repo, novoTenant())
 
-	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(novoTenant(), &alheio.ID, vetorUnitario(0))); !errors.Is(err, domain.ErrNaoEncontrado) {
+	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(novoTenant(), alheio.ID, vetorUnitario(0))); !errors.Is(err, domain.ErrNaoEncontrado) {
 		t.Errorf("esperava ErrNaoEncontrado ao misturar tenants, obtive %v", err)
 	}
 }
@@ -479,9 +499,7 @@ func TestBuscaVetorialAchaOsVizinhosDeOutroTenantPeloHNSW(t *testing.T) {
 	vizinho, consultado := novoTenant(), novoTenant()
 	aleatorio := rand.New(rand.NewPCG(1, 2))
 
-	// O outro tenant ocupa toda a vizinhança da consulta. Sem varredura
-	// iterativa, o HNSW entrega só os ef_search candidatos mais próximos, todos
-	// do outro tenant, e o filtro por tenant esvazia o resultado.
+	numero := 0
 	gravar := func(tenant int64, perto bool) {
 		vetor := make([]float32, domain.DimensoesEmbedding)
 		for i := range vetor {
@@ -490,9 +508,8 @@ func TestBuscaVetorialAchaOsVizinhosDeOutroTenantPeloHNSW(t *testing.T) {
 		if perto {
 			vetor[0] = 30
 		}
-		if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, vetor)); err != nil {
-			t.Fatalf("gravar memória: %v", err)
-		}
+		numero++
+		analiseComVetor(t, repo, tenant, numero, headDoPR, vetor)
 	}
 	for range 200 {
 		gravar(vizinho, true)
@@ -504,7 +521,7 @@ func TestBuscaVetorialAchaOsVizinhosDeOutroTenantPeloHNSW(t *testing.T) {
 		t.Fatalf("analyze: %v", err)
 	}
 
-	vizinhos, err := repositorioPeloHNSW(t).BuscarVizinhos(t.Context(), consultado, vetorUnitario(0), 5)
+	vizinhos, err := repositorioPeloHNSW(t).VizinhosParecidos(t.Context(), consultaDeVizinhos(consultado, vetorUnitario(0), 5))
 	if err != nil {
 		t.Fatalf("buscar vizinhos: %v", err)
 	}
@@ -516,7 +533,7 @@ func TestBuscaVetorialAchaOsVizinhosDeOutroTenantPeloHNSW(t *testing.T) {
 func TestBuscaVetorialRecusaDimensaoErrada(t *testing.T) {
 	repo := exigirBanco(t)
 
-	if _, err := repo.BuscarVizinhos(t.Context(), novoTenant(), []float32{1, 2, 3}, 1); !errors.Is(err, domain.ErrDadosInvalidos) {
+	if _, err := repo.VizinhosParecidos(t.Context(), consultaDeVizinhos(novoTenant(), []float32{1, 2, 3}, 1)); !errors.Is(err, domain.ErrDadosInvalidos) {
 		t.Errorf("esperava ErrDadosInvalidos, obtive %v", err)
 	}
 }

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
 )
 
 const (
@@ -307,11 +307,14 @@ func caminhoDoReciboNoExemplo(t *testing.T, tipo eventos.TipoEvento) string {
 	if err != nil {
 		t.Fatalf("ler exemplo: %v", err)
 	}
-	_, caminho, encontrado := strings.Cut(urlDoRecibo(t, corpo), "/recibos/")
+	_, caminho, encontrado := strings.Cut(urlDoRecibo(t, corpo), "/receipts/")
 	if !encontrado {
-		t.Fatalf("o exemplo de %s não tem /recibos/ na url_recibo", tipo)
+		t.Fatalf("o exemplo de %s não tem /receipts/ na url_recibo", tipo)
 	}
-	return "/recibos/" + caminho
+	if !strings.HasSuffix(caminho, "/verify") {
+		t.Fatalf("a url_recibo do exemplo de %s precisa apontar para a verificação: %s", tipo, caminho)
+	}
+	return "/receipts/" + caminho
 }
 
 func TestScriptUsaABaseDaURLPublicaNoRecibo(t *testing.T) {

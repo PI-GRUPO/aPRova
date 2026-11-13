@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/config"
-	"github.com/Azulpasta/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
 const tempoLimiteVerificacao = 30 * time.Second

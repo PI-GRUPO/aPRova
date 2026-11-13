@@ -7,12 +7,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 const (
@@ -24,11 +26,13 @@ const (
 
 	tamanhoMaximoDoCorpo = 1 << 20
 	sufixoDeBot          = "[bot]"
+	acaoDeFechamento     = "closed"
 )
 
 var (
 	acoesDePullRequestAceitas = []string{"opened", "synchronize"}
 	estadosDeReviewQueDecidem = []string{"approved", "changes_requested"}
+	linhaDeReversao           = regexp.MustCompile(`^Reverts ([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)#([1-9][0-9]{0,9})$`)
 )
 
 type entregaRecebida struct {
@@ -47,6 +51,10 @@ type cargaPullRequest struct {
 		Usuario struct {
 			Login string `json:"login"`
 		} `json:"user"`
+		Mergeado   bool      `json:"merged"`
+		SHADoMerge string    `json:"merge_commit_sha"`
+		FechadoEm  time.Time `json:"closed_at"`
+		Corpo      string    `json:"body"`
 	} `json:"pull_request"`
 	Repositorio struct {
 		NomeCompleto string `json:"full_name"`
@@ -58,9 +66,10 @@ type cargaPullRequest struct {
 
 type cargaReview struct {
 	Review struct {
-		Estado  string `json:"state"`
-		Corpo   string `json:"body"`
-		Usuario struct {
+		Estado   string `json:"state"`
+		Corpo    string `json:"body"`
+		CommitID string `json:"commit_id"`
+		Usuario  struct {
 			Login string `json:"login"`
 		} `json:"user"`
 	} `json:"review"`
@@ -126,7 +135,7 @@ func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRece
 		return http.StatusBadRequest, nil
 	}
 
-	if !slices.Contains(acoesDePullRequestAceitas, carga.Acao) {
+	if carga.Acao != acaoDeFechamento && !slices.Contains(acoesDePullRequestAceitas, carga.Acao) {
 		entrega.diario.Debug("ação de pull request ignorada", "acao", carga.Acao)
 		return http.StatusNoContent, nil
 	}
@@ -134,6 +143,10 @@ func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRece
 	if carga.Instalacao.ID <= 0 {
 		entrega.diario.Warn("webhook de pull request sem installation.id")
 		return http.StatusBadRequest, nil
+	}
+
+	if carga.Acao == acaoDeFechamento {
+		return s.registrarFechamento(ctx, entrega, carga)
 	}
 
 	execucao, err := s.execucoes.RegistrarPullRequest(ctx, domain.EventoPullRequest{
@@ -154,6 +167,43 @@ func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRece
 		"task_run_id", execucao.ID, "acao", carga.Acao, "reentrega", execucao.JaRegistrada)
 
 	return http.StatusAccepted, nil
+}
+
+func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaRecebida, carga cargaPullRequest) (int, error) {
+	fechamento := domain.FechamentoDePR{
+		InstallationID: carga.Instalacao.ID,
+		DeliveryID:     entrega.deliveryID,
+		Repositorio:    carga.Repositorio.NomeCompleto,
+		NumeroPR:       carga.Numero,
+		Mergeado:       carga.PullRequest.Mergeado,
+		SHAHead:        carga.PullRequest.Head.SHA,
+		FechadoEm:      carga.PullRequest.FechadoEm,
+	}
+	if fechamento.Mergeado {
+		fechamento.SHADoMerge = carga.PullRequest.SHADoMerge
+		fechamento.Reverte = pullRequestRevertido(carga.PullRequest.Corpo, carga.Repositorio.NomeCompleto)
+	}
+
+	if err := s.execucoes.RegistrarFechamento(ctx, fechamento); err != nil {
+		return 0, err
+	}
+
+	entrega.diario.Info("fechamento de pull request registrado",
+		"numero_pr", carga.Numero, "mergeado", fechamento.Mergeado, "reverte", fechamento.Reverte)
+	return http.StatusAccepted, nil
+}
+
+func pullRequestRevertido(corpo, repositorio string) int {
+	primeiraLinha, _, _ := strings.Cut(corpo, "\n")
+	partes := linhaDeReversao.FindStringSubmatch(strings.TrimSuffix(primeiraLinha, "\r"))
+	if partes == nil || !strings.EqualFold(partes[1], repositorio) {
+		return 0
+	}
+	numero, err := strconv.Atoi(partes[2])
+	if err != nil {
+		return 0
+	}
+	return numero
 }
 
 func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida) (int, error) {
@@ -188,6 +238,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		Revisor:        revisor,
 		Origem:         origem,
 		RecebidoEm:     time.Now().UTC(),
+		CommitSHA:      carga.Review.CommitID,
 	})
 	if errors.Is(err, domain.ErrNaoEncontrado) {
 		entrega.diario.Warn("revisão de pull request sem task_run ignorada",

@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/acaoremota"
+	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 )
 
 const segredoDasAcoesDeTeste = "segredo-das-acoes-de-teste"

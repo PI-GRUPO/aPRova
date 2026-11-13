@@ -9,10 +9,13 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/eventos"
-	"github.com/Azulpasta/aPRova/internal/platform"
-	"github.com/Azulpasta/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 // Armazenamento é o que o motor e o pool usam do banco: a fila com prazo, as
@@ -27,7 +30,6 @@ type Armazenamento interface {
 	GravarResultadoDaTentativa(ctx context.Context, taskRunID string, tentativa int, resultado sandbox.ResultadoSandbox) error
 	UltimoResultadoSandbox(ctx context.Context, taskRunID string) (int, sandbox.ResultadoSandbox, error)
 	BuscarGateDeRisco(ctx context.Context, taskRunID string) (domain.GateDeRisco, error)
-	GravarGateDeRisco(ctx context.Context, gate domain.GateDeRisco) error
 	BuscarReciboPorTaskRun(ctx context.Context, taskRunID string) (domain.Recibo, error)
 	ProximaAprovacao(ctx context.Context, taskRunID string, depoisDe int64) (domain.AprovacaoRegistrada, error)
 	AvancarCursorDeAprovacao(ctx context.Context, taskRunID, trabalhador string, ate int64) error
@@ -44,67 +46,47 @@ type ConsultaDePermissao interface {
 	PermissaoNoRepositorio(ctx context.Context, installationID int64, dono, repositorio, login string) (platform.Permissao, error)
 }
 
-// Motivo é uma regra acionada pelo gate, com nome estável e descrição curta.
-type Motivo struct {
-	Nome      string
-	Descricao string
-}
-
-// EntradaAvaliacao é o que o gate recebe: o task_run, o contexto do PR e o
-// resultado do sandbox.
-type EntradaAvaliacao struct {
-	TaskRun  domain.TaskRun
-	Contexto platform.ContextoPR
-	Sandbox  sandbox.ResultadoSandbox
-}
-
-// Avaliacao é a decisão do gate: os níveis, os motivos e a explicação em
-// português.
-type Avaliacao struct {
-	NivelDeterministico domain.NivelRisco
-	Nivel               domain.NivelRisco
-	Motivos             []Motivo
-	Explicacao          string
-}
-
-// AvaliadorRisco decide o nível de risco de um pull request.
+// AvaliadorRisco decide o nível de risco de um pull request. O gate.Gate é a
+// implementação.
 type AvaliadorRisco interface {
-	Avaliar(ctx context.Context, entrada EntradaAvaliacao) (Avaliacao, error)
+	Avaliar(ctx context.Context, entrada gate.Entrada) (gate.Resultado, error)
 }
 
-// PedidoRecibo é o que o recibo registra: o task_run, a avaliação e o
-// resultado do sandbox.
-type PedidoRecibo struct {
-	TaskRun   domain.TaskRun
-	Avaliacao Avaliacao
-	Sandbox   sandbox.ResultadoSandbox
+// CalibradorRisco é a camada 2 do gate: pode descer o nível um degrau a partir
+// do histórico do tenant e nunca devolve erro. O calibracao.Calibrador é a
+// implementação.
+type CalibradorRisco interface {
+	Calibrar(ctx context.Context, pedido calibracao.Pedido) calibracao.Resultado
 }
 
-// ReciboEmitido identifica o recibo de um task_run e o SHA-256 do conteúdo
-// assinado.
-type ReciboEmitido struct {
-	ID   string
-	Hash []byte
-}
-
-// EmissorRecibo assina e grava o recibo do task_run. Existe um recibo por
-// task_run: emitir de novo para o mesmo task_run devolve o mesmo recibo.
+// EmissorRecibo grava a decisão do gate e o recibo assinado dela, os dois
+// juntos ou nenhum. Decisão que já existe devolve domain.ErrDuplicado. O
+// receipt.Emissor é a implementação.
 type EmissorRecibo interface {
-	Emitir(ctx context.Context, pedido PedidoRecibo) (ReciboEmitido, error)
+	Emitir(ctx context.Context, pedido receipt.Pedido) (receipt.Emitido, error)
 }
 
-// Publicacao é o resultado de um task_run a publicar no pull request.
+// Publicacao é o resultado de um task_run a publicar no pull request: a
+// decisão do gate, o resultado do sandbox em que ela se apoiou e o recibo
+// assinado. AprovadoPor é o login de quem aprovou um pull request de risco
+// alto; vazio enquanto ninguém aprovou.
 type Publicacao struct {
-	TaskRun domain.TaskRun
-	Gate    domain.GateDeRisco
-	Recibo  ReciboEmitido
+	TaskRun     domain.TaskRun
+	Gate        domain.GateDeRisco
+	Sandbox     sandbox.ResultadoSandbox
+	Recibo      receipt.Emitido
+	AprovadoPor string
 }
 
 // PublicadorPR publica o Check Run e o comentário do task_run no pull
-// request. É idempotente por task_run: publicar de novo o mesmo task_run não
-// cria um segundo Check Run nem um segundo comentário. Nunca faz merge.
+// request. Iniciar cria o Check Run em andamento; Publicar o conclui e escreve
+// o comentário; PublicarFalha o conclui como failure, com o diagnóstico. Tudo é
+// idempotente por task_run: repetir não cria um segundo Check Run nem um
+// segundo comentário. Nunca faz merge.
 type PublicadorPR interface {
+	Iniciar(ctx context.Context, taskRun domain.TaskRun) error
 	Publicar(ctx context.Context, publicacao Publicacao) error
+	PublicarFalha(ctx context.Context, taskRun domain.TaskRun, diagnostico string) error
 }
 
 // EmissorEventos envia um evento ao n8n sem bloquear quem chama.

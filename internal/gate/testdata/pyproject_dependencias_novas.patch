@@ -1,0 +1,12 @@
+@@ -3,7 +3,10 @@ name = "frete"
+ version = "0.1.0"
+ description = "Calculo de frete por faixa de peso e distancia (repositorio de testes do aPRova)"
+ requires-python = ">=3.9"
+-dependencies = []
++dependencies = [
++    "httpx>=0.27",
++    "pydantic[email]==2.9.2",
++]
+ 
+ [project.optional-dependencies]
+ dev = ["pytest>=7.0"]

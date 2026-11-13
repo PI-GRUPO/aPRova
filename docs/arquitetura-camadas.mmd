@@ -19,7 +19,7 @@ graph TD
 
     subgraph externo["Adaptadores externos"]
         GH["GitHub API"]
-        CRJ["Cloud Run Jobs"]
+        ACA["Azure Container Apps Jobs"]
         CC["Claude Code headless"]
         PG[("PostgreSQL<br/>pgvector")]
         RD[("Redis")]
@@ -39,7 +39,7 @@ graph TD
     GATE --> DOMAIN
 
     PLATFORM -.implementa.-> GH
-    SANDBOX -.implementa.-> CRJ
+    SANDBOX -.implementa.-> ACA
     LLM -.implementa.-> CC
     REPO --> PG
     WORKER --> RD

@@ -193,15 +193,18 @@ ALTO e mostra três motivos. Core o chama; Central encaminha cliques após
 assinatura. Sem vínculo revisor Slack/GitHub, não pergunta. API de feedback
 está desabilitada e não existe endpoint correspondente no núcleo.
 Faltam cadastro de identidade, endpoint autorizado/idempotente, integração
-com `approvals.feedback_reason` e calibrador real. Desenvolvimento adiado.
+com `approvals.feedback_reason` e o calibrador histórico do núcleo.
+A persistência de feedback continua fora desta etapa.
 Inventário e contrato proposto estão na
 [documentação central](../../docs/central-slack-implementacao.md#feedback--motivo-da-aprovação).
 
 Ações da Central passam pela API com vínculo Slack/GitHub e permissão real.
-Conferir/aplicar migrations, incluindo a 15, antes dos testes integrados.
+Conferir/aplicar as 21 migrations antes dos testes integrados; a 21 preserva
+a justificativa remota, e a 15 pertence aos motivos do gate.
 A reexecução ainda não tem executor. O worker já emite análise, espera de
-aprovação, decisão e falha recuperável; faltam eventos de dependência e
-instalação, gate/calibração definitivos, recibos e publicação definitivos.
+aprovação, decisão, dependências identificadas e falha recuperável.
+Gate/calibração, recibos e publicação reais vieram da `dev`; falta o evento
+automático de instalação e a validação externa do conjunto.
 SLA com dois limites configuráveis ainda não tem workflow.
 
 ## Onboarding de Repositório
@@ -217,7 +220,7 @@ Consulta somente leitura da proteção clássica, com três resultados:
 atual não autentica no GitHub e não cobre rulesets; no teste real, a branch
 foi identificada e a proteção retornou 401. Não existe endpoint equivalente
 na API. A integração deverá ganhar leitura autenticada e a identidade exata
-do Check do produto, cuja publicação ainda é provisória no backend.
+do Check do produto (`aPRova`), publicado pelo backend real.
 
 No Trello, cria ou reutiliza lista `owner/repo` no quadro configurado.
 Não cria cards, move cards ou comenta. Arquivamento, nomes ambíguos e falhas
@@ -305,7 +308,7 @@ correspondência inequívoca na instância. Nenhum vínculo de pessoa foi inferi
 | `APROVA_TRELLO_QUADRO_NOME` | Trello/onboarding: rótulo | `Quadro da equipe` no Trello; vazio no onboarding | Nome do quadro existente | n8n |
 | `APROVA_ONBOARDING_TRELLO_HABILITADO` | Onboarding: habilitar Trello | `false`; somente `true` habilita | Decisão do operador; estado local reaproveitado | n8n |
 | `APROVA_ONBOARDING_SLACK_HABILITADO` | Onboarding: habilitar Slack | `false`; somente `true` habilita | Decisão do operador; estado local reaproveitado | n8n |
-| `APROVA_GITHUB_CHECK_NOME` | Onboarding: identidade do Check | vazio impede confirmação de proteção | Backend definitivo (pendente) | n8n |
+| `APROVA_GITHUB_CHECK_NOME` | Onboarding: identidade do Check | vazio impede confirmação de proteção | Nome do Check do backend (`aPRova`); confirmar no ambiente | n8n |
 | `APROVA_GITHUB_CHECK_APP_ID` | Onboarding: App do Check | vazio → `null`, pendente | App que publica o Check; não é installation ID | n8n |
 | `SLACK_GITHUB_VINCULOS` | API e feedback: identidade compartilhada | vazio sem vínculos; `USUARIO_SLACK:login_github,...` | Confirmação humana das identidades | API e n8n |
 | `N8N_SEGREDO_EVENTOS` | Go → Core, HMAC | vazio; obrigatório quando emissão habilitada | Segredo compartilhado por direção | Emissor e n8n |
@@ -381,8 +384,8 @@ PostgreSQL/Redis nesta migração: suas portas não foram alteradas.
 | `GITHUB_PRIVATE_KEY_BASE64` | Go / chave privada GitHub | `vazio` | opcional no loader; necessário ao worker; Chave PEM do GitHub App em base64; segredo | API/worker |
 | `GITHUB_WEBHOOK_SECRET` | Go / autenticar webhook GitHub | `vazio` | opcional no loader; necessário ao webhook; GitHub App webhook secret | API |
 | `GITHUB_APP_SLUG` | Go / identificação do App | `vazio` | opcional; GitHub App settings | API/worker |
-| `RECEIPT_PRIVATE_KEY_BASE64` | Go / assinar recibo Ed25519 | `vazio` | opcional no loader; Gerador de chaves do projeto; segredo | API/worker |
-| `RECEIPT_PUBLIC_KEY_BASE64` | Go / conferir recibo Ed25519 | `vazio` | opcional no loader; Par da chave privada | API/worker |
+| `APROVA_CHAVE_RECIBO` | Go / assinar recibo Ed25519 | `vazio` | semente de 32 bytes em base64; obrigatória ao iniciar worker; segredo | API/worker |
+| `APROVA_CHAVES_PUBLICAS_RECIBO` | Go / conferir recibos Ed25519 | `vazio` | chaves públicas em base64, separadas por vírgula; permite conferir recibos antigos | API/worker |
 | `SANDBOX_EXECUTOR` | Go / executor do sandbox | `vazio no loader` | obrigatório ao iniciar worker (local ou azure); local ou azure conforme implantação | worker |
 | `SANDBOX_IMAGEM_GO` | Go / imagem do executor | `vazio` | necessário ao executor local; Imagem construída/publicada pela equipe | worker |
 | `SANDBOX_DIRETORIOS` | Go / subdiretórios por repositório | `vazio` | opcional; dono/repo=diretorio_relativo separados por vírgula | worker |
@@ -400,3 +403,43 @@ PostgreSQL/Redis nesta migração: suas portas não foram alteradas.
 | `AZURE_CLIENT_SECRET` | Go / Azure segredo do cliente | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
 | `AZURE_RESOURCE_GROUP` | Go / Azure grupo de recursos | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
 | `AZURE_SANDBOX_JOB_NAME` | Go / Azure job do sandbox | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
+
+
+## Integração com a dev — 2026-11-13
+
+O módulo Go é `github.com/PI-GRUPO/aPRova`, com toolchain Go 1.26.11.
+O núcleo agora inclui sandbox Python, gate determinístico, recibos Ed25519,
+publicação idempotente no GitHub e calibração opcional por histórico.
+Essas implementações não substituem a validação do n8n com serviços reais.
+
+| Variável incorporada da dev | Consumidor e configuração | Recarga |
+| --- | --- | --- |
+| `SANDBOX_IMAGEM_PYTHON` | worker; imagem construída para executar projetos Python | worker |
+| `SANDBOX_LINGUAGENS` | worker; pares `dono/repo=python` ou `dono/repo=go`; padrão Go | worker |
+| `GATE_MAX_ARQUIVOS` | worker; padrão 20, limite da regra de tamanho | worker |
+| `GATE_CAMINHOS_SENSIVEIS` | worker; configuração de caminhos do gate; ver `README.md`, seção Gate de risco | worker |
+| `CALIBRACAO_LIGADA` | worker; `false` por padrão | worker |
+| `CALIBRACAO_VIZINHOS` | worker; padrão 10 | worker |
+| `CALIBRACAO_SIMILARIDADE_MINIMA` | worker; padrão 0.97 | worker |
+| `CALIBRACAO_MINIMO_DE_DESFECHOS` | worker; padrão 5 | worker |
+| `CALIBRACAO_TIMEOUT` | worker; padrão 5s | worker |
+| `GEMINI_API_KEY` | worker; segredo do provedor de embeddings quando a calibração estiver ligada | worker |
+
+`GEMINI_API_KEY` pertence ao backend e não substitui a credencial Gemini do
+assistente no n8n. As chaves `RECEIPT_PRIVATE_KEY_BASE64` e
+`RECEIPT_PUBLIC_KEY_BASE64` foram substituídas por `APROVA_CHAVE_RECIBO` e
+`APROVA_CHAVES_PUBLICAS_RECIBO`. A nova chave privada recebe a semente de
+32 bytes em base64; não copiar uma chave expandida de 64 bytes nesse campo.
+Preservar as chaves públicas históricas e não gerar outra identidade de
+assinatura inadvertidamente. O `.env` local não é alterado pelo merge.
+
+O esquema integrado tem 21 migrations. A justificativa remota passou de
+`000015_preservar_justificativa_acao_remota` para `000021`, pois a `dev` já
+usa a versão 15 para motivos do gate e as versões 16–20 para outras funções.
+Em banco limpo ou no esquema original da `dev`, seguir as migrations normais.
+**Se o banco já aplicou a antiga migration 15 de workflows-n8n, não executar
+`migrate up` nem `force` sem reconciliar o esquema e o histórico primeiro.**
+O número 15 sozinho não identifica qual alteração foi aplicada. Conferir
+`schema_migrations`, a coluna `remote_action_attempts.justification` e as
+colunas do gate; preservar os dados e preparar uma migração específica ou
+usar um banco de testes novo. Esta integração não modifica o banco local.

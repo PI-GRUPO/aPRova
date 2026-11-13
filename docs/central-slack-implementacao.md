@@ -1,6 +1,6 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-08**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-13**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
@@ -35,6 +35,8 @@ núcleo nem usar IA para decidir aprovações.
 | Feedback — Motivo da Aprovação | Publicado, bloqueado por configuração | Pergunta de motivo para aprovação ALTO; sem vínculo não pergunta; envio à API desabilitado. |
 | Onboarding de Repositório | Publicado, proteção ainda indisponível | Identifica branch, consulta proteção, cria/reutiliza lista Trello e resume no Slack. |
 
+Os estados locais da tabela foram conferidos em 2026-11-08; esta integração
+de código em 2026-11-13 não altera nem revalida a instância n8n.
 Publicação local não comprova funcionamento integral com GitHub real ou
 produção. Na validação do onboarding, `/health` e `/ready` responderam 200
 a partir do n8n, superando a indisponibilidade registrada anteriormente.
@@ -56,7 +58,7 @@ Indisponibilidade não deve ser apresentada como métricas zeradas.
 | `APROVA_API_URL` | Configurada; `/health` e `/ready` responderam 200 no teste do onboarding. Endpoints de negócio ainda exigem validação própria. |
 | `N8N_WEBHOOK_URL` | Preenchida no `.env` do núcleo; conferir URL e carregar no worker ao iniciá-lo. |
 | `SLACK_GITHUB_VINCULOS` | **Não configurado** no `.env` e ausente no ambiente do n8n. Necessário na API para ações; feedback exige configuração adicional abaixo. |
-| `APROVA_URL_PUBLICA` | Não configurada; recibos públicos também dependem de endpoint ainda ausente. |
+| `APROVA_URL_PUBLICA` | Configuração local ainda precisa ser conferida; os endpoints `/receipts/{id}`, `/receipts/{id}/verify` e `/receipts/keys` existem no código integrado. |
 
 O `.env` é ignorado pelo Git; `.env.example` contém somente exemplos.
 O Compose repassa a instalação para `n8n-aprova`. Os workflows usam
@@ -118,7 +120,7 @@ ID global de consultas. `relatorio_periodico` é pedido da automação,
 não um sétimo evento emitido pelo worker, e não publica Digest.
 
 Falta validar worker → Core com dados reais; implementar emissão de
-`dependencia_nova` e `instalacao`; e construir SLA com limites
+`instalacao` (a de `dependencia_nova` já existe); e construir SLA com limites
 configuráveis, encerramento ao receber decisão e atualização do alerta.
 
 ## Onboarding de Repositório
@@ -169,9 +171,9 @@ valida regras de rulesets. Não cria regras nem torna checks obrigatórios.
 Somente `protecao_confirmada` retorna `pronto_fluxo_protegido=true`.
 HTTP 401/403/404 não prova que a proteção esteja ausente. O status deve ser
 interpretado antes de campos auxiliares como `check_obrigatorio`.
-Nome e App ID ficam vazios no nó `02` enquanto o publicador do backend for
-provisório; os checks de CI `verificacao`, `sandbox` e `banco` não definem
-a identidade do Check do produto aPRova.
+O publicador real usa o nome de Check `aPRova` (`internal/publicacao`).
+O onboarding exige esse nome e o App ID do publicador, confirmados no
+ambiente; os checks de CI não substituem a identidade do Check do produto.
 
 O nó `08` recebe evidência com `branch`, `status_http`, `protecao` e
 `simulado`. Não aceita resultado de proteção informado pelo evento.
@@ -267,7 +269,7 @@ justificativa também no backend. O pedido leva ID Slack e, quando disponível,
 
 `Pedido`, `Servico.Processar` e `ExecutorNoGitHub` ficam em
 `internal/acaoremota/`. `RepositorioPostgres` reserva `id_acao`
-e registra tentativas; migration 15 inclui
+e registra tentativas; migration 21 inclui
 `remote_action_attempts.justification`. A correlação confere análise,
 tenant, repositório e PR; justificativa também segue na review GitHub.
 Somente `202 + status=aceito` confirma a execução nesse contrato.
@@ -440,8 +442,9 @@ ALTO original e idempotência tenant/aprovação; política de segundo motivo
 conflitante; vínculo do revisor e teste integrado. Falha após deduplicação
 da pergunta exige reprocessamento controlado.
 
-O calibrador histórico real ainda não existe; worker usa gate provisório.
-Falta consumir o sinal rotulado e registrar no artigo a diferença entre
+O núcleo já tem gate determinístico e calibração opcional por histórico
+([calibracao.md](calibracao.md)); o feedback posterior ainda não está integrado
+a esse fluxo. Falta consumir o sinal rotulado e registrar no artigo a diferença entre
 aprender com resultado observado e com motivo declarado pelo humano.
 Não afirmar ganho quantitativo antes de medir. O desenvolvimento posterior
 deste ramo foi adiado pelo usuário.
@@ -464,10 +467,11 @@ nula sem finalizadas. `em_andamento` considera execuções recebidas na janela,
 não todas as atuais; reversões podem corresponder a análises antigas.
 Falha da API não representa semana vazia.
 
-Não existem endpoints para listar PRs pendentes, detalhar execução, fornecer
-recibo público ou gravar feedback posterior. Não prometer essas consultas.
-O worker emite análise, espera de aprovação, decisão e falha recuperável,
-mas gate, recibo e publicação ainda usam implementações provisórias.
+Não existem endpoints para listar PRs pendentes, detalhar execução ou gravar
+feedback posterior. Os endpoints públicos de recibos já existem.
+O worker emite análise, espera de aprovação, decisão, dependências novas
+identificadas e falha recuperável. Gate, recibo, publicação e calibração
+opcional estão implementados; testes locais não comprovam integração externa.
 
 ## Pendências compartilhadas e implantação
 
@@ -479,8 +483,8 @@ mas gate, recibo e publicação ainda usam implementações provisórias.
   declarada pela IA como autoridade.
 - Conferir URLs HTTPS do Slack/GitHub ao mudar túnel; produção exige domínio
   estável e rede/configuração próprias.
-- Implementar gate/calibração, recibos e publicação definitivos e eventos
-  ainda ausentes, respeitando a separação núcleo/periferia.
+- Validar gate/calibração, recibos e publicação reais com as integrações;
+  implementar o evento de instalação, respeitando a separação núcleo/periferia.
 - Construir SLA com dois limites configuráveis: renotificação e menção ao
   responsável, encerrando após decisão. Ainda não há workflow.
 - Configurar credenciais/chamadas após importar os exports; preservar
@@ -509,5 +513,5 @@ locais no feedback. As evidências funcionais acima são históricas; preencher
 variáveis não valida GitHub, Slack, Trello ou Gemini. Nesta etapa só foram
 executados testes isolados e inspeção estrutural, sem disparos externos.
 Permanecem pendentes identidades Slack/GitHub, validação de permissões reais,
-endpoint de feedback, executor de reexecução e versões definitivas do Check,
-gate, recibos e publicação.
+endpoint de feedback, executor de reexecução e validação integrada do Check,
+gate, calibração, recibos e publicação incorporados da `dev`.

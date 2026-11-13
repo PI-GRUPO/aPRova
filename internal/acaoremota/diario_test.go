@@ -64,7 +64,7 @@ func TestServicoRegistraRecusaEmLogDeAvisoComOsCamposDaTentativa(t *testing.T) {
 		"tipo":          "aprovar",
 		"usuario_slack": "U-LEITOR",
 		"login_github":  "dave",
-		"repositorio":   "Azulpasta/aPRova",
+		"repositorio":   "PI-GRUPO/aPRova",
 		"numero_pr":     float64(42),
 		"decisao":       "recusada",
 		"motivo":        "permissao_insuficiente",

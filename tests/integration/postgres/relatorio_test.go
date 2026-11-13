@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
-	"github.com/Azulpasta/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 )
 
 func taskRunRecebidoEm(t *testing.T, repo *repository.RepositorioPostgres, tenant int64, recebidoEm time.Time) domain.TaskRun {
@@ -51,15 +51,12 @@ func gravarGate(t *testing.T, repo *repository.RepositorioPostgres, taskRunID st
 	}
 }
 
-func gravarDesfecho(t *testing.T, tenant int64, desfecho domain.DesfechoMudanca, criadoEm time.Time) {
+func gravarReversao(t *testing.T, repo *repository.RepositorioPostgres, tenant int64, revertido int, revertidoEm time.Time) {
 	t.Helper()
 
-	if _, err := pool.Exec(t.Context(), `
-		INSERT INTO code_memory (tenant_id, repository, summary, embedding, level, outcome, created_at)
-		VALUES ($1, 'Azulpasta/alvo', 'mudança', array_fill(0.1::real, ARRAY[$2::int])::vector, 'alto', $3, $4)`,
-		tenant, domain.DimensoesEmbedding, string(desfecho), criadoEm); err != nil {
-		t.Fatalf("gravar desfecho: %v", err)
-	}
+	reversao := fechamento(tenant, revertido+100, true, revertidoEm)
+	reversao.Reverte = revertido
+	registrarFechamento(t, repo, reversao)
 }
 
 func TestRelatorioSemanalContaSoAJanelaEOTenant(t *testing.T) {
@@ -92,11 +89,11 @@ func TestRelatorioSemanalContaSoAJanelaEOTenant(t *testing.T) {
 	outroTenant := taskRunRecebidoEm(t, repo, novoTenant(), dentro)
 	percorrer(t, repo, outroTenant, domain.EstadoConcluido)
 
-	gravarDesfecho(t, tenant, domain.DesfechoRevertidaAposMerge, dentro)
-	gravarDesfecho(t, tenant, domain.DesfechoRevertidaAposMerge, inicio)
-	gravarDesfecho(t, tenant, domain.DesfechoRevertidaAposMerge, fim)
-	gravarDesfecho(t, tenant, domain.DesfechoSemReversao, dentro)
-	gravarDesfecho(t, novoTenant(), domain.DesfechoRevertidaAposMerge, dentro)
+	gravarReversao(t, repo, tenant, 1, dentro)
+	gravarReversao(t, repo, tenant, 2, inicio)
+	gravarReversao(t, repo, tenant, 3, fim)
+	registrarFechamento(t, repo, fechamento(tenant, 4, true, dentro))
+	gravarReversao(t, repo, novoTenant(), 1, dentro)
 
 	relatorio, err := repo.RelatorioSemanal(t.Context(), tenant, inicio, fim)
 	if err != nil {

@@ -17,6 +17,7 @@ func TestAfetaOSandboxReconheceCadaCaminhoMonitorado(t *testing.T) {
 		".dockerignore",
 		".github/workflows/ci.yml",
 		".github/workflows/imagem-sandbox-go.yml",
+		"imagens/python/Dockerfile",
 		"tests/integration/sandbox_go_test.go",
 		"tests/integration/testdata/go/ok/frete.go",
 	}
@@ -35,7 +36,7 @@ func TestAfetaOSandboxIgnoraOQueNaoMexeNele(t *testing.T) {
 		"internal/sandboxes.go",
 		"cmd/api/main.go",
 		"cmd/sandboxer/main.go",
-		"imagens/python/Dockerfile",
+		"imagens/ruby/Dockerfile",
 		"docs/go.mod",
 		"go.mod.bak",
 		".github/CODEOWNERS",

@@ -1,0 +1,7 @@
+@@ -16,5 +16,5 @@ build-backend = "setuptools.build_meta"
+ include = ["frete*"]
+ 
+ [tool.pytest.ini_options]
+-testpaths = ["tests"]
++testpaths = ["tests", "integracao"]
+ pythonpath = ["."]

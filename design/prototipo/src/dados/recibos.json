@@ -1,0 +1,1388 @@
+[
+	{
+		"id": "948ed06c-88aa-41fa-ab10-7d38bb2248c5",
+		"tenant_id": 58291734,
+		"task_run_id": "79e23c90-bb19-4b72-b638-34a649404568",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "0324210026470e9a8bd13314d29c2bb58917cc2e0665f6583fd0cf0b6a52eaf6",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiOTQ4ZWQwNmMtODhhYS00MWZhLWFiMTAtN2QzOGJiMjI0OGM1IiwidGFza19ydW5faWQiOiI3OWUyM2M5MC1iYjE5LTRiNzItYjYzOC0zNGE2NDk0MDQ1NjgiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjg3LCJoZWFkX3NoYSI6IjA0YmNmMGY0NTBmNjQ5MjY4YTc0NWE4MjUwMTFjMDAwODBmOWNhY2QiLCJkaWZmX3NoYTI1NiI6Ijc4YWE1ZmViYjEwNjcyMTlmN2JhOGRlMmEwYzY0MzNiZTU4NDAzYWEzODVmYTVlYTE5OTJlOGNiZTQ5ZTNjNmIiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoibWVkaW8iLCJuaXZlbCI6Im1lZGlvIiwibW90aXZvcyI6W3siaWQiOiJjb2RpZ29fc2VtX3Rlc3RlIiwiZXZpZGVuY2lhcyI6WyJwYWluZWwvZW50cmVnYXMvamFuZWxhLnB5IiwicGFpbmVsL2VudHJlZ2FzL3JvdGEucHkiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMC0xM1QxNjowMDozOC41MTgwMDBaIiwiYW50ZXJpb3IiOm51bGwsImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "pucpCj0VO46as1Zepbiy9trjkLF/CZldIiH53rep2sZrJHpLzv0u7ETyDesddjLRwJ8+HwCgWCJ0Mm7fbBX+Dg==",
+		"recibo_anterior_id": null,
+		"signed_at": "2026-10-13T16:00:38.518000Z",
+		"payload": {
+			"versao": 1,
+			"id": "948ed06c-88aa-41fa-ab10-7d38bb2248c5",
+			"task_run_id": "79e23c90-bb19-4b72-b638-34a649404568",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 87,
+			"head_sha": "04bcf0f450f649268a745a825011c00080f9cacd",
+			"diff_sha256": "78aa5febb1067219f7ba8de2a0c6433be58403aa385fa5ea1992e8cbe49e3c6b",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"emitido_em": "2026-10-13T16:00:38.518000Z",
+			"anterior": null,
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "5956acb7-40d7-4427-a8a5-643c1510b4d0",
+		"tenant_id": 58291734,
+		"task_run_id": "cadb978e-89c8-4507-9d60-fc50f8c894ae",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "9443e230692b3482120353c3cfc69dfc65ca6c4fe54dce42be20353e0d7177d2",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNTk1NmFjYjctNDBkNy00NDI3LWE4YTUtNjQzYzE1MTBiNGQwIiwidGFza19ydW5faWQiOiJjYWRiOTc4ZS04OWM4LTQ1MDctOWQ2MC1mYzUwZjhjODk0YWUiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjozLCJoZWFkX3NoYSI6ImEzYjAzZTBiMjIxMDg0YjQ4YmU1NDJlZmUxYTFmNjlkZGUyYTQ4YmUiLCJkaWZmX3NoYTI1NiI6IjYyNDg4MjI3NDQwNzRlZTUwMmMxY2MxNmRjMmYwOWI2NWI4YTc0NmM2MTAxODE2MzU3NTA1NTAxYmY4Y2JiZmIiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTE2VDE1OjAwOjUwLjM0NDAwMFoiLCJhbnRlcmlvciI6eyJpZCI6Ijk0OGVkMDZjLTg4YWEtNDFmYS1hYjEwLTdkMzhiYjIyNDhjNSIsImhhc2giOiIwMzI0MjEwMDI2NDcwZTlhOGJkMTMzMTRkMjljMmJiNTg5MTdjYzJlMDY2NWY2NTgzZmQwY2YwYjZhNTJlYWY2In0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "yCW/WzAHk9QJEk/oNrJVFlE/4zmazcNFFP6JVf6zz3/MK55/z8UUv4g08bC2C99rYjALe26jqLdDu4uahsbKAQ==",
+		"recibo_anterior_id": "948ed06c-88aa-41fa-ab10-7d38bb2248c5",
+		"signed_at": "2026-10-16T15:00:50.344000Z",
+		"payload": {
+			"versao": 1,
+			"id": "5956acb7-40d7-4427-a8a5-643c1510b4d0",
+			"task_run_id": "cadb978e-89c8-4507-9d60-fc50f8c894ae",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 3,
+			"head_sha": "a3b03e0b221084b48be542efe1a1f69dde2a48be",
+			"diff_sha256": "6248822744074ee502c1cc16dc2f09b65b8a746c6101816357505501bf8cbbfb",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-16T15:00:50.344000Z",
+			"anterior": {
+				"id": "948ed06c-88aa-41fa-ab10-7d38bb2248c5",
+				"hash": "0324210026470e9a8bd13314d29c2bb58917cc2e0665f6583fd0cf0b6a52eaf6"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "175007d7-1a04-4a43-b4e5-22ffb10badfe",
+		"tenant_id": 58291734,
+		"task_run_id": "c23b1ff9-f95b-466c-b56e-d438bf4498ff",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "eaae3c632a0d5fab45e6c1987da67d091228287bde3ed7db2ae5fe5fdd84b130",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMTc1MDA3ZDctMWEwNC00YTQzLWI0ZTUtMjJmZmIxMGJhZGZlIiwidGFza19ydW5faWQiOiJjMjNiMWZmOS1mOTViLTQ2NmMtYjU2ZS1kNDM4YmY0NDk4ZmYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjg4LCJoZWFkX3NoYSI6ImE0YjM0M2E3NDNmZjc3NDA0MGY3Mzk4MjZhZjUwMzA0NzJiN2IwZGMiLCJkaWZmX3NoYTI1NiI6IjlkMTJmOTUzOTY0ZmRkZDVmNTA1ZGEzYzVhYjM2Njk3NzAwODc1NGMyZjBhMmVkNjAxMTg4MmE4ZTE5MDEzNmUiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjoxLCJ0aXBvX2ZhbGhhIjoidGVzdGUiLCJ0ZW50YXRpdmEiOjF9LCJuaXZlbF9kZXRlcm1pbmlzdGljbyI6ImFsdG8iLCJuaXZlbCI6ImFsdG8iLCJtb3Rpdm9zIjpbeyJpZCI6ImZhbGhhX3NhbmRib3giLCJldmlkZW5jaWFzIjpbIjEgZGUgNjQgdGVzdGVzIGZhbGhhcmFtIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTAtMThUMTM6MDA6NDkuMzc3MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiNTk1NmFjYjctNDBkNy00NDI3LWE4YTUtNjQzYzE1MTBiNGQwIiwiaGFzaCI6Ijk0NDNlMjMwNjkyYjM0ODIxMjAzNTNjM2NmYzY5ZGZjNjVjYTZjNGZlNTRkY2U0MmJlMjAzNTNlMGQ3MTc3ZDIifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "aNcxoeS5yPZCl8nB51PrBKOUR2cKjyG8eT2IICzTVWLNKL5RavgZnieArVwvjCHcdrT+dgPipJbYcaL2+KfyCQ==",
+		"recibo_anterior_id": "5956acb7-40d7-4427-a8a5-643c1510b4d0",
+		"signed_at": "2026-10-18T13:00:49.377000Z",
+		"payload": {
+			"versao": 1,
+			"id": "175007d7-1a04-4a43-b4e5-22ffb10badfe",
+			"task_run_id": "c23b1ff9-f95b-466c-b56e-d438bf4498ff",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 88,
+			"head_sha": "a4b343a743ff774040f739826af5030472b7b0dc",
+			"diff_sha256": "9d12f953964fddd5f505da3c5ab366977008754c2f0a2ed6011882a8e190136e",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 1,
+				"tipo_falha": "teste",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "falha_sandbox",
+					"evidencias": ["1 de 64 testes falharam"]
+				}
+			],
+			"emitido_em": "2026-10-18T13:00:49.377000Z",
+			"anterior": {
+				"id": "5956acb7-40d7-4427-a8a5-643c1510b4d0",
+				"hash": "9443e230692b3482120353c3cfc69dfc65ca6c4fe54dce42be20353e0d7177d2"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "91f4e427-3560-4586-b59d-4d8bfb131099",
+		"tenant_id": 58291734,
+		"task_run_id": "8344ee4f-77c4-481a-9c8f-c0982dfaddc7",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "52bc8c5bb6c5cba70e127812c88c728c825a6fd9a1256f469606fd10b3a6fc8a",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiOTFmNGU0MjctMzU2MC00NTg2LWI1OWQtNGQ4YmZiMTMxMDk5IiwidGFza19ydW5faWQiOiI4MzQ0ZWU0Zi03N2M0LTQ4MWEtOWM4Zi1jMDk4MmRmYWRkYzciLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIwNSwiaGVhZF9zaGEiOiJjNGJmNjJhZDM2ZDg3OThmZDZlNjllZGVmMzY2MTAxYzMxNDFiNDcyIiwiZGlmZl9zaGEyNTYiOiI1ZmE4YjcwZjY0MDBhZWZjNzZmYjc4MDY0MzE2NTY3NzJmOThkZWIyYTQ1OTRjNmQwZjcwYjQxMzM2NzhkM2UzIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJiYWl4byIsIm5pdmVsIjoiYmFpeG8iLCJtb3Rpdm9zIjpbXSwiZW1pdGlkb19lbSI6IjIwMjYtMTAtMTlUMTE6MDE6MDguOTY4MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiMTc1MDA3ZDctMWEwNC00YTQzLWI0ZTUtMjJmZmIxMGJhZGZlIiwiaGFzaCI6ImVhYWUzYzYzMmEwZDVmYWI0NWU2YzE5ODdkYTY3ZDA5MTIyODI4N2JkZTNlZDdkYjJhZTVmZTVmZGQ4NGIxMzAifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "K6ursA6jsDSWJl4tuBYtEq/rD3yVkyAZUdmdG8p7EopUJCn5WgFA/MkBAELlR/fDc6bbLO8arIYuYY2bVLmhAA==",
+		"recibo_anterior_id": "175007d7-1a04-4a43-b4e5-22ffb10badfe",
+		"signed_at": "2026-10-19T11:01:08.968000Z",
+		"payload": {
+			"versao": 1,
+			"id": "91f4e427-3560-4586-b59d-4d8bfb131099",
+			"task_run_id": "8344ee4f-77c4-481a-9c8f-c0982dfaddc7",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 205,
+			"head_sha": "c4bf62ad36d8798fd6e69edef366101c3141b472",
+			"diff_sha256": "5fa8b70f6400aefc76fb7806431656772f98deb2a4594c6d0f70b4133678d3e3",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-19T11:01:08.968000Z",
+			"anterior": {
+				"id": "175007d7-1a04-4a43-b4e5-22ffb10badfe",
+				"hash": "eaae3c632a0d5fab45e6c1987da67d091228287bde3ed7db2ae5fe5fdd84b130"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "c7859b52-c74a-4cb6-a895-a87b76e73d58",
+		"tenant_id": 58291734,
+		"task_run_id": "76423658-858c-408f-876f-2214cf49204f",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "0bd1bbce35c28ff8ae54890f72e891ccdb80c4209ca58de8755fd7be1c372162",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYzc4NTliNTItYzc0YS00Y2I2LWE4OTUtYTg3Yjc2ZTczZDU4IiwidGFza19ydW5faWQiOiI3NjQyMzY1OC04NThjLTQwOGYtODc2Zi0yMjE0Y2Y0OTIwNGYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjg5LCJoZWFkX3NoYSI6ImQxYTk5ODlkNjNkOTM5ZmI2Nzc2ZTcyNDIzNDA4ODcwZWVjODA4NjEiLCJkaWZmX3NoYTI1NiI6IjBiZTM2ZmI1MWI4ODVkODlkNjM4M2YyNjgyZmI0NWIzNWQ1MjUyMDEzMDg0MDk0MzY5MTcxNDRjMzY3YTc3YWQiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTIxVDE1OjAwOjUwLjU4NDAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjkxZjRlNDI3LTM1NjAtNDU4Ni1iNTlkLTRkOGJmYjEzMTA5OSIsImhhc2giOiI1MmJjOGM1YmI2YzVjYmE3MGUxMjc4MTJjODhjNzI4YzgyNWE2ZmQ5YTEyNTZmNDY5NjA2ZmQxMGIzYTZmYzhhIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "rln8Z1Nj6/MKkqULBuUA8LkC5j+NZtqw+P+Fj6KWnSoPN3jKwbwSljGI4kB1bwCazxgwiJkYDxj2p0rvsoH6Dw==",
+		"recibo_anterior_id": "91f4e427-3560-4586-b59d-4d8bfb131099",
+		"signed_at": "2026-10-21T15:00:50.584000Z",
+		"payload": {
+			"versao": 1,
+			"id": "c7859b52-c74a-4cb6-a895-a87b76e73d58",
+			"task_run_id": "76423658-858c-408f-876f-2214cf49204f",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 89,
+			"head_sha": "d1a9989d63d939fb6776e72423408870eec80861",
+			"diff_sha256": "0be36fb51b885d89d6383f2682fb45b35d525201308409436917144c367a77ad",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-21T15:00:50.584000Z",
+			"anterior": {
+				"id": "91f4e427-3560-4586-b59d-4d8bfb131099",
+				"hash": "52bc8c5bb6c5cba70e127812c88c728c825a6fd9a1256f469606fd10b3a6fc8a"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "73e873df-fe92-439b-b602-7ec7449f5319",
+		"tenant_id": 58291734,
+		"task_run_id": "6fb2e4bf-3f12-4bbc-8107-9b957edf61f6",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "e118291100ea220fc169e8af00d9e2d73d676d39b5c3f2915710724cad813b92",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNzNlODczZGYtZmU5Mi00MzliLWI2MDItN2VjNzQ0OWY1MzE5IiwidGFza19ydW5faWQiOiI2ZmIyZTRiZi0zZjEyLTRiYmMtODEwNy05Yjk1N2VkZjYxZjYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIwNiwiaGVhZF9zaGEiOiI2ZWM2OWFjMDBiZmVmZjk3NDc2ZGQ5YjkzNDQ0ODkwMjg1ZjkwZmJiIiwiZGlmZl9zaGEyNTYiOiIwMTQwOGQ2ZTkwNmI0NGU3M2MyZmE2OTk4NDQxMGY2Mjg4NDU4OWJmNzc5ZTM3MDJjZTNlODVjMTM5NmE0YThlIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJjb25maWd1cmFjYW9fY2kiLCJldmlkZW5jaWFzIjpbIi5naXRodWIvd29ya2Zsb3dzL2NpLnltbCIsIkRvY2tlcmZpbGUiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMC0yMlQxNDowMTowMi40NTMwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiJjNzg1OWI1Mi1jNzRhLTRjYjYtYTg5NS1hODdiNzZlNzNkNTgiLCJoYXNoIjoiMGJkMWJiY2UzNWMyOGZmOGFlNTQ4OTBmNzJlODkxY2NkYjgwYzQyMDljYTU4ZGU4NzU1ZmQ3YmUxYzM3MjE2MiJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "RCHo1nPv4+EDwLU59bCB3GY6fh41/AK7JQ6bDwAKHmmw+QKnvVnhfy64TJJ40sKKIMM4YQSA/tXtq5Kuiyn2Bw==",
+		"recibo_anterior_id": "c7859b52-c74a-4cb6-a895-a87b76e73d58",
+		"signed_at": "2026-10-22T14:01:02.453000Z",
+		"payload": {
+			"versao": 1,
+			"id": "73e873df-fe92-439b-b602-7ec7449f5319",
+			"task_run_id": "6fb2e4bf-3f12-4bbc-8107-9b957edf61f6",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 206,
+			"head_sha": "6ec69ac00bfeff97476dd9b93444890285f90fbb",
+			"diff_sha256": "01408d6e906b44e73c2fa69984410f62884589bf779e3702ce3e85c1396a4a8e",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "configuracao_ci",
+					"evidencias": [".github/workflows/ci.yml", "Dockerfile"]
+				}
+			],
+			"emitido_em": "2026-10-22T14:01:02.453000Z",
+			"anterior": {
+				"id": "c7859b52-c74a-4cb6-a895-a87b76e73d58",
+				"hash": "0bd1bbce35c28ff8ae54890f72e891ccdb80c4209ca58de8755fd7be1c372162"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "298475ca-58a3-4b86-bac0-11d2a3268933",
+		"tenant_id": 58291734,
+		"task_run_id": "0f0854af-2cde-485e-9051-f2578eb78aaf",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "c023d8144401eb29040b1aac4439cfb861c355ff1aa03d8605f5e27c4d7bd1b7",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMjk4NDc1Y2EtNThhMy00Yjg2LWJhYzAtMTFkMmEzMjY4OTMzIiwidGFza19ydW5faWQiOiIwZjA4NTRhZi0yY2RlLTQ4NWUtOTA1MS1mMjU3OGViNzhhYWYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjo0LCJoZWFkX3NoYSI6IjdlNTY0ZDBhNmQ4MmE2OGE2YzRiOGU5NmE4NWI0YmZiODg0ODg2ZDUiLCJkaWZmX3NoYTI1NiI6IjkwM2VlOGM2Zjk3YTY3Y2U0YTg2YjBlNjliN2Q1ZjI2YTkwZjkwMmYxNDg2MTY5NzU1ODgwZThmMTRiYTQzZTQiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoibWVkaW8iLCJuaXZlbCI6Im1lZGlvIiwibW90aXZvcyI6W3siaWQiOiJjb2RpZ29fc2VtX3Rlc3RlIiwiZXZpZGVuY2lhcyI6WyJpbnRlcm5hbC9jb2JyYW5jYS9qdXJvcy5nbyJdfV0sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTI0VDEyOjAwOjQ5Ljc4NzAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjczZTg3M2RmLWZlOTItNDM5Yi1iNjAyLTdlYzc0NDlmNTMxOSIsImhhc2giOiJlMTE4MjkxMTAwZWEyMjBmYzE2OWU4YWYwMGQ5ZTJkNzNkNjc2ZDM5YjVjM2YyOTE1NzEwNzI0Y2FkODEzYjkyIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "wJ2hzUtWpmnG2sKZJ72LP5/khx9x2yTvD4rXWmiIrSTnXcsdgHCVNNyBPQ0UODhn+/MnM7cbs0jsp1msPqDFBA==",
+		"recibo_anterior_id": "73e873df-fe92-439b-b602-7ec7449f5319",
+		"signed_at": "2026-10-24T12:00:49.787000Z",
+		"payload": {
+			"versao": 1,
+			"id": "298475ca-58a3-4b86-bac0-11d2a3268933",
+			"task_run_id": "0f0854af-2cde-485e-9051-f2578eb78aaf",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 4,
+			"head_sha": "7e564d0a6d82a68a6c4b8e96a85b4bfb884886d5",
+			"diff_sha256": "903ee8c6f97a67ce4a86b0e69b7d5f26a90f902f1486169755880e8f14ba43e4",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"emitido_em": "2026-10-24T12:00:49.787000Z",
+			"anterior": {
+				"id": "73e873df-fe92-439b-b602-7ec7449f5319",
+				"hash": "e118291100ea220fc169e8af00d9e2d73d676d39b5c3f2915710724cad813b92"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "151d48e6-4718-444b-bd77-61c441c8d0ba",
+		"tenant_id": 58291734,
+		"task_run_id": "0f0e452f-8430-4274-9074-8e411745b796",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "6c664f6adc24bcc25f30f07539aa5e11aa1e642156c107c6db24b4d7a9bb7eef",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMTUxZDQ4ZTYtNDcxOC00NDRiLWJkNzctNjFjNDQxYzhkMGJhIiwidGFza19ydW5faWQiOiIwZjBlNDUyZi04NDMwLTQyNzQtOTA3NC04ZTQxMTc0NWI3OTYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjkwLCJoZWFkX3NoYSI6IjA1YjliN2QwZDM3NzMwZjRmZjc5MjA4NTcxZjY3YTNkMDYyZTY0N2YiLCJkaWZmX3NoYTI1NiI6IjBiMTU1YjVmZWZjODQyOTEwOGIxODEwNTIyOWRkNWNhNjY5ZDA3YTljNzVjNDEyMzU5MzJmMTU2MDVlMDRlZmIiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTI1VDE2OjAwOjM1LjI2OTAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjI5ODQ3NWNhLTU4YTMtNGI4Ni1iYWMwLTExZDJhMzI2ODkzMyIsImhhc2giOiJjMDIzZDgxNDQ0MDFlYjI5MDQwYjFhYWM0NDM5Y2ZiODYxYzM1NWZmMWFhMDNkODYwNWY1ZTI3YzRkN2JkMWI3In0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "S+i/bDoFoHEPrhhkHHeLQzXqWkJSyj5A2x0Kw+vLIkVQXyu/uPlLHH/FFIPPgFMfUHOAwrj68NPdbWwKlER9AA==",
+		"recibo_anterior_id": "298475ca-58a3-4b86-bac0-11d2a3268933",
+		"signed_at": "2026-10-25T16:00:35.269000Z",
+		"payload": {
+			"versao": 1,
+			"id": "151d48e6-4718-444b-bd77-61c441c8d0ba",
+			"task_run_id": "0f0e452f-8430-4274-9074-8e411745b796",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 90,
+			"head_sha": "05b9b7d0d37730f4ff79208571f67a3d062e647f",
+			"diff_sha256": "0b155b5fefc8429108b18105229dd5ca669d07a9c75c41235932f15605e04efb",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-25T16:00:35.269000Z",
+			"anterior": {
+				"id": "298475ca-58a3-4b86-bac0-11d2a3268933",
+				"hash": "c023d8144401eb29040b1aac4439cfb861c355ff1aa03d8605f5e27c4d7bd1b7"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "48e99b9a-0762-482b-aee0-d1d5a6f9a936",
+		"tenant_id": 58291734,
+		"task_run_id": "a215dd00-8f0b-4d6b-8509-a1169737ec77",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "ed887d95304f7f408d1f5fe5b71ea5eb440d9655116404a92cffa37be7881bc5",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNDhlOTliOWEtMDc2Mi00ODJiLWFlZTAtZDFkNWE2ZjlhOTM2IiwidGFza19ydW5faWQiOiJhMjE1ZGQwMC04ZjBiLTRkNmItODUwOS1hMTE2OTczN2VjNzciLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIwNywiaGVhZF9zaGEiOiIzNGJhMGI2ZTNkNmM4Y2M4NWQwODFhMDMxODU4Yzc1YzJkNDQ1YzYwIiwiZGlmZl9zaGEyNTYiOiI0MzA2MWY5ZjRmYzhmNjBiZTc3ZGUzMjMxMWVjMTcyMGUwYmQxMjNkYjVmZDM5ZjNkMTdhMzAwYjZmNzk2ZTk4IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJhcmVhX3NlbnNpdmVsIiwiZXZpZGVuY2lhcyI6WyJtaWdyYXRpb25zLzAwMDAzMV9wYXJjZWxhcy5kb3duLnNxbCIsIm1pZ3JhdGlvbnMvMDAwMDMxX3BhcmNlbGFzLnVwLnNxbCJdfSx7ImlkIjoiY29kaWdvX3NlbV90ZXN0ZSIsImV2aWRlbmNpYXMiOlsiaW50ZXJuYWwvY29icmFuY2EvcGFyY2VsYS5nbyJdfV0sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTI2VDEzOjAxOjAzLjAyODAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjE1MWQ0OGU2LTQ3MTgtNDQ0Yi1iZDc3LTYxYzQ0MWM4ZDBiYSIsImhhc2giOiI2YzY2NGY2YWRjMjRiY2MyNWYzMGYwNzUzOWFhNWUxMWFhMWU2NDIxNTZjMTA3YzZkYjI0YjRkN2E5YmI3ZWVmIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "/vYHxX5Y7uXEUtuKZ7sItiZ5w7p6eL97gwEXHI67cGU4rn5a0Vch1mX5NDthra7m/zEq+Lqe7QF6rJyd6AylBg==",
+		"recibo_anterior_id": "151d48e6-4718-444b-bd77-61c441c8d0ba",
+		"signed_at": "2026-10-26T13:01:03.028000Z",
+		"payload": {
+			"versao": 1,
+			"id": "48e99b9a-0762-482b-aee0-d1d5a6f9a936",
+			"task_run_id": "a215dd00-8f0b-4d6b-8509-a1169737ec77",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 207,
+			"head_sha": "34ba0b6e3d6c8cc85d081a031858c75c2d445c60",
+			"diff_sha256": "43061f9f4fc8f60be77de32311ec1720e0bd123db5fd39f3d17a300b6f796e98",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "area_sensivel",
+					"evidencias": [
+						"migrations/000031_parcelas.down.sql",
+						"migrations/000031_parcelas.up.sql"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/parcela.go"]
+				}
+			],
+			"emitido_em": "2026-10-26T13:01:03.028000Z",
+			"anterior": {
+				"id": "151d48e6-4718-444b-bd77-61c441c8d0ba",
+				"hash": "6c664f6adc24bcc25f30f07539aa5e11aa1e642156c107c6db24b4d7a9bb7eef"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "98dd13ec-6eec-4301-bc9a-723d2a3ed817",
+		"tenant_id": 58291734,
+		"task_run_id": "85d07204-267f-4a1e-8acb-fefcb2c786e7",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "0b04b2d8d406f45474f068463d6d725ea5fe119fcebbc69f8700775b8cba4dde",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiOThkZDEzZWMtNmVlYy00MzAxLWJjOWEtNzIzZDJhM2VkODE3IiwidGFza19ydW5faWQiOiI4NWQwNzIwNC0yNjdmLTRhMWUtOGFjYi1mZWZjYjJjNzg2ZTciLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIwOCwiaGVhZF9zaGEiOiIyMzcwZGVlZmYwNDdlZjdiNzJlNWRhNTg2Y2Y0Mjk4YjVmOGFkNDNkIiwiZGlmZl9zaGEyNTYiOiIwZjkyYzU4YTQ1YjYwNzJiYmZmZjY4OTRkNTRlNTZhNmQzMTFmOTcwNjE5ZjhmNTQzZWU4MjRlYjFiODM0MzMwIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJiYWl4byIsIm5pdmVsIjoiYmFpeG8iLCJtb3Rpdm9zIjpbXSwiZW1pdGlkb19lbSI6IjIwMjYtMTAtMjhUMTE6MDE6MTEuNDk0MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiNDhlOTliOWEtMDc2Mi00ODJiLWFlZTAtZDFkNWE2ZjlhOTM2IiwiaGFzaCI6ImVkODg3ZDk1MzA0ZjdmNDA4ZDFmNWZlNWI3MWVhNWViNDQwZDk2NTUxMTY0MDRhOTJjZmZhMzdiZTc4ODFiYzUifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "SFJO2oKLAE9c5/o9OnAdUAS9PYJvweya7fKUZIdTPSimDWlA6PKOpJwMFqIrl0xY18RV6dVTGiHNMtV0PAo4Bw==",
+		"recibo_anterior_id": "48e99b9a-0762-482b-aee0-d1d5a6f9a936",
+		"signed_at": "2026-10-28T11:01:11.494000Z",
+		"payload": {
+			"versao": 1,
+			"id": "98dd13ec-6eec-4301-bc9a-723d2a3ed817",
+			"task_run_id": "85d07204-267f-4a1e-8acb-fefcb2c786e7",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 208,
+			"head_sha": "2370deeff047ef7b72e5da586cf4298b5f8ad43d",
+			"diff_sha256": "0f92c58a45b6072bbfff6894d54e56a6d311f970619f8f543ee824eb1b834330",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-28T11:01:11.494000Z",
+			"anterior": {
+				"id": "48e99b9a-0762-482b-aee0-d1d5a6f9a936",
+				"hash": "ed887d95304f7f408d1f5fe5b71ea5eb440d9655116404a92cffa37be7881bc5"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "03138753-d9d7-4f33-9f13-5547c774f31b",
+		"tenant_id": 58291734,
+		"task_run_id": "b6f87168-e03a-46d1-a400-f1991fec8fd3",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "74b6462e1c86fbeadd50becad0b15c3c4df450b2d778fdf060873a18ff25f8dd",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMDMxMzg3NTMtZDlkNy00ZjMzLTlmMTMtNTU0N2M3NzRmMzFiIiwidGFza19ydW5faWQiOiJiNmY4NzE2OC1lMDNhLTQ2ZDEtYTQwMC1mMTk5MWZlYzhmZDMiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjo1LCJoZWFkX3NoYSI6IjQ4MzgwZTNmNTQ3ZmM4YjE1NDExODQxNGY5MTllOWEyNjZmZWVmMWIiLCJkaWZmX3NoYTI1NiI6ImIyOTYzYTAwNjVjZTlkNTZjMWZkZmY3ZTNjN2Y5ZWVkZjkwMzAzMDNmZTk1NWNmMDFiMTdjODA5ZmNiYjY1MTUiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTEwLTI5VDE0OjAwOjQxLjIzNTAwMFoiLCJhbnRlcmlvciI6eyJpZCI6Ijk4ZGQxM2VjLTZlZWMtNDMwMS1iYzlhLTcyM2QyYTNlZDgxNyIsImhhc2giOiIwYjA0YjJkOGQ0MDZmNDU0NzRmMDY4NDYzZDZkNzI1ZWE1ZmUxMTlmY2ViYmM2OWY4NzAwNzc1YjhjYmE0ZGRlIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "tY47zGFsu83FlCTQaQ3YcDauxxkOMDBMvwk/Val+WcPB0/hrQHX6fl9Mp3O3RFEJCetJyw89Kr+dEv3Krv64DQ==",
+		"recibo_anterior_id": "98dd13ec-6eec-4301-bc9a-723d2a3ed817",
+		"signed_at": "2026-10-29T14:00:41.235000Z",
+		"payload": {
+			"versao": 1,
+			"id": "03138753-d9d7-4f33-9f13-5547c774f31b",
+			"task_run_id": "b6f87168-e03a-46d1-a400-f1991fec8fd3",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 5,
+			"head_sha": "48380e3f547fc8b154118414f919e9a266feef1b",
+			"diff_sha256": "b2963a0065ce9d56c1fdff7e3c7f9eedf9030303fe955cf01b17c809fcbb6515",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-29T14:00:41.235000Z",
+			"anterior": {
+				"id": "98dd13ec-6eec-4301-bc9a-723d2a3ed817",
+				"hash": "0b04b2d8d406f45474f068463d6d725ea5fe119fcebbc69f8700775b8cba4dde"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "c36b1396-79a4-4509-8236-9f778b9b8cd6",
+		"tenant_id": 58291734,
+		"task_run_id": "6263d05a-3a34-4a19-bc16-c496d1ac01f2",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "6a01027b452d5f9d56a425cabb19ef4e51c79cd9d867d34894b56496e0dd1af3",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYzM2YjEzOTYtNzlhNC00NTA5LTgyMzYtOWY3NzhiOWI4Y2Q2IiwidGFza19ydW5faWQiOiI2MjYzZDA1YS0zYTM0LTRhMTktYmMxNi1jNDk2ZDFhYzAxZjIiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjkyLCJoZWFkX3NoYSI6ImEwY2EzMDIzZjg4YjU2ZTllZGY4NTk3YzgzZjc0NjYzMjI0YzI1NjkiLCJkaWZmX3NoYTI1NiI6IjI1Mjg0YjdmYzhiMDU4ODQyYzI1ZDBlZGJjYmEwNzBmNjZiMmRmYmE0NDk3MjEzNWIxZTA4ODVmNjQwYjhhZmUiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoiZGVwZW5kZW5jaWFfbm92YSIsImV2aWRlbmNpYXMiOlsicG9tLnhtbDogbsOjbyBmb2kgcG9zc8OtdmVsIGxlciBvIGRpZmYiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMC0zMFQxMjowMDo0Ny4xMzEwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiIwMzEzODc1My1kOWQ3LTRmMzMtOWYxMy01NTQ3Yzc3NGYzMWIiLCJoYXNoIjoiNzRiNjQ2MmUxYzg2ZmJlYWRkNTBiZWNhZDBiMTVjM2M0ZGY0NTBiMmQ3NzhmZGYwNjA4NzNhMThmZjI1ZjhkZCJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "Y9RbBAKFaO11iNCrCpxDF/z9I4agaXJ38BR1OpPTK6tbYln2wWHPsWVCFIQ5HgtrzF83KpmzNgmHdcjwn8b5Dg==",
+		"recibo_anterior_id": "03138753-d9d7-4f33-9f13-5547c774f31b",
+		"signed_at": "2026-10-30T12:00:47.131000Z",
+		"payload": {
+			"versao": 1,
+			"id": "c36b1396-79a4-4509-8236-9f778b9b8cd6",
+			"task_run_id": "6263d05a-3a34-4a19-bc16-c496d1ac01f2",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 92,
+			"head_sha": "a0ca3023f88b56e9edf8597c83f74663224c2569",
+			"diff_sha256": "25284b7fc8b058842c25d0edbcba070f66b2dfba44972135b1e0885f640b8afe",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "dependencia_nova",
+					"evidencias": ["pom.xml: não foi possível ler o diff"]
+				}
+			],
+			"emitido_em": "2026-10-30T12:00:47.131000Z",
+			"anterior": {
+				"id": "03138753-d9d7-4f33-9f13-5547c774f31b",
+				"hash": "74b6462e1c86fbeadd50becad0b15c3c4df450b2d778fdf060873a18ff25f8dd"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "578a693a-20a6-441c-baa3-a5d106795cd8",
+		"tenant_id": 58291734,
+		"task_run_id": "27b608e9-4aa8-4972-bbd6-e9d65075ed60",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "a5462540252216e62431ccd12c4f13b0cd32bb6637a229fe38fb9ec4b67c2615",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNTc4YTY5M2EtMjBhNi00NDFjLWJhYTMtYTVkMTA2Nzk1Y2Q4IiwidGFza19ydW5faWQiOiIyN2I2MDhlOS00YWE4LTQ5NzItYmJkNi1lOWQ2NTA3NWVkNjAiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIwOSwiaGVhZF9zaGEiOiJiOWMwYzY4ODkwNmI1ZDE4YzYyOTYwMzQzYzkzZDMxMDY1NGYyMWFkIiwiZGlmZl9zaGEyNTYiOiIzMjk3MTYzMTM3NWVkMjkxMDViODdlMmQzYzc1OWYzMjY1MThjOWNkY2U3Y2ZkOGFhYjkyN2RiYzg2MDA3YjQ0IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJiYWl4byIsIm5pdmVsIjoiYmFpeG8iLCJtb3Rpdm9zIjpbXSwiZW1pdGlkb19lbSI6IjIwMjYtMTAtMzFUMTY6MDE6MjkuNjkwMDAwWiIsImFudGVyaW9yIjp7ImlkIjoiYzM2YjEzOTYtNzlhNC00NTA5LTgyMzYtOWY3NzhiOWI4Y2Q2IiwiaGFzaCI6IjZhMDEwMjdiNDUyZDVmOWQ1NmE0MjVjYWJiMTllZjRlNTFjNzljZDlkODY3ZDM0ODk0YjU2NDk2ZTBkZDFhZjMifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "UJzXYGYsdpfxHDfWr+mbeWgiYCfGVgNCle7XQ/ETwj5cPBsmxHDfT91rLqdJmTtZvi9neBPyfO6VsAnR4a73AA==",
+		"recibo_anterior_id": "c36b1396-79a4-4509-8236-9f778b9b8cd6",
+		"signed_at": "2026-10-31T16:01:29.690000Z",
+		"payload": {
+			"versao": 1,
+			"id": "578a693a-20a6-441c-baa3-a5d106795cd8",
+			"task_run_id": "27b608e9-4aa8-4972-bbd6-e9d65075ed60",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 209,
+			"head_sha": "b9c0c688906b5d18c62960343c93d310654f21ad",
+			"diff_sha256": "32971631375ed29105b87e2d3c759f326518c9cdce7cfd8aab927dbc86007b44",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-10-31T16:01:29.690000Z",
+			"anterior": {
+				"id": "c36b1396-79a4-4509-8236-9f778b9b8cd6",
+				"hash": "6a01027b452d5f9d56a425cabb19ef4e51c79cd9d867d34894b56496e0dd1af3"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "b10d014e-172d-4e64-8986-fe121df9741b",
+		"tenant_id": 58291734,
+		"task_run_id": "6e1e52e0-cdc2-4538-b458-0b5bb36faa33",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "1a3231dd2d420eafa424117f4b63b46027ad008ecf41042fd92e0ed43af00e2f",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYjEwZDAxNGUtMTcyZC00ZTY0LTg5ODYtZmUxMjFkZjk3NDFiIiwidGFza19ydW5faWQiOiI2ZTFlNTJlMC1jZGMyLTQ1MzgtYjQ1OC0wYjViYjM2ZmFhMzMiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjkzLCJoZWFkX3NoYSI6IjcyN2UxOGUzZWM5ZTkzYjY0OTcwOTM2OTJhMDU4OGIzYmE5MWEzOTciLCJkaWZmX3NoYTI1NiI6IjIxNDlmNzE5ZWI3OWQ0OTQ3NDJmMDE3ZDg1MTZjYWUyMTU1ZDQ0YmEwNDJlOThjNDdjOTg1ZDM5OTA1Njc1OWQiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoibWVkaW8iLCJuaXZlbCI6Im1lZGlvIiwibW90aXZvcyI6W3siaWQiOiJjb2RpZ29fc2VtX3Rlc3RlIiwiZXZpZGVuY2lhcyI6WyJwYWluZWwvZW50cmVnYXMvamFuZWxhLnB5IiwicGFpbmVsL2VudHJlZ2FzL3JvdGEucHkiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0wMVQxMzowMDo0Mi44MTcwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiI1NzhhNjkzYS0yMGE2LTQ0MWMtYmFhMy1hNWQxMDY3OTVjZDgiLCJoYXNoIjoiYTU0NjI1NDAyNTIyMTZlNjI0MzFjY2QxMmM0ZjEzYjBjZDMyYmI2NjM3YTIyOWZlMzhmYjllYzRiNjdjMjYxNSJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "8DtHxe/rsxWRdWh3cHyftbSK3dwow327j+K6Diad8oyImxsjetHjGdSu0d95B9rNOwjsNA4jvYLYAVxYTypiCg==",
+		"recibo_anterior_id": "578a693a-20a6-441c-baa3-a5d106795cd8",
+		"signed_at": "2026-11-01T13:00:42.817000Z",
+		"payload": {
+			"versao": 1,
+			"id": "b10d014e-172d-4e64-8986-fe121df9741b",
+			"task_run_id": "6e1e52e0-cdc2-4538-b458-0b5bb36faa33",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 93,
+			"head_sha": "727e18e3ec9e93b6497093692a0588b3ba91a397",
+			"diff_sha256": "2149f719eb79d494742f017d8516cae2155d44ba042e98c47c985d399056759d",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"emitido_em": "2026-11-01T13:00:42.817000Z",
+			"anterior": {
+				"id": "578a693a-20a6-441c-baa3-a5d106795cd8",
+				"hash": "a5462540252216e62431ccd12c4f13b0cd32bb6637a229fe38fb9ec4b67c2615"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "f7d8e595-d7ce-4fa9-ba0e-9c5483c5a4d1",
+		"tenant_id": 58291734,
+		"task_run_id": "763c2ec6-6cac-4988-861c-950be3c5835b",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "614cfe49339b205cd7e373f8a23d5c1faf5ba1d2c9230c1b1af0824e7b954b2d",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiZjdkOGU1OTUtZDdjZS00ZmE5LWJhMGUtOWM1NDgzYzVhNGQxIiwidGFza19ydW5faWQiOiI3NjNjMmVjNi02Y2FjLTQ5ODgtODYxYy05NTBiZTNjNTgzNWIiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxMCwiaGVhZF9zaGEiOiI0MDdjZTM5M2ZlMzBlNzYzY2FjMWJmMDJiYTcyNTIyYjVjNjg3YmUwIiwiZGlmZl9zaGEyNTYiOiIxN2U2YTUwNjljMDk0NWVlNzNjZTI5OTk1ZTg3YTQwZTVmODkwMzVhZmIyZGVlOWQ1ZWViNjEwY2M0ZTQ4MjY1IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJkZXBlbmRlbmNpYV9ub3ZhIiwiZXZpZGVuY2lhcyI6WyJnby5tb2QiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0wMlQxNDowMTozOC42OTAwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiJiMTBkMDE0ZS0xNzJkLTRlNjQtODk4Ni1mZTEyMWRmOTc0MWIiLCJoYXNoIjoiMWEzMjMxZGQyZDQyMGVhZmE0MjQxMTdmNGI2M2I0NjAyN2FkMDA4ZWNmNDEwNDJmZDkyZTBlZDQzYWYwMGUyZiJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "FoxLNJj6SyoOgiXAQ0hve5/DMTIHXGLDE+bsIWhA/Z+mJTtqgQ5lOyJruEgbk7Jo5GHa2VNYACsxuuI0csERAw==",
+		"recibo_anterior_id": "b10d014e-172d-4e64-8986-fe121df9741b",
+		"signed_at": "2026-11-02T14:01:38.690000Z",
+		"payload": {
+			"versao": 1,
+			"id": "f7d8e595-d7ce-4fa9-ba0e-9c5483c5a4d1",
+			"task_run_id": "763c2ec6-6cac-4988-861c-950be3c5835b",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 210,
+			"head_sha": "407ce393fe30e763cac1bf02ba72522b5c687be0",
+			"diff_sha256": "17e6a5069c0945ee73ce29995e87a40e5f89035afb2dee9d5eeb610cc4e48265",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "dependencia_nova",
+					"evidencias": ["go.mod"]
+				}
+			],
+			"emitido_em": "2026-11-02T14:01:38.690000Z",
+			"anterior": {
+				"id": "b10d014e-172d-4e64-8986-fe121df9741b",
+				"hash": "1a3231dd2d420eafa424117f4b63b46027ad008ecf41042fd92e0ed43af00e2f"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "304d85ea-dddd-4722-a547-8dc63c2062bb",
+		"tenant_id": 58291734,
+		"task_run_id": "11d818bd-a000-4805-aebc-a780bd29f03f",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "3c3b4909b29ef97ac76096c426d82441a5684dabbb9df58a181407247ca375aa",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMzA0ZDg1ZWEtZGRkZC00NzIyLWE1NDctOGRjNjNjMjA2MmJiIiwidGFza19ydW5faWQiOiIxMWQ4MThiZC1hMDAwLTQ4MDUtYWViYy1hNzgwYmQyOWYwM2YiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjo2LCJoZWFkX3NoYSI6Ijg5NDUxMTdlMzM4M2U1ZjcyYTI1NDM1N2MyYTkzYzIyNzdlMGM4YTQiLCJkaWZmX3NoYTI1NiI6ImM5MjU5ZWYwYjZkZDg5MTE5ZDFhMGQ3Y2QxNmZiZDVkM2FjNjljYWUwZjY3ZGZlZmYyNjRkZWVhNWQ2YzdiMjAiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6ZmFsc2UsInRlc3Rlc19wYXNzYXJhbSI6MCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoiY29tcGlsYWNhbyIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoiZmFsaGFfc2FuZGJveCIsImV2aWRlbmNpYXMiOlsibyBwcm9qZXRvIG7Do28gY29tcGlsb3UiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0wM1QxMTowMDo0NC41MDEwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiJmN2Q4ZTU5NS1kN2NlLTRmYTktYmEwZS05YzU0ODNjNWE0ZDEiLCJoYXNoIjoiNjE0Y2ZlNDkzMzliMjA1Y2Q3ZTM3M2Y4YTIzZDVjMWZhZjViYTFkMmM5MjMwYzFiMWFmMDgyNGU3Yjk1NGIyZCJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "DPDbwP2WfWjZ9YTYXbyO3tcWNouY4kidwV8poIJvpNWeGeJ1XFAmtrs7GjopFQASKdym7aDMU9bZ4zWA/1NOAA==",
+		"recibo_anterior_id": "f7d8e595-d7ce-4fa9-ba0e-9c5483c5a4d1",
+		"signed_at": "2026-11-03T11:00:44.501000Z",
+		"payload": {
+			"versao": 1,
+			"id": "304d85ea-dddd-4722-a547-8dc63c2062bb",
+			"task_run_id": "11d818bd-a000-4805-aebc-a780bd29f03f",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 6,
+			"head_sha": "8945117e3383e5f72a254357c2a93c2277e0c8a4",
+			"diff_sha256": "c9259ef0b6dd89119d1a0d7cd16fbd5d3ac69cae0f67dfeff264deea5d6c7b20",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": false,
+				"testes_passaram": 0,
+				"testes_falharam": 0,
+				"tipo_falha": "compilacao",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "falha_sandbox",
+					"evidencias": ["o projeto não compilou"]
+				}
+			],
+			"emitido_em": "2026-11-03T11:00:44.501000Z",
+			"anterior": {
+				"id": "f7d8e595-d7ce-4fa9-ba0e-9c5483c5a4d1",
+				"hash": "614cfe49339b205cd7e373f8a23d5c1faf5ba1d2c9230c1b1af0824e7b954b2d"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "3d8a2619-4edf-4a8f-913e-e598ac4f525f",
+		"tenant_id": 58291734,
+		"task_run_id": "8a8e36b2-b2e7-4f68-886c-54a5817ddd9d",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "f9f93e81c2378a8acf944b40929ea38a6e54044dec9994c5ea78c13bdac803a6",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiM2Q4YTI2MTktNGVkZi00YThmLTkxM2UtZTU5OGFjNGY1MjVmIiwidGFza19ydW5faWQiOiI4YThlMzZiMi1iMmU3LTRmNjgtODg2Yy01NGE1ODE3ZGRkOWQiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjk0LCJoZWFkX3NoYSI6IjcyNjc5YTNlNzU1MWQzMTE2YWI3MjljYzY3MjMzNTA3ZjlmOGVmNjMiLCJkaWZmX3NoYTI1NiI6IjZlZTExYTFhNDA5NTk2OWY2NDM5OTIwY2Q0NjI2Yjc3ZjNiYmVhMGRjNzZkNzI5NWNlY2Y5MWFmMzZlNzRmYTYiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTExLTAzVDE1OjAwOjM1Ljk2NzAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjMwNGQ4NWVhLWRkZGQtNDcyMi1hNTQ3LThkYzYzYzIwNjJiYiIsImhhc2giOiIzYzNiNDkwOWIyOWVmOTdhYzc2MDk2YzQyNmQ4MjQ0MWE1Njg0ZGFiYmI5ZGY1OGExODE0MDcyNDdjYTM3NWFhIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "qLEcxiz77H/FP8kx3UPHW4ENH4kUHuxzw5y7m5yyWqivglRrYkJ4ceKwl0n/EH6MVgoRXxTWNgsTWBi++1gMAA==",
+		"recibo_anterior_id": "304d85ea-dddd-4722-a547-8dc63c2062bb",
+		"signed_at": "2026-11-03T15:00:35.967000Z",
+		"payload": {
+			"versao": 1,
+			"id": "3d8a2619-4edf-4a8f-913e-e598ac4f525f",
+			"task_run_id": "8a8e36b2-b2e7-4f68-886c-54a5817ddd9d",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 94,
+			"head_sha": "72679a3e7551d3116ab729cc67233507f9f8ef63",
+			"diff_sha256": "6ee11a1a4095969f6439920cd4626b77f3bbea0dc76d7295cecf91af36e74fa6",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-11-03T15:00:35.967000Z",
+			"anterior": {
+				"id": "304d85ea-dddd-4722-a547-8dc63c2062bb",
+				"hash": "3c3b4909b29ef97ac76096c426d82441a5684dabbb9df58a181407247ca375aa"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "66b323c1-b4fe-4bf5-942a-819c9512fd73",
+		"tenant_id": 58291734,
+		"task_run_id": "6ebe77cc-3151-4bbf-a7f4-b4532d7e5dca",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "7a339f86aeebe732abd6e257718542f41498f1b1ea55e9c2690cc0204282edd9",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNjZiMzIzYzEtYjRmZS00YmY1LTk0MmEtODE5Yzk1MTJmZDczIiwidGFza19ydW5faWQiOiI2ZWJlNzdjYy0zMTUxLTRiYmYtYTdmNC1iNDUzMmQ3ZTVkY2EiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxMSwiaGVhZF9zaGEiOiI5OTU2NWIxMmIyNzg1MmY5M2QzNGFhOWE1MWFkZjQ3MzIzMzBlYTNkIiwiZGlmZl9zaGEyNTYiOiJlZWE4MGM3YjE2Y2ZkYzAyMjI4YjJkZmU2MzY2MmUyN2EzZjEwYTg1ODdmOWZjN2I1NmZjMjM5N2IxMmY3MThiIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJjb25maWd1cmFjYW9fY2kiLCJldmlkZW5jaWFzIjpbImRvY2tlci1jb21wb3NlLnltbCJdfSx7ImlkIjoic2VncmVkb192ZXJzaW9uYWRvIiwiZXZpZGVuY2lhcyI6WyIuZW52LnByb2R1Y2FvIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMDRUMTI6MDE6MjUuMjcyMDAwWiIsImFudGVyaW9yIjp7ImlkIjoiM2Q4YTI2MTktNGVkZi00YThmLTkxM2UtZTU5OGFjNGY1MjVmIiwiaGFzaCI6ImY5ZjkzZTgxYzIzNzhhOGFjZjk0NGI0MDkyOWVhMzhhNmU1NDA0NGRlYzk5OTRjNWVhNzhjMTNiZGFjODAzYTYifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "v5U/KAfdSaC4BqtFYYTwVmdL35Z6SCPF+JABf1XgzThTYsbreGUVoPqI2TcpAmRPfL1Xa5OXAo40VLqbeSOiDg==",
+		"recibo_anterior_id": "3d8a2619-4edf-4a8f-913e-e598ac4f525f",
+		"signed_at": "2026-11-04T12:01:25.272000Z",
+		"payload": {
+			"versao": 1,
+			"id": "66b323c1-b4fe-4bf5-942a-819c9512fd73",
+			"task_run_id": "6ebe77cc-3151-4bbf-a7f4-b4532d7e5dca",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 211,
+			"head_sha": "99565b12b27852f93d34aa9a51adf4732330ea3d",
+			"diff_sha256": "eea80c7b16cfdc02228b2dfe63662e27a3f10a8587f9fc7b56fc2397b12f718b",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "configuracao_ci",
+					"evidencias": ["docker-compose.yml"]
+				},
+				{
+					"id": "segredo_versionado",
+					"evidencias": [".env.producao"]
+				}
+			],
+			"emitido_em": "2026-11-04T12:01:25.272000Z",
+			"anterior": {
+				"id": "3d8a2619-4edf-4a8f-913e-e598ac4f525f",
+				"hash": "f9f93e81c2378a8acf944b40929ea38a6e54044dec9994c5ea78c13bdac803a6"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "302be0a2-7ccb-4eea-a6e3-53fd8f327073",
+		"tenant_id": 58291734,
+		"task_run_id": "4bdfd1e1-fa02-4bec-8c8b-d6bf461789c6",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "73eb5f05bcf289a535b8853559f86be8058724ff4d2edb62a569b5ec8d3143bc",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMzAyYmUwYTItN2NjYi00ZWVhLWE2ZTMtNTNmZDhmMzI3MDczIiwidGFza19ydW5faWQiOiI0YmRmZDFlMS1mYTAyLTRiZWMtOGM4Yi1kNmJmNDYxNzg5YzYiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxMiwiaGVhZF9zaGEiOiJjNjg4ODc4ZWEyYWRjZGNhY2JjMjQwNTUwMzRlOGUyNDk5MjI2N2MxIiwiZGlmZl9zaGEyNTYiOiJhNjRkOGJkOWQ4NDcwODY4ZWExOTIyZmVkMTc3ODZjNTkzYzg0YjdjMWQ0ZWQwNjU4MzNkMmQyODg4MjJiNjc5IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJtZWRpbyIsIm5pdmVsIjoibWVkaW8iLCJtb3Rpdm9zIjpbeyJpZCI6ImNvZGlnb19zZW1fdGVzdGUiLCJldmlkZW5jaWFzIjpbImludGVybmFsL2NvYnJhbmNhL2p1cm9zLmdvIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMDVUMTY6MDE6MTcuMzc0MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiNjZiMzIzYzEtYjRmZS00YmY1LTk0MmEtODE5Yzk1MTJmZDczIiwiaGFzaCI6IjdhMzM5Zjg2YWVlYmU3MzJhYmQ2ZTI1NzcxODU0MmY0MTQ5OGYxYjFlYTU1ZTljMjY5MGNjMDIwNDI4MmVkZDkifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "QVrAdZsBrbGiTLlo3WRVyY7ygVL4Q1+AvDao+mNjuNF63uJ8TP7R29iRNGXbFg+19Sp6JLqZmJmQRSK9y883AQ==",
+		"recibo_anterior_id": "66b323c1-b4fe-4bf5-942a-819c9512fd73",
+		"signed_at": "2026-11-05T16:01:17.374000Z",
+		"payload": {
+			"versao": 1,
+			"id": "302be0a2-7ccb-4eea-a6e3-53fd8f327073",
+			"task_run_id": "4bdfd1e1-fa02-4bec-8c8b-d6bf461789c6",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 212,
+			"head_sha": "c688878ea2adcdcacbc24055034e8e24992267c1",
+			"diff_sha256": "a64d8bd9d8470868ea1922fed17786c593c84b7c1d4ed065833d2d288822b679",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"emitido_em": "2026-11-05T16:01:17.374000Z",
+			"anterior": {
+				"id": "66b323c1-b4fe-4bf5-942a-819c9512fd73",
+				"hash": "7a339f86aeebe732abd6e257718542f41498f1b1ea55e9c2690cc0204282edd9"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "e090e2ef-04a0-42bb-905b-24f679644fa2",
+		"tenant_id": 58291734,
+		"task_run_id": "20606d91-5f5e-4695-bd47-4b40f156c991",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "20cebb2079f7c12ffff5bf033268ba58a7b03ee33b65a04c46abf50407388b4e",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiZTA5MGUyZWYtMDRhMC00MmJiLTkwNWItMjRmNjc5NjQ0ZmEyIiwidGFza19ydW5faWQiOiIyMDYwNmQ5MS01ZjVlLTQ2OTUtYmQ0Ny00YjQwZjE1NmM5OTEiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjo3LCJoZWFkX3NoYSI6ImY2YTZkNTNhZjZmMjMwYjRjYzMyM2VhN2MwODczMTBhOGZkZTRiMWMiLCJkaWZmX3NoYTI1NiI6ImU1MmIwNjM1ODY1OGQ2MWYxNzBjMGRkNDUxYWI4NGYzYzE4YmZkMDgyMjEyYTEwMGFjNzZjOWU0ZTNjNGFjY2YiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTExLTA2VDE0OjAwOjQxLjk3MjAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjMwMmJlMGEyLTdjY2ItNGVlYS1hNmUzLTUzZmQ4ZjMyNzA3MyIsImhhc2giOiI3M2ViNWYwNWJjZjI4OWE1MzViODg1MzU1OWY4NmJlODA1ODcyNGZmNGQyZWRiNjJhNTY5YjVlYzhkMzE0M2JjIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "i3ZQ79Bzv/PN+hjIXC3e+SshDn0MYvI+bSlKO/cPslj5akSjq5hetVi/8YDpiMtrXm+7k+n1AP0pa1+tQJ4kAQ==",
+		"recibo_anterior_id": "302be0a2-7ccb-4eea-a6e3-53fd8f327073",
+		"signed_at": "2026-11-06T14:00:41.972000Z",
+		"payload": {
+			"versao": 1,
+			"id": "e090e2ef-04a0-42bb-905b-24f679644fa2",
+			"task_run_id": "20606d91-5f5e-4695-bd47-4b40f156c991",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 7,
+			"head_sha": "f6a6d53af6f230b4cc323ea7c087310a8fde4b1c",
+			"diff_sha256": "e52b06358658d61f170c0dd451ab84f3c18bfd082212a100ac76c9e4e3c4accf",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-11-06T14:00:41.972000Z",
+			"anterior": {
+				"id": "302be0a2-7ccb-4eea-a6e3-53fd8f327073",
+				"hash": "73eb5f05bcf289a535b8853559f86be8058724ff4d2edb62a569b5ec8d3143bc"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "7a7b6f9b-cf49-42ad-9cfc-d3ef987ae0f1",
+		"tenant_id": 58291734,
+		"task_run_id": "84954a7a-b5be-4424-8f60-5351575f12ad",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "45f3425530280353fe50e4fef244ae2ff1ee5414469ecd7b6211aec14e9fdb9d",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiN2E3YjZmOWItY2Y0OS00MmFkLTljZmMtZDNlZjk4N2FlMGYxIiwidGFza19ydW5faWQiOiI4NDk1NGE3YS1iNWJlLTQ0MjQtOGY2MC01MzUxNTc1ZjEyYWQiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxMywiaGVhZF9zaGEiOiI2M2ZkMzIzZTZhNDg0ODI1NGM4NzEyNzkzODY3NjQ1M2UwZTU2NjFhIiwiZGlmZl9zaGEyNTYiOiIzMThlMzE1NGRlZGJmYTgyNmU0YWEwODg1YjU3YzVlMGZjZjQ5NDBiMjAzODJlOGE1OWE3MWFkOGEzMzMyYzgyIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ1LCJ0ZXN0ZXNfZmFsaGFyYW0iOjQsInRpcG9fZmFsaGEiOiJ0ZXN0ZSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoiZmFsaGFfc2FuZGJveCIsImV2aWRlbmNpYXMiOlsiNCBkZSAxNDkgdGVzdGVzIGZhbGhhcmFtIl19LHsiaWQiOiJjb2RpZ29fc2VtX3Rlc3RlIiwiZXZpZGVuY2lhcyI6WyJpbnRlcm5hbC9jb2JyYW5jYS9ib2xldG8uZ28iXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0wN1QxNTowMToxOC4zNjAwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiJlMDkwZTJlZi0wNGEwLTQyYmItOTA1Yi0yNGY2Nzk2NDRmYTIiLCJoYXNoIjoiMjBjZWJiMjA3OWY3YzEyZmZmZjViZjAzMzI2OGJhNThhN2IwM2VlMzNiNjVhMDRjNDZhYmY1MDQwNzM4OGI0ZSJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "mDAwCF1b8GqPelVvggKZ3JPP727qxA05K/2wEjsfgtFqDgJabjZaVU2ECODmVebyW389sVEZwVvQEh7+IYF8Dg==",
+		"recibo_anterior_id": "e090e2ef-04a0-42bb-905b-24f679644fa2",
+		"signed_at": "2026-11-07T15:01:18.360000Z",
+		"payload": {
+			"versao": 1,
+			"id": "7a7b6f9b-cf49-42ad-9cfc-d3ef987ae0f1",
+			"task_run_id": "84954a7a-b5be-4424-8f60-5351575f12ad",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 213,
+			"head_sha": "63fd323e6a4848254c87127938676453e0e5661a",
+			"diff_sha256": "318e3154dedbfa826e4aa0885b57c5e0fcf4940b20382e8a59a71ad8a3332c82",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 145,
+				"testes_falharam": 4,
+				"tipo_falha": "teste",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "falha_sandbox",
+					"evidencias": ["4 de 149 testes falharam"]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/boleto.go"]
+				}
+			],
+			"emitido_em": "2026-11-07T15:01:18.360000Z",
+			"anterior": {
+				"id": "e090e2ef-04a0-42bb-905b-24f679644fa2",
+				"hash": "20cebb2079f7c12ffff5bf033268ba58a7b03ee33b65a04c46abf50407388b4e"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "998ce082-d85c-44e1-9f13-9328989f55b3",
+		"tenant_id": 58291734,
+		"task_run_id": "03ae759d-ab60-481f-ba7b-5cf1820a6e58",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "c34cc00b3455c2ceadc7ad33696677112914205502b23b80aed82b96a334dbe3",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiOTk4Y2UwODItZDg1Yy00NGUxLTlmMTMtOTMyODk4OWY1NWIzIiwidGFza19ydW5faWQiOiIwM2FlNzU5ZC1hYjYwLTQ4MWYtYmE3Yi01Y2YxODIwYTZlNTgiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjk2LCJoZWFkX3NoYSI6IjQyN2M5Y2Q1NjVmMDdlZDAzNGEzZGUxMjk2OGZmYjYwMzY0MzVmMzUiLCJkaWZmX3NoYTI1NiI6Ijg3M2U1N2Q5ODllMTRiOTRjNjc4YmQwM2E2ZGM1NmM1ODIxMzk2Nzc2YmJmNzk5ZTkxZGZhNzRlNWUzYjVhOTciLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoiY29uZmlndXJhY2FvX2NpIiwiZXZpZGVuY2lhcyI6WyIuZ2l0aHViL3dvcmtmbG93cy9jaS55bWwiLCJEb2NrZXJmaWxlIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMDhUMTM6MDA6NDguMTQ3MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiN2E3YjZmOWItY2Y0OS00MmFkLTljZmMtZDNlZjk4N2FlMGYxIiwiaGFzaCI6IjQ1ZjM0MjU1MzAyODAzNTNmZTUwZTRmZWYyNDRhZTJmZjFlZTU0MTQ0NjllY2Q3YjYyMTFhZWMxNGU5ZmRiOWQifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "Vz7Gq8klR5fK/RgARHFiYdb19PA1e6nOm3XntcXo/hXrBVkIbCG3jMRczOHBnUV0FbGe5SIKkxY1V7+JofoCBQ==",
+		"recibo_anterior_id": "7a7b6f9b-cf49-42ad-9cfc-d3ef987ae0f1",
+		"signed_at": "2026-11-08T13:00:48.147000Z",
+		"payload": {
+			"versao": 1,
+			"id": "998ce082-d85c-44e1-9f13-9328989f55b3",
+			"task_run_id": "03ae759d-ab60-481f-ba7b-5cf1820a6e58",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 96,
+			"head_sha": "427c9cd565f07ed034a3de12968ffb6036435f35",
+			"diff_sha256": "873e57d989e14b94c678bd03a6dc56c5821396776bbf799e91dfa74e5e3b5a97",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "configuracao_ci",
+					"evidencias": [".github/workflows/ci.yml", "Dockerfile"]
+				}
+			],
+			"emitido_em": "2026-11-08T13:00:48.147000Z",
+			"anterior": {
+				"id": "7a7b6f9b-cf49-42ad-9cfc-d3ef987ae0f1",
+				"hash": "45f3425530280353fe50e4fef244ae2ff1ee5414469ecd7b6211aec14e9fdb9d"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "b212dc29-c818-49a3-a3fd-188e59afff88",
+		"tenant_id": 58291734,
+		"task_run_id": "ec7203ed-57c5-4b48-a0a2-7b4e3f911d5d",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "3aa2c148e66e2b87b785380cb62bdffb86fc52112bfc1550bdd2b0beeae87536",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYjIxMmRjMjktYzgxOC00OWEzLWEzZmQtMTg4ZTU5YWZmZjg4IiwidGFza19ydW5faWQiOiJlYzcyMDNlZC01N2M1LTRiNDgtYTBhMi03YjRlM2Y5MTFkNWQiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxNSwiaGVhZF9zaGEiOiJiNTg1MzVjZDQyODA4NWIxZjFmN2I0NzRiMWI5NjJkNThhNDc1MWNiIiwiZGlmZl9zaGEyNTYiOiIyMmQ0MmI1OTQ1MTUzZDk2NTNlNzA4NmYwMTMyYmZhNWMxNjljMmQyYjcwMDFkN2E2ODUxNTMyNmYzNmM1OWY3IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJhcmVhX3NlbnNpdmVsIiwiZXZpZGVuY2lhcyI6WyJpbnRlcm5hbC9hdXRoL3Nlc3Nhby5nbyIsImludGVybmFsL2F1dGgvc2Vzc2FvX3Rlc3QuZ28iXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0wOFQxNjowMToxNi4yMzMwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiI5OThjZTA4Mi1kODVjLTQ0ZTEtOWYxMy05MzI4OTg5ZjU1YjMiLCJoYXNoIjoiYzM0Y2MwMGIzNDU1YzJjZWFkYzdhZDMzNjk2Njc3MTEyOTE0MjA1NTAyYjIzYjgwYWVkODJiOTZhMzM0ZGJlMyJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "Z774FheieUQIDU7tXpKbe5FzP+XrrXuNXVxA01wn19kQ6klm9ImK6dL/IpE2vEkv4bkexQF2luNInFMzIHcQBg==",
+		"recibo_anterior_id": "998ce082-d85c-44e1-9f13-9328989f55b3",
+		"signed_at": "2026-11-08T16:01:16.233000Z",
+		"payload": {
+			"versao": 1,
+			"id": "b212dc29-c818-49a3-a3fd-188e59afff88",
+			"task_run_id": "ec7203ed-57c5-4b48-a0a2-7b4e3f911d5d",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 215,
+			"head_sha": "b58535cd428085b1f1f7b474b1b962d58a4751cb",
+			"diff_sha256": "22d42b5945153d9653e7086f0132bfa5c169c2d2b7001d7a68515326f36c59f7",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "area_sensivel",
+					"evidencias": [
+						"internal/auth/sessao.go",
+						"internal/auth/sessao_test.go"
+					]
+				}
+			],
+			"emitido_em": "2026-11-08T16:01:16.233000Z",
+			"anterior": {
+				"id": "998ce082-d85c-44e1-9f13-9328989f55b3",
+				"hash": "c34cc00b3455c2ceadc7ad33696677112914205502b23b80aed82b96a334dbe3"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "4b132f41-074d-463b-955e-510473e3cf92",
+		"tenant_id": 58291734,
+		"task_run_id": "a8c2729e-e174-4b94-9bc6-f5c928abae7b",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "e55ad83daec9d78be2c72263f89a814938d2de6d3d2f37cae47f728508c59e87",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNGIxMzJmNDEtMDc0ZC00NjNiLTk1NWUtNTEwNDczZTNjZjkyIiwidGFza19ydW5faWQiOiJhOGMyNzI5ZS1lMTc0LTRiOTQtOWJjNi1mNWM5MjhhYmFlN2IiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjo4LCJoZWFkX3NoYSI6ImUyZTUzNzFhMmRiZjdmMGJlNjkwNDE5ZDk3MzJiMmYxYmJmZWRjYTIiLCJkaWZmX3NoYTI1NiI6IjMzZTA1ZmIzMjBiZDUxZmNlOTM2ODM4YTJhMjM0MzYyNDY1YTM3OTYxZTQxNTc2ZWI1OWViMDYzNDVmYjY5MGYiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYmFpeG8iLCJuaXZlbCI6ImJhaXhvIiwibW90aXZvcyI6W10sImVtaXRpZG9fZW0iOiIyMDI2LTExLTA5VDEyOjAwOjM3LjkyMTAwMFoiLCJhbnRlcmlvciI6eyJpZCI6ImIyMTJkYzI5LWM4MTgtNDlhMy1hM2ZkLTE4OGU1OWFmZmY4OCIsImhhc2giOiIzYWEyYzE0OGU2NmUyYjg3Yjc4NTM4MGNiNjJiZGZmYjg2ZmM1MjExMmJmYzE1NTBiZGQyYjBiZWVhZTg3NTM2In0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "2IN9bS7NoJuqKMiNCqAke2CAre+ieXddJwqic9pwBLL17DHolibMfzSxTRE2DndyZT632mT9zy5G+gEruG93Bg==",
+		"recibo_anterior_id": "b212dc29-c818-49a3-a3fd-188e59afff88",
+		"signed_at": "2026-11-09T12:00:37.921000Z",
+		"payload": {
+			"versao": 1,
+			"id": "4b132f41-074d-463b-955e-510473e3cf92",
+			"task_run_id": "a8c2729e-e174-4b94-9bc6-f5c928abae7b",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 8,
+			"head_sha": "e2e5371a2dbf7f0be690419d9732b2f1bbfedca2",
+			"diff_sha256": "33e05fb320bd51fce936838a2a234362465a37961e41576eb59eb06345fb690f",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-11-09T12:00:37.921000Z",
+			"anterior": {
+				"id": "b212dc29-c818-49a3-a3fd-188e59afff88",
+				"hash": "3aa2c148e66e2b87b785380cb62bdffb86fc52112bfc1550bdd2b0beeae87536"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "6d290152-af24-4462-a525-72adf3b22d6c",
+		"tenant_id": 58291734,
+		"task_run_id": "9eaa0538-add6-4361-8bfc-e74acec86c07",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "ecce2e592a38045cba16d311a22db762721cbf9cb857da228998fdbacdf86151",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNmQyOTAxNTItYWYyNC00NDYyLWE1MjUtNzJhZGYzYjIyZDZjIiwidGFza19ydW5faWQiOiI5ZWFhMDUzOC1hZGQ2LTQzNjEtOGJmYy1lNzRhY2VjODZjMDciLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9hUFJvdmEtVEVTVEVTIiwibnVtZXJvX3ByIjoxLCJoZWFkX3NoYSI6IjZiZTkzMGFmYzgzYmI3MjEzZDNkNGUxMTFmMmM2ZWI3ZmQwMDhhNDIiLCJkaWZmX3NoYTI1NiI6ImQ5MjQ5ZmVhYTIwZWMxMTVjNzkyNmUzNjc3YjY5NWUxYjAzMmQ2YWNkYmRiN2U5OTA1ZTg3ZDcyYzYxZWE1ZGMiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjoxMCwidGVzdGVzX2ZhbGhhcmFtIjoxLCJ0aXBvX2ZhbGhhIjoidGVzdGUiLCJ0ZW50YXRpdmEiOjF9LCJuaXZlbF9kZXRlcm1pbmlzdGljbyI6ImFsdG8iLCJuaXZlbCI6ImFsdG8iLCJtb3Rpdm9zIjpbeyJpZCI6ImZhbGhhX3NhbmRib3giLCJldmlkZW5jaWFzIjpbIjEgZGUgMTEgdGVzdGVzIGZhbGhhcmFtIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMDlUMTQ6MDA6NDcuNDExMDAwWiIsImFudGVyaW9yIjp7ImlkIjoiNGIxMzJmNDEtMDc0ZC00NjNiLTk1NWUtNTEwNDczZTNjZjkyIiwiaGFzaCI6ImU1NWFkODNkYWVjOWQ3OGJlMmM3MjI2M2Y4OWE4MTQ5MzhkMmRlNmQzZDJmMzdjYWU0N2Y3Mjg1MDhjNTllODcifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "aQRJIoGkcasuGDcEm4b2q2fmNt2iYqqNJ2mkg0uzFtl/Js28F8EdTQe2lZIXVmPOa9oMBCkxUKhEkZDE3FNxAw==",
+		"recibo_anterior_id": "4b132f41-074d-463b-955e-510473e3cf92",
+		"signed_at": "2026-11-09T14:00:47.411000Z",
+		"payload": {
+			"versao": 1,
+			"id": "6d290152-af24-4462-a525-72adf3b22d6c",
+			"task_run_id": "9eaa0538-add6-4361-8bfc-e74acec86c07",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/aPRova-TESTES",
+			"numero_pr": 1,
+			"head_sha": "6be930afc83bb7213d3d4e111f2c6eb7fd008a42",
+			"diff_sha256": "d9249feaa20ec115c7926e3677b695e1b032d6acdbdb7e9905e87d72c61ea5dc",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 10,
+				"testes_falharam": 1,
+				"tipo_falha": "teste",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "falha_sandbox",
+					"evidencias": ["1 de 11 testes falharam"]
+				}
+			],
+			"emitido_em": "2026-11-09T14:00:47.411000Z",
+			"anterior": {
+				"id": "4b132f41-074d-463b-955e-510473e3cf92",
+				"hash": "e55ad83daec9d78be2c72263f89a814938d2de6d3d2f37cae47f728508c59e87"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "3c5d4f44-fd93-4862-899c-a6f02c230e21",
+		"tenant_id": 58291734,
+		"task_run_id": "fb69c243-48ba-4834-9d73-12427d5e5ce3",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "13313ea22117eac8de0d69383550e49e8319893b98c61116c9f15c9eb5c7d870",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiM2M1ZDRmNDQtZmQ5My00ODYyLTg5OWMtYTZmMDJjMjMwZTIxIiwidGFza19ydW5faWQiOiJmYjY5YzI0My00OGJhLTQ4MzQtOWQ3My0xMjQyN2Q1ZTVjZTMiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjk4LCJoZWFkX3NoYSI6IjNhNTBhNmNkM2JjMmI1NWNjNWEyOTUyMTc5MWJiOWFmNDU2ZTM2ODYiLCJkaWZmX3NoYTI1NiI6IjlkNmI2MjBhOTFmMTJlZGUxYTU1MjkwYzUxMDQ4ZDRiYjQ2N2YzYTUxMDM3MTQ5NTIxMWUwNTRmZWU5NWI0MzgiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoibWVkaW8iLCJuaXZlbCI6Im1lZGlvIiwibW90aXZvcyI6W3siaWQiOiJjb2RpZ29fc2VtX3Rlc3RlIiwiZXZpZGVuY2lhcyI6WyJwYWluZWwvZW50cmVnYXMvamFuZWxhLnB5IiwicGFpbmVsL2VudHJlZ2FzL3JvdGEucHkiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0xMFQxMTowMDo0NS45MzcwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiI2ZDI5MDE1Mi1hZjI0LTQ0NjItYTUyNS03MmFkZjNiMjJkNmMiLCJoYXNoIjoiZWNjZTJlNTkyYTM4MDQ1Y2JhMTZkMzExYTIyZGI3NjI3MjFjYmY5Y2I4NTdkYTIyODk5OGZkYmFjZGY4NjE1MSJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "wGwHV48SB8iNKXdKsQHI60Z7MyPeSgb7Gu6bTJq9ZVtnenHtKDJQItTZA/BcHmPOriUzcACgrF6uC7t6rzo9Dg==",
+		"recibo_anterior_id": "6d290152-af24-4462-a525-72adf3b22d6c",
+		"signed_at": "2026-11-10T11:00:45.937000Z",
+		"payload": {
+			"versao": 1,
+			"id": "3c5d4f44-fd93-4862-899c-a6f02c230e21",
+			"task_run_id": "fb69c243-48ba-4834-9d73-12427d5e5ce3",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 98,
+			"head_sha": "3a50a6cd3bc2b55cc5a29521791bb9af456e3686",
+			"diff_sha256": "9d6b620a91f12ede1a55290c51048d4bb467f3a510371495211e054fee95b438",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["painel/entregas/janela.py", "painel/entregas/rota.py"]
+				}
+			],
+			"emitido_em": "2026-11-10T11:00:45.937000Z",
+			"anterior": {
+				"id": "6d290152-af24-4462-a525-72adf3b22d6c",
+				"hash": "ecce2e592a38045cba16d311a22db762721cbf9cb857da228998fdbacdf86151"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "aee875d0-37c8-4b4d-9126-49fd2a4ae6b8",
+		"tenant_id": 58291734,
+		"task_run_id": "8d698334-f4d4-499a-89b3-079602394a52",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "88df692e75b967150dce0fa3e522560f96337ebaf02db20a086407edf694b5f0",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYWVlODc1ZDAtMzdjOC00YjRkLTkxMjYtNDlmZDJhNGFlNmI4IiwidGFza19ydW5faWQiOiI4ZDY5ODMzNC1mNGQ0LTQ5OWEtODliMy0wNzk2MDIzOTRhNTIiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxNiwiaGVhZF9zaGEiOiJmZTdlYjQ4YWRhMzk5ZjhlMTVhNDlkNWE2MjE4NjM1ZDJhYWZiYWExIiwiZGlmZl9zaGEyNTYiOiIwNTg4YTIzOWIxYWRkOTY4YmJhNTNmOGUyZTk2ZDkyMDE2MzU2OThlMzVhNWViMTA5ODQ5NmJiZjc0NTZkNDBlIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJiYWl4byIsIm5pdmVsIjoiYmFpeG8iLCJtb3Rpdm9zIjpbXSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMTBUMTU6MDE6MTUuNzk1MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiM2M1ZDRmNDQtZmQ5My00ODYyLTg5OWMtYTZmMDJjMjMwZTIxIiwiaGFzaCI6IjEzMzEzZWEyMjExN2VhYzhkZTBkNjkzODM1NTBlNDllODMxOTg5M2I5OGM2MTExNmM5ZjE1YzllYjVjN2Q4NzAifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "wCq1ZVKnDlGIITrEJpzGhODYDujyBDb9r66MuubgRjHU5ZwKc4M7JYuTTvnqrzKNw9tQo+oOjJWvhgr7rPNHDA==",
+		"recibo_anterior_id": "3c5d4f44-fd93-4862-899c-a6f02c230e21",
+		"signed_at": "2026-11-10T15:01:15.795000Z",
+		"payload": {
+			"versao": 1,
+			"id": "aee875d0-37c8-4b4d-9126-49fd2a4ae6b8",
+			"task_run_id": "8d698334-f4d4-499a-89b3-079602394a52",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 216,
+			"head_sha": "fe7eb48ada399f8e15a49d5a6218635d2aafbaa1",
+			"diff_sha256": "0588a239b1add968bba53f8e2e96d9201635698e35a5eb1098496bbf7456d40e",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "baixo",
+			"nivel": "baixo",
+			"motivos": [],
+			"emitido_em": "2026-11-10T15:01:15.795000Z",
+			"anterior": {
+				"id": "3c5d4f44-fd93-4862-899c-a6f02c230e21",
+				"hash": "13313ea22117eac8de0d69383550e49e8319893b98c61116c9f15c9eb5c7d870"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "4aed363f-3a40-40f5-b0c2-ce482eef57da",
+		"tenant_id": 58291734,
+		"task_run_id": "4b314d30-8a9f-4f23-8c07-872192c4ef60",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "8ba3f091d42f9846453efa98780f410e05c7938347f37bd3c2ed338a33ddc623",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNGFlZDM2M2YtM2E0MC00MGY1LWIwYzItY2U0ODJlZWY1N2RhIiwidGFza19ydW5faWQiOiI0YjMxNGQzMC04YTlmLTRmMjMtOGMwNy04NzIxOTJjNGVmNjAiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxNCwiaGVhZF9zaGEiOiI5NWViNThlZTlkYjBkNzNlODMyMTUxOTMwYzQ4YzEwM2Q2N2Q0MDRiIiwiZGlmZl9zaGEyNTYiOiI2NTVlZmQ4YTRlM2M1NzA5NjBkNzllMWJhMjEzOWJkMzRhNjE0ZjZhMGQwYTc2N2Y4ZDE4MjM4ZmJlNmE2MDFkIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJkZXBlbmRlbmNpYV9ub3ZhIiwiZXZpZGVuY2lhcyI6WyJnby5tb2QiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0xMFQxNTowMToyOC45MzYwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiJhZWU4NzVkMC0zN2M4LTRiNGQtOTEyNi00OWZkMmE0YWU2YjgiLCJoYXNoIjoiODhkZjY5MmU3NWI5NjcxNTBkY2UwZmEzZTUyMjU2MGY5NjMzN2ViYWYwMmRiMjBhMDg2NDA3ZWRmNjk0YjVmMCJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "jC1dZwrqWuGxCILvykD+Jzo0Yh+WNZYkawvWvAU63cy4JJnGIn4sAxx/iwo0dgwTbSM5WOohwg0JZPyyESfgDw==",
+		"recibo_anterior_id": "aee875d0-37c8-4b4d-9126-49fd2a4ae6b8",
+		"signed_at": "2026-11-10T15:01:28.936000Z",
+		"payload": {
+			"versao": 1,
+			"id": "4aed363f-3a40-40f5-b0c2-ce482eef57da",
+			"task_run_id": "4b314d30-8a9f-4f23-8c07-872192c4ef60",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 214,
+			"head_sha": "95eb58ee9db0d73e832151930c48c103d67d404b",
+			"diff_sha256": "655efd8a4e3c570960d79e1ba2139bd34a614f6a0d0a767f8d18238fbe6a601d",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "dependencia_nova",
+					"evidencias": ["go.mod"]
+				}
+			],
+			"emitido_em": "2026-11-10T15:01:28.936000Z",
+			"anterior": {
+				"id": "aee875d0-37c8-4b4d-9126-49fd2a4ae6b8",
+				"hash": "88df692e75b967150dce0fa3e522560f96337ebaf02db20a086407edf694b5f0"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "2e081c11-d8b3-4021-a511-7e267a97315b",
+		"tenant_id": 58291734,
+		"task_run_id": "3f2725ba-125e-4023-a508-7347f335b71a",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "2a79f7c1e237d3d9baaed456a11fb17f001c1fb303ed0ac4b86befd258f9afee",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiMmUwODFjMTEtZDhiMy00MDIxLWE1MTEtN2UyNjdhOTczMTViIiwidGFza19ydW5faWQiOiIzZjI3MjViYS0xMjVlLTQwMjMtYTUwOC03MzQ3ZjMzNWI3MWEiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjk3LCJoZWFkX3NoYSI6IjI1MTkwOTc4Nzg4YWMyNjNjY2UzMzc2ZWY1MDVhNDQ1ZDM4NTdhMWEiLCJkaWZmX3NoYTI1NiI6IjNiNGU4ZmIxYWVlYzRkOTlhYmJkM2ZjZDM1NTgyMzE2NDFhYjkxYjkxZTg3Y2Q5ODcxYWI5M2VkYzcwODFlOTYiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoiZGVwZW5kZW5jaWFfbm92YSIsImV2aWRlbmNpYXMiOlsicmVxdWlyZW1lbnRzLnR4dCJdfSx7ImlkIjoiY29kaWdvX3NlbV90ZXN0ZSIsImV2aWRlbmNpYXMiOlsicGFpbmVsL2V4cG9ydGFjYW8vcGxhbmlsaGEucHkiXX1dLCJlbWl0aWRvX2VtIjoiMjAyNi0xMS0xMVQwOTo0MDozNC4wNTYwMDBaIiwiYW50ZXJpb3IiOnsiaWQiOiI0YWVkMzYzZi0zYTQwLTQwZjUtYjBjMi1jZTQ4MmVlZjU3ZGEiLCJoYXNoIjoiOGJhM2YwOTFkNDJmOTg0NjQ1M2VmYTk4NzgwZjQxMGUwNWM3OTM4MzQ3ZjM3YmQzYzJlZDMzOGEzM2RkYzYyMyJ9LCJrZXlfaWQiOiIxZGYxOTBiOWEyMjZlZTI3In0=",
+		"assinatura_base64": "NJ71wIQ08yfidsjaTHF3TUZfiawa21cEx7BBE7/gtC+JJ7iHWTYHSrw9C6j44nkJUhTCGuiVcjkyCz1divwiDA==",
+		"recibo_anterior_id": "4aed363f-3a40-40f5-b0c2-ce482eef57da",
+		"signed_at": "2026-11-11T09:40:34.056000Z",
+		"payload": {
+			"versao": 1,
+			"id": "2e081c11-d8b3-4021-a511-7e267a97315b",
+			"task_run_id": "3f2725ba-125e-4023-a508-7347f335b71a",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 97,
+			"head_sha": "25190978788ac263cce3376ef505a445d3857a1a",
+			"diff_sha256": "3b4e8fb1aeec4d99abbd3fcd3558231641ab91b91e87cd9871ab93edc7081e96",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "dependencia_nova",
+					"evidencias": ["requirements.txt"]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["painel/exportacao/planilha.py"]
+				}
+			],
+			"emitido_em": "2026-11-11T09:40:34.056000Z",
+			"anterior": {
+				"id": "4aed363f-3a40-40f5-b0c2-ce482eef57da",
+				"hash": "8ba3f091d42f9846453efa98780f410e05c7938347f37bd3c2ed338a33ddc623"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "b06ca98a-62b0-4ffe-9b87-a7ab883e2295",
+		"tenant_id": 58291734,
+		"task_run_id": "643edc0b-45a6-4e81-8922-581045006c39",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "f2fc49f730b42ce2cce6fe0e8f7cba2fbb90b7bb93a4d322e0d5af9ca930bcf5",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiYjA2Y2E5OGEtNjJiMC00ZmZlLTliODctYTdhYjg4M2UyMjk1IiwidGFza19ydW5faWQiOiI2NDNlZGMwYi00NWE2LTRlODEtODkyMi01ODEwNDUwMDZjMzkiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxNywiaGVhZF9zaGEiOiI0MTIxNTQ1NjI1ZDBhNGZiNDAyOTNkYWYzM2QxNjFhNGE0NTRmYmJkIiwiZGlmZl9zaGEyNTYiOiIwZGM4MzM5ZTliY2M2ZmI4OTkwNTMxNjA1ZjU5MTA2N2RkZDM2M2RkNTFlM2Q3ZWNhZmE0ZjNkZThlZDk2Y2NiIiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJhbHRvIiwibml2ZWwiOiJhbHRvIiwibW90aXZvcyI6W3siaWQiOiJhcmVhX3NlbnNpdmVsIiwiZXZpZGVuY2lhcyI6WyJtaWdyYXRpb25zLzAwMDAzMV9wYXJjZWxhcy5kb3duLnNxbCIsIm1pZ3JhdGlvbnMvMDAwMDMxX3BhcmNlbGFzLnVwLnNxbCJdfSx7ImlkIjoiY29kaWdvX3NlbV90ZXN0ZSIsImV2aWRlbmNpYXMiOlsiaW50ZXJuYWwvY29icmFuY2EvcGFyY2VsYS5nbyJdfV0sImVtaXRpZG9fZW0iOiIyMDI2LTExLTExVDEzOjU2OjA1LjU5MzAwMFoiLCJhbnRlcmlvciI6eyJpZCI6IjJlMDgxYzExLWQ4YjMtNDAyMS1hNTExLTdlMjY3YTk3MzE1YiIsImhhc2giOiIyYTc5ZjdjMWUyMzdkM2Q5YmFhZWQ0NTZhMTFmYjE3ZjAwMWMxZmIzMDNlZDBhYzRiODZiZWZkMjU4ZjlhZmVlIn0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "5oL7XS3gsILn19YyoLiik26qisEyZ3LZD8vFqCSWfBmGBf8GcsRWPI0iIrtjCZ8MRU2ov5LNeW21sTtlGQiQBQ==",
+		"recibo_anterior_id": "2e081c11-d8b3-4021-a511-7e267a97315b",
+		"signed_at": "2026-11-11T13:56:05.593000Z",
+		"payload": {
+			"versao": 1,
+			"id": "b06ca98a-62b0-4ffe-9b87-a7ab883e2295",
+			"task_run_id": "643edc0b-45a6-4e81-8922-581045006c39",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 217,
+			"head_sha": "4121545625d0a4fb40293daf33d161a4a454fbbd",
+			"diff_sha256": "0dc8339e9bcc6fb8990531605f591067ddd363dd51e3d7ecafa4f3de8ed96ccb",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "area_sensivel",
+					"evidencias": [
+						"migrations/000031_parcelas.down.sql",
+						"migrations/000031_parcelas.up.sql"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/parcela.go"]
+				}
+			],
+			"emitido_em": "2026-11-11T13:56:05.593000Z",
+			"anterior": {
+				"id": "2e081c11-d8b3-4021-a511-7e267a97315b",
+				"hash": "2a79f7c1e237d3d9baaed456a11fb17f001c1fb303ed0ac4b86befd258f9afee"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "d7e2ee1d-5931-4a8a-910b-8124aec72459",
+		"tenant_id": 58291734,
+		"task_run_id": "d9fc6089-4457-4032-8884-0d2948f68b7f",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "9666d5675c275cedecd95546d5343488ee4ccab8b29e66d53b618de04824d9c6",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiZDdlMmVlMWQtNTkzMS00YThhLTkxMGItODEyNGFlYzcyNDU5IiwidGFza19ydW5faWQiOiJkOWZjNjA4OS00NDU3LTQwMzItODg4NC0wZDI5NDhmNjhiN2YiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9wYWluZWwtZW50cmVnYXMiLCJudW1lcm9fcHIiOjk5LCJoZWFkX3NoYSI6IjExNjQ1ZGFjNzRmNTZjNDc4YmEwMTUwNWRkOTQ3ZmY2OTgyZjUzYzEiLCJkaWZmX3NoYTI1NiI6ImVhYTE0M2IwMzllMGE0NGI4MjlkNzg1OWQ4MjQyYWRhNTdmOTU2NWI2OTBlMThlMjY1ZWU3MmZmYzY1MTE1OWIiLCJkaWZmX3RydW5jYWRvIjpmYWxzZSwic2FuZGJveCI6eyJjb21waWxvdSI6dHJ1ZSwidGVzdGVzX3Bhc3NhcmFtIjo2MywidGVzdGVzX2ZhbGhhcmFtIjowLCJ0aXBvX2ZhbGhhIjoibmVuaHVtYSIsInRlbnRhdGl2YSI6MX0sIm5pdmVsX2RldGVybWluaXN0aWNvIjoiYWx0byIsIm5pdmVsIjoiYWx0byIsIm1vdGl2b3MiOlt7ImlkIjoibXVpdG9zX2FycXVpdm9zIiwiZXZpZGVuY2lhcyI6WyJwYWluZWwvcm90YXMvcm90YV8wMS5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzAyLnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMDMucHkiLCJwYWluZWwvcm90YXMvcm90YV8wNC5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzA1LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMDYucHkiLCJwYWluZWwvcm90YXMvcm90YV8wNy5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzA4LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMDkucHkiLCJwYWluZWwvcm90YXMvcm90YV8xMC5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzExLnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMTIucHkiLCJwYWluZWwvcm90YXMvcm90YV8xMy5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzE0LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMTUucHkiLCJwYWluZWwvcm90YXMvcm90YV8xNi5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzE3LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMTgucHkiLCJwYWluZWwvcm90YXMvcm90YV8xOS5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzIwLnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMjEucHkiLCJwYWluZWwvcm90YXMvcm90YV8yMi5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzIzLnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMjQucHkiLCJwYWluZWwvcm90YXMvcm90YV8yNS5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzI2LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMjcucHkiXX0seyJpZCI6ImNvZGlnb19zZW1fdGVzdGUiLCJldmlkZW5jaWFzIjpbInBhaW5lbC9yb3Rhcy9yb3RhXzAxLnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMDIucHkiLCJwYWluZWwvcm90YXMvcm90YV8wMy5weSIsInBhaW5lbC9yb3Rhcy9yb3RhXzA0LnB5IiwicGFpbmVsL3JvdGFzL3JvdGFfMDUucHkiLCJwYWluZWwvcm90YXMvcm90YV8wNi5weSJdfV0sImVtaXRpZG9fZW0iOiIyMDI2LTExLTExVDE2OjEyOjQ4LjE4MDAwMFoiLCJhbnRlcmlvciI6eyJpZCI6ImIwNmNhOThhLTYyYjAtNGZmZS05Yjg3LWE3YWI4ODNlMjI5NSIsImhhc2giOiJmMmZjNDlmNzMwYjQyY2UyY2NlNmZlMGU4ZjdjYmEyZmJiOTBiN2JiOTNhNGQzMjJlMGQ1YWY5Y2E5MzBiY2Y1In0sImtleV9pZCI6IjFkZjE5MGI5YTIyNmVlMjcifQ==",
+		"assinatura_base64": "Eik6ipuJBJtGWoWryQP7u0lSo48t68DRvzNBYdn9aX+S/TSObP0+vBKMY8hKcDDM9A9gijAEQSYGwfWRDy1zAg==",
+		"recibo_anterior_id": "b06ca98a-62b0-4ffe-9b87-a7ab883e2295",
+		"signed_at": "2026-11-11T16:12:48.180000Z",
+		"payload": {
+			"versao": 1,
+			"id": "d7e2ee1d-5931-4a8a-910b-8124aec72459",
+			"task_run_id": "d9fc6089-4457-4032-8884-0d2948f68b7f",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/painel-entregas",
+			"numero_pr": 99,
+			"head_sha": "11645dac74f56c478ba01505dd947ff6982f53c1",
+			"diff_sha256": "eaa143b039e0a44b829d7859d8242ada57f9565b690e18e265ee72ffc651159b",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 63,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "alto",
+			"nivel": "alto",
+			"motivos": [
+				{
+					"id": "muitos_arquivos",
+					"evidencias": [
+						"painel/rotas/rota_01.py",
+						"painel/rotas/rota_02.py",
+						"painel/rotas/rota_03.py",
+						"painel/rotas/rota_04.py",
+						"painel/rotas/rota_05.py",
+						"painel/rotas/rota_06.py",
+						"painel/rotas/rota_07.py",
+						"painel/rotas/rota_08.py",
+						"painel/rotas/rota_09.py",
+						"painel/rotas/rota_10.py",
+						"painel/rotas/rota_11.py",
+						"painel/rotas/rota_12.py",
+						"painel/rotas/rota_13.py",
+						"painel/rotas/rota_14.py",
+						"painel/rotas/rota_15.py",
+						"painel/rotas/rota_16.py",
+						"painel/rotas/rota_17.py",
+						"painel/rotas/rota_18.py",
+						"painel/rotas/rota_19.py",
+						"painel/rotas/rota_20.py",
+						"painel/rotas/rota_21.py",
+						"painel/rotas/rota_22.py",
+						"painel/rotas/rota_23.py",
+						"painel/rotas/rota_24.py",
+						"painel/rotas/rota_25.py",
+						"painel/rotas/rota_26.py",
+						"painel/rotas/rota_27.py"
+					]
+				},
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": [
+						"painel/rotas/rota_01.py",
+						"painel/rotas/rota_02.py",
+						"painel/rotas/rota_03.py",
+						"painel/rotas/rota_04.py",
+						"painel/rotas/rota_05.py",
+						"painel/rotas/rota_06.py"
+					]
+				}
+			],
+			"emitido_em": "2026-11-11T16:12:48.180000Z",
+			"anterior": {
+				"id": "b06ca98a-62b0-4ffe-9b87-a7ab883e2295",
+				"hash": "f2fc49f730b42ce2cce6fe0e8f7cba2fbb90b7bb93a4d322e0d5af9ca930bcf5"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	},
+	{
+		"id": "4c9384a3-f126-4447-9fd4-82ab9eb236e9",
+		"tenant_id": 58291734,
+		"task_run_id": "12d8a1dd-9e1a-42ef-837c-71b13af91cfa",
+		"key_id": "1df190b9a226ee27",
+		"hash_sha256": "f27414ff01e9ac4c1993b061ccc98d5f9b39ec043774ebb2240501d4b9a4a7cf",
+		"payload_base64": "eyJ2ZXJzYW8iOjEsImlkIjoiNGM5Mzg0YTMtZjEyNi00NDQ3LTlmZDQtODJhYjllYjIzNmU5IiwidGFza19ydW5faWQiOiIxMmQ4YTFkZC05ZTFhLTQyZWYtODM3Yy03MWIxM2FmOTFjZmEiLCJ0ZW5hbnRfaWQiOjU4MjkxNzM0LCJyZXBvc2l0b3JpbyI6IkF6dWxwYXN0YS9jb2JyYW5jYS1hcGkiLCJudW1lcm9fcHIiOjIxOCwiaGVhZF9zaGEiOiJmYzhmYTkwNTQwYjQ1YzM5NjBlMDU3N2QyMDdlZjZkNTIxNjRmMzU0IiwiZGlmZl9zaGEyNTYiOiI1ODRlZDNiMDYzY2Q3MTcyNDM4NGI5NDAwMDM5MmU4OWFiOTU1MWVhOTY3NzMwZjBjYmY1NmVkNWM2MmM3OTU3IiwiZGlmZl90cnVuY2FkbyI6ZmFsc2UsInNhbmRib3giOnsiY29tcGlsb3UiOnRydWUsInRlc3Rlc19wYXNzYXJhbSI6MTQ4LCJ0ZXN0ZXNfZmFsaGFyYW0iOjAsInRpcG9fZmFsaGEiOiJuZW5odW1hIiwidGVudGF0aXZhIjoxfSwibml2ZWxfZGV0ZXJtaW5pc3RpY28iOiJtZWRpbyIsIm5pdmVsIjoibWVkaW8iLCJtb3Rpdm9zIjpbeyJpZCI6ImNvZGlnb19zZW1fdGVzdGUiLCJldmlkZW5jaWFzIjpbImludGVybmFsL2NvYnJhbmNhL2p1cm9zLmdvIl19XSwiZW1pdGlkb19lbSI6IjIwMjYtMTEtMTFUMTY6Mzg6NTguNDc4MDAwWiIsImFudGVyaW9yIjp7ImlkIjoiZDdlMmVlMWQtNTkzMS00YThhLTkxMGItODEyNGFlYzcyNDU5IiwiaGFzaCI6Ijk2NjZkNTY3NWMyNzVjZWRlY2Q5NTU0NmQ1MzQzNDg4ZWU0Y2NhYjhiMjllNjZkNTNiNjE4ZGUwNDgyNGQ5YzYifSwia2V5X2lkIjoiMWRmMTkwYjlhMjI2ZWUyNyJ9",
+		"assinatura_base64": "g25AfBMoqLGRd/gl3Y3eyoPfKNso4mrwkehGCWNK50Oyf+0Zz3KKpChP90WVHa1nkUeGeuqEePNQwKgladc8DA==",
+		"recibo_anterior_id": "d7e2ee1d-5931-4a8a-910b-8124aec72459",
+		"signed_at": "2026-11-11T16:38:58.478000Z",
+		"payload": {
+			"versao": 1,
+			"id": "4c9384a3-f126-4447-9fd4-82ab9eb236e9",
+			"task_run_id": "12d8a1dd-9e1a-42ef-837c-71b13af91cfa",
+			"tenant_id": 58291734,
+			"repositorio": "Azulpasta/cobranca-api",
+			"numero_pr": 218,
+			"head_sha": "fc8fa90540b45c3960e0577d207ef6d52164f354",
+			"diff_sha256": "584ed3b063cd71724384b94000392e89ab9551ea967730f0cbf56ed5c62c7957",
+			"diff_truncado": false,
+			"sandbox": {
+				"compilou": true,
+				"testes_passaram": 148,
+				"testes_falharam": 0,
+				"tipo_falha": "nenhuma",
+				"tentativa": 1
+			},
+			"nivel_deterministico": "medio",
+			"nivel": "medio",
+			"motivos": [
+				{
+					"id": "codigo_sem_teste",
+					"evidencias": ["internal/cobranca/juros.go"]
+				}
+			],
+			"emitido_em": "2026-11-11T16:38:58.478000Z",
+			"anterior": {
+				"id": "d7e2ee1d-5931-4a8a-910b-8124aec72459",
+				"hash": "9666d5675c275cedecd95546d5343488ee4ccab8b29e66d53b618de04824d9c6"
+			},
+			"key_id": "1df190b9a226ee27"
+		}
+	}
+]

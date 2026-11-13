@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
 const (

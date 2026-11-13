@@ -1,0 +1,537 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-12T06:40:15Z",
+  "title": "Design System: aPRova",
+  "extensions": {
+    "colorMeta": {
+      "fundo-base": {
+        "role": "neutral",
+        "displayName": "Base",
+        "canonical": "#111214",
+        "tonalRamp": [
+          "oklch(15% 0.002 264)",
+          "oklch(26% 0.003 264)",
+          "oklch(38% 0.003 264)",
+          "oklch(49% 0.004 264)",
+          "oklch(61% 0.004 264)",
+          "oklch(72% 0.003 264)",
+          "oklch(84% 0.003 264)",
+          "oklch(95% 0.002 264)"
+        ]
+      },
+      "fundo-superficie": {
+        "role": "neutral",
+        "displayName": "Superfície",
+        "canonical": "#17181B",
+        "tonalRamp": [
+          "oklch(15% 0.003 271)",
+          "oklch(26% 0.004 271)",
+          "oklch(38% 0.005 271)",
+          "oklch(49% 0.006 271)",
+          "oklch(61% 0.006 271)",
+          "oklch(72% 0.005 271)",
+          "oklch(84% 0.004 271)",
+          "oklch(95% 0.003 271)"
+        ]
+      },
+      "fundo-elevado": {
+        "role": "neutral",
+        "displayName": "Elevado",
+        "canonical": "#1E2024",
+        "tonalRamp": [
+          "oklch(15% 0.004 264)",
+          "oklch(26% 0.005 264)",
+          "oklch(38% 0.006 264)",
+          "oklch(49% 0.008 264)",
+          "oklch(61% 0.008 264)",
+          "oklch(72% 0.006 264)",
+          "oklch(84% 0.005 264)",
+          "oklch(95% 0.004 264)"
+        ]
+      },
+      "borda-padrao": {
+        "role": "neutral",
+        "displayName": "Borda",
+        "canonical": "#2A2C31",
+        "tonalRamp": [
+          "oklch(15% 0.004 268)",
+          "oklch(26% 0.006 268)",
+          "oklch(38% 0.007 268)",
+          "oklch(49% 0.009 268)",
+          "oklch(61% 0.009 268)",
+          "oklch(72% 0.007 268)",
+          "oklch(84% 0.006 268)",
+          "oklch(95% 0.004 268)"
+        ]
+      },
+      "texto-primario": {
+        "role": "neutral",
+        "displayName": "Texto primário",
+        "canonical": "#ECE9E2",
+        "tonalRamp": [
+          "oklch(15% 0.005 87)",
+          "oklch(26% 0.006 87)",
+          "oklch(38% 0.008 87)",
+          "oklch(49% 0.009 87)",
+          "oklch(61% 0.009 87)",
+          "oklch(72% 0.008 87)",
+          "oklch(84% 0.006 87)",
+          "oklch(95% 0.005 87)"
+        ]
+      },
+      "texto-secundario": {
+        "role": "neutral",
+        "displayName": "Texto secundário",
+        "canonical": "#9A9EA6",
+        "tonalRamp": [
+          "oklch(15% 0.006 264)",
+          "oklch(26% 0.008 264)",
+          "oklch(38% 0.010 264)",
+          "oklch(49% 0.012 264)",
+          "oklch(61% 0.012 264)",
+          "oklch(72% 0.010 264)",
+          "oklch(84% 0.008 264)",
+          "oklch(95% 0.006 264)"
+        ]
+      },
+      "acao-link": {
+        "role": "primary",
+        "displayName": "Azul-aço",
+        "canonical": "#7FA2C8",
+        "tonalRamp": [
+          "oklch(15% 0.031 251)",
+          "oklch(26% 0.042 251)",
+          "oklch(38% 0.052 251)",
+          "oklch(49% 0.063 251)",
+          "oklch(61% 0.063 251)",
+          "oklch(72% 0.052 251)",
+          "oklch(84% 0.042 251)",
+          "oklch(95% 0.031 251)"
+        ]
+      },
+      "risco-baixo": {
+        "role": "tertiary",
+        "displayName": "Risco baixo",
+        "canonical": "#3FB37F",
+        "tonalRamp": [
+          "oklch(15% 0.059 160)",
+          "oklch(26% 0.079 160)",
+          "oklch(38% 0.100 160)",
+          "oklch(49% 0.120 160)",
+          "oklch(61% 0.120 160)",
+          "oklch(72% 0.100 160)",
+          "oklch(84% 0.079 160)",
+          "oklch(95% 0.059 160)"
+        ]
+      },
+      "risco-medio": {
+        "role": "tertiary",
+        "displayName": "Risco médio",
+        "canonical": "#E0A43B",
+        "tonalRamp": [
+          "oklch(15% 0.062 78)",
+          "oklch(26% 0.083 78)",
+          "oklch(38% 0.105 78)",
+          "oklch(49% 0.126 78)",
+          "oklch(61% 0.126 78)",
+          "oklch(72% 0.105 78)",
+          "oklch(84% 0.083 78)",
+          "oklch(95% 0.062 78)"
+        ]
+      },
+      "risco-alto": {
+        "role": "tertiary",
+        "displayName": "Risco alto",
+        "canonical": "#E75D55",
+        "tonalRamp": [
+          "oklch(15% 0.079 26)",
+          "oklch(26% 0.106 26)",
+          "oklch(38% 0.133 26)",
+          "oklch(49% 0.160 26)",
+          "oklch(61% 0.160 26)",
+          "oklch(72% 0.133 26)",
+          "oklch(84% 0.106 26)",
+          "oklch(95% 0.079 26)"
+        ]
+      },
+      "claro-fundo-base": {
+        "role": "neutral",
+        "displayName": "Base (tema claro)",
+        "canonical": "#F5F5F6",
+        "tonalRamp": [
+          "oklch(15% 0.001 286)",
+          "oklch(26% 0.001 286)",
+          "oklch(38% 0.001 286)",
+          "oklch(49% 0.001 286)",
+          "oklch(61% 0.001 286)",
+          "oklch(72% 0.001 286)",
+          "oklch(84% 0.001 286)",
+          "oklch(95% 0.001 286)"
+        ]
+      },
+      "claro-fundo-superficie": {
+        "role": "neutral",
+        "displayName": "Superfície (tema claro)",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "oklch(15% 0.000 90)",
+          "oklch(26% 0.000 90)",
+          "oklch(38% 0.000 90)",
+          "oklch(49% 0.000 90)",
+          "oklch(61% 0.000 90)",
+          "oklch(72% 0.000 90)",
+          "oklch(84% 0.000 90)",
+          "oklch(95% 0.000 90)"
+        ]
+      },
+      "claro-fundo-elevado": {
+        "role": "neutral",
+        "displayName": "Elevado (tema claro)",
+        "canonical": "#ECECEE",
+        "tonalRamp": [
+          "oklch(15% 0.001 286)",
+          "oklch(26% 0.002 286)",
+          "oklch(38% 0.002 286)",
+          "oklch(49% 0.002 286)",
+          "oklch(61% 0.002 286)",
+          "oklch(72% 0.002 286)",
+          "oklch(84% 0.002 286)",
+          "oklch(95% 0.001 286)"
+        ]
+      },
+      "claro-borda-padrao": {
+        "role": "neutral",
+        "displayName": "Borda (tema claro)",
+        "canonical": "#DCDCE0",
+        "tonalRamp": [
+          "oklch(15% 0.002 286)",
+          "oklch(26% 0.003 286)",
+          "oklch(38% 0.004 286)",
+          "oklch(49% 0.005 286)",
+          "oklch(61% 0.005 286)",
+          "oklch(72% 0.004 286)",
+          "oklch(84% 0.003 286)",
+          "oklch(95% 0.002 286)"
+        ]
+      },
+      "claro-texto-primario": {
+        "role": "neutral",
+        "displayName": "Texto primário (tema claro)",
+        "canonical": "#111214",
+        "tonalRamp": [
+          "oklch(15% 0.002 264)",
+          "oklch(26% 0.003 264)",
+          "oklch(38% 0.003 264)",
+          "oklch(49% 0.004 264)",
+          "oklch(61% 0.004 264)",
+          "oklch(72% 0.003 264)",
+          "oklch(84% 0.003 264)",
+          "oklch(95% 0.002 264)"
+        ]
+      },
+      "claro-texto-secundario": {
+        "role": "neutral",
+        "displayName": "Texto secundário (tema claro)",
+        "canonical": "#5F636B",
+        "tonalRamp": [
+          "oklch(15% 0.006 264)",
+          "oklch(26% 0.008 264)",
+          "oklch(38% 0.010 264)",
+          "oklch(49% 0.013 264)",
+          "oklch(61% 0.013 264)",
+          "oklch(72% 0.010 264)",
+          "oklch(84% 0.008 264)",
+          "oklch(95% 0.006 264)"
+        ]
+      },
+      "claro-acao-link": {
+        "role": "primary",
+        "displayName": "Azul-aço (tema claro)",
+        "canonical": "#3F6A96",
+        "tonalRamp": [
+          "oklch(15% 0.039 250)",
+          "oklch(26% 0.052 250)",
+          "oklch(38% 0.065 250)",
+          "oklch(49% 0.079 250)",
+          "oklch(61% 0.079 250)",
+          "oklch(72% 0.065 250)",
+          "oklch(84% 0.052 250)",
+          "oklch(95% 0.039 250)"
+        ]
+      },
+      "claro-risco-baixo": {
+        "role": "tertiary",
+        "displayName": "Risco baixo (tema claro)",
+        "canonical": "#1F764E",
+        "tonalRamp": [
+          "oklch(15% 0.047 159)",
+          "oklch(26% 0.063 159)",
+          "oklch(38% 0.079 159)",
+          "oklch(49% 0.095 159)",
+          "oklch(61% 0.095 159)",
+          "oklch(72% 0.079 159)",
+          "oklch(84% 0.063 159)",
+          "oklch(95% 0.047 159)"
+        ]
+      },
+      "claro-risco-medio": {
+        "role": "tertiary",
+        "displayName": "Risco médio (tema claro)",
+        "canonical": "#915C08",
+        "tonalRamp": [
+          "oklch(15% 0.050 70)",
+          "oklch(26% 0.067 70)",
+          "oklch(38% 0.084 70)",
+          "oklch(49% 0.102 70)",
+          "oklch(61% 0.102 70)",
+          "oklch(72% 0.084 70)",
+          "oklch(84% 0.067 70)",
+          "oklch(95% 0.050 70)"
+        ]
+      },
+      "claro-risco-alto": {
+        "role": "tertiary",
+        "displayName": "Risco alto (tema claro)",
+        "canonical": "#B42F28",
+        "tonalRamp": [
+          "oklch(15% 0.078 28)",
+          "oklch(26% 0.104 28)",
+          "oklch(38% 0.131 28)",
+          "oklch(49% 0.158 28)",
+          "oklch(61% 0.158 28)",
+          "oklch(72% 0.131 28)",
+          "oklch(84% 0.104 28)",
+          "oklch(95% 0.078 28)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "O valor de cada métrica."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Título da página."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Passo da escala que nenhuma tela construída usa ainda."
+      },
+      "titulo-de-estado": {
+        "displayName": "Título de estado",
+        "purpose": "Título do bloco de erro e do bloco vazio."
+      },
+      "titulo-de-painel": {
+        "displayName": "Título de painel",
+        "purpose": "Título da fila e dos painéis da Visão geral."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Texto, tabelas, listas e controles."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Rótulo de métrica, cabeçalho de coluna, selo."
+      },
+      "apoio": {
+        "displayName": "Apoio",
+        "purpose": "Linha de apoio da métrica, resumo do painel, contagem da fila, eixos do gráfico."
+      },
+      "identificador": {
+        "displayName": "Identificador",
+        "purpose": "Hash, head_sha, key_id, id de motivo, nome de branch, número de PR e caminho de arquivo."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "transicao-de-estado",
+        "value": "120ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Única transição do sistema, em fundo, borda, cor, rotação e opacidade. Duração zero com prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1100px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Selo de risco, ponto",
+      "kind": "chip",
+      "refersTo": "selo-de-risco-ponto",
+      "description": "Ponto de 6px e nome do nível na cor de risco. Usado no título de uma lista em que todas as linhas têm o mesmo nível.",
+      "html": "<span class=\"ds-selo-ponto ds-selo-alto\"><span class=\"ds-selo-marca\"></span><span>risco alto</span></span> <span class=\"ds-selo-ponto ds-selo-medio\"><span class=\"ds-selo-marca\"></span><span>risco médio</span></span> <span class=\"ds-selo-ponto ds-selo-baixo\"><span class=\"ds-selo-marca\"></span><span>risco baixo</span></span>",
+      "css": ".ds-selo-ponto { display: inline-flex; align-items: center; gap: 6px; margin-right: 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--ds-cor); } .ds-selo-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-selo-alto { --ds-cor: var(--risco-alto); } .ds-selo-medio { --ds-cor: var(--risco-medio); } .ds-selo-baixo { --ds-cor: var(--risco-baixo); }"
+    },
+    {
+      "name": "Selo de risco, tingido",
+      "kind": "chip",
+      "refersTo": "selo-de-risco-tingido",
+      "description": "Selo de 20px com tinta de 13% da cor do nível, borda de 32% e texto primário. Pronto no componente, ainda sem uso em tela.",
+      "html": "<span class=\"ds-selo-tingido ds-tinta-alto\"><span class=\"ds-tinta-marca\"></span><span>alto</span></span> <span class=\"ds-selo-tingido ds-tinta-medio\"><span class=\"ds-tinta-marca\"></span><span>médio</span></span> <span class=\"ds-selo-tingido ds-tinta-baixo\"><span class=\"ds-tinta-marca\"></span><span>baixo</span></span>",
+      "css": ".ds-selo-tingido { display: inline-flex; align-items: center; gap: 6px; height: 20px; padding: 0 6px; margin-right: 8px; border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--texto-primario); background: color-mix(in srgb, var(--ds-cor) 13%, transparent); border: 1px solid color-mix(in srgb, var(--ds-cor) 32%, transparent); } .ds-tinta-marca { width: 6px; height: 6px; border-radius: 9999px; background: var(--ds-cor); } .ds-tinta-alto { --ds-cor: var(--risco-alto); } .ds-tinta-medio { --ds-cor: var(--risco-medio); } .ds-tinta-baixo { --ds-cor: var(--risco-baixo); }"
+    },
+    {
+      "name": "Campo de busca",
+      "kind": "input",
+      "refersTo": "campo-de-busca",
+      "description": "Campo de 32px com lupa e contorno na cor do texto secundário.",
+      "html": "<div class=\"ds-busca\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input class=\"ds-busca-campo\" type=\"search\" aria-label=\"Buscar na fila\" placeholder=\"PR, branch ou motivo\"></div>",
+      "css": ".ds-busca { position: relative; width: 224px; color: var(--texto-secundario); } .ds-busca svg { position: absolute; top: 8px; left: 8px; pointer-events: none; } .ds-busca-campo { width: 100%; height: 32px; padding: 0 32px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-busca-campo::placeholder { color: var(--texto-secundario); } .ds-busca-campo:hover { border-color: var(--texto-primario); } .ds-busca-campo:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+    },
+    {
+      "name": "Seleção, gatilho",
+      "kind": "input",
+      "refersTo": "selecao-gatilho",
+      "description": "Gatilho do select (Radix): mesma altura, raio e contorno do campo de busca, com seta à direita.",
+      "html": "<button type=\"button\" class=\"ds-selecao\"><span>Todos os repositórios</span><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
+      "css": ".ds-selecao { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 208px; height: 32px; padding: 0 8px 0 12px; border: 1px solid var(--texto-secundario); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-selecao svg { color: var(--texto-secundario); } .ds-selecao:hover { border-color: var(--texto-primario); } .ds-selecao:active { background: var(--fundo-elevado); } .ds-selecao:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+    },
+    {
+      "name": "Botão de tema",
+      "kind": "button",
+      "refersTo": "botao-de-tema",
+      "description": "Único botão da casca: alterna entre o tema escuro e o claro.",
+      "html": "<button type=\"button\" class=\"ds-tema\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2\"/><path d=\"M12 20v2\"/><path d=\"m4.93 4.93 1.41 1.41\"/><path d=\"m17.66 17.66 1.41 1.41\"/><path d=\"M2 12h2\"/><path d=\"M20 12h2\"/><path d=\"m6.34 17.66-1.41 1.41\"/><path d=\"m19.07 4.93-1.41 1.41\"/></svg><span>Tema claro</span></button>",
+      "css": ".ds-tema { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; cursor: pointer; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tema:hover { background: var(--fundo-elevado); } .ds-tema:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+    },
+    {
+      "name": "Item de navegação",
+      "kind": "nav",
+      "refersTo": "navegacao-item",
+      "description": "Item da barra lateral, com o estado ativo em fundo elevado e peso 500.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\" class=\"ds-nav-item ds-nav-ativo\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m3 17 2 2 4-4\"/><path d=\"m3 7 2 2 4-4\"/><path d=\"M13 6h8\"/><path d=\"M13 12h8\"/><path d=\"M13 18h8\"/></svg><span>Análises</span></a><a href=\"#\" class=\"ds-nav-item\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M8 8h8\"/><path d=\"M8 12h8\"/><path d=\"M8 16h5\"/></svg><span>Recibos</span></a></nav>",
+      "css": ".ds-nav { display: grid; gap: 4px; width: 224px; padding: 8px; background: var(--fundo-superficie); } .ds-nav-item { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 6px; color: var(--texto-secundario); text-decoration: none; white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover, .ds-nav-ativo { background: var(--fundo-elevado); color: var(--texto-primario); } .ds-nav-ativo { font-weight: 500; } .ds-nav-item:focus-visible { outline: 2px solid var(--acao-link); outline-offset: -2px; }"
+    },
+    {
+      "name": "Métrica",
+      "kind": "card",
+      "refersTo": "metrica",
+      "description": "Célula da faixa de métricas: rótulo, valor com unidade, barra de proporção e linha de apoio com fração e período.",
+      "html": "<dl class=\"ds-faixa\"><div class=\"ds-metrica\"><dt class=\"ds-metrica-rotulo\">Taxa de bloqueio</dt><dd class=\"ds-metrica-linha\"><span class=\"ds-metrica-valor\">N%</span><span class=\"ds-metrica-unidade\">das avaliadas</span></dd><dd class=\"ds-metrica-barra\"><span class=\"ds-proporcao\"><span style=\"width: 40%\"></span></span></dd><dd class=\"ds-metrica-apoio\">N de M análises em D dias</dd></div><div class=\"ds-metrica\"><dt class=\"ds-metrica-rotulo\">Falhas no sandbox</dt><dd class=\"ds-metrica-linha\"><span class=\"ds-metrica-valor\">N%</span><span class=\"ds-metrica-unidade\">das execuções</span></dd><dd class=\"ds-metrica-barra\"><span class=\"ds-proporcao\"><span style=\"width: 15%\"></span></span></dd><dd class=\"ds-metrica-apoio\">N de M execuções em D dias</dd></div></dl>",
+      "css": ".ds-faixa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--borda-padrao); font-family: 'IBM Plex Sans', sans-serif; color: var(--texto-primario); font-variant-numeric: tabular-nums; } .ds-metrica { display: flex; flex-direction: column; min-width: 0; padding: 12px 16px; background: var(--fundo-superficie); } .ds-metrica dd { margin: 0; } .ds-metrica-rotulo { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--texto-secundario); } .ds-metrica-linha { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; margin-top: 4px !important; } .ds-metrica-valor { font-size: 32px; line-height: 40px; font-weight: 600; } .ds-metrica-unidade { font-size: 14px; line-height: 20px; color: var(--texto-secundario); white-space: nowrap; } .ds-metrica-barra, .ds-metrica-apoio { margin-top: 8px !important; } .ds-metrica-apoio { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-proporcao { display: block; width: 100%; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-proporcao span { display: block; height: 100%; background: var(--texto-secundario); }"
+    },
+    {
+      "name": "Painel com tabela de contagem",
+      "kind": "card",
+      "refersTo": "painel",
+      "description": "Bloco de superfície com faixa de cabeçalho em fundo elevado; cada linha traz rótulo, barra de proporção e número.",
+      "html": "<section class=\"ds-painel\"><header class=\"ds-painel-cabecalho\"><h2>Bloqueadas</h2><div>M por desfecho</div></header><table class=\"ds-painel-tabela\"><tbody><tr><th scope=\"row\">Aguardando</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 50%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr><tr><th scope=\"row\">Aprovadas</th><td class=\"ds-painel-meio\"><span class=\"ds-painel-barra\"><span style=\"width: 30%\"></span></span></td><td class=\"ds-painel-numero\">N</td></tr></tbody></table></section>",
+      "css": ".ds-painel { width: 320px; overflow: hidden; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-painel-cabecalho { display: flex; align-items: baseline; justify-content: space-between; column-gap: 16px; padding: 6px 12px; border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); white-space: nowrap; } .ds-painel-cabecalho h2 { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; } .ds-painel-cabecalho div { font-size: 12px; line-height: 16px; color: var(--texto-secundario); } .ds-painel-tabela { width: 100%; border-collapse: collapse; } .ds-painel-tabela tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-painel-tabela th { padding: 6px 12px; text-align: left; font-weight: 400; white-space: nowrap; } .ds-painel-meio { width: 100%; padding: 0 12px; } .ds-painel-numero { padding: 6px 12px; text-align: right; } .ds-painel-barra { display: block; height: 6px; overflow: hidden; border-radius: 2px; background: color-mix(in srgb, var(--texto-secundario) 28%, transparent); } .ds-painel-barra span { display: block; height: 100%; background: var(--texto-secundario); }"
+    },
+    {
+      "name": "Tabela com coluna ordenável",
+      "kind": "custom",
+      "refersTo": "tabela-linha",
+      "description": "Linhas de 32px, faixa de cabeçalho em fundo elevado, cabeçalho ordenável com seta que gira e identificadores em Plex Mono.",
+      "html": "<table class=\"ds-tabela\"><thead><tr><th scope=\"col\" aria-sort=\"descending\" class=\"ds-tabela-ordena\"><button type=\"button\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"/><path d=\"M12 19V5\"/></svg><span>Espera</span></button></th><th scope=\"col\">Pull request</th><th scope=\"col\">Branch</th></tr></thead><tbody><tr><td class=\"ds-tabela-espera\">N h</td><td><a href=\"#\">repositorio <span class=\"ds-mono\">#N</span></a></td><td><span class=\"ds-mono\">nome-da-branch</span></td></tr><tr><td class=\"ds-tabela-espera\">N h</td><td><a href=\"#\">repositorio <span class=\"ds-mono\">#N</span></a></td><td><span class=\"ds-mono\">nome-da-branch</span></td></tr></tbody></table>",
+      "css": ".ds-tabela { width: 100%; border-collapse: collapse; text-align: left; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; } .ds-tabela thead tr { border-bottom: 1px solid var(--borda-padrao); background: var(--fundo-elevado); } .ds-tabela th { padding: 6px 12px; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; color: var(--texto-secundario); } .ds-tabela th.ds-tabela-ordena { width: 0; padding: 0; } .ds-tabela-ordena button { display: flex; flex-direction: row-reverse; align-items: center; gap: 4px; width: 100%; padding: 6px 12px; border: 0; background: none; color: var(--texto-primario); font: inherit; white-space: nowrap; cursor: pointer; } .ds-tabela-ordena svg { rotate: 180deg; transition: rotate 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela-ordena button:focus-visible { outline: 2px solid var(--acao-link); outline-offset: -2px; } .ds-tabela tbody tr { transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-tabela tbody tr + tr { border-top: 1px solid var(--borda-padrao); } .ds-tabela tbody tr:hover { background: var(--fundo-elevado); } .ds-tabela td { padding: 6px 12px; white-space: nowrap; } .ds-tabela-espera { text-align: right; font-weight: 500; } .ds-tabela a { color: var(--acao-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-tabela a:hover { text-decoration-thickness: 2px; } .ds-tabela a:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; } .ds-mono { font-family: 'IBM Plex Mono', monospace; } @media (prefers-reduced-motion: reduce) { .ds-tabela tbody tr, .ds-tabela-ordena svg { transition-duration: 0ms; } }"
+    },
+    {
+      "name": "Bloco de estado da página",
+      "kind": "card",
+      "refersTo": "estado-de-pagina",
+      "description": "Bloco de erro ou de vazio: título de 16px, explicação em texto secundário e uma ação em link. Não usa cor de risco.",
+      "html": "<div class=\"ds-estado\"><h2>Não foi possível carregar a visão geral</h2><p>O servidor do aPRova não respondeu a tempo. Nenhuma análise foi perdida: as decisões e os recibos continuam gravados, e o que estava bloqueado no GitHub continua bloqueado.</p><p class=\"ds-estado-acao\"><a href=\"#\">Tentar de novo</a></p></div>",
+      "css": ".ds-estado { max-width: 65ch; padding: 24px; border: 1px solid var(--borda-padrao); border-radius: 6px; background: var(--fundo-superficie); color: var(--texto-primario); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; line-height: 20px; } .ds-estado h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; } .ds-estado p { margin: 8px 0 0; color: var(--texto-secundario); } .ds-estado .ds-estado-acao { margin-top: 16px; } .ds-estado a { color: var(--acao-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; } .ds-estado a:hover { text-decoration-thickness: 2px; } .ds-estado a:focus-visible { outline: 2px solid var(--acao-link); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "O livro de registro",
+    "overview": "O dashboard do aPRova é um livro de registro: cada linha é uma decisão que alguém pode ter de provar depois. A interface é sóbria como um terminal ou um painel de observabilidade. Nada nela pede atenção por conta própria; o que chama o olho é o que espera por uma pessoa.\n\nA identidade foi definida por quem pediu o protótipo e não é reinterpretada aqui. Este arquivo registra o que o código construído faz. Até agora existem a casca (navegação, moldura de página e os estados de carregamento, erro e vazio) e a tela Visão geral. Análises, Recibos e Regras aparecem na navegação, mas ainda não têm tela: os três endereços caem em \"Página não encontrada\". Nenhum componente dessas telas está descrito aqui, e os que elas trouxerem entram quando forem construídos.\n\nO tema escuro é o padrão. O claro existe e é alternável pelo botão de tema, e a escolha persiste no navegador.",
+    "keyCharacteristics": [
+      "Escuro por padrão, denso, sem ornamento.",
+      "Superfícies separadas por borda de 1px e por três tons de fundo, nunca por sombra.",
+      "Duas famílias com papéis fixos: Plex Sans fala, Plex Mono identifica.",
+      "Cor reservada: o azul é de link e foco, e as três cores de risco só aparecem onde se fala de risco.",
+      "Todo número vem com unidade, período e denominador.",
+      "Um único elemento decorativo previsto: a borda inferior serrilhada do bloco do recibo, que ainda não foi construída."
+    ],
+    "rules": [
+      {
+        "name": "A regra do azul",
+        "body": "O azul-aço é só para link e anel de foco. Não é cor de botão principal, de destaque nem de gráfico.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do risco",
+        "body": "Verde, âmbar e vermelho aparecem só onde se fala de risco: selo de nível, motivo, barra de gráfico de risco. Nunca como decoração, sucesso genérico ou erro de formulário. Um estado `concluido` não é verde; um erro de carregamento não é vermelho.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do nome",
+        "body": "O nível de risco nunca é dito só pela cor: vem sempre com \"baixo\", \"médio\" ou \"alto\" escrito. Quando o selo mostra só o nome, a palavra \"risco\" continua lá para leitor de tela.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do nível único",
+        "body": "Quando todas as linhas de uma lista têm o mesmo nível, ele é escrito uma vez no título da lista, e não repetido numa coluna. A fila \"Aguardando aprovação\" traz \"risco alto\" ao lado do título e não tem coluna de risco.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do contorno",
+        "body": "Campo de texto, select e caixa de seleção têm o contorno na cor do texto secundário, que dá 3:1 ou mais contra os três fundos nos dois temas. A borda padrão continua sendo a linha que separa superfícies e não delimita controle.",
+        "section": "colors"
+      },
+      {
+        "name": "A regra do identificador",
+        "body": "Tudo o que alguém pode copiar para um terminal ou comparar caractere a caractere é Plex Mono, e isso inclui caminho de arquivo. Todo o resto é Plex Sans. Mono não é usada para dar ar técnico a um rótulo. Na fila, a evidência só vai em Mono quando é um caminho; quando é uma frase, fica em Sans.",
+        "section": "typography"
+      },
+      {
+        "name": "A regra do denominador",
+        "body": "Todo número vem com unidade, período e denominador. A métrica escreve a porcentagem com \"das avaliadas\" ao lado e, embaixo, a fração e o período, no formato \"N de M análises em D dias\". A barra de proporção nunca fala sozinha: a fração está sempre escrita ao lado dela.",
+        "section": "typography"
+      },
+      {
+        "name": "A regra da borda",
+        "body": "Superfícies se separam por borda de 1px e pela troca de fundo. Sombra difusa não separa nada aqui.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do usar o tema escuro como padrão e manter o claro alternável, com a escolha persistida.",
+      "Do separar superfícies com borda de 1px e com a troca entre base, superfície e elevado.",
+      "Do escrever em Plex Mono todo hash, `head_sha`, `key_id`, id de motivo, nome de branch, número de PR e caminho de arquivo.",
+      "Do escrever o nome do nível junto da cor de risco.",
+      "Do escrever o nível uma vez no título quando a lista inteira tem o mesmo nível, em vez de repeti-lo numa coluna.",
+      "Do dar unidade, período e denominador a todo número, e escrever a fração ao lado de toda barra de proporção.",
+      "Do manter controle e linha de tabela em 32px de altura.",
+      "Do limitar o movimento à transição curta de estado (120ms) e zerá-la com `prefers-reduced-motion: reduce`.",
+      "Do registrar em `LICENSES-TERCEIROS.md` toda peça derivada de outra biblioteca.",
+      "Do usar a logo de `design/marca/svg/` no topo da navegação, na versão do tema, e `icone-app-fundo-escuro-32.png` como favicon."
+    ],
+    "donts": [
+      "Don't usar o azul-aço em botão principal, destaque ou gráfico.",
+      "Don't usar cor de risco fora de risco: nem como sucesso genérico, nem como erro de formulário, nem como decoração.",
+      "Don't usar roxo, gradiente, glassmorphism ou fundo com blur.",
+      "Don't usar sombra difusa como separador, nem sombra grande.",
+      "Don't usar Inter, Roboto ou fonte do sistema no lugar da Plex.",
+      "Don't pôr card dentro de card.",
+      "Don't pôr um ícone num quadradinho arredondado em cima de cada título.",
+      "Don't escrever texto cinza sobre fundo colorido.",
+      "Don't usar emoji na interface.",
+      "Don't usar botão em pílula nem cantos acima de 6px.",
+      "Don't trocar informação por frase de efeito.",
+      "Don't animar a entrada de página, nem usar mola.",
+      "Don't manter cor, raio, sombra, fonte ou animação de uma biblioteca de origem.",
+      "Don't alterar `design/marca/`."
+    ]
+  }
+}

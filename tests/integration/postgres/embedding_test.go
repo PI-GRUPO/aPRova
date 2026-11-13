@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azulpasta/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -47,20 +47,15 @@ func TestEmbeddingDe768DimensoesGravaEEEncontradoPelaSimilaridade(t *testing.T) 
 	repo := exigirBanco(t)
 	tenant := novoTenant()
 
-	alvo, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, vetorComDimensao(dimensaoDoGeminiEmbedding, 3)))
-	if err != nil {
-		t.Fatalf("gravar vetor de 768 posições: %v", err)
-	}
-	if _, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, vetorComDimensao(dimensaoDoGeminiEmbedding, 4))); err != nil {
-		t.Fatalf("gravar segundo vetor: %v", err)
-	}
+	alvo := analiseComVetor(t, repo, tenant, 1, headDoPR, vetorComDimensao(dimensaoDoGeminiEmbedding, 3))
+	analiseComVetor(t, repo, tenant, 2, headDoPR, vetorComDimensao(dimensaoDoGeminiEmbedding, 4))
 
-	vizinhos, err := repo.BuscarVizinhos(t.Context(), tenant, vetorComDimensao(dimensaoDoGeminiEmbedding, 3), 1)
+	vizinhos, err := repo.VizinhosParecidos(t.Context(), consultaDeVizinhos(tenant, vetorComDimensao(dimensaoDoGeminiEmbedding, 3), 1))
 	if err != nil {
 		t.Fatalf("buscar por similaridade: %v", err)
 	}
-	if len(vizinhos) != 1 || vizinhos[0].ID != alvo || vizinhos[0].Distancia > 1e-6 {
-		t.Errorf("esperava a memória %d a distância zero, obtive %+v", alvo, vizinhos)
+	if len(vizinhos) != 1 || vizinhos[0].TaskRunID != alvo.ID || vizinhos[0].Similaridade < 1-1e-6 {
+		t.Errorf("esperava a análise %s com similaridade 1, obtive %+v", alvo.ID, vizinhos)
 	}
 }
 
@@ -68,7 +63,9 @@ func TestEmbeddingDe1536DimensoesERecusadoAntesDoBanco(t *testing.T) {
 	repo := exigirBanco(t)
 	tenant := novoTenant()
 
-	_, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, nil, vetorComDimensao(1536, 0)))
+	taskRun := novoTaskRun(t, repo, tenant)
+
+	_, err := repo.GravarMemoriaDeCodigo(t.Context(), memoria(tenant, taskRun.ID, vetorComDimensao(1536, 0)))
 
 	if !errors.Is(err, domain.ErrDadosInvalidos) {
 		t.Fatalf("esperava ErrDadosInvalidos, obtive %v", err)
