@@ -67,6 +67,7 @@ type montagemDoGate struct {
 	banco      bancoDaFila
 	leitor     worker.LeitorDePR
 	avaliador  worker.AvaliadorRisco
+	calibrador worker.CalibradorRisco
 	sandbox    *sandboxContado
 	publicador *publicadorContado
 	eventos    *eventosGuardados
@@ -92,6 +93,7 @@ func (m montagemDoGate) rodarAte(t *testing.T, taskRunID string, estadoFinal dom
 		Permissoes:    permissaoDeAdmin{},
 		Sandbox:       m.sandbox,
 		Avaliador:     m.avaliador,
+		Calibrador:    m.calibrador,
 		Recibos:       emissorDeRecibos(t, m.banco.repo),
 		Publicador:    m.publicador,
 		Eventos:       m.eventos,
