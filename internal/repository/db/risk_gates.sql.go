@@ -10,20 +10,25 @@ import (
 )
 
 const createRiskGate = `-- name: CreateRiskGate :one
-INSERT INTO risk_gates (tenant_id, task_run_id, deterministic_level, level, reason, rules_hit, new_dependencies)
-SELECT tr.tenant_id, tr.id, $1, $2, $3, $4, $5
+INSERT INTO risk_gates (tenant_id, task_run_id, deterministic_level, level, reason, rules_hit, new_dependencies,
+                        calibration_status, calibration_reason, calibration_neighbors)
+SELECT tr.tenant_id, tr.id, $1, $2, $3, $4, $5,
+       $6, $7, $8
 FROM task_runs tr
-WHERE tr.id = $6
-RETURNING id, tenant_id, task_run_id, deterministic_level, level, reason, created_at, rules_hit, new_dependencies
+WHERE tr.id = $9
+RETURNING id, tenant_id, task_run_id, deterministic_level, level, reason, created_at, rules_hit, new_dependencies, calibration_status, calibration_reason, calibration_neighbors
 `
 
 type CreateRiskGateParams struct {
-	DeterministicLevel string `json:"deterministic_level"`
-	Level              string `json:"level"`
-	Reason             string `json:"reason"`
-	RulesHit           []byte `json:"rules_hit"`
-	NewDependencies    []byte `json:"new_dependencies"`
-	TaskRunID          string `json:"task_run_id"`
+	DeterministicLevel   string `json:"deterministic_level"`
+	Level                string `json:"level"`
+	Reason               string `json:"reason"`
+	RulesHit             []byte `json:"rules_hit"`
+	NewDependencies      []byte `json:"new_dependencies"`
+	CalibrationStatus    string `json:"calibration_status"`
+	CalibrationReason    string `json:"calibration_reason"`
+	CalibrationNeighbors []byte `json:"calibration_neighbors"`
+	TaskRunID            string `json:"task_run_id"`
 }
 
 func (q *Queries) CreateRiskGate(ctx context.Context, arg CreateRiskGateParams) (RiskGate, error) {
@@ -33,6 +38,9 @@ func (q *Queries) CreateRiskGate(ctx context.Context, arg CreateRiskGateParams) 
 		arg.Reason,
 		arg.RulesHit,
 		arg.NewDependencies,
+		arg.CalibrationStatus,
+		arg.CalibrationReason,
+		arg.CalibrationNeighbors,
 		arg.TaskRunID,
 	)
 	var i RiskGate
@@ -46,12 +54,15 @@ func (q *Queries) CreateRiskGate(ctx context.Context, arg CreateRiskGateParams) 
 		&i.CreatedAt,
 		&i.RulesHit,
 		&i.NewDependencies,
+		&i.CalibrationStatus,
+		&i.CalibrationReason,
+		&i.CalibrationNeighbors,
 	)
 	return i, err
 }
 
 const getRiskGateByTaskRun = `-- name: GetRiskGateByTaskRun :one
-SELECT id, tenant_id, task_run_id, deterministic_level, level, reason, created_at, rules_hit, new_dependencies FROM risk_gates WHERE task_run_id = $1
+SELECT id, tenant_id, task_run_id, deterministic_level, level, reason, created_at, rules_hit, new_dependencies, calibration_status, calibration_reason, calibration_neighbors FROM risk_gates WHERE task_run_id = $1
 `
 
 func (q *Queries) GetRiskGateByTaskRun(ctx context.Context, taskRunID string) (RiskGate, error) {
@@ -67,6 +78,9 @@ func (q *Queries) GetRiskGateByTaskRun(ctx context.Context, taskRunID string) (R
 		&i.CreatedAt,
 		&i.RulesHit,
 		&i.NewDependencies,
+		&i.CalibrationStatus,
+		&i.CalibrationReason,
+		&i.CalibrationNeighbors,
 	)
 	return i, err
 }

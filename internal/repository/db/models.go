@@ -105,15 +105,18 @@ type RemoteActionAttempt struct {
 }
 
 type RiskGate struct {
-	ID                 int64     `json:"id"`
-	TenantID           int64     `json:"tenant_id"`
-	TaskRunID          string    `json:"task_run_id"`
-	DeterministicLevel string    `json:"deterministic_level"`
-	Level              string    `json:"level"`
-	Reason             string    `json:"reason"`
-	CreatedAt          time.Time `json:"created_at"`
-	RulesHit           []byte    `json:"rules_hit"`
-	NewDependencies    []byte    `json:"new_dependencies"`
+	ID                   int64     `json:"id"`
+	TenantID             int64     `json:"tenant_id"`
+	TaskRunID            string    `json:"task_run_id"`
+	DeterministicLevel   string    `json:"deterministic_level"`
+	Level                string    `json:"level"`
+	Reason               string    `json:"reason"`
+	CreatedAt            time.Time `json:"created_at"`
+	RulesHit             []byte    `json:"rules_hit"`
+	NewDependencies      []byte    `json:"new_dependencies"`
+	CalibrationStatus    string    `json:"calibration_status"`
+	CalibrationReason    string    `json:"calibration_reason"`
+	CalibrationNeighbors []byte    `json:"calibration_neighbors"`
 }
 
 type SandboxResult struct {

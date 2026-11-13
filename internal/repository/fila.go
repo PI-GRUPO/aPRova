@@ -143,6 +143,13 @@ func (r *RepositorioPostgres) BuscarGateDeRisco(ctx context.Context, taskRunID s
 	if err := json.Unmarshal(linha.NewDependencies, &gate.DependenciasNovas); err != nil {
 		return domain.GateDeRisco{}, fmt.Errorf("interpretar new_dependencies do task_run %s: %w", taskRunID, err)
 	}
+	gate.Calibracao = domain.Calibracao{Estado: domain.EstadoCalibracao(linha.CalibrationStatus), Razao: linha.CalibrationReason}
+	if err := json.Unmarshal(linha.CalibrationNeighbors, &gate.Calibracao.Vizinhos); err != nil {
+		return domain.GateDeRisco{}, fmt.Errorf("interpretar calibration_neighbors do task_run %s: %w", taskRunID, err)
+	}
+	if len(gate.Calibracao.Vizinhos) == 0 {
+		gate.Calibracao.Vizinhos = nil
+	}
 	return gate, nil
 }
 

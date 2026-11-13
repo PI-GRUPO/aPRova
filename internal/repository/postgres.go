@@ -26,6 +26,8 @@ const (
 	indiceDeUmaAceitaPorAcao = "remote_action_attempts_uma_aceita_por_acao"
 
 	codigoViolacaoUnica = "23505"
+
+	razaoDaCalibracaoDesligada = "calibração desligada"
 )
 
 var (
@@ -287,16 +289,31 @@ func (r *RepositorioPostgres) GravarGateDeRisco(ctx context.Context, gate domain
 	if err != nil {
 		return err
 	}
+	calibracao := calibracaoOuDesligada(gate.Calibracao)
+	vizinhos, err := jsonDaLista(calibracao.Vizinhos)
+	if err != nil {
+		return err
+	}
 
 	_, err = r.consultas.CreateRiskGate(ctx, db.CreateRiskGateParams{
-		TaskRunID:          gate.TaskRunID,
-		DeterministicLevel: string(gate.NivelDeterministico),
-		Level:              string(gate.Nivel),
-		Reason:             gate.Motivo,
-		RulesHit:           motivos,
-		NewDependencies:    dependencias,
+		TaskRunID:            gate.TaskRunID,
+		DeterministicLevel:   string(gate.NivelDeterministico),
+		Level:                string(gate.Nivel),
+		Reason:               gate.Motivo,
+		RulesHit:             motivos,
+		NewDependencies:      dependencias,
+		CalibrationStatus:    string(calibracao.Estado),
+		CalibrationReason:    calibracao.Razao,
+		CalibrationNeighbors: vizinhos,
 	})
 	return traduzir("gravar gate de risco", err)
+}
+
+func calibracaoOuDesligada(calibracao domain.Calibracao) domain.Calibracao {
+	if calibracao.Estado == "" {
+		return domain.Calibracao{Estado: domain.CalibracaoDesligada, Razao: razaoDaCalibracaoDesligada}
+	}
+	return calibracao
 }
 
 // AnexarRecibo grava o recibo. Só existe um por task_run e ele nunca muda.
@@ -326,8 +343,9 @@ func (r *RepositorioPostgres) AnexarRecibo(ctx context.Context, novo domain.Novo
 	return paraRecibo(linha), nil
 }
 
-// GravarDecisaoComRecibo grava a decisão do gate e o recibo dela numa só
-// transação: ou os dois ficam gravados, ou nenhum. montar recebe o último
+// GravarDecisaoComRecibo grava a decisão do gate, a assinatura dela no
+// histórico da calibração, quando houver, e o recibo numa só transação: ou tudo
+// fica gravado, ou nada. montar recebe o último
 // recibo do tenant do task_run, ou nil quando é o primeiro, e devolve o recibo
 // assinado. A emissão é serializada por tenant, de modo que duas decisões
 // simultâneas nunca recebem o mesmo anterior. Decisão ou recibo que já existem
@@ -345,6 +363,12 @@ func (r *RepositorioPostgres) GravarDecisaoComRecibo(ctx context.Context, gate d
 		}
 		if err := tx.GravarGateDeRisco(ctx, gate); err != nil {
 			return err
+		}
+		if gate.Assinatura != nil {
+			memoria := domain.MemoriaDeCodigo{TenantID: taskRun.TenantID, TaskRunID: taskRun.ID, Resumo: gate.Assinatura.Texto, Embedding: gate.Assinatura.Embedding}
+			if _, err := tx.GravarMemoriaDeCodigo(ctx, memoria); err != nil {
+				return err
+			}
 		}
 
 		anterior, err := tx.ultimoReciboDoTenant(ctx, taskRun.TenantID)
