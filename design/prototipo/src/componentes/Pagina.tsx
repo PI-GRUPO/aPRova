@@ -54,8 +54,8 @@ export function Pagina({ titulo, tituloDoDocumento, contexto, estado, oQueCarreg
 				<div role="alert" className="max-w-[65ch] rounded-painel border border-borda bg-superficie p-6">
 					<h2 className="text-16 font-semibold">Não foi possível carregar {oQueCarrega}</h2>
 					<p className="mt-2 text-secundario">
-						O servidor do aPRova não respondeu a tempo. Nenhuma análise foi perdida: as decisões e os recibos continuam gravados, e o que
-						estava bloqueado no GitHub continua bloqueado.
+						O servidor do aPRova não respondeu a tempo. As decisões e os recibos ficam gravados no servidor, e o bloqueio no GitHub não
+						depende desta tela.
 					</p>
 					<p className="mt-4">
 						<Link to={pathname}>Tentar de novo</Link>

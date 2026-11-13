@@ -7,6 +7,7 @@ export interface DiaDoPeriodo {
 	baixo: number;
 	medio: number;
 	alto: number;
+	analises: Record<Nivel, Analise[]>;
 }
 
 const tiposDeFalha: Exclude<TipoDeFalha, "nenhuma">[] = ["teste", "compilacao", "infraestrutura"];
@@ -27,12 +28,17 @@ export function analisesPorDia(): DiaDoPeriodo[] {
 
 	return dias.map((dia) => {
 		const doDia = analises.filter((analise) => analise.risk_gate && isSameDay(new Date(analise.received_at), dia));
-		const contar = (nivel: Nivel) => doDia.filter((analise) => analise.risk_gate?.level === nivel).length;
+		const doNivel = (nivel: Nivel) =>
+			doDia
+				.filter((analise) => analise.risk_gate?.level === nivel)
+				.sort((a, b) => new Date(a.received_at).getTime() - new Date(b.received_at).getTime());
+		const analisesDoDia = { baixo: doNivel("baixo"), medio: doNivel("medio"), alto: doNivel("alto") };
 		return {
 			dia,
-			baixo: contar("baixo"),
-			medio: contar("medio"),
-			alto: contar("alto"),
+			baixo: analisesDoDia.baixo.length,
+			medio: analisesDoDia.medio.length,
+			alto: analisesDoDia.alto.length,
+			analises: analisesDoDia,
 		};
 	});
 }
@@ -86,15 +92,25 @@ export function repositoriosDaFila(fila: ItemDaFila[]) {
 }
 
 function textoPesquisavel({ analise }: ItemDaFila) {
-	const motivos = analise.risk_gate?.rules_hit.map((motivo) => motivo.id) ?? [];
-	return [analise.repository, `#${analise.pr_number}`, analise.head_branch, analise.head_sha, ...motivos].join(" ").toLowerCase();
+	const motivos = analise.risk_gate?.rules_hit ?? [];
+	const ids = motivos.map((motivo) => motivo.id);
+	const evidencias = motivos.flatMap((motivo) => motivo.evidencias);
+	return [analise.repository, `#${analise.pr_number}`, analise.head_branch, analise.head_sha, ...ids, ...evidencias]
+		.join(" ")
+		.toLowerCase();
+}
+
+function termosDaBusca(busca: string) {
+	return busca.trim().toLowerCase().split(/\s+/).filter(Boolean);
 }
 
 export function filtrarFila(fila: ItemDaFila[], busca: string, repositorio: string) {
-	const termo = busca.trim().toLowerCase();
-	return fila.filter(
-		(item) => (repositorio === todosOsRepositorios || item.analise.repository === repositorio) && textoPesquisavel(item).includes(termo),
-	);
+	const termos = termosDaBusca(busca);
+	return fila.filter((item) => {
+		const doRepositorio = repositorio === todosOsRepositorios || item.analise.repository === repositorio;
+		const texto = textoPesquisavel(item);
+		return doRepositorio && termos.every((termo) => texto.includes(termo));
+	});
 }
 
 export function ordenarPorEspera(fila: ItemDaFila[], maiorEsperaPrimeiro: boolean) {

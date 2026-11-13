@@ -37,19 +37,42 @@ function CaminhoQuebravel({ caminho }: { caminho: string }) {
 	));
 }
 
+function CaminhoComNomeInteiro({ caminho }: { caminho: string }) {
+	const corte = caminho.lastIndexOf("/") + 1;
+	const pasta = caminho.slice(0, corte);
+
+	return (
+		<span className="flex min-w-0 items-baseline font-mono" title={caminho}>
+			{pasta ? <span className="truncate">{pasta}</span> : null}
+			<span className="shrink-0">{caminho.slice(corte)}</span>
+		</span>
+	);
+}
+
+function ConteudoDaEvidencia({ texto, ehCaminho, quebraLinha }: { texto: string; ehCaminho: boolean; quebraLinha: boolean }) {
+	if (quebraLinha) {
+		return (
+			<span className={cn("whitespace-normal [overflow-wrap:anywhere]", ehCaminho && "font-mono")}>
+				{ehCaminho ? <CaminhoQuebravel caminho={texto} /> : texto}
+			</span>
+		);
+	}
+	if (ehCaminho) return <CaminhoComNomeInteiro caminho={texto} />;
+	return (
+		<span className="truncate" title={texto}>
+			{texto}
+		</span>
+	);
+}
+
 function EvidenciaPrincipal({ analise, quebraLinha = false, className }: { analise: Analise; quebraLinha?: boolean; className?: string }) {
 	const [primeira, ...demais] = evidenciasDaAnalise(analise);
 	if (!primeira) return null;
 	const ehCaminho = !primeira.includes(" ");
 
 	return (
-		<span className={cn("flex items-baseline gap-x-2", className)}>
-			<span
-				className={cn(quebraLinha ? "whitespace-normal [overflow-wrap:anywhere]" : "truncate", ehCaminho && "font-mono")}
-				title={primeira}
-			>
-				{quebraLinha && ehCaminho ? <CaminhoQuebravel caminho={primeira} /> : primeira}
-			</span>
+		<span className={cn("flex min-w-0 items-baseline gap-x-2", className)}>
+			<ConteudoDaEvidencia texto={primeira} ehCaminho={ehCaminho} quebraLinha={quebraLinha} />
 			{demais.length > 0 ? <span className="shrink-0 text-12 text-secundario">e mais {demais.length}</span> : null}
 		</span>
 	);
@@ -69,7 +92,7 @@ function LinhaDaFila({ analise, desde }: ItemDaFila) {
 			<Celula className="relative z-10 max-2xl:hidden">
 				<Identificador>{analise.head_branch}</Identificador>
 			</Celula>
-			<Celula className="relative z-10 text-secundario max-2xl:hidden">
+			<Celula className="relative z-10 text-secundario max-3xl:hidden">
 				<Identificador>{analise.head_sha.slice(0, 7)}</Identificador>
 			</Celula>
 			<Celula className="max-md:hidden">
@@ -151,7 +174,7 @@ export function FilaDeAprovacao() {
 							</ColunaOrdenavel>
 							<Coluna>Pull request</Coluna>
 							<Coluna className="max-2xl:hidden">Branch</Coluna>
-							<Coluna className="max-2xl:hidden">Commit</Coluna>
+							<Coluna className="max-3xl:hidden">Commit</Coluna>
 							<Coluna className="max-md:hidden">Motivos</Coluna>
 							<Coluna className="max-lg:hidden">Evidência</Coluna>
 						</CabecalhoDaTabela>

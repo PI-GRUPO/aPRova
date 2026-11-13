@@ -1,8 +1,10 @@
-import { type CSSProperties, type KeyboardEvent, useId, useState } from "react";
+import { type CSSProperties, type KeyboardEvent, useId, useLayoutEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import { cn } from "@/lib/classes";
 import { diaEMes, nomeDoNivel, plural } from "@/lib/formatos";
 import type { Nivel } from "@/lib/tipos";
 import type { DiaDoPeriodo } from "@/lib/visao-geral";
+import { ListaDaCelula } from "./ListaDaCelula";
 
 const niveisDoMaiorParaOMenor: Nivel[] = ["alto", "medio", "baixo"];
 const forcaDoPasso = [0, 76, 88, 100];
@@ -48,6 +50,10 @@ function limitar(valor: number, maximo: number) {
 	return Math.min(maximo, Math.max(0, valor));
 }
 
+function mesmaCelula(a: Celula | null, b: Celula) {
+	return a?.linha === b.linha && a.coluna === b.coluna;
+}
+
 export function EscalaDoMapa() {
 	return (
 		<div data-testid="escala-do-mapa" className="flex items-center gap-2">
@@ -70,24 +76,50 @@ export function EscalaDoMapa() {
 interface PropsDaDica {
 	id: string;
 	texto: string;
-	linha: number;
-	coluna: number;
+	celula: Celula;
 	colunas: number;
 }
 
-function Dica({ id, texto, linha, coluna, colunas }: PropsDaDica) {
+function Dica({ id, texto, celula, colunas }: PropsDaDica) {
 	return (
 		<span
 			id={id}
 			role="tooltip"
 			className={cn(
 				"pointer-events-none absolute z-10 rounded-selo border border-borda bg-elevado px-2 py-1 text-12 font-normal whitespace-nowrap text-titulo",
-				linha === 0 ? "top-full mt-1.5" : "bottom-full mb-1.5",
-				ancoraDaDica(coluna, colunas),
+				celula.linha === 0 ? "top-full mt-1.5" : "bottom-full mb-1.5",
+				ancoraDaDica(celula.coluna, colunas),
 			)}
 		>
 			{texto}
 		</span>
+	);
+}
+
+const coberturaDaCelula = "absolute inset-0 cursor-pointer rounded-[2px]";
+
+interface PropsDoDestino {
+	dia: DiaDoPeriodo;
+	nivel: Nivel;
+	aberta: boolean;
+	aoMudar: (aberta: boolean) => void;
+	aoFechar: () => void;
+}
+
+function DestinoDaCelula({ dia, nivel, aberta, aoMudar, aoFechar }: PropsDoDestino) {
+	const analises = dia.analises[nivel];
+	const rotulo = descricaoDaCelula(dia, nivel);
+	const [unica] = analises;
+	if (!unica) return null;
+
+	if (analises.length === 1) {
+		return <Link to={`/analises/${unica.id}`} tabIndex={-1} aria-label={`Abrir a análise de ${rotulo}`} className={coberturaDaCelula} />;
+	}
+
+	return (
+		<ListaDaCelula rotulo={rotulo} analises={analises} aberta={aberta} aoMudar={aoMudar} aoFechar={aoFechar}>
+			<button type="button" tabIndex={-1} aria-label={`Ver as ${analises.length} análises de ${rotulo}`} className={coberturaDaCelula} />
+		</ListaDaCelula>
 	);
 }
 
@@ -98,28 +130,43 @@ interface PropsDaLinha {
 	prefixo: string;
 	ativa: Celula | null;
 	destacada: Celula | null;
+	aberta: Celula | null;
 	idDaDica: string;
 	aoApontar: (celula: Celula) => void;
+	aoAbrir: (celula: Celula | null) => void;
+	aoFecharLista: () => void;
 }
 
-function LinhaDoNivel({ nivel, linha, dias, prefixo, ativa, destacada, idDaDica, aoApontar }: PropsDaLinha) {
+function LinhaDoNivel({
+	nivel,
+	linha,
+	dias,
+	prefixo,
+	ativa,
+	destacada,
+	aberta,
+	idDaDica,
+	aoApontar,
+	aoAbrir,
+	aoFecharLista,
+}: PropsDaLinha) {
 	const total = dias.reduce((soma, dia) => soma + dia[nivel], 0);
 
 	return (
 		<tr data-testid="linha-do-mapa">
-			<th scope="row" className="pr-2 text-left text-12 font-normal text-secundario">
+			<th scope="row" className="sticky left-0 z-[1] bg-superficie pr-2 text-left text-12 font-normal text-secundario">
 				{nomeDoNivel[nivel]}
 				<span className="sr-only">, {plural(total, "análise", "análises")} no período</span>
 			</th>
 			{dias.map((dia, coluna) => {
 				const quantas = dia[nivel];
 				const passo = passoDaContagem(quantas);
-				const comDica = destacada?.linha === linha && destacada.coluna === coluna;
-				const comFoco = ativa?.linha === linha && ativa.coluna === coluna;
+				const celula = { linha, coluna };
+				const comDica = mesmaCelula(destacada, celula) && !aberta;
 				return (
 					<td
 						key={dia.dia.toISOString()}
-						id={idDaCelula(prefixo, { linha, coluna })}
+						id={idDaCelula(prefixo, celula)}
 						data-testid="celula-do-mapa"
 						data-quantas={quantas}
 						data-passo={passo}
@@ -127,18 +174,22 @@ function LinhaDoNivel({ nivel, linha, dias, prefixo, ativa, destacada, idDaDica,
 						aria-label={descricaoDaCelula(dia, nivel)}
 						aria-describedby={comDica ? idDaDica : undefined}
 						className={cn(
-							"relative h-5 rounded-[2px] p-0 text-center text-[11px] leading-none font-semibold text-superficie",
-							comFoco && "outline-2 outline-offset-1 outline-acento",
+							"transicao-de-estado relative h-6 min-w-6 rounded-[2px] p-0 text-center text-[11px] leading-none font-semibold text-superficie",
+							quantas > 0 && "hover:outline-1 hover:outline-offset-1 hover:outline-[var(--texto-titulo)]",
+							mesmaCelula(ativa, celula) && "outline-2 outline-offset-1 outline-acento",
 						)}
 						style={tintaDoPasso(passo, `var(--risco-${nivel})`)}
-						onMouseEnter={() => aoApontar({ linha, coluna })}
+						onMouseEnter={() => aoApontar(celula)}
 					>
-						<span aria-hidden="true" className="max-md:hidden">
-							{quantas >= 2 ? quantas : ""}
-						</span>
-						{comDica ? (
-							<Dica id={idDaDica} texto={descricaoDaCelula(dia, nivel)} linha={linha} coluna={coluna} colunas={dias.length} />
-						) : null}
+						<span aria-hidden="true">{quantas >= 2 ? quantas : ""}</span>
+						<DestinoDaCelula
+							dia={dia}
+							nivel={nivel}
+							aberta={mesmaCelula(aberta, celula)}
+							aoMudar={(abrir) => aoAbrir(abrir ? celula : null)}
+							aoFechar={aoFecharLista}
+						/>
+						{comDica ? <Dica id={idDaDica} texto={descricaoDaCelula(dia, nivel)} celula={celula} colunas={dias.length} /> : null}
 					</td>
 				);
 			})}
@@ -171,11 +222,20 @@ interface Props {
 export function MapaDeCalor({ dias, legenda, className }: Props) {
 	const prefixo = useId();
 	const idDaDica = useId();
+	const navegar = useNavigate();
+	const rolagem = useRef<HTMLDivElement>(null);
+	const grade = useRef<HTMLTableElement>(null);
 	const [foco, setFoco] = useState<Celula>({ linha: 0, coluna: dias.length - 1 });
 	const [focada, setFocada] = useState(false);
 	const [apontada, setApontada] = useState<Celula | null>(null);
+	const [aberta, setAberta] = useState<Celula | null>(null);
 	const [dicaFechada, setDicaFechada] = useState(false);
 	const destacada = apontada ?? (focada && !dicaFechada ? foco : null);
+
+	useLayoutEffect(() => {
+		const caixa = rolagem.current;
+		if (caixa) caixa.scrollLeft = caixa.scrollWidth;
+	}, []);
 
 	function destino(tecla: string): Celula | null {
 		if (tecla === "Home") return { linha: foco.linha, coluna: 0 };
@@ -188,9 +248,25 @@ export function MapaDeCalor({ dias, legenda, className }: Props) {
 		};
 	}
 
+	function abrirCelula(celula: Celula) {
+		const dia = dias[celula.coluna];
+		const nivel = niveisDoMaiorParaOMenor[celula.linha];
+		if (!dia || !nivel) return;
+		const analises = dia.analises[nivel];
+		const [unica] = analises;
+		if (!unica) return;
+		if (analises.length === 1) navegar(`/analises/${unica.id}`);
+		else setAberta(celula);
+	}
+
 	function aoTeclar(evento: KeyboardEvent<HTMLTableElement>) {
 		if (evento.key === "Escape") {
 			setDicaFechada(true);
+			return;
+		}
+		if (evento.key === "Enter" || evento.key === " ") {
+			evento.preventDefault();
+			abrirCelula(foco);
 			return;
 		}
 		const proxima = destino(evento.key);
@@ -199,49 +275,58 @@ export function MapaDeCalor({ dias, legenda, className }: Props) {
 		setFoco(proxima);
 		setApontada(null);
 		setDicaFechada(false);
+		document.getElementById(idDaCelula(prefixo, proxima))?.scrollIntoView({ block: "nearest", inline: "nearest" });
 	}
 
 	return (
-		<figure className={cn("m-0 flex flex-col justify-center", className)}>
-			<table
-				role="grid"
-				tabIndex={0}
-				aria-label="Análises por dia e nível de risco. Use as setas para percorrer os dias e os níveis."
-				aria-activedescendant={focada ? idDaCelula(prefixo, foco) : undefined}
-				className="w-full table-fixed border-separate border-spacing-0.5 rounded-selo"
-				onKeyDown={aoTeclar}
-				onFocus={() => {
-					setFocada(true);
-					setDicaFechada(false);
-				}}
-				onBlur={() => setFocada(false)}
-				onMouseLeave={() => setApontada(null)}
-			>
-				<caption className="sr-only">{legenda}</caption>
-				<colgroup>
-					<col className="w-12" />
-					{dias.map((dia) => (
-						<col key={dia.dia.toISOString()} />
-					))}
-					<col className="w-8" />
-				</colgroup>
-				<tbody>
-					{niveisDoMaiorParaOMenor.map((nivel, linha) => (
-						<LinhaDoNivel
-							key={nivel}
-							nivel={nivel}
-							linha={linha}
-							dias={dias}
-							prefixo={prefixo}
-							ativa={focada ? foco : null}
-							destacada={destacada}
-							idDaDica={idDaDica}
-							aoApontar={setApontada}
-						/>
-					))}
-				</tbody>
-			</table>
-			<EixoDosDias dias={dias} />
+		<figure className={cn("m-0 flex min-w-0 flex-col justify-center", className)}>
+			<div ref={rolagem} className="overflow-x-auto pt-2 pb-1">
+				<div className="min-w-[900px]">
+					<table
+						ref={grade}
+						role="grid"
+						tabIndex={0}
+						aria-label="Análises por dia e nível de risco. Use as setas para percorrer os dias e os níveis e Enter para abrir."
+						aria-activedescendant={focada ? idDaCelula(prefixo, foco) : undefined}
+						className="w-full table-fixed border-separate border-spacing-0.5 rounded-selo"
+						onKeyDown={aoTeclar}
+						onFocus={() => {
+							setFocada(true);
+							setDicaFechada(false);
+						}}
+						onBlur={() => setFocada(false)}
+						onMouseLeave={() => setApontada(null)}
+					>
+						<caption className="sr-only">{legenda}</caption>
+						<colgroup>
+							<col className="w-12" />
+							{dias.map((dia) => (
+								<col key={dia.dia.toISOString()} />
+							))}
+							<col className="w-8" />
+						</colgroup>
+						<tbody>
+							{niveisDoMaiorParaOMenor.map((nivel, linha) => (
+								<LinhaDoNivel
+									key={nivel}
+									nivel={nivel}
+									linha={linha}
+									dias={dias}
+									prefixo={prefixo}
+									ativa={focada ? foco : null}
+									destacada={destacada}
+									aberta={aberta}
+									idDaDica={idDaDica}
+									aoApontar={setApontada}
+									aoAbrir={setAberta}
+									aoFecharLista={() => grade.current?.focus()}
+								/>
+							))}
+						</tbody>
+					</table>
+					<EixoDosDias dias={dias} />
+				</div>
+			</div>
 		</figure>
 	);
 }
