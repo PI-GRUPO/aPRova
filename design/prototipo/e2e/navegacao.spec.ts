@@ -29,6 +29,20 @@ test.describe("rotas", () => {
 	});
 });
 
+test.describe("página não encontrada", () => {
+	test("a composição tipográfica é decorativa e não estoura a largura", async ({ page }) => {
+		for (const largura of [390, 1440]) {
+			await page.setViewportSize({ width: largura, height: 844 });
+			await page.goto("/nao-existe");
+			const fragmentos = page.getByTestId("fragmentos-404");
+			await expect(fragmentos).toBeVisible();
+			await expect(fragmentos).toHaveAttribute("aria-hidden", "true");
+			expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(largura);
+			await expect(page.getByRole("main").getByRole("link", { name: "Visão geral" })).toBeVisible();
+		}
+	});
+});
+
 test.describe("da lista ao recibo", () => {
 	test("clicar numa análise leva ao detalhe certo", async ({ page }) => {
 		await abrirCasoReal(page);
