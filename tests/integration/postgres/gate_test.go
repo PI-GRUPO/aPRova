@@ -187,6 +187,7 @@ func TestRetomadaEmAvaliandoRiscoComGateGravadoNaoChamaOGate(t *testing.T) {
 		TaskRunID: avaliando.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "dependencia_nova: o PR acrescenta dependência nova",
 		Motivos:           []domain.MotivoDeRisco{{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova", Evidencias: []string{"go/go.mod"}}},
 		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
+		Calibracao:        domain.Calibracao{Estado: domain.CalibracaoDesligada, Razao: "calibração desligada"},
 	}
 	emitido, err := emissorDeRecibos(t, banco.repo).Emitir(t.Context(), receipt.Pedido{TaskRun: avaliando, Gate: gravado, Tentativa: 1, Diff: "diff"})
 	if err != nil {

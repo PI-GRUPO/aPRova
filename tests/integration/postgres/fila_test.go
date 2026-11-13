@@ -322,6 +322,7 @@ func TestBuscarGateDeRiscoDoTaskRun(t *testing.T) {
 			{ID: "falha_sandbox", Nivel: domain.RiscoAlto, Descricao: "os testes falharam no sandbox", Evidencias: []string{"1 de 11 testes falharam"}},
 		},
 		DependenciasNovas: []domain.DependenciaNova{{Ecossistema: "Go", Nome: "github.com/shopspring/decimal", Versao: "v1.4.0"}},
+		Calibracao:        domain.Calibracao{Estado: domain.CalibracaoDesligada, Razao: "calibração desligada"},
 	}
 	if err := banco.repo.GravarGateDeRisco(t.Context(), gate); err != nil {
 		t.Fatalf("gravar gate: %v", err)
