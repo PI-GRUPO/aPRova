@@ -49,7 +49,7 @@ WHERE id = (
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
 `
 
 type ClaimNextTaskRunParams struct {
@@ -77,6 +77,7 @@ func (q *Queries) ClaimNextTaskRun(ctx context.Context, arg ClaimNextTaskRunPara
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
@@ -85,7 +86,7 @@ const createTaskRun = `-- name: CreateTaskRun :one
 INSERT INTO task_runs (tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, received_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (delivery_id) DO NOTHING
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
 `
 
 type CreateTaskRunParams struct {
@@ -128,12 +129,24 @@ func (q *Queries) CreateTaskRun(ctx context.Context, arg CreateTaskRunParams) (T
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
 
+const getCheckRunID = `-- name: GetCheckRunID :one
+SELECT check_run_id FROM task_runs WHERE id = $1
+`
+
+func (q *Queries) GetCheckRunID(ctx context.Context, id string) (*int64, error) {
+	row := q.db.QueryRow(ctx, getCheckRunID, id)
+	var check_run_id *int64
+	err := row.Scan(&check_run_id)
+	return check_run_id, err
+}
+
 const getLatestTaskRunForPullRequest = `-- name: GetLatestTaskRunForPullRequest :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen FROM task_runs
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs
 WHERE tenant_id = $1 AND repository = $2 AND pr_number = $3
 ORDER BY created_at DESC, id DESC
 LIMIT 1
@@ -165,12 +178,13 @@ func (q *Queries) GetLatestTaskRunForPullRequest(ctx context.Context, arg GetLat
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
 
 const getTaskRun = `-- name: GetTaskRun :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen FROM task_runs WHERE id = $1
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs WHERE id = $1
 `
 
 func (q *Queries) GetTaskRun(ctx context.Context, id string) (TaskRun, error) {
@@ -193,12 +207,13 @@ func (q *Queries) GetTaskRun(ctx context.Context, id string) (TaskRun, error) {
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
 
 const getTaskRunByDeliveryID = `-- name: GetTaskRunByDeliveryID :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen FROM task_runs WHERE delivery_id = $1
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs WHERE delivery_id = $1
 `
 
 func (q *Queries) GetTaskRunByDeliveryID(ctx context.Context, deliveryID string) (TaskRun, error) {
@@ -221,6 +236,7 @@ func (q *Queries) GetTaskRunByDeliveryID(ctx context.Context, deliveryID string)
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
@@ -313,6 +329,23 @@ func (q *Queries) RenewTaskRunLease(ctx context.Context, arg RenewTaskRunLeasePa
 	return result.RowsAffected(), nil
 }
 
+const setCheckRunID = `-- name: SetCheckRunID :execrows
+UPDATE task_runs SET check_run_id = $1 WHERE id = $2
+`
+
+type SetCheckRunIDParams struct {
+	CheckRunID *int64 `json:"check_run_id"`
+	ID         string `json:"id"`
+}
+
+func (q *Queries) SetCheckRunID(ctx context.Context, arg SetCheckRunIDParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setCheckRunID, arg.CheckRunID, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const taskRunExists = `-- name: TaskRunExists :one
 SELECT EXISTS (SELECT 1 FROM task_runs WHERE id = $1)
 `
@@ -335,7 +368,7 @@ SET state = $1,
         ELSE last_approval_seen
     END
 WHERE task_runs.id = $2 AND task_runs.state = $3 AND task_runs.claimed_by = $4
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
 `
 
 type TransitionClaimedTaskRunParams struct {
@@ -370,6 +403,7 @@ func (q *Queries) TransitionClaimedTaskRun(ctx context.Context, arg TransitionCl
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }
@@ -378,7 +412,7 @@ const transitionTaskRun = `-- name: TransitionTaskRun :one
 UPDATE task_runs
 SET state = $1, updated_at = now()
 WHERE id = $2 AND state = $3
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
 `
 
 type TransitionTaskRunParams struct {
@@ -407,6 +441,7 @@ func (q *Queries) TransitionTaskRun(ctx context.Context, arg TransitionTaskRunPa
 		&i.LeaseExpiresAt,
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
+		&i.CheckRunID,
 	)
 	return i, err
 }

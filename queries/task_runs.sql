@@ -86,3 +86,9 @@ SELECT EXISTS (
     WHERE novo.tenant_id = sqlc.arg(tenant_id) AND novo.repository = sqlc.arg(repository) AND novo.pr_number = sqlc.arg(pr_number)
       AND (novo.created_at, novo.id) > (sqlc.arg(created_at)::timestamptz, sqlc.arg(id)::uuid)
 );
+
+-- name: GetCheckRunID :one
+SELECT check_run_id FROM task_runs WHERE id = $1;
+
+-- name: SetCheckRunID :execrows
+UPDATE task_runs SET check_run_id = sqlc.arg(check_run_id) WHERE id = sqlc.arg(id);

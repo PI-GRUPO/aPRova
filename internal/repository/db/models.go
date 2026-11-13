@@ -44,6 +44,15 @@ type IdentityLink struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+type PullRequestComment struct {
+	TenantID   int64     `json:"tenant_id"`
+	Repository string    `json:"repository"`
+	PrNumber   int32     `json:"pr_number"`
+	CommentID  int64     `json:"comment_id"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
 type Receipt struct {
 	ID                string    `json:"id"`
 	TenantID          int64     `json:"tenant_id"`
@@ -116,6 +125,7 @@ type TaskRun struct {
 	LeaseExpiresAt   *time.Time `json:"lease_expires_at"`
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
+	CheckRunID       *int64     `json:"check_run_id"`
 }
 
 type TaskStep struct {
