@@ -55,3 +55,9 @@ design/prototipo/playwright-report/
 .impeccable/mocks/
 .impeccable/review/
 .impeccable/build/
+
+# Versão livre do protótipo, arquivada fora dos commits
+design/prototipo-livre-arquivado/
+
+# Protótipo do dashboard: cache incremental do TypeScript
+design/prototipo/tsconfig.tsbuildinfo
