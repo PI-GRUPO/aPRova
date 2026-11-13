@@ -17,7 +17,7 @@ func TestCalibracaoFicaDesligadaComOsPadroesDoCodigo(t *testing.T) {
 	if configuracao.CalibracaoLigada {
 		t.Error("sem CALIBRACAO_LIGADA, a calibração fica desligada")
 	}
-	if configuracao.CalibracaoVizinhos != 10 || configuracao.CalibracaoSimilaridadeMinima != 0.90 ||
+	if configuracao.CalibracaoVizinhos != 10 || configuracao.CalibracaoSimilaridadeMinima != 0.97 ||
 		configuracao.CalibracaoMinimoDeDesfechos != 5 || configuracao.CalibracaoTimeout != 5*time.Second {
 		t.Errorf("padrões da calibração: %d vizinhos, %v, %d desfechos, %v", configuracao.CalibracaoVizinhos,
 			configuracao.CalibracaoSimilaridadeMinima, configuracao.CalibracaoMinimoDeDesfechos, configuracao.CalibracaoTimeout)

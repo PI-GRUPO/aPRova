@@ -49,7 +49,7 @@ func vizinho(numero int, similaridade float64, desfecho domain.DesfechoDoVizinho
 func positivos(quantos int) []domain.VizinhoDaCalibracao {
 	vizinhos := make([]domain.VizinhoDaCalibracao, 0, quantos)
 	for numero := range quantos {
-		vizinhos = append(vizinhos, vizinho(numero+1, 0.95, domain.VizinhoAprovadoEMergeado))
+		vizinhos = append(vizinhos, vizinho(numero+1, 0.99, domain.VizinhoAprovadoEMergeado))
 	}
 	return vizinhos
 }
@@ -186,7 +186,7 @@ func TestCalibracaoAcrescentaOMotivoComAEvidenciaDosVizinhos(t *testing.T) {
 	if historico.Descricao != "risco alto pelas regras, reduzido a médio pelo histórico: 7 casos parecidos aprovados e mergeados, nenhum revertido" {
 		t.Errorf("descrição = %q", historico.Descricao)
 	}
-	if len(historico.Evidencias) != 7 || historico.Evidencias[0] != "00000000-0000-4000-8000-000000000001 Azulpasta/alvo#1 similaridade 0.9500 aprovado_e_mergeado" {
+	if len(historico.Evidencias) != 7 || historico.Evidencias[0] != "00000000-0000-4000-8000-000000000001 Azulpasta/alvo#1 similaridade 0.9900 aprovado_e_mergeado" {
 		t.Errorf("cada vizinho usado é uma evidência com id, PR, similaridade e desfecho: %v", historico.Evidencias)
 	}
 	if len(decisao.Calibracao.Vizinhos) != 7 {
@@ -199,11 +199,11 @@ func TestCalibracaoAcrescentaOMotivoComAEvidenciaDosVizinhos(t *testing.T) {
 
 func TestEvidenciaVemDaMaiorParaAMenorSimilaridade(t *testing.T) {
 	vizinhos := []domain.VizinhoDaCalibracao{
-		vizinho(3, 0.91, domain.VizinhoAprovadoEMergeado),
-		vizinho(1, 0.99, domain.VizinhoAprovadoEMergeado),
-		vizinho(2, 0.95, domain.VizinhoAprovadoEMergeado),
-		vizinho(5, 0.95, domain.VizinhoAprovadoEMergeado),
-		vizinho(4, 0.93123456, domain.VizinhoAprovadoEMergeado),
+		vizinho(3, 0.975, domain.VizinhoAprovadoEMergeado),
+		vizinho(1, 0.999, domain.VizinhoAprovadoEMergeado),
+		vizinho(2, 0.99, domain.VizinhoAprovadoEMergeado),
+		vizinho(5, 0.99, domain.VizinhoAprovadoEMergeado),
+		vizinho(4, 0.98123456, domain.VizinhoAprovadoEMergeado),
 	}
 
 	decisao := Decidir(RegraPadrao(), entradaAlta(vizinhos))
@@ -215,7 +215,7 @@ func TestEvidenciaVemDaMaiorParaAMenorSimilaridade(t *testing.T) {
 	if !slices.Equal(ordem, []int{1, 2, 5, 4, 3}) {
 		t.Errorf("ordem dos vizinhos = %v", ordem)
 	}
-	if similaridade := decisao.Calibracao.Vizinhos[3].Similaridade; similaridade != 0.9312 {
+	if similaridade := decisao.Calibracao.Vizinhos[3].Similaridade; similaridade != 0.9812 {
 		t.Errorf("a similaridade gravada é a mesma que vai assinada, com quatro casas: %v", similaridade)
 	}
 }
@@ -223,7 +223,7 @@ func TestEvidenciaVemDaMaiorParaAMenorSimilaridade(t *testing.T) {
 func TestUmVizinhoNegativoImpedeACalibracao(t *testing.T) {
 	for _, negativo := range []domain.DesfechoDoVizinho{domain.VizinhoRevertido, domain.VizinhoFechadoSemMerge} {
 		t.Run(string(negativo), func(t *testing.T) {
-			vizinhos := append(positivos(9), vizinho(40, 0.92, negativo))
+			vizinhos := append(positivos(9), vizinho(40, 0.98, negativo))
 
 			decisao := Decidir(RegraPadrao(), entradaAlta(vizinhos))
 
@@ -279,20 +279,20 @@ func TestVizinhoDeOutroTenantNuncaEConsiderado(t *testing.T) {
 func TestVizinhoAbaixoDaSimilaridadeMinimaNaoConta(t *testing.T) {
 	distantes := positivos(10)
 	for indice := range distantes {
-		distantes[indice].Similaridade = 0.8999
+		distantes[indice].Similaridade = 0.9699
 	}
 	if decisao := Decidir(RegraPadrao(), entradaAlta(distantes)); decisao.Calibracao.Razao != "histórico insuficiente: 0 de 5" {
 		t.Errorf("positivo distante não conta: %+v", decisao.Calibracao)
 	}
 
-	negativoDistante := vizinho(90, 0.85, domain.VizinhoFechadoSemMerge)
+	negativoDistante := vizinho(90, 0.96, domain.VizinhoFechadoSemMerge)
 	if decisao := Decidir(RegraPadrao(), entradaAlta(append(positivos(5), negativoDistante))); decisao.Nivel != domain.RiscoMedio {
 		t.Errorf("negativo distante não bloqueia: %+v", decisao.Calibracao)
 	}
 }
 
 func TestSoOsKMaisParecidosSaoConsiderados(t *testing.T) {
-	vizinhos := append(positivos(10), vizinho(90, 0.91, domain.VizinhoRevertido))
+	vizinhos := append(positivos(10), vizinho(90, 0.98, domain.VizinhoRevertido))
 
 	decisao := Decidir(RegraPadrao(), entradaAlta(vizinhos))
 
@@ -312,7 +312,7 @@ func TestMergeadoSemAprovacaoNuncaContaComoPositivoNemBloqueia(t *testing.T) {
 		t.Errorf("mergeado sem aprovação não é positivo: %s, %+v", insuficiente.Nivel, insuficiente.Calibracao)
 	}
 
-	calibrada := Decidir(Regra{Vizinhos: 20, SimilaridadeMinima: 0.9, MinimoDeDesfechos: 5}, entradaAlta(append(positivos(5), calibradosEMergeados...)))
+	calibrada := Decidir(Regra{Vizinhos: 20, SimilaridadeMinima: 0.97, MinimoDeDesfechos: 5}, entradaAlta(append(positivos(5), calibradosEMergeados...)))
 	if calibrada.Nivel != domain.RiscoMedio {
 		t.Errorf("mergeado sem aprovação também não bloqueia: %s, %+v", calibrada.Nivel, calibrada.Calibracao)
 	}
@@ -345,7 +345,7 @@ func TestNivelBaixoNaoTemOQueCalibrar(t *testing.T) {
 }
 
 func TestRegraPadrao(t *testing.T) {
-	if regra := RegraPadrao(); regra != (Regra{Vizinhos: 10, SimilaridadeMinima: 0.90, MinimoDeDesfechos: 5}) {
+	if regra := RegraPadrao(); regra != (Regra{Vizinhos: 10, SimilaridadeMinima: 0.97, MinimoDeDesfechos: 5}) {
 		t.Errorf("regra padrão = %+v", regra)
 	}
 }
