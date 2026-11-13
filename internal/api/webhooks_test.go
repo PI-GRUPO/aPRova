@@ -19,6 +19,7 @@ type registroFalso struct {
 	execucoes      map[string]domain.EventoPullRequest
 	porEntrega     map[string]string
 	revisoes       []domain.DecisaoDeReview
+	fechamentos    []domain.FechamentoDePR
 	semTaskRunNoPR bool
 }
 
@@ -46,6 +47,11 @@ func (r *registroFalso) RegistrarRevisao(_ context.Context, decisao domain.Decis
 		return domain.ErrNaoEncontrado
 	}
 	r.revisoes = append(r.revisoes, decisao)
+	return nil
+}
+
+func (r *registroFalso) RegistrarFechamento(_ context.Context, fechamento domain.FechamentoDePR) error {
+	r.fechamentos = append(r.fechamentos, fechamento)
 	return nil
 }
 
