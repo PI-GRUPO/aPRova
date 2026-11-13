@@ -47,24 +47,30 @@ func Nova(opcoes Opcoes) *Linguagem {
 }
 
 // Executar roda download de módulos, build e testes no diretório informado e
-// classifica o desfecho. prazoFinal é o instante em que o resultado já precisa
-// ter sido entregue.
+// classifica o desfecho, tudo num lugar só e com a rede que o contêiner tiver.
+// É o fluxo do executor da Azure até o card 61; o executor local usa Preparar
+// e Testar. prazoFinal é o instante em que o resultado já precisa ter sido
+// entregue.
 func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal time.Time) sandbox.ResultadoSandbox {
 	if !existeGoModNaRaiz(diretorio) {
 		return infraestrutura("repositório sem go.mod na raiz")
 	}
 
-	download := l.rodar(ctx, diretorio, "mod", "download")
+	ambiente := l.ambienteLegado()
+	download := l.rodar(ctx, diretorio, ambiente, "mod", "download")
 	if !concluiu(download) {
 		return infraestrutura(explicarFalhaDoDownload(download), download.Saida)
 	}
+	return l.compilarETestar(ctx, diretorio, ambiente, prazoFinal)
+}
 
-	build := l.rodar(ctx, diretorio, "build", "./...")
+func (l *Linguagem) compilarETestar(ctx context.Context, diretorio string, ambiente []string, prazoFinal time.Time) sandbox.ResultadoSandbox {
+	build := l.rodar(ctx, diretorio, ambiente, "build", "./...")
 	if !concluiu(build) {
 		return classificarCompilacao("go build", build)
 	}
 
-	compilacaoDosTestes := l.rodar(ctx, diretorio, "test", "-c", "-o", l.diretorioDosBinariosDeTeste(), "./...")
+	compilacaoDosTestes := l.rodar(ctx, diretorio, ambiente, "test", "-c", "-o", l.diretorioDosBinariosDeTeste(), "./...")
 	if !concluiu(compilacaoDosTestes) {
 		return classificarCompilacao("compilação dos testes", compilacaoDosTestes)
 	}
@@ -74,20 +80,20 @@ func (l *Linguagem) Executar(ctx context.Context, diretorio string, prazoFinal t
 		return infraestrutura(fmt.Sprintf("prazo insuficiente para rodar os testes: restam %v", timeout))
 	}
 
-	teste := l.rodar(ctx, diretorio, "test", "-json", fmt.Sprintf("-timeout=%ds", int(timeout.Seconds())), "./...")
+	teste := l.rodar(ctx, diretorio, ambiente, "test", "-json", fmt.Sprintf("-timeout=%ds", int(timeout.Seconds())), "./...")
 	return classificarTeste(teste)
 }
 
-func (l *Linguagem) rodar(ctx context.Context, diretorio string, argumentos ...string) processo.Execucao {
+func (l *Linguagem) rodar(ctx context.Context, diretorio string, ambiente []string, argumentos ...string) processo.Execucao {
 	return l.rodador.Rodar(ctx, processo.Comando{
 		Binario:    binarioGo,
 		Argumentos: argumentos,
 		Diretorio:  diretorio,
-		Ambiente:   l.ambiente(),
+		Ambiente:   ambiente,
 	})
 }
 
-func (l *Linguagem) ambiente() []string {
+func (l *Linguagem) ambienteLegado() []string {
 	return []string{
 		caminhoDosExecutaveis,
 		"HOME=" + filepath.Join(l.diretorioDeCache, "home"),
