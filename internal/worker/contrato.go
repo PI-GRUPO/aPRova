@@ -71,10 +71,14 @@ type Publicacao struct {
 }
 
 // PublicadorPR publica o Check Run e o comentário do task_run no pull
-// request. É idempotente por task_run: publicar de novo o mesmo task_run não
-// cria um segundo Check Run nem um segundo comentário. Nunca faz merge.
+// request. Iniciar cria o Check Run em andamento; Publicar o conclui e escreve
+// o comentário; PublicarFalha o conclui como neutral, com o diagnóstico. Tudo é
+// idempotente por task_run: repetir não cria um segundo Check Run nem um
+// segundo comentário. Nunca faz merge.
 type PublicadorPR interface {
+	Iniciar(ctx context.Context, taskRun domain.TaskRun) error
 	Publicar(ctx context.Context, publicacao Publicacao) error
+	PublicarFalha(ctx context.Context, taskRun domain.TaskRun, diagnostico string) error
 }
 
 // EmissorEventos envia um evento ao n8n sem bloquear quem chama.

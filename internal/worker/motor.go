@@ -158,7 +158,7 @@ func (c *conducao) avancar() (passo, error) {
 		return passo{}, err
 	}
 	if substituido {
-		return c.encerrarEmFalha(detalheDeSubstituido)
+		return c.encerrarSubstituido()
 	}
 
 	switch c.taskRun.Estado {
