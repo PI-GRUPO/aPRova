@@ -167,14 +167,28 @@ Com os vizinhos do mesmo tenant:
 1. A busca pega os `k` mais parecidos (`CALIBRACAO_VIZINHOS`, padrão 10). Os
    outros task_runs do **próprio PR** ficam de fora, para o PR não contar a
    favor de si mesmo.
-2. Entram só os que estão acima da similaridade mínima
-   (`CALIBRACAO_SIMILARIDADE_MINIMA`, padrão 0,97) e têm desfecho conhecido,
-   positivo ou negativo.
-3. Se **um** deles for negativo, não calibra.
-4. Se houver menos positivos que o mínimo (`CALIBRACAO_MINIMO_DE_DESFECHOS`,
-   padrão 5), não calibra.
-5. Cumprido tudo isso, o nível cai **um** degrau: alto vira médio e médio vira
+2. Ficam só os que estão acima da similaridade mínima
+   (`CALIBRACAO_SIMILARIDADE_MINIMA`, padrão 0,97).
+3. Se **um** deles for negativo, não calibra, com quaisquer motivos.
+4. Um positivo só conta se o gate determinístico dele acionou **exatamente o
+   mesmo conjunto de motivos** da análise atual, sem o `calibracao_historico`.
+   Um motivo a mais ou a menos e ele não conta, mesmo com similaridade 0,99.
+5. Se houver menos positivos assim que o mínimo
+   (`CALIBRACAO_MINIMO_DE_DESFECHOS`, padrão 5), não calibra.
+6. Cumprido tudo isso, o nível cai **um** degrau: alto vira médio e médio vira
    baixo.
+
+**Por que o mesmo conjunto de motivos.** A similaridade sozinha separa mal:
+a margem medida entre o pior par legítimo e o melhor par que deve ficar de fora
+é de 0,006 (veja os números abaixo). O conjunto de motivos é um filtro exato e
+determinístico, que não depende do modelo. Os motivos de cada vizinho vêm de
+`risk_gates.rules_hit` dele.
+
+**Por que o filtro não vale para os negativos.** O filtro existe para
+restringir a calibração, nunca para ampliá-la. Aplicado aos negativos, ele
+faria um vizinho revertido com um motivo a mais deixar de bloquear, e a
+calibração passaria a acontecer onde antes não acontecia. Por isso um negativo
+acima do limiar bloqueia com quaisquer motivos.
 
 Histórico só da mesma instalação: decisão de outro tenant nunca é usada. A
 consulta filtra por tenant, e a regra descarta de novo qualquer vizinho de
@@ -237,7 +251,7 @@ O que fica **fora** do recibo, em `risk_gates` (migration 20):
 | --- | --- |
 | `calibration_status` | o estado da tabela acima |
 | `calibration_reason` | a razão em texto |
-| `calibration_neighbors` | os vizinhos considerados, em JSON: `task_run_id`, `repositorio`, `numero_pr`, `similaridade`, `desfecho` |
+| `calibration_neighbors` | os vizinhos considerados, em JSON: `task_run_id`, `repositorio`, `numero_pr`, `similaridade`, `desfecho`, `motivos` |
 
 E em `code_memory` (migration 19), uma linha por análise: o `task_run_id`, o
 texto da assinatura em `summary` e o vetor em `embedding`.
@@ -256,7 +270,10 @@ texto da assinatura em `summary` e o vetor em `embedding`.
    seria um defeito.
 4. **Confira cada vizinho.** Cada evidência de `calibracao_historico` traz o
    task_run, o PR, a similaridade e o desfecho no momento da decisão. Todos
-   têm de ser `aprovado_e_mergeado` e pelo menos o mínimo configurado.
+   têm de ser `aprovado_e_mergeado`, com similaridade pelo menos igual ao
+   limiar, e pelo menos o mínimo configurado. O `rules_hit` do gate de cada
+   vizinho, sem o `calibracao_historico`, tem de ter exatamente os mesmos ids
+   que os outros motivos deste recibo.
 5. **Confira os fatos de cada vizinho.** Para cada vizinho, consulte:
    - o fechamento do PR em `pull_request_outcomes`;
    - a aprovação do commit em `approvals` (`commit_sha` igual ao head do
@@ -307,7 +324,17 @@ Com o limiar antigo de 0,90, esses pares contariam como casos parecidos.
 
 **Por que 0,97.** Nesta amostra, é o valor que aceita só "mesmos motivos e
 mesma área" e recusa todo o resto. A margem é estreita: o pior par legítimo dá
-0,9723 e o melhor par que deve ficar de fora dá 0,9665. A regra continua
-segura nos dois lados do limiar, porque um vizinho negativo bloqueia e cinco
-positivos são exigidos. Ainda assim, vale repetir o teste quando houver
-histórico real e ajustar o limiar com `CALIBRACAO_SIMILARIDADE_MINIMA`.
+0,9723 e o melhor par que deve ficar de fora dá 0,9665.
+
+**Por que isso não basta.** Com uma margem de 0,006, o limiar sozinho é frágil,
+e por isso a regra também exige o mesmo conjunto de motivos. Esse filtro não
+depende do modelo. Nos pares da tabela, ele já recusa sozinho:
+- `auth/` com `codigo_sem_teste` a mais;
+- o frontend sem teste;
+- a renomeação em massa.
+
+Sobram para o limiar só os pares com os mesmos motivos em áreas diferentes,
+como `auth/` contra `payments/` ou `auth/` com `migrations/`. A regra
+continua segura dos dois lados do limiar, porque um vizinho negativo bloqueia e
+cinco positivos são exigidos. Vale repetir o teste quando houver histórico real
+e ajustar o limiar com `CALIBRACAO_SIMILARIDADE_MINIMA`.
