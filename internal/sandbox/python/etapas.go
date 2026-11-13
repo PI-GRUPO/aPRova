@@ -189,7 +189,7 @@ func classificarDownload(download processo.Execucao) sandbox.ResultadoSandbox {
 	case contemAlgum(saida, sinaisDeIncompativel):
 		return compilacaoNoPreparo("as versões pedidas são incompatíveis entre si", download.Saida)
 	case contemAlgum(saida, sinaisDeInexistente):
-		return compilacaoNoPreparo("dependência que não existe no índice ou só existe como sdist, que exigiria executar o setup.py dela", download.Saida)
+		return compilacaoNoPreparo("dependência que não existe no índice ou só existe como sdist, cuja instalação exigiria construí-la", download.Saida)
 	default:
 		return infraestrutura(descreverInterrupcao("pip download", download), download.Saida)
 	}
