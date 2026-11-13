@@ -89,19 +89,20 @@ type Receipt struct {
 }
 
 type RemoteActionAttempt struct {
-	ActionID    string    `json:"action_id"`
-	TenantID    int64     `json:"tenant_id"`
-	TaskRunID   *string   `json:"task_run_id"`
-	ActionType  string    `json:"action_type"`
-	SlackUserID string    `json:"slack_user_id"`
-	GithubLogin *string   `json:"github_login"`
-	Repository  string    `json:"repository"`
-	PrNumber    int32     `json:"pr_number"`
-	Decision    string    `json:"decision"`
-	Reason      string    `json:"reason"`
-	AttemptedAt time.Time `json:"attempted_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	ID          int64     `json:"id"`
+	ActionID      string    `json:"action_id"`
+	TenantID      int64     `json:"tenant_id"`
+	TaskRunID     *string   `json:"task_run_id"`
+	ActionType    string    `json:"action_type"`
+	SlackUserID   string    `json:"slack_user_id"`
+	GithubLogin   *string   `json:"github_login"`
+	Repository    string    `json:"repository"`
+	PrNumber      int32     `json:"pr_number"`
+	Decision      string    `json:"decision"`
+	Reason        string    `json:"reason"`
+	AttemptedAt   time.Time `json:"attempted_at"`
+	CreatedAt     time.Time `json:"created_at"`
+	ID            int64     `json:"id"`
+	Justification string    `json:"justification"`
 }
 
 type RiskGate struct {

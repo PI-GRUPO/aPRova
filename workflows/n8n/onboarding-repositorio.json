@@ -1,0 +1,717 @@
+{
+  "name": "aPRova | Onboarding de Repositório",
+  "description": "Onboarding por repositório autenticado pelo Core: leitura de proteção GitHub, lista Trello reutilizável e resumo Slack. Sem confirmação quando a integração está indisponível.",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "4239c77c-7a2a-47c7-b770-0c83b5a477af",
+      "name": "01 | Evento normalizado do Core",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const entradas=$input.all();\nif(entradas.length!==1) throw new Error('Receber um evento normalizado por execução; chamador no modo each.');\nconst e=entradas[0].json;\nif(e.evento?.tipo!=='instalacao' || !['instalado','repositorios_adicionados'].includes(e.evento?.acao)) return [];\nif(e.meta?.origem_verificada!==true || e.meta?.validacao?.valido!==true || e.meta?.versao_evento!==1 || !Number.isSafeInteger(e.meta?.tenant_id) || e.meta.tenant_id<=0 || !/^[0-9a-f-]{36}$/i.test(e.meta?.id_evento||'')) throw new Error('Evento sem validação/autenticação do Core.');\nif(!Array.isArray(e.instalacao?.repositorios) || e.instalacao.acao!==e.evento.acao) throw new Error('Instalação normalizada inválida.');\nconst repos=[...new Set(e.instalacao.repositorios)];\nif(repos.some(r=>typeof r!=='string'||!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(r))) throw new Error('Lista de repositórios inválida; evento inteiro recusado antes de efeitos.');\nconst config={check_nome:($env.APROVA_GITHUB_CHECK_NOME || ''),app_id:($env.APROVA_GITHUB_CHECK_APP_ID ? Number($env.APROVA_GITHUB_CHECK_APP_ID) : null),trello_habilitado:($env.APROVA_ONBOARDING_TRELLO_HABILITADO === 'true'),quadro_id:($env.APROVA_TRELLO_QUADRO_ID || ''),quadro_nome:($env.APROVA_TRELLO_QUADRO_NOME || ''),slack_habilitado:($env.APROVA_ONBOARDING_SLACK_HABILITADO === 'true'),slack_canal_id:($env.APROVA_SLACK_CANAL_ONBOARDING_ID || '')};\nreturn repos.map(repositorio=>({json:{meta:e.meta,acao:e.evento.acao,conta:e.instalacao.conta,repositorio,config,trello:{status:config.trello_habilitado?'consultar':'desabilitado'}}}));"
+      },
+      "id": "45aadd90-eb98-462a-b55d-fb5ddd374a56",
+      "name": "02 | Validar e separar repositórios",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "notes": "Configuração local: quadro reaproveitado da integração Trello. Nome exato e App ID do Check ficam vazios até o backend publicar Check real. Não confundir os checks verificacao/sandbox/banco do CI com o Check do produto aPRova. Configure canal de teste confirmado antes de habilitar Slack. Sem leitura autenticada GitHub, indisponibilidade é esperada. Nenhum segredo deve ser colocado neste nó."
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "id": "e53bbfe5-b348-4953-87b4-42e0d81d31db",
+      "name": "20 | Resultados do evento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.github.com/repos/' + $json.repositorio }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "11c6f7c3-2c7d-4c44-89fb-9d8523792ccd",
+      "name": "04 | GitHub - ler repositório",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        128
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$('03 | Um repositório por vez').item.json; const b=$json.body; const valida=$json.statusCode===200 && b?.full_name?.toLowerCase()===c.repositorio.toLowerCase() && typeof b.default_branch==='string' && b.default_branch.length>0; return {json:{...c,branch:valida?b.default_branch:null,branch_fonte:valida?'github_default_branch':'indisponivel',repositorio_http:$json.statusCode??null}};"
+      },
+      "id": "7ee30a0d-df22-467e-8267-32c6a51b1fe5",
+      "name": "05 | Resolver branch de destino",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ typeof $json.branch === 'string' && $json.branch.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3206a058-7e14-42a5-b3fe-0425ff5144c9",
+      "name": "06 | Branch identificada",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.github.com/repos/' + $json.repositorio + '/branches/' + encodeURIComponent($json.branch) + '/protection' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "098b9f59-b196-47a3-b5b7-e9a7c4751949",
+      "name": "07 | GitHub - ler proteção",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        32
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "GET somente leitura. Quando o backend oferecer leitura autenticada, substituir esta etapa por sua API preservando statusCode/body ou adaptar somente a evidência no nó 08. Não usar /acoes-remotas para esta verificação. 404 não prova ausência; rulesets não são confirmados por este adaptador."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function classificar(evidencia, configuracao) {\n const base={versao:1,status:'verificacao_indisponivel',pronto_fluxo_protegido:false,fonte:'github_rest',simulado:false,check_obrigatorio:false,acao_necessaria:'Disponibilizar consulta autenticada de proteção no backend ou credencial GitHub no nó de leitura; definir o nome exato do Check publicado pelo aPRova.'};\n if(evidencia?.simulado===true) return {...base,motivo:'Evidência simulada recusada no fluxo real.'};\n if(!evidencia?.branch || evidencia.status_http!==200 || !evidencia.protecao || typeof evidencia.protecao!=='object') return {...base,motivo:'Proteção não pôde ser consultada; HTTP 401/403/404, timeout ou branch desconhecida não comprovam ausência de proteção.',status_http:evidencia?.status_http??null};\n if(!configuracao.check_nome || !Number.isSafeInteger(configuracao.app_id) || configuracao.app_id<=0) return {...base,motivo:'Nome e identidade do Check ainda não configurados; publicação do backend é provisória.'};\n const p=evidencia.protecao;\n if(!Object.hasOwn(p,'required_status_checks')) return {...base,motivo:'Resposta de proteção incompleta.'};\n const r=p.required_status_checks;\n if(r!==null && (!r || !Array.isArray(r.checks))) return {...base,motivo:'Resposta sem identidade dos checks obrigatórios.'};\n const encontrado=r?.checks?.find(c=>c.context===configuracao.check_nome && c.app_id===configuracao.app_id);\n if(!encontrado) return {...base,status:'check_obrigatorio_pendente',motivo:'O Check do aPRova não consta como obrigatório para esta branch e GitHub App.',acao_necessaria:'Administrador: exigir o Check '+configuracao.check_nome+' do aPRova na proteção da branch. Nenhuma configuração é alterada por este fluxo.'};\n if(p.enforce_admins?.enabled!==true) return {...base,status:'check_obrigatorio_pendente',check_obrigatorio:true,motivo:'Check obrigatório, mas proteção não inclui administradores.',acao_necessaria:'Administrador: habilitar a aplicação da proteção também aos administradores e revisar os bypasses.'};\n return {...base,status:'protecao_confirmada',pronto_fluxo_protegido:true,check_obrigatorio:true,motivo:'Consulta real confirmou Check obrigatório vinculado ao GitHub App e proteção aplicada aos administradores.',acao_necessaria:null,status_http:200};\n}\nconst c=$('05 | Resolver branch de destino').item.json; const evidencia={branch:c.branch,status_http:$json.statusCode??null,protecao:$json.body??null,simulado:false}; return {json:{...c,protecao:classificar(evidencia,c.config)}};"
+      },
+      "id": "ffbfb29a-0b17-49ab-abdf-3a158d58edfa",
+      "name": "08 | Interpretar proteção real",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "options": {},
+        "batchSize": 1
+      },
+      "id": "fd03b56c-2947-485e-b5ee-7d63944c9aa2",
+      "name": "03 | Um repositório por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.trello_habilitado === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d3fd9191-e795-4c53-af1d-5784bef23300",
+      "name": "09 | Trello habilitado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1936,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.trello.com/1/boards/' + $json.config.quadro_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "trelloOAuth1Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "name,closed"
+            },
+            {
+              "name": "lists",
+              "value": "all"
+            },
+            {
+              "name": "list_fields",
+              "value": "name,closed,idBoard"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "98f887c1-b91b-488c-9fb6-9e198a161e78",
+      "name": "10 | Ler quadro e listas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2192,
+        144
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$('08 | Interpretar proteção real').item.json; const b=$json.body; const nome=c.repositorio;\nlet trello={status:'indisponivel',motivo:'Consulta do quadro/listas sem confirmação; nenhuma lista criada.'};\nif($json.statusCode===200 && b?.id===c.config.quadro_id && b.name===c.config.quadro_nome && b.closed===false && Array.isArray(b.lists)){\n const listas=b.lists.filter(l=>l.idBoard===b.id && l.name?.toLowerCase()===nome.toLowerCase());\n trello=listas.length===0?{status:'criar',nome}:listas.length===1 && listas[0].closed===false?{status:'reutilizada',lista_id:listas[0].id,nome:listas[0].name}:{status:'pendente',motivo:'Lista arquivada ou nome ambíguo; revisar manualmente, sem criar duplicata.'};\n} return {json:{...c,trello}};"
+      },
+      "id": "85bc6111-6da7-4c92-bda1-ce6ee1271903",
+      "name": "11 | Reutilizar lista existente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.trello.status === 'criar' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "30b7e702-d38c-49bd-a244-c2f5163f9fba",
+      "name": "12 | Criar somente quando ausente",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2672,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth1",
+        "resource": "list",
+        "idBoard": "={{ $json.config.quadro_id }}",
+        "name": "={{ $json.repositorio }}",
+        "additionalFields": {
+          "pos": "bottom"
+        }
+      },
+      "id": "98d66297-897b-4981-99ce-56ae9e83a677",
+      "name": "13 | Criar lista do repositório",
+      "type": "n8n-nodes-base.trello",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        -160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$('11 | Reutilizar lista existente').item.json; const ok=$json.idBoard===c.config.quadro_id && $json.name===c.repositorio && typeof $json.id==='string' && $json.closed===false; return {json:{...c,trello:ok?{status:'criada',lista_id:$json.id,nome:$json.name}:{status:'criacao_nao_confirmada',motivo:'Conferir quadro antes de reprocessar; retry de criação desativado.'}}};"
+      },
+      "id": "d63c8ec2-64e6-44fd-821d-beb0387fbffc",
+      "name": "14 | Confirmar criação da lista",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$json; const p=c.protecao;\nconst rotulos={protecao_confirmada:'Proteção confirmada',check_obrigatorio_pendente:'Check obrigatório pendente',verificacao_indisponivel:'Verificação indisponível'};\nconst texto=['aPRova — Onboarding de Repositório','Repositório: '+c.repositorio,'Branch de destino: '+(c.branch||'não identificada (consulta GitHub indisponível)'),'Verificação: '+rotulos[p.status],p.motivo,'Pronto para o fluxo protegido: '+(p.pronto_fluxo_protegido?'sim':'não confirmado'),'Trello: '+c.trello.status+(c.trello.lista_id?' — lista '+c.trello.lista_id:''),p.acao_necessaria?'Ação necessária: '+p.acao_necessaria:'',c.trello.motivo||''].filter(Boolean).join('\\n');\nreturn {json:{...c,resumo_slack:texto,notificacao_slack:{status:c.config.slack_habilitado?'pendente':'desabilitada'}}};"
+      },
+      "id": "745f5489-ee7a-4d98-aec0-4c9107075c64",
+      "name": "15 | Resumo de onboarding",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3424,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.config.slack_habilitado === true && !!$json.config.slack_canal_id }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9d0b9307-8ef4-452d-99c5-d0c7a2f61923",
+      "name": "16 | Slack habilitado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3632,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.config.slack_canal_id }}"
+        },
+        "text": "={{ $json.resumo_slack }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": false,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "id": "682f07bb-2a81-4123-bcd2-33b8859ca1b8",
+      "name": "17 | Enviar resumo ao Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        3872,
+        176
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c=$('15 | Resumo de onboarding').item.json; const ok=$json.channel===c.config.slack_canal_id && typeof ($json.ts||$json.message_timestamp)==='string'; return {json:{...c,notificacao_slack:{status:ok?'enviada':'nao_confirmada',canal:c.config.slack_canal_id,ts:ok?($json.ts||$json.message_timestamp):null}}};"
+      },
+      "id": "2ea1e200-afc3-4a15-be98-648c40aa16c6",
+      "name": "18 | Confirmar notificação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const {config,...resultado}=$json; return {json:resultado};"
+      },
+      "id": "58a1c6de-4f96-4fd8-8cdb-bd02305c6685",
+      "name": "19 | Resultado por repositório",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4400,
+        336
+      ]
+    }
+  ],
+  "connections": {
+    "01 | Evento normalizado do Core": {
+      "main": [
+        [
+          {
+            "node": "02 | Validar e separar repositórios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Validar e separar repositórios": {
+      "main": [
+        [
+          {
+            "node": "03 | Um repositório por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | GitHub - ler repositório": {
+      "main": [
+        [
+          {
+            "node": "05 | Resolver branch de destino",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Resolver branch de destino": {
+      "main": [
+        [
+          {
+            "node": "06 | Branch identificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Branch identificada": {
+      "main": [
+        [
+          {
+            "node": "07 | GitHub - ler proteção",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "08 | Interpretar proteção real",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "07 | GitHub - ler proteção": {
+      "main": [
+        [
+          {
+            "node": "08 | Interpretar proteção real",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 | Interpretar proteção real": {
+      "main": [
+        [
+          {
+            "node": "09 | Trello habilitado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Um repositório por vez": {
+      "main": [
+        [
+          {
+            "node": "20 | Resultados do evento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "04 | GitHub - ler repositório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "09 | Trello habilitado": {
+      "main": [
+        [
+          {
+            "node": "10 | Ler quadro e listas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15 | Resumo de onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 | Ler quadro e listas": {
+      "main": [
+        [
+          {
+            "node": "11 | Reutilizar lista existente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 | Reutilizar lista existente": {
+      "main": [
+        [
+          {
+            "node": "12 | Criar somente quando ausente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 | Criar somente quando ausente": {
+      "main": [
+        [
+          {
+            "node": "13 | Criar lista do repositório",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "15 | Resumo de onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "13 | Criar lista do repositório": {
+      "main": [
+        [
+          {
+            "node": "14 | Confirmar criação da lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 | Confirmar criação da lista": {
+      "main": [
+        [
+          {
+            "node": "15 | Resumo de onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 | Resumo de onboarding": {
+      "main": [
+        [
+          {
+            "node": "16 | Slack habilitado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 | Slack habilitado": {
+      "main": [
+        [
+          {
+            "node": "17 | Enviar resumo ao Slack",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "19 | Resultado por repositório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "17 | Enviar resumo ao Slack": {
+      "main": [
+        [
+          {
+            "node": "18 | Confirmar notificação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "18 | Confirmar notificação": {
+      "main": [
+        [
+          {
+            "node": "19 | Resultado por repositório",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 | Resultado por repositório": {
+      "main": [
+        [
+          {
+            "node": "03 | Um repositório por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}

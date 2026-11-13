@@ -114,6 +114,7 @@ func corpoDoPedido(t *testing.T, campos map[string]any) []byte {
 		"repositorio":     "PI-GRUPO/aPRova",
 		"numero_pr":       42,
 		"installation_id": 7001,
+		"justificativa":   "Risco avaliado e aceito pelo revisor.",
 	}
 	for campo, valor := range campos {
 		if valor == nil {
@@ -155,6 +156,7 @@ func TestServicoRecusaAprovacaoDeQuemSoLeORepositorio(t *testing.T) {
 	tentativa := c.unicaTentativa(t)
 	esperada := Tentativa{
 		IDAcao:         "acao-1",
+		Justificativa:  "Risco avaliado e aceito pelo revisor.",
 		Tipo:           TipoAprovar,
 		UsuarioSlack:   "U-LEITOR",
 		LoginGitHub:    "dave",
@@ -300,6 +302,7 @@ func TestServicoExecutaAprovacaoDeQuemTemEscritaEmPRDeOutraPessoa(t *testing.T) 
 	esperada := AcaoAutorizada{
 		Pedido: Pedido{
 			IDAcao:         "acao-1",
+			Justificativa:  "Risco avaliado e aceito pelo revisor.",
 			Tipo:           TipoAprovar,
 			UsuarioSlack:   "U-ESCRITOR",
 			Repositorio:    "PI-GRUPO/aPRova",

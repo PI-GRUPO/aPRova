@@ -171,6 +171,8 @@ func (s *Servico) concluir(ctx context.Context, resultado desfecho) Decisao {
 func (s *Servico) tentativaDe(resultado desfecho) Tentativa {
 	return Tentativa{
 		IDAcao:         resultado.pedido.IDAcao,
+		TaskRunID:      resultado.pedido.TaskRunID,
+		Justificativa:  resultado.pedido.Justificativa,
 		Tipo:           resultado.pedido.Tipo,
 		UsuarioSlack:   resultado.pedido.UsuarioSlack,
 		LoginGitHub:    resultado.login,

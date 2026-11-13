@@ -54,14 +54,14 @@ func TestExecutorAprovaNomeandoOHumanoQueDecidiu(t *testing.T) {
 	publicador := &publicadorFalso{}
 	reenfileirador := &reenfileiradorFalso{}
 
-	err := NovoExecutorNoGitHub(publicador, reenfileirador).Executar(t.Context(), acaoAutorizadaDeTeste(TipoAprovar, ""))
+	err := NovoExecutorNoGitHub(publicador, reenfileirador).Executar(t.Context(), acaoAutorizadaDeTeste(TipoAprovar, "Risco avaliado."))
 
 	if err != nil {
 		t.Fatalf("aprovação não deveria falhar: %v", err)
 	}
 	esperada := reviewPublicada{7001, "PI-GRUPO", "aPRova", 42, platform.Review{
 		Evento: platform.EventoAprovar,
-		Corpo:  "Aprovado por @erin via Slack",
+		Corpo:  "Aprovado por @erin via Slack:\n\nRisco avaliado.",
 	}}
 	if len(publicador.publicadas) != 1 || publicador.publicadas[0] != esperada {
 		t.Errorf("reviews = %+v, esperava só %+v", publicador.publicadas, esperada)

@@ -40,8 +40,9 @@ func TestReviewDoAppPeloSlackRegistraQuemDecidiuNoSlack(t *testing.T) {
 		estado string
 		corpo  string
 	}{
-		"aprovado":               {"approved", "Aprovado por @Azulpasta via Slack"},
-		"alterações solicitadas": {"changes_requested", "Alteração solicitada por @Azulpasta via Slack:\n\nfalta o teste de peso zero"},
+		"aprovado":                   {"approved", "Aprovado por @Azulpasta via Slack"},
+		"aprovado com justificativa": {"approved", "Aprovado por @Azulpasta via Slack:\n\nRisco avaliado.\nTestes conferidos."},
+		"alterações solicitadas":     {"changes_requested", "Alteração solicitada por @Azulpasta via Slack:\n\nfalta o teste de peso zero"},
 	}
 
 	for nome, caso := range casos {

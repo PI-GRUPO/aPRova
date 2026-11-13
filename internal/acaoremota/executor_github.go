@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	formatoDaAprovacaoPeloSlack = "Aprovado por @%s via Slack"
+	formatoDaAprovacaoPeloSlack = "Aprovado por @%s via Slack:\n\n%s"
 	formatoDaAlteracaoPeloSlack = "Alteração solicitada por @%s via Slack:\n\n%s"
 	tamanhoMaximoDoLogin        = 39
 )
 
 var reviewPublicadaPeloSlack = regexp.MustCompile(
-	`^(?:Aprovado por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack|Alteração solicitada por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack:\n\n(?s:.*))$`)
+	`^(?:Aprovado por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack(?::\n\n(?s:.*))?|Alteração solicitada por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack:\n\n(?s:.*))$`)
 
 var (
 	// ErrTipoSemExecucao indica ação autorizada para a qual não há efeito definido.
@@ -50,7 +50,7 @@ func (e *ExecutorNoGitHub) Executar(ctx context.Context, acao AcaoAutorizada) er
 	case TipoAprovar:
 		return e.publicar(ctx, acao, platform.Review{
 			Evento: platform.EventoAprovar,
-			Corpo:  fmt.Sprintf(formatoDaAprovacaoPeloSlack, acao.LoginGitHub),
+			Corpo:  fmt.Sprintf(formatoDaAprovacaoPeloSlack, acao.LoginGitHub, acao.Justificativa),
 		})
 	case TipoSolicitarAlteracao:
 		return e.publicar(ctx, acao, platform.Review{

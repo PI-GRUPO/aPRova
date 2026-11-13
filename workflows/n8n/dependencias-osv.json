@@ -1,0 +1,387 @@
+{
+  "name": "aPRova | Dependências | Consulta OSV",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "40e0e48d-a815-4c87-a725-2b5e437b531d",
+      "name": "01 | Receber Evento Normalizado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9f2bdd15-2aca-40a4-9802-3f1e5039a190",
+              "leftValue": "={{ $json.evento?.tipo === 'dependencia_nova' || ($json.evento?.tipo === 'aguardando_aprovacao' && $json.modo_osv === 'contexto_aprovacao') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            },
+            {
+              "id": "d5ff1679-8950-42f6-a62e-51840498f4b1",
+              "leftValue": "={{ Array.isArray($json.dependencias) && $json.dependencias.length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f6d0489a-e53a-4059-bcad-287f2bb6cf66",
+      "name": "02 | Validar Evento de Dependências"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "dependencias",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "dependencia"
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -96
+      ],
+      "id": "a581b5b3-520a-4a39-adb5-0dc10fded2bf",
+      "name": "03 | Separar Dependências"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.osv.dev/v1/query",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  package: {\n    name: $json.dependencia.nome,\n    ecosystem: $json.dependencia.ecossistema\n  },\n  version: $json.dependencia.versao\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "body",
+                    "name": "page_token",
+                    "value": "={{ $pageCount === 0 ? '' : ($response.body?.next_page_token || '') }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ $response.statusCode !== 200 || !$response.body?.next_page_token }}",
+              "limitPagesFetched": true,
+              "maxRequests": "={{ $json.modo_osv === 'contexto_aprovacao' ? 2 : 10 }}",
+              "requestInterval": 200
+            }
+          },
+          "timeout": "={{ $json.modo_osv === 'contexto_aprovacao' ? 5000 : 30000 }}"
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        688,
+        -96
+      ],
+      "id": "7e8f88f8-89b8-4293-9b2d-f8ba0b5f724f",
+      "name": "04 | Consultar OSV",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const entradas = $input.all();\nconst grupos = new Map();\n\nfor (let indice = 0; indice < entradas.length; indice++) {\n  const contexto =\n    $('03 | Separar Dependências').itemMatching(indice).json;\n\n  const dependencia = contexto.dependencia;\n\n  if (\n    !dependencia ||\n    !dependencia.ecossistema ||\n    !dependencia.nome ||\n    !dependencia.versao\n  ) {\n    throw new Error('Contexto da dependência incompleto.');\n  }\n\n    const chave = JSON.stringify([\n    contexto.meta?.tenant_id,\n    contexto.meta?.id_evento,\n    dependencia.ecossistema,\n    dependencia.nome,\n    dependencia.versao,\n  ]);\n\n  if (!grupos.has(chave)) {\n    grupos.set(chave, {\n      contexto,\n      indices: [],\n      paginasValidas: 0,\n      ultimaPaginaTemProxima: false,\n      erros: [],\n      avisos: new Map(),\n    });\n  }\n\n    const grupo = grupos.get(chave);\n  grupo.indices.push(indice);\n\n  const resposta = entradas[indice].json;\n  let corpo = resposta.body;\n\n  if (typeof corpo === 'string') {\n    try {\n      corpo = JSON.parse(corpo);\n    } catch {\n      corpo = null;\n    }\n  }\n\n  if (\n    resposta.error ||\n    resposta.statusCode !== 200 ||\n    !corpo ||\n    typeof corpo !== 'object' ||\n    Array.isArray(corpo) ||\n    (corpo.vulns !== undefined && !Array.isArray(corpo.vulns)) ||\n    (corpo.next_page_token !== undefined &&\n      typeof corpo.next_page_token !== 'string')\n  ) {\n    grupo.erros.push(\n      resposta.statusCode\n        ? `Consulta não concluída: HTTP ${resposta.statusCode}.`\n        : 'Consulta não concluída: falha de conexão ou resposta inválida.'\n    );\n    continue;\n  }\n\n    grupo.paginasValidas++;\n  grupo.ultimaPaginaTemProxima = Boolean(corpo.next_page_token);\n\n  for (const aviso of corpo.vulns ?? []) {\n    if (!aviso || typeof aviso.id !== 'string' || !aviso.id) {\n      grupo.erros.push('O OSV retornou um aviso sem identificador válido.');\n      continue;\n    }\n\n    if (aviso.withdrawn) continue;\n\n    const aliases = Array.isArray(aviso.aliases)\n      ? aviso.aliases\n      : [];\n\n    const cves = [...new Set(\n      [aviso.id, ...aliases].filter(\n        valor =>\n          typeof valor === 'string' &&\n          /^CVE-\\d{4}-\\d+$/i.test(valor)\n      ).map(valor => valor.toUpperCase())\n    )];\n\n    const afetados = Array.isArray(aviso.affected)\n      ? aviso.affected.filter(\n          item =>\n            item.package?.name === dependencia.nome &&\n            item.package?.ecosystem === dependencia.ecossistema\n        )\n      : [];\n\n     const severidades = [\n      aviso.database_specific?.severity,\n      ...afetados.map(item => item.ecosystem_specific?.severity),\n    ].filter(\n      valor => typeof valor === 'string' && valor.trim()\n    );\n\n    const cvss = [\n      ...(Array.isArray(aviso.severity) ? aviso.severity : []),\n      ...afetados.flatMap(\n        item => Array.isArray(item.severity) ? item.severity : []\n      ),\n    ];\n\n    grupo.avisos.set(aviso.id, {\n      id: aviso.id,\n      resumo: typeof aviso.summary === 'string' ? aviso.summary : '',\n      cves,\n      severidades_informadas: [...new Set(severidades)],\n      cvss,\n      url: `https://osv.dev/vulnerability/${encodeURIComponent(aviso.id)}`,\n    });\n  }\n}\n\nreturn [...grupos.values()].map(grupo => {\n  const completa =\n    grupo.paginasValidas > 0 &&\n    grupo.erros.length === 0 &&\n    !grupo.ultimaPaginaTemProxima;\n\n  const avisos = [...grupo.avisos.values()];\n\n  const cves = [...new Set(\n    avisos.flatMap(aviso => aviso.cves)\n  )].sort();\n\n  const status = completa\n    ? 'concluida'\n    : grupo.paginasValidas > 0\n      ? 'incompleta'\n      : 'falha';\n\n  return {\n    json: {\n      ...grupo.contexto,\n      enriquecimento_osv: {\n        status,\n        consultado_em: new Date().toISOString(),\n        paginas_validas: grupo.paginasValidas,\n        paginacao_pendente: grupo.ultimaPaginaTemProxima,\n        total_avisos: completa ? avisos.length : null,\n        total_cves: completa ? cves.length : null,\n        avisos_observados: avisos.length,\n        cves_observados: cves,\n        avisos,\n        erros: grupo.erros,\n      },\n    },\n    pairedItem: grupo.indices.map(item => ({ item })),\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "db4d0dcd-bdeb-4f9c-84f6-2e0e50246a71",
+      "name": "05 | Consolidar Consulta por Dependência"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const evento = $json;\nconst dependencia = evento.dependencia;\nconst consulta = evento.enriquecimento_osv;\n\nif (!dependencia || !consulta) {\n  throw new Error('Dependência ou resultado OSV ausente.');\n}\n\nconst avisos = consulta.avisos ?? [];\n\nconst rotulos = {\n  CRITICAL: 'crítica',\n  HIGH: 'alta',\n  MEDIUM: 'média',\n  MODERATE: 'média',\n  LOW: 'baixa',\n};\n\nconst severidades = [...new Set(\n  avisos\n    .flatMap(aviso => aviso.severidades_informadas ?? [])\n    .map(valor => rotulos[String(valor).trim().toUpperCase()])\n    .filter(Boolean)\n)];\n\nlet resultado;\n\nif (consulta.status === 'concluida') {\n  resultado = consulta.total_avisos === 0\n    ? 'Nenhum aviso conhecido encontrado no OSV para a versão consultada.'\n    : `${consulta.total_avisos} avisos OSV encontrados, com ` +\n      `${consulta.total_cves} CVEs distintas identificadas.`;\n} else if (consulta.status === 'incompleta') {\n  resultado =\n    'Consulta incompleta. Os resultados são parciais: ' +\n    `${consulta.avisos_observados} avisos OSV observados.`;\n} else {\n  resultado =\n    'Não foi possível concluir a consulta ao OSV. ' +\n    'A ausência de resultados não indica ausência de vulnerabilidades.';\n}\n\nconst cves = consulta.cves_observados ?? [];\n\nconst detalhes = [resultado];\n\nif (cves.length > 0) {\n  detalhes.push(`CVEs: ${cves.slice(0, 10).join(', ')}`);\n\n  if (cves.length > 10) {\n    detalhes.push(`Mais ${cves.length - 10} CVEs na saída do workflow.`);\n  }\n}\n\nif (avisos.length > 0) {\n  detalhes.push(\n    severidades.length > 0\n      ? `Severidades textuais informadas pelas fontes: ${severidades.join(', ')}.`\n      : 'Classificação textual de severidade não informada nas fontes consultadas.'\n  );\n}\n\nconst risco = evento.risco?.nivel;\n\nif (typeof risco === 'string' && risco.trim()) {\n  detalhes.push(`Risco definido pelo núcleo: ${risco}.`);\n}\n\nconst repositorio = evento.repositorio?.full_name;\nconst numeroPr = evento.pr?.numero;\n\nconst identificacao =\n  `${repositorio} #${numeroPr}`;\n\nconst pacote =\n  `${dependencia.nome} @ ${dependencia.versao}\\n` +\n  `Ecossistema: ${dependencia.ecossistema}`;\n\nconst slack_payload = {\n  text: `Dependência nova: ${pacote}\\n${identificacao}\\n${resultado}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Dependência nova no PR\\n${identificacao}`,\n      },\n    },\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text: pacote,\n      },\n    },\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text: detalhes.join('\\n\\n').slice(0, 2800),\n      },\n    },\n  ],\n};\n\nreturn {\n  json: {\n    ...evento,\n    texto_alerta: detalhes.join('\\n\\n'),\n    slack_payload,\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        -96
+      ],
+      "id": "b497bf96-7308-4e00-b2c6-837e6d970032",
+      "name": "06 | Preparar Alerta de Dependência"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_INCOMING_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.slack_payload) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1552,
+        -112
+      ],
+      "id": "f33ea2ea-ead9-4be7-9b3b-cf0b5010704b",
+      "name": "07 | Enviar Alerta Enriquecido"
+    },
+    {
+      "parameters": {
+        "jsCode": "const grupos = new Map();\nfor (let indice = 0; indice < $input.all().length; indice++) {\n  const evento = $input.all()[indice].json;\n  const identidade = [evento.meta?.tenant_id, evento.meta?.execution_id, evento.repositorio?.full_name, evento.pr?.numero];\n  if (!Number.isSafeInteger(identidade[0]) || identidade[0] <= 0 ||\n      typeof identidade[1] !== 'string' || !identidade[1] ||\n      typeof identidade[2] !== 'string' || !identidade[2] ||\n      !Number.isSafeInteger(identidade[3]) || identidade[3] <= 0) {\n    throw new Error('Contexto OSV sem identificação completa da análise.');\n  }\n  const chave = JSON.stringify(identidade);\n  if (!grupos.has(chave)) grupos.set(chave, { evento, identidade, indices: [], dependencias: new Map() });\n  const grupo = grupos.get(chave);\n  grupo.indices.push(indice);\n  const dep = evento.dependencia;\n  const resultado = evento.enriquecimento_osv;\n  if (!dep || !resultado) throw new Error('Resultado OSV por dependência ausente.');\n  grupo.dependencias.set(JSON.stringify([dep.ecossistema, dep.nome, dep.versao]), {\n    ecossistema: dep.ecossistema, nome: dep.nome, versao: dep.versao,\n    status: resultado.status, consultado_em: resultado.consultado_em,\n    resumo: String(evento.texto_alerta || '').replace(/\\n\\nRisco definido pelo núcleo:[^\\n]*/g, '').slice(0, 1500),\n  });\n}\nreturn [...grupos.entries()].map(([chave, grupo]) => {\n  const todas = [...grupo.dependencias.values()];\n  const snapshot = {\n    versao: 1, identidade: grupo.identidade, sha: grupo.evento.pr?.sha || '',\n    consultado_em: todas.map(d => d.consultado_em).filter(Boolean).sort().at(-1) || new Date().toISOString(),\n    total_dependencias: Math.max(todas.length, Number(grupo.evento.osv_pacotes_total) || 0), dependencias: todas.slice(0, 50),\n    status: todas.every(d => d.status === 'falha') ? 'falha' :\n      todas.length <= 50 && todas.length >= (Number(grupo.evento.osv_pacotes_total) || 0) && todas.every(d => d.status === 'concluida') ? 'concluida' : 'incompleta',\n  };\n  return { json: { ...grupo.evento, chave_osv: chave, contexto_osv_snapshot: snapshot,\n    contexto_osv_serializado: JSON.stringify(snapshot) },\n    pairedItem: grupo.indices.map(item => ({ item })) };\n});"
+      },
+      "id": "35dd0c07-5863-4699-86f7-c8c5f165cb7c",
+      "name": "06A | Agrupar Contexto OSV da Análise",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "aprova_osv_por_analise"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "keyValue": "={{ $json.chave_osv }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chave": "={{ $json.chave_osv }}",
+            "contexto": "={{ $json.contexto_osv_serializado }}"
+          },
+          "schema": [
+            {
+              "id": "chave",
+              "displayName": "chave",
+              "type": "string"
+            },
+            {
+              "id": "contexto",
+              "displayName": "contexto",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38e32259-8210-4546-9038-42c51b4ed717",
+      "name": "06B | Guardar Contexto OSV",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1536,
+        160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: $('06A | Agrupar Contexto OSV da Análise').item.json };"
+      },
+      "id": "2df02958-12e4-439f-a110-c6fbba26bcbc",
+      "name": "06C | Retornar Contexto OSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.modo_osv !== 'contexto_aprovacao' }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5b7ceb90-032e-4966-b730-34e1f69f9259",
+      "name": "06D | Publicar Alerta de Dependência",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1312,
+        -96
+      ]
+    }
+  ],
+  "connections": {
+    "01 | Receber Evento Normalizado": {
+      "main": [
+        [
+          {
+            "node": "02 | Validar Evento de Dependências",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Validar Evento de Dependências": {
+      "main": [
+        [
+          {
+            "node": "03 | Separar Dependências",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Separar Dependências": {
+      "main": [
+        [
+          {
+            "node": "04 | Consultar OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | Consultar OSV": {
+      "main": [
+        [
+          {
+            "node": "05 | Consolidar Consulta por Dependência",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Consolidar Consulta por Dependência": {
+      "main": [
+        [
+          {
+            "node": "06 | Preparar Alerta de Dependência",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Preparar Alerta de Dependência": {
+      "main": [
+        [
+          {
+            "node": "06A | Agrupar Contexto OSV da Análise",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "06D | Publicar Alerta de Dependência",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06A | Agrupar Contexto OSV da Análise": {
+      "main": [
+        [
+          {
+            "node": "06B | Guardar Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06B | Guardar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "06C | Retornar Contexto OSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06D | Publicar Alerta de Dependência": {
+      "main": [
+        [
+          {
+            "node": "07 | Enviar Alerta Enriquecido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}

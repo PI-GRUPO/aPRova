@@ -1,0 +1,7 @@
+{
+  "name": "aprova_osv_por_analise",
+  "columns": [
+    { "name": "chave", "type": "string" },
+    { "name": "contexto", "type": "string" }
+  ]
+}

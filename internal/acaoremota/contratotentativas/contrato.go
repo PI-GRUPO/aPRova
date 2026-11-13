@@ -151,6 +151,7 @@ func (c *cenario) processar(t *testing.T, idAcao, usuarioSlack string) acaoremot
 		"repositorio":     "PI-GRUPO/alvo",
 		"numero_pr":       42,
 		"installation_id": installationID,
+		"justificativa":   "Risco avaliado e aceito pelo revisor.",
 	})
 	if err != nil {
 		t.Fatalf("serializar pedido: %v", err)

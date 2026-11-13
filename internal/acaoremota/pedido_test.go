@@ -12,7 +12,10 @@ func TestServicoRejeitaCorpoInvalidoSemConsultarNada(t *testing.T) {
 	}{
 		{"tipo desconhecido", comCampos(map[string]any{"tipo": "mesclar"})},
 		{"tipo com grafia diferente", comCampos(map[string]any{"tipo": "Aprovar"})},
-		{"solicitar alteração sem justificativa", comCampos(map[string]any{"tipo": "solicitar_alteracao"})},
+		{"aprovar sem justificativa", comCampos(map[string]any{"justificativa": nil})},
+		{"aprovar com justificativa em branco", comCampos(map[string]any{"justificativa": "  \n\t"})},
+		{"task_run_id inválido", comCampos(map[string]any{"task_run_id": "invalido"})},
+		{"solicitar alteração sem justificativa", comCampos(map[string]any{"tipo": "solicitar_alteracao", "justificativa": nil})},
 		{"solicitar alteração com justificativa em branco", comCampos(map[string]any{"tipo": "solicitar_alteracao", "justificativa": "   \n\t"})},
 		{"sem id_acao", comCampos(map[string]any{"id_acao": nil})},
 		{"id_acao longo demais", comCampos(map[string]any{"id_acao": strings.Repeat("x", 201)})},

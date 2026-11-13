@@ -1,0 +1,226 @@
+{
+  "name": "aPRova | Digest | Resumo Semanal",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "d8a5af47-a19a-42a0-b804-09b7af4f74f7",
+      "name": "01 | Segunda-feira às 09h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const configuracao = { installation_ids: [Number($env.APROVA_CHAT_INSTALLATION_ID || 0)] };\nconst ids = [...new Set(configuracao.installation_ids)];\nif (!ids.length || ids.length > 50 || ids.some(id => !Number.isSafeInteger(id) || id <= 0)) {\n  throw new Error('Configure APROVA_CHAT_INSTALLATION_ID no ambiente do n8n com um ID real de instalação do GitHub App.');\n}\nconst agora = new Date();\nconst hoje = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate()));\nconst fim = new Date(hoje);\nfim.setUTCDate(fim.getUTCDate() - (fim.getUTCDay() + 6) % 7);\nconst inicio = new Date(fim);\ninicio.setUTCDate(inicio.getUTCDate() - 7);\nreturn ids.map(installation_id => ({ json: {\n  installation_id, inicio: inicio.toISOString().slice(0, 10), fim: fim.toISOString().slice(0, 10),\n} }));"
+      },
+      "id": "b672e3d4-f25c-4f19-abaa-74006fd7f3cc",
+      "name": "02 | Configurar Instalações",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst { installation_id, inicio, fim } = $json;\nif (!Number.isSafeInteger(installation_id) || installation_id <= 0 ||\n    typeof inicio !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(inicio)) throw new Error('Consulta inválida.');\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) throw new Error('N8N_SEGREDO_ACOES ausente no n8n.');\nif (!$env.SLACK_INCOMING_WEBHOOK_URL) throw new Error('SLACK_INCOMING_WEBHOOK_URL ausente no n8n.');\nconst query = 'installation_id=' + installation_id + '&inicio=' + inicio;\nconst timestamp = Math.floor(Date.now() / 1000).toString();\nreturn { json: { installation_id, inicio, fim, requisicao: {\n  url: ($env.APROVA_API_URL || 'http://host.docker.internal:8080').replace(/\\/+$/, '') + '/reports/weekly?' + query,\n  headers: {\n    'X-Aprova-Timestamp': timestamp,\n    'X-Aprova-Assinatura': 'sha256=' + crypto.createHmac('sha256', segredo).update(timestamp + '.' + query).digest('hex'),\n  },\n} } };"
+      },
+      "id": "c68e9bd7-75e1-4038-b5b9-7e6a012657df",
+      "name": "03 | Assinar Consulta à API",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.requisicao.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Aprova-Timestamp",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Timestamp'] }}"
+            },
+            {
+              "name": "X-Aprova-Assinatura",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Assinatura'] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "9a73b61b-1d73-43a7-816d-d78173de4139",
+      "name": "04 | Consultar Relatório Semanal",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const esperado = $('03 | Assinar Consulta à API').item.json;\nconst r = $json.body;\nconst contagens = ['total_execucoes', 'concluidas', 'rejeitadas', 'falhas', 'em_andamento',\n  'exigiram_aprovacao_humana', 'revertidas'];\nconst finalizadas = r ? r.concluidas + r.rejeitadas + r.falhas : NaN;\nif ($json.statusCode !== 200 || !r || Array.isArray(r) ||\n    r.installation_id !== esperado.installation_id ||\n    r.inicio !== esperado.inicio + 'T00:00:00Z' || r.fim !== esperado.fim + 'T00:00:00Z' ||\n    contagens.some(k => !Number.isSafeInteger(r[k]) || r[k] < 0) ||\n    finalizadas + r.em_andamento !== r.total_execucoes ||\n    r.exigiram_aprovacao_humana > r.total_execucoes ||\n    (finalizadas === 0 ? r.taxa_sucesso !== null :\n      typeof r.taxa_sucesso !== 'number' || !Number.isFinite(r.taxa_sucesso) ||\n      Math.abs(r.taxa_sucesso - r.concluidas / finalizadas) > 0.000001)) {\n  throw new Error('Relatório semanal inválido ou de instalação/período diferente. Digest não enviado.');\n}\nconst data = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);\nconst ultimoDia = new Date(r.fim);\nultimoDia.setUTCDate(ultimoDia.getUTCDate() - 1);\nconst taxa = r.taxa_sucesso === null ? 'Não disponível — nenhuma execução finalizada.' :\n  (r.taxa_sucesso * 100).toFixed(1).replace('.', ',') + '%';\nconst texto = [\n  'aPRova | Digest semanal',\n  'Instalação: ' + r.installation_id,\n  'Período: ' + data(r.inicio) + ' a ' + data(ultimoDia.toISOString()) + ' (UTC)',\n  '',\n  'Total de execuções: ' + r.total_execucoes,\n  'Taxa de sucesso: ' + taxa,\n  'Exigiram aprovação humana: ' + r.exigiram_aprovacao_humana,\n  'Revertidas: ' + r.revertidas,\n  '',\n  'Taxa de sucesso = concluídas / (concluídas + rejeitadas + falhas).',\n  'Execuções em andamento: ' + r.em_andamento + '.',\n  'Reversões contabilizadas pelo núcleo na semana; podem se referir a análises anteriores.',\n].join('\\n');\nreturn { json: {\n  installation_id: r.installation_id, inicio: r.inicio, fim: r.fim, metricas: r,\n  slack_payload: { text: texto, blocks: [{ type: 'section', text: { type: 'plain_text', text: texto } }],\n    mrkdwn: false, unfurl_links: false, unfurl_media: false },\n} };"
+      },
+      "id": "53446934-4ef6-4c6a-8403-4472df8ac987",
+      "name": "05 | Validar e Formatar Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SLACK_INCOMING_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.slack_payload }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "id": "11645120-f041-4a0e-98a0-f9f7e3919823",
+      "name": "06 | Publicar Digest no Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1296,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const resposta = $json.body ?? $json.data;\nif ($json.statusCode !== 200 || typeof resposta !== 'string' || resposta.trim() !== 'ok') {\n  throw new Error('Slack não confirmou o recebimento. Confira a execução antes de reenviar para evitar duplicação.');\n}\nconst digest = $('05 | Validar e Formatar Digest').item.json;\nreturn { json: { status: 'enviado', installation_id: digest.installation_id,\n  inicio: digest.inicio, fim: digest.fim } };"
+      },
+      "id": "8fd8e89d-cb6d-449d-96ea-23a3ba10d9b5",
+      "name": "07 | Confirmar Publicação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        320
+      ]
+    }
+  ],
+  "connections": {
+    "01 | Segunda-feira às 09h": {
+      "main": [
+        [
+          {
+            "node": "02 | Configurar Instalações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Configurar Instalações": {
+      "main": [
+        [
+          {
+            "node": "03 | Assinar Consulta à API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Assinar Consulta à API": {
+      "main": [
+        [
+          {
+            "node": "04 | Consultar Relatório Semanal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 | Consultar Relatório Semanal": {
+      "main": [
+        [
+          {
+            "node": "05 | Validar e Formatar Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 | Publicar Digest no Slack": {
+      "main": [
+        [
+          {
+            "node": "07 | Confirmar Publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05 | Validar e Formatar Digest": {
+      "main": [
+        [
+          {
+            "node": "06 | Publicar Digest no Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "timezone": "America/Sao_Paulo",
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "description": "Digest semanal com instalação lida de APROVA_CHAT_INSTALLATION_ID no ambiente do n8n. Consulta assinada ao núcleo e publicação no Slack; ativar após validação real.",
+  "pinData": {}
+}
