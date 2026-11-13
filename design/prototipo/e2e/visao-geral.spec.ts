@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 function fila(pagina: Page) {
@@ -17,20 +18,28 @@ async function baseDe(alvo: Locator) {
 }
 
 test.describe("faixa de métricas", () => {
-	test("mostra quatro números com unidade e barra de proporção", async ({ page }) => {
+	test("mostra quatro números, com barra só nas porcentagens", async ({ page }) => {
 		await page.goto("/");
 		const metricas = page.getByTestId("metrica");
 		await expect(metricas).toHaveCount(4);
-		for (const [rotulo, valor] of [
-			["Aguardando aprovação", "5"],
-			["Taxa de bloqueio", "47%"],
-			["Falhas no sandbox", "31%"],
-			["Análises recebidas", "41"],
+		for (const [rotulo, valor, temBarra] of [
+			["Espera mais antiga", "2 d 2 h", false],
+			["Taxa de bloqueio", "47%", true],
+			["Falhas no sandbox", "31%", true],
+			["Análises recebidas", "41", false],
 		] as const) {
 			const metrica = metricas.filter({ hasText: rotulo });
 			await expect(metrica.getByTestId("metrica-valor")).toHaveText(valor);
-			await expect(metrica.getByTestId("proporcao")).toBeVisible();
+			await expect(metrica.getByTestId("proporcao")).toHaveCount(temBarra ? 1 : 0);
 		}
+	});
+
+	test("a espera mais antiga diz qual PR é e quantos esperam", async ({ page }) => {
+		await page.goto("/");
+		const metrica = page.getByTestId("metrica").filter({ hasText: "Espera mais antiga" });
+		await expect(metrica).toContainText("aPRova-TESTES #1");
+		await expect(metrica).toContainText("1 de 5 na fila");
+		await expect(page.getByText(/de 15 bloqueadas/)).toHaveCount(0);
 	});
 
 	test("o valor usa algarismos tabulares em 32px", async ({ page }) => {
@@ -116,11 +125,13 @@ test.describe("painéis do período", () => {
 		await page.goto("/");
 		const paineis = page.getByTestId("painel-do-periodo");
 		await expect(paineis).toHaveCount(3);
-		const bases = await Promise.all((await paineis.all()).map(baseDe));
-		expect(Math.max(...bases) - Math.min(...bases)).toBeLessThanOrEqual(1);
-		const larguraDaFila = (await fila(page).boundingBox())?.width ?? 0;
+		const bases = await Promise.all((await paineis.all()).slice(0, 2).map(baseDe));
+		expect(Math.abs((bases[0] ?? 0) - (bases[1] ?? 0))).toBeLessThanOrEqual(1);
 		const larguraDaFaixa = (await page.getByTestId("faixa-de-metricas").boundingBox())?.width ?? 0;
-		expect(Math.abs(larguraDaFila - larguraDaFaixa)).toBeLessThanOrEqual(1);
+		for (const bloco of [fila(page), page.getByRole("region", { name: "Análises por dia e nível" })]) {
+			const largura = (await bloco.boundingBox())?.width ?? 0;
+			expect(Math.abs(largura - larguraDaFaixa)).toBeLessThanOrEqual(1);
+		}
 	});
 });
 
@@ -279,12 +290,15 @@ test.describe("mapa de calor pelo teclado", () => {
 		return pagina.getByRole("region", { name: "Análises por dia e nível" });
 	}
 
-	test("a grade é um único ponto de tabulação e as células não são alvos", async ({ page }) => {
+	test("a grade é um único ponto de tabulação", async ({ page }) => {
 		await page.goto("/");
 		const grade = mapa(page).getByRole("grid");
 		await expect(grade).toHaveAttribute("tabindex", "0");
-		await expect(mapa(page).locator("button")).toHaveCount(0);
 		await expect(mapa(page).getByRole("gridcell")).toHaveCount(90);
+		const focaveisDentro = await grade
+			.locator("a, button")
+			.evaluateAll((elementos) => elementos.filter((elemento) => elemento.getAttribute("tabindex") !== "-1").length);
+		expect(focaveisDentro).toBe(0);
 	});
 
 	test("o foco mostra o valor da célula ativa e as setas percorrem dias e níveis", async ({ page }) => {
@@ -333,4 +347,165 @@ test("em 768px a evidência aparece inteira abaixo do pull request", async ({ pa
 	await expect(caminho).toHaveCount(1);
 	const caixa = await caminho.boundingBox();
 	expect(caixa?.width).toBeGreaterThan(80);
+});
+
+test.describe("estados honestos", () => {
+	test("carregando não afirma hora de atualização", async ({ page }) => {
+		await page.goto("/?estado=carregando");
+		await expect(page.getByRole("main").getByText(/Atualizando/)).toBeVisible();
+		await expect(page.getByRole("main").getByText(/atualizado às/)).toHaveCount(0);
+	});
+
+	test("o erro diz a última atualização boa e não promete o que não sabe", async ({ page }) => {
+		await page.goto("/?estado=erro");
+		const principal = page.getByRole("main");
+		await expect(principal.getByText(/Última atualização às 14:00/)).toBeVisible();
+		await expect(principal.getByText(/Nenhuma análise foi perdida/)).toHaveCount(0);
+		await expect(principal.getByRole("alert")).toContainText("o bloqueio no GitHub não depende desta tela");
+	});
+
+	test("o esqueleto tem a forma da tela e não faz a página pular", async ({ page }) => {
+		await page.goto("/");
+		const faixa = await page.getByTestId("faixa-de-metricas").boundingBox();
+		const fila = await page.getByRole("region", { name: "Aguardando aprovação" }).boundingBox();
+		await page.goto("/?estado=carregando");
+		const faixaDoEsqueleto = await page.getByTestId("esqueleto-da-faixa").boundingBox();
+		const filaDoEsqueleto = await page.getByTestId("esqueleto-da-fila").boundingBox();
+		expect(Math.abs((faixaDoEsqueleto?.height ?? 0) - (faixa?.height ?? 0))).toBeLessThanOrEqual(8);
+		expect(Math.abs((filaDoEsqueleto?.y ?? 0) - (fila?.y ?? 0))).toBeLessThanOrEqual(8);
+		expect(Math.abs((filaDoEsqueleto?.height ?? 0) - (fila?.height ?? 0))).toBeLessThanOrEqual(24);
+	});
+});
+
+test.describe("evidência e busca", () => {
+	test("em 1440px o nome do arquivo da evidência aparece inteiro", async ({ page }) => {
+		await page.goto("/");
+		const arquivo = fila(page).getByText("000031_parcelas.down.sql", { exact: true }).filter({ visible: true });
+		await expect(arquivo).toHaveCount(1);
+		const cortado = await arquivo.evaluate((elemento) => elemento.scrollWidth > elemento.clientWidth);
+		expect(cortado).toBe(false);
+	});
+
+	test("a busca procura na evidência e aceita espaço no lugar do sublinhado", async ({ page }) => {
+		await page.goto("/");
+		const busca = fila(page).getByRole("searchbox", { name: "Buscar na fila" });
+		await busca.fill("migrations");
+		await expect(linhasDaFila(page)).toHaveCount(1);
+		await busca.fill("falha sandbox");
+		await expect(linhasDaFila(page)).toHaveCount(1);
+		await expect(linhasDaFila(page)).toContainText("aPRova-TESTES");
+	});
+});
+
+test.describe("recibo e vocabulário", () => {
+	test("uma linha discreta mostra o último recibo assinado", async ({ page }) => {
+		await page.goto("/");
+		const recibo = page.getByRole("region", { name: "Último recibo assinado" });
+		await expect(recibo).toContainText("f27414ff");
+		await expect(recibo).toContainText("cobranca-api #218");
+		await expect(recibo).toContainText("Ed25519");
+		await expect(recibo.getByRole("link", { name: "Ver os recibos" })).toHaveAttribute("href", "/recibos");
+	});
+
+	test("os rótulos dizem o que contam", async ({ page }) => {
+		await page.goto("/");
+		await expect(page.getByText("Alterações pedidas")).toBeVisible();
+		await expect(page.getByText("Com alterações")).toHaveCount(0);
+		await expect(page.getByText(/9 em andamento ou paradas antes do gate/)).toBeVisible();
+		await expect(page.getByText(/cada tentativa conta/)).toBeVisible();
+		await expect(page.getByRole("region", { name: "Bloqueadas" })).toContainText("15 no período, por desfecho");
+	});
+});
+
+interface AnaliseDosDados {
+	id: string;
+	received_at: string;
+	risk_gate: { level: string } | null;
+}
+
+const analisesDosDados: AnaliseDosDados[] = JSON.parse(readFileSync(new URL("../src/dados/analises.json", import.meta.url), "utf8"));
+const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+const nivelPorNome: Record<string, string> = { alto: "alto", médio: "medio", baixo: "baixo" };
+
+function diaEMesEmBrasilia(data: string) {
+	const partes = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "America/Sao_Paulo",
+		year: "numeric",
+		month: "numeric",
+		day: "numeric",
+	}).formatToParts(new Date(data));
+	const valor = (tipo: string) => Number(partes.find((parte) => parte.type === tipo)?.value);
+	return `${valor("day")} ${meses[valor("month") - 1]}`;
+}
+
+function idsDaCelula(rotulo: string) {
+	const [dia, resto] = rotulo.split(", ");
+	const nivel = nivelPorNome[(resto ?? "").split(":")[0] ?? ""];
+	return analisesDosDados
+		.filter((analise) => analise.risk_gate?.level === nivel && diaEMesEmBrasilia(analise.received_at) === dia)
+		.map((analise) => `/analises/${analise.id}`)
+		.sort();
+}
+
+test.describe("mapa de calor leva às análises", () => {
+	function mapa(pagina: Page) {
+		return pagina.getByRole("region", { name: "Análises por dia e nível" });
+	}
+
+	test("a célula com uma análise leva exatamente a ela", async ({ page }) => {
+		await page.goto("/");
+		const celula = mapa(page).locator('[data-testid="celula-do-mapa"][data-quantas="1"]').first();
+		const rotulo = (await celula.getAttribute("aria-label")) ?? "";
+		const [esperado] = idsDaCelula(rotulo);
+		expect(esperado).toBeTruthy();
+		await celula.click();
+		await expect(page).toHaveURL(new RegExp(`${esperado}$`));
+	});
+
+	test("a célula com várias análises lista cada uma com o link exato", async ({ page }) => {
+		await page.goto("/");
+		const celula = mapa(page).locator('[data-testid="celula-do-mapa"][data-quantas="3"]').first();
+		const rotulo = (await celula.getAttribute("aria-label")) ?? "";
+		await celula.click();
+		const lista = page.getByRole("dialog", { name: rotulo });
+		await expect(lista).toBeVisible();
+		const destinos = (await lista.getByRole("link").evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""))).sort();
+		expect(destinos).toEqual(idsDaCelula(rotulo));
+		expect(destinos).toHaveLength(3);
+	});
+
+	test("a célula vazia não leva a lugar nenhum", async ({ page }) => {
+		await page.goto("/");
+		const vazia = mapa(page).locator('[data-testid="celula-do-mapa"][data-quantas="0"]').first();
+		await expect(vazia.locator("a, button")).toHaveCount(0);
+	});
+
+	test("Enter na célula ativa abre a análise pelo teclado", async ({ page }) => {
+		await page.goto("/");
+		const grade = mapa(page).getByRole("grid");
+		await grade.focus();
+		await page.keyboard.press("ArrowLeft");
+		const ativa = page.locator(`[id="${await grade.getAttribute("aria-activedescendant")}"]`);
+		await expect(ativa).toHaveAttribute("data-quantas", "1");
+		const [esperado] = idsDaCelula((await ativa.getAttribute("aria-label")) ?? "");
+		await page.keyboard.press("Enter");
+		await expect(page).toHaveURL(new RegExp(`${esperado}$`));
+	});
+
+	for (const largura of [390, 1440]) {
+		test(`em ${largura}px as células clicáveis têm pelo menos 24px e a página não rola de lado`, async ({ page }) => {
+			await page.setViewportSize({ width: largura, height: 900 });
+			await page.goto("/");
+			const caixas = await mapa(page)
+				.locator('[data-testid="celula-do-mapa"]:not([data-quantas="0"])')
+				.evaluateAll((celulas) =>
+					celulas.map((celula) => celula.getBoundingClientRect()).map(({ width, height }) => Math.min(width, height)),
+				);
+			expect(Math.min(...caixas)).toBeGreaterThanOrEqual(24);
+			expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(largura);
+			const hoje = await mapa(page).getByText("hoje", { exact: true }).boundingBox();
+			expect(hoje?.x ?? -1).toBeGreaterThanOrEqual(0);
+			expect((hoje?.x ?? 0) + (hoje?.width ?? 0)).toBeLessThanOrEqual(largura);
+		});
+	}
 });
