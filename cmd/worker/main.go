@@ -9,7 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
 	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/embedding"
 	"github.com/PI-GRUPO/aPRova/internal/eventos"
 	"github.com/PI-GRUPO/aPRova/internal/gate"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
@@ -83,12 +85,18 @@ func executar() error {
 	}
 	slog.Info("recibos assinados com Ed25519", "key_id", assinador.IDChave())
 
+	calibrador, err := montarCalibrador(configuracao, repositorio)
+	if err != nil {
+		return err
+	}
+
 	motor, err := worker.NovoMotor(worker.Opcoes{
 		Armazenamento: repositorio,
 		LeitorDePR:    clienteGitHub,
 		Permissoes:    clienteGitHub,
 		Sandbox:       executorSandbox,
 		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
+		Calibrador:    calibrador,
 		Recibos:       emissorDeRecibos,
 		Publicador:    publicador,
 		Eventos:       emissorDeEventos,
@@ -125,6 +133,37 @@ func executar() error {
 	emissorDeEventos.Aguardar()
 
 	return nil
+}
+
+func montarCalibrador(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) (worker.CalibradorRisco, error) {
+	if !configuracao.CalibracaoLigada {
+		slog.Info("CALIBRACAO_LIGADA desligada, o nível é o do gate determinístico")
+		return nil, nil
+	}
+
+	var embedder embedding.Embedder
+	gemini, err := embedding.NovoGemini(embedding.OpcoesGemini{Chave: configuracao.ChaveAPIGemini, Timeout: configuracao.CalibracaoTimeout})
+	if err != nil {
+		slog.Warn("calibração ligada sem embedding: cada análise fica com o nível do gate e registra o motivo", "motivo", err)
+		embedder = embedding.Indisponivel{Motivo: err}
+	} else {
+		embedder = gemini
+	}
+
+	regra := calibracao.Regra{
+		Vizinhos:           configuracao.CalibracaoVizinhos,
+		SimilaridadeMinima: configuracao.CalibracaoSimilaridadeMinima,
+		MinimoDeDesfechos:  configuracao.CalibracaoMinimoDeDesfechos,
+	}
+	calibrador, err := calibracao.NovoCalibrador(calibracao.OpcoesCalibrador{
+		Embedder: embedder, Historico: repositorio, Regra: regra, Timeout: configuracao.CalibracaoTimeout,
+	})
+	if err != nil {
+		return nil, err
+	}
+	slog.Info("calibração por histórico ligada", "vizinhos", regra.Vizinhos, "similaridade_minima", regra.SimilaridadeMinima,
+		"minimo_de_desfechos", regra.MinimoDeDesfechos, "timeout", configuracao.CalibracaoTimeout)
+	return calibrador, nil
 }
 
 func montarAssinador(configuracao config.Configuracao) (*receipt.Assinador, error) {
