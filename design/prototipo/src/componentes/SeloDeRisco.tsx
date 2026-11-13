@@ -26,13 +26,15 @@ interface Props {
 	nivel: Nivel;
 	variante?: Variante;
 	comPrefixo?: boolean;
+	explicacao?: string;
 	className?: string;
 }
 
-export function SeloDeRisco({ nivel, variante = "tingido", comPrefixo = false, className }: Props) {
+export function SeloDeRisco({ nivel, variante = "tingido", comPrefixo = false, explicacao, className }: Props) {
 	return (
 		<span
 			data-testid={`selo-risco-${nivel}`}
+			title={explicacao}
 			className={cn(
 				"inline-flex items-center text-12 font-medium whitespace-nowrap",
 				formaDaVariante[variante],
@@ -48,8 +50,4 @@ export function SeloDeRisco({ nivel, variante = "tingido", comPrefixo = false, c
 			</span>
 		</span>
 	);
-}
-
-export function AmostraDoNivel({ nivel }: { nivel: Nivel }) {
-	return <span aria-hidden="true" className={cn("inline-block size-2 rounded-[2px]", fundoDoNivel[nivel])} />;
 }

@@ -1,17 +1,14 @@
-import { BarrasPorDia } from "@/componentes/BarrasPorDia";
 import { Esqueleto, LinhasDeEsqueleto } from "@/componentes/Esqueleto";
 import { FaixaDeMetricas, Metrica } from "@/componentes/FaixaDeMetricas";
+import { EscalaDoMapa, MapaDeCalor } from "@/componentes/MapaDeCalor";
 import { Pagina } from "@/componentes/Pagina";
 import { LinhaDeContagem, Painel, TabelaDeContagem } from "@/componentes/Painel";
-import { AmostraDoNivel } from "@/componentes/SeloDeRisco";
 import { agora, analises, instalacao } from "@/lib/dados";
 import { useEstadoDaTela } from "@/lib/estado-da-tela";
-import { dataEHora, espera, nomeDoNivel, periodo, porcentagem } from "@/lib/formatos";
-import type { Nivel, TipoDeFalha } from "@/lib/tipos";
+import { espera, horaDoDia, periodo, porcentagem } from "@/lib/formatos";
+import type { TipoDeFalha } from "@/lib/tipos";
 import { analisesPorDia, bloqueio, falhasDoSandbox, filaDeAprovacao, totaisPorNivel } from "@/lib/visao-geral";
 import { FilaDeAprovacao } from "@/telas/FilaDeAprovacao";
-
-const niveisDoMaiorParaOMenor: Nivel[] = ["alto", "medio", "baixo"];
 
 const nomeDaFalha: Record<Exclude<TipoDeFalha, "nenhuma">, string> = {
 	teste: "Teste",
@@ -37,7 +34,7 @@ function MetricasDoPeriodo() {
 				todo={taxa.bloqueadas}
 				apoio={
 					maisAntiga
-						? `de ${taxa.bloqueadas} bloqueadas, a mais antiga há ${espera(maisAntiga.desde, agora)}`
+						? `de ${taxa.bloqueadas} bloqueadas, mais antiga há ${espera(maisAntiga.desde, agora)}`
 						: `de ${taxa.bloqueadas} bloqueadas, nenhuma à espera`
 				}
 			/>
@@ -69,24 +66,10 @@ function MetricasDoPeriodo() {
 	);
 }
 
-function LegendaDosNiveis() {
-	const totais = totaisPorNivel();
-
-	return (
-		<ul className="flex gap-3">
-			{niveisDoMaiorParaOMenor.map((nivel) => (
-				<li key={nivel} className="inline-flex items-center gap-1.5">
-					<AmostraDoNivel nivel={nivel} />
-					{nomeDoNivel[nivel]} {totais[nivel]}
-				</li>
-			))}
-		</ul>
-	);
-}
-
 function PaineisDoPeriodo() {
 	const taxa = bloqueio();
 	const falhas = falhasDoSandbox();
+	const dias = analisesPorDia();
 
 	return (
 		<div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
@@ -104,12 +87,8 @@ function PaineisDoPeriodo() {
 					))}
 				</TabelaDeContagem>
 			</Painel>
-			<Painel titulo="Análises por dia e nível" resumo={<LegendaDosNiveis />} className="md:max-xl:col-span-2">
-				<BarrasPorDia
-					dias={analisesPorDia()}
-					legenda="Análises por dia de chegada e por nível de risco"
-					className="flex-1 px-3 pt-3 pb-2"
-				/>
+			<Painel titulo="Análises por dia e nível" resumo={<EscalaDoMapa />} className="md:max-xl:col-span-2">
+				<MapaDeCalor dias={dias} legenda="Análises por dia de chegada e por nível de risco" className="flex-1 px-3 py-2" />
 			</Painel>
 		</div>
 	);
@@ -118,17 +97,17 @@ function PaineisDoPeriodo() {
 function EsqueletoDaVisaoGeral() {
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="grid grid-cols-2 gap-px xl:grid-cols-4">
-				<Esqueleto className="h-[118px]" />
-				<Esqueleto className="h-[118px]" />
-				<Esqueleto className="h-[118px]" />
-				<Esqueleto className="h-[118px]" />
+			<div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+				<Esqueleto className="h-[118px] rounded-painel" />
+				<Esqueleto className="h-[118px] rounded-painel" />
+				<Esqueleto className="h-[118px] rounded-painel" />
+				<Esqueleto className="h-[118px] rounded-painel" />
 			</div>
 			<LinhasDeEsqueleto quantas={6} />
 			<div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
-				<Esqueleto className="h-[132px]" />
-				<Esqueleto className="h-[132px]" />
-				<Esqueleto className="h-[132px] md:max-xl:col-span-2" />
+				<Esqueleto className="h-[132px] rounded-painel" />
+				<Esqueleto className="h-[132px] rounded-painel" />
+				<Esqueleto className="h-[132px] rounded-painel md:max-xl:col-span-2" />
 			</div>
 		</div>
 	);
@@ -141,7 +120,7 @@ export function VisaoGeral() {
 		<Pagina
 			titulo="Visão geral"
 			tituloDoDocumento="Visão geral"
-			contexto={`Últimos ${instalacao.periodo_dias} dias, ${periodo(agora, instalacao.periodo_dias)} · atualizado em ${dataEHora(agora)}`}
+			contexto={`Últimos ${instalacao.periodo_dias} dias · ${periodo(agora, instalacao.periodo_dias)} · atualizado às ${horaDoDia(agora)}`}
 			estado={estado}
 			oQueCarrega="a visão geral"
 			vazio={{

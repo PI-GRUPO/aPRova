@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { CampoDeBusca } from "@/componentes/CampoDeBusca";
 import { Identificador } from "@/componentes/Identificador";
@@ -23,6 +23,20 @@ function evidenciasDaAnalise(analise: Analise) {
 	return [...new Set(analise.risk_gate?.rules_hit.flatMap((motivo) => motivo.evidencias) ?? [])];
 }
 
+function CaminhoQuebravel({ caminho }: { caminho: string }) {
+	const partes = caminho.split("/");
+	return partes.map((parte, indice) => (
+		<Fragment key={partes.slice(0, indice + 1).join("/")}>
+			{parte}
+			{indice < partes.length - 1 ? (
+				<>
+					/<wbr />
+				</>
+			) : null}
+		</Fragment>
+	));
+}
+
 function EvidenciaPrincipal({ analise, quebraLinha = false, className }: { analise: Analise; quebraLinha?: boolean; className?: string }) {
 	const [primeira, ...demais] = evidenciasDaAnalise(analise);
 	if (!primeira) return null;
@@ -30,8 +44,11 @@ function EvidenciaPrincipal({ analise, quebraLinha = false, className }: { anali
 
 	return (
 		<span className={cn("flex items-baseline gap-x-2", className)}>
-			<span className={cn(quebraLinha ? "break-all whitespace-normal" : "truncate", ehCaminho && "font-mono")} title={primeira}>
-				{primeira}
+			<span
+				className={cn(quebraLinha ? "whitespace-normal [overflow-wrap:anywhere]" : "truncate", ehCaminho && "font-mono")}
+				title={primeira}
+			>
+				{quebraLinha && ehCaminho ? <CaminhoQuebravel caminho={primeira} /> : primeira}
 			</span>
 			{demais.length > 0 ? <span className="shrink-0 text-12 text-secundario">e mais {demais.length}</span> : null}
 		</span>
@@ -43,11 +60,11 @@ function LinhaDaFila({ analise, desde }: ItemDaFila) {
 		<LinhaDaTabela>
 			<Celula className="text-right font-medium">{espera(desde, agora)}</Celula>
 			<Celula className="max-md:whitespace-normal">
-				<Link to={`/analises/${analise.id}`} className="after:absolute after:inset-0">
+				<Link to={`/analises/${analise.id}`} className="font-medium after:absolute after:inset-0">
 					{nomeCurtoDoRepositorio(analise.repository)} <Identificador>#{analise.pr_number}</Identificador>
 				</Link>
 				<MotivosDaAnalise analise={analise} className="flex-wrap leading-6 md:hidden" />
-				<EvidenciaPrincipal analise={analise} className="relative z-10 flex-wrap md:hidden" quebraLinha />
+				<EvidenciaPrincipal analise={analise} className="relative z-10 flex-wrap lg:hidden" quebraLinha />
 			</Celula>
 			<Celula className="relative z-10 max-2xl:hidden">
 				<Identificador>{analise.head_branch}</Identificador>
@@ -58,7 +75,7 @@ function LinhaDaFila({ analise, desde }: ItemDaFila) {
 			<Celula className="max-md:hidden">
 				<MotivosDaAnalise analise={analise} className="md:max-lg:flex-col" />
 			</Celula>
-			<Celula className="relative z-10 w-full max-w-0 max-md:hidden">
+			<Celula className="relative z-10 w-full max-w-0 max-lg:hidden">
 				<EvidenciaPrincipal analise={analise} />
 			</Celula>
 		</LinhaDaTabela>
@@ -84,12 +101,17 @@ export function FilaDeAprovacao() {
 	}
 
 	return (
-		<section aria-labelledby="titulo-da-fila" className="overflow-hidden rounded-controle border border-borda bg-superficie">
+		<section aria-labelledby="titulo-da-fila" className="overflow-hidden rounded-painel border border-borda bg-superficie">
 			<div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-borda px-3 py-2">
 				<h2 id="titulo-da-fila" className="text-14 font-semibold">
 					Aguardando aprovação
 				</h2>
-				<SeloDeRisco nivel="alto" variante="ponto" comPrefixo />
+				<SeloDeRisco
+					nivel="alto"
+					variante="ponto"
+					comPrefixo
+					explicacao="Risco alto: o Check Run bloqueia o merge até uma pessoa aprovar ou pedir alterações."
+				/>
 				<search aria-label="Filtros da fila" className="flex flex-wrap items-center gap-x-3 gap-y-2 max-md:w-full md:ml-auto">
 					<CampoDeBusca
 						rotulo="Buscar na fila"
@@ -131,7 +153,7 @@ export function FilaDeAprovacao() {
 							<Coluna className="max-2xl:hidden">Branch</Coluna>
 							<Coluna className="max-2xl:hidden">Commit</Coluna>
 							<Coluna className="max-md:hidden">Motivos</Coluna>
-							<Coluna className="max-md:hidden">Evidência</Coluna>
+							<Coluna className="max-lg:hidden">Evidência</Coluna>
 						</CabecalhoDaTabela>
 						<CorpoDaTabela>
 							{fila.map((item) => (
@@ -143,7 +165,11 @@ export function FilaDeAprovacao() {
 						<p className="px-3 py-6 text-secundario">
 							Nenhuma análise da fila corresponde ao filtro.{" "}
 							{filtrada ? (
-								<button type="button" onClick={limparFiltros} className="cursor-pointer text-link underline underline-offset-[3px]">
+								<button
+									type="button"
+									onClick={limparFiltros}
+									className="cursor-pointer text-link underline decoration-1 underline-offset-[3px] hover:decoration-2"
+								>
 									Limpar filtros
 								</button>
 							) : null}

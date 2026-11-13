@@ -5,7 +5,7 @@ const mesclar = extendTailwindMerge({
 	extend: {
 		classGroups: {
 			"font-size": [{ text: ["12", "14", "16", "20", "24", "32"] }],
-			rounded: [{ rounded: ["selo", "controle"] }],
+			rounded: [{ rounded: ["selo", "controle", "painel"] }],
 		},
 	},
 });

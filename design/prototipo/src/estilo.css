@@ -4,27 +4,29 @@
 
 :root {
 	color-scheme: dark;
-	--fundo-base: #111214;
-	--fundo-superficie: #17181b;
-	--fundo-elevado: #1e2024;
-	--borda-padrao: #2a2c31;
-	--texto-primario: #ece9e2;
-	--texto-secundario: #9a9ea6;
-	--acao-link: #7fa2c8;
-	--risco-baixo: #3fb37f;
+	--fundo-base: #08090a;
+	--fundo-superficie: #0f1011;
+	--fundo-elevado: #161718;
+	--borda-padrao: #23252a;
+	--texto-titulo: #ffffff;
+	--texto-primario: #d0d6e0;
+	--texto-secundario: #8a8f98;
+	--acento: #e4f222;
+	--risco-baixo: #27a644;
 	--risco-medio: #e0a43b;
-	--risco-alto: #e75d55;
+	--risco-alto: #eb5757;
 }
 
 [data-tema="claro"] {
 	color-scheme: light;
-	--fundo-base: #f5f5f6;
+	--fundo-base: #e9eaec;
 	--fundo-superficie: #ffffff;
-	--fundo-elevado: #ececee;
-	--borda-padrao: #dcdce0;
-	--texto-primario: #111214;
-	--texto-secundario: #5f636b;
-	--acao-link: #3f6a96;
+	--fundo-elevado: #f1f2f4;
+	--borda-padrao: #d3d5da;
+	--texto-titulo: #0f1011;
+	--texto-primario: #1c1e24;
+	--texto-secundario: #62666d;
+	--acento: #5f6600;
 	--risco-baixo: #1f764e;
 	--risco-medio: #915c08;
 	--risco-alto: #b42f28;
@@ -43,7 +45,11 @@
 	--breakpoint-xl: 1280px;
 	--breakpoint-2xl: 1440px;
 
-	--font-sans: "IBM Plex Sans", sans-serif;
+	--font-sans: "Inter Variable", sans-serif;
+	--font-weight-*: initial;
+	--font-weight-normal: 400;
+	--font-weight-medium: 510;
+	--font-weight-semibold: 590;
 	--font-mono: "IBM Plex Mono", monospace;
 
 	--text-12: 12px;
@@ -56,11 +62,14 @@
 	--text-20--line-height: 28px;
 	--text-24: 24px;
 	--text-24--line-height: 32px;
+	--text-24--letter-spacing: -0.012em;
 	--text-32: 32px;
 	--text-32--line-height: 40px;
+	--text-32--letter-spacing: -0.022em;
 
 	--radius-selo: 4px;
 	--radius-controle: 6px;
+	--radius-painel: 12px;
 }
 
 @theme inline {
@@ -71,7 +80,9 @@
 	--color-contorno: var(--texto-secundario);
 	--color-primario: var(--texto-primario);
 	--color-secundario: var(--texto-secundario);
-	--color-link: var(--acao-link);
+	--color-titulo: var(--texto-titulo);
+	--color-link: var(--texto-primario);
+	--color-acento: var(--acento);
 	--color-risco-baixo: var(--risco-baixo);
 	--color-risco-medio: var(--risco-medio);
 	--color-risco-alto: var(--risco-alto);
@@ -91,17 +102,22 @@
 		font-family: var(--font-sans);
 		font-size: 14px;
 		line-height: 20px;
+		font-feature-settings:
+			"cv01" on,
+			"ss03" on,
+			"zero" on;
 		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.011em;
 		-webkit-font-smoothing: antialiased;
 	}
 
 	::selection {
-		background: var(--texto-primario);
+		background: var(--acento);
 		color: var(--fundo-base);
 	}
 
 	:focus-visible {
-		outline: 2px solid var(--acao-link);
+		outline: 2px solid var(--acento);
 		outline-offset: 2px;
 	}
 
@@ -110,7 +126,7 @@
 	}
 
 	a {
-		color: var(--acao-link);
+		color: var(--texto-primario);
 		text-decoration: underline;
 		text-decoration-thickness: 1px;
 		text-underline-offset: 3px;
@@ -134,6 +150,7 @@
 	h1,
 	h2,
 	h3 {
+		color: var(--texto-titulo);
 		text-wrap-style: balance;
 	}
 

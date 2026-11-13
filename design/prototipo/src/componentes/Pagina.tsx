@@ -51,7 +51,7 @@ export function Pagina({ titulo, tituloDoDocumento, contexto, estado, oQueCarreg
 			) : null}
 
 			{estado === "erro" ? (
-				<div role="alert" className="max-w-[65ch] rounded-controle border border-borda bg-superficie p-6">
+				<div role="alert" className="max-w-[65ch] rounded-painel border border-borda bg-superficie p-6">
 					<h2 className="text-16 font-semibold">Não foi possível carregar {oQueCarrega}</h2>
 					<p className="mt-2 text-secundario">
 						O servidor do aPRova não respondeu a tempo. Nenhuma análise foi perdida: as decisões e os recibos continuam gravados, e o que
@@ -64,7 +64,7 @@ export function Pagina({ titulo, tituloDoDocumento, contexto, estado, oQueCarreg
 			) : null}
 
 			{estado === "vazio" ? (
-				<div data-testid="estado-vazio" className="max-w-[65ch] rounded-controle border border-borda bg-superficie p-6">
+				<div data-testid="estado-vazio" className="max-w-[65ch] rounded-painel border border-borda bg-superficie p-6">
 					<h2 className="text-16 font-semibold">{vazio.titulo}</h2>
 					<p className="mt-2 text-secundario">{vazio.texto}</p>
 					{vazio.acao ? <p className="mt-4">{vazio.acao}</p> : null}

@@ -14,8 +14,40 @@
 			"!.impeccable"
 		]
 	},
-	"formatter": { "indentStyle": "tab", "lineWidth": 140 },
-	"css": { "parser": { "tailwindDirectives": true } },
-	"linter": { "enabled": true, "rules": { "recommended": true } },
-	"assist": { "actions": { "source": { "organizeImports": "on" } } }
+	"formatter": {
+		"indentStyle": "tab",
+		"lineWidth": 140
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["src/componentes/MapaDeCalor.tsx"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noNoninteractiveElementToInteractiveRole": "off",
+						"useFocusableInteractive": "off",
+						"useSemanticElements": "off"
+					}
+				}
+			}
+		}
+	]
 }

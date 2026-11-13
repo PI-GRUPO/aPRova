@@ -8,7 +8,7 @@ export function LinhasDeEsqueleto({ quantas, className }: { quantas: number; cla
 	const linhas = Array.from({ length: quantas }, (_, indice) => `linha-${indice}`);
 
 	return (
-		<div className={cn("divide-y divide-borda rounded-controle border border-borda bg-superficie", className)}>
+		<div className={cn("divide-y divide-borda rounded-painel border border-borda bg-superficie", className)}>
 			{linhas.map((linha) => (
 				<div key={linha} className="flex items-center gap-4 px-4 py-3">
 					<Esqueleto className="h-4 w-16" />

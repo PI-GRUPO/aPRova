@@ -45,6 +45,10 @@ export function dataEHora(data: Date) {
 	return format(data, "d MMM yyyy, HH:mm", { locale: ptBR }).replace(".", "");
 }
 
+export function horaDoDia(data: Date) {
+	return format(data, "HH:mm");
+}
+
 export function periodo(ate: Date, dias: number) {
 	return `${diaEMes(subDays(ate, dias - 1))} a ${format(ate, "d MMM yyyy", { locale: ptBR }).replace(".", "")}`;
 }

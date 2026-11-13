@@ -82,5 +82,5 @@ export function ColunaOrdenavel({ children, sentido, aoOrdenar, aDireita = false
 }
 
 export function Celula({ children, className }: PropsComFilhos) {
-	return <td className={cn("px-3 py-1.5 md:max-lg:px-2 whitespace-nowrap", className)}>{children}</td>;
+	return <td className={cn("px-3 py-2 whitespace-nowrap md:max-lg:px-2", className)}>{children}</td>;
 }

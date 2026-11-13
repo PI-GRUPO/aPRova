@@ -16,7 +16,7 @@ export function Painel({ titulo, resumo, children, className }: Props) {
 		<section
 			aria-labelledby={idDoTitulo}
 			data-testid="painel-do-periodo"
-			className={cn("flex flex-col overflow-hidden rounded-controle border border-borda bg-superficie", className)}
+			className={cn("flex flex-col overflow-hidden rounded-painel border border-borda bg-superficie", className)}
 		>
 			<header className="flex flex-wrap items-baseline justify-between gap-x-4 border-b border-borda bg-elevado px-3 py-1.5 whitespace-nowrap">
 				<h2 id={idDoTitulo} className="text-14 font-semibold">
@@ -41,13 +41,13 @@ export function TabelaDeContagem({ legenda, children }: { legenda: string; child
 export function LinhaDeContagem({ rotulo, parte, todo }: { rotulo: string; parte: number; todo: number }) {
 	return (
 		<tr className="border-b border-borda last:border-b-0">
-			<th scope="row" className="px-3 py-1.5 text-left font-normal whitespace-nowrap">
+			<th scope="row" className="px-3 py-2 text-left font-normal whitespace-nowrap">
 				{rotulo}
 			</th>
 			<td className="w-full px-3">
 				<Proporcao parte={parte} todo={todo} />
 			</td>
-			<td className="px-3 py-1.5 text-right whitespace-nowrap">{parte}</td>
+			<td className="px-3 py-2 text-right whitespace-nowrap">{parte}</td>
 		</tr>
 	);
 }
