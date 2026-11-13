@@ -32,11 +32,14 @@ linguagem em que é testado apenas adicionando um `go.mod`.
    `infraestrutura` e nada do PR roda. Essa conferência é o equivalente ao "sem
    `go.mod`" da imagem Go: sem ela, um diretório configurado errado daria zero
    testes, e zero testes não reprova.
-2. Se há `requirements.txt` na raiz do projeto, criar um venv com
-   `--system-site-packages` e rodar `pip install -r requirements.txt`. O pytest e
-   os plugins vêm da imagem; o venv os enxerga e só acrescenta o que o
-   `requirements.txt` pede. Um `pip install` que falha é `infraestrutura`, como o
-   `go mod download`, mesmo quando a causa é um requisito errado no PR.
+2. No executor local, a etapa `preparar` lê os `requirements*.txt` da raiz e o
+   `[project]` do `pyproject.toml` como dado e baixa só as wheels para o cache;
+   a etapa `testar` cria um venv com `--system-site-packages` e instala só a
+   partir desse cache (`pip install --no-index --find-links`). O pytest e os
+   plugins vêm da imagem; o venv os enxerga e só acrescenta o que foi pedido.
+   Requisito inexistente ou só em sdist é `compilacao`. Sem subcomando, o fluxo
+   da Azure até o card 61 ainda roda `pip install -r requirements.txt` direto,
+   e lá uma instalação que falha é `infraestrutura`.
 3. Rodar `python -m pytest` com `--json-report` num arquivo com sufixo aleatório
    fora do clone, e `--timeout` com o tempo que resta menos a margem de entrega.
 
@@ -80,7 +83,11 @@ teste `TestSandboxPythonTesteMaliciosoNaoForjaOResultado` tenta esses ataques.
   arquivo antes da execução. O ganho para quem ataca é o mesmo de apagar o teste
   que falha no próprio PR, e nenhum dos dois é barrado pelo sandbox. O sandbox
   detecta erro honesto; não é defesa contra autor mal-intencionado.
-- O código do PR tem acesso à rede durante os testes, e `pip install` executa
-  código do pacote instalado. Não há segredo no container.
-- Sem rede (`SANDBOX_REDE_LOCAL=none`), um `requirements.txt` com dependência que
-  a imagem não tem falha como `infraestrutura`.
+- **No executor local, o código do PR não tem rede.** A etapa `preparar` baixa só
+  wheels (`pip download --only-binary=:all:`), que não executam nada, e a etapa
+  `testar` instala só a partir delas, com `--network none`. Dependência
+  inexistente ou só em sdist é `compilacao`. Veja
+  [docs/sandbox-em-duas-etapas.md](../../docs/sandbox-em-duas-etapas.md).
+- Na Azure, até o card 61, o job ainda roda tudo numa etapa só, com a rede que o
+  job tiver, e lá o `pip install` pode executar código de pacote em sdist. Não há
+  segredo no container.

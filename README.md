@@ -54,11 +54,11 @@ formato (por exemplo `Azulpasta/aPRova-TESTES=python`), e aceita `go` e `python`
 Repositório sem entrada é testado como Go. Como o diretório, a linguagem vem
 sempre daqui, nunca do conteúdo do PR.
 
-O executor local roda o contêiner sem rede (`SANDBOX_REDE_LOCAL=none`), e assim
-só consegue testar repositórios `file://`, como os dos testes de integração.
-Para analisar um PR real do GitHub na sua máquina, defina
-`SANDBOX_REDE_LOCAL=bridge`: o clone passa a funcionar, e o código do PR também
-ganha acesso à rede durante os testes. Use só em desenvolvimento.
+O executor local roda o sandbox em duas etapas: `preparar` clona o PR e baixa
+as dependências com rede, sem executar nenhum código do PR, e `testar` roda os
+testes com `--network none`. A rede é fixa por etapa e não se configura;
+`SANDBOX_REDE_LOCAL` deixou de existir e, presente no `.env`, impede o worker
+de subir. Veja [docs/sandbox-em-duas-etapas.md](docs/sandbox-em-duas-etapas.md).
 
 Para disparar o job real na Azure contra um SHA e ver o status final:
 

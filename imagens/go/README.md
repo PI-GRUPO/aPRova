@@ -2,10 +2,13 @@
 
 Imagem que roda dentro do job do sandbox para repositórios Go. O único processo
 do aPRova aqui dentro é o executor de dentro (`cmd/sandbox`), que recebe o
-pedido por variáveis de ambiente, clona o repositório no SHA exato, roda
-`go mod download`, `go build ./...`, compila os testes e roda
-`go test -json ./...`, e entrega um `ResultadoSandbox` como uma única linha
-JSON no stdout.
+pedido por variáveis de ambiente e entrega o resultado como uma única linha
+JSON no stdout. No executor local ele roda em duas etapas
+([docs/sandbox-em-duas-etapas.md](../../docs/sandbox-em-duas-etapas.md)):
+`preparar` clona o repositório no SHA exato e roda só `go mod download`, com
+rede; `testar` roda `go build ./...`, compila os testes e roda
+`go test -json ./...` com `--network none`. Sem subcomando, faz tudo num
+contêiner só, o fluxo da Azure até o card 61.
 
 ## Construir
 
@@ -90,10 +93,10 @@ exatamente esses ataques e confere que o resultado entregue é a falha real.
 
 ## Limites conhecidos
 
-- **O código do PR tem acesso de rede durante os testes.** Não há segredo
-  nenhum no container, nenhum token do GitHub App e nenhuma credencial no
-  clone, então o dano possível é limitado a usar a rede a partir do job, mas
-  ele existe. A restrição de rede é de outro card.
+- **No executor local, o código do PR não tem rede.** A etapa `testar` roda
+  com `--network none`. Na Azure, até o card 61, o job ainda roda tudo numa
+  etapa só, com a rede que o job tiver. Não há segredo nenhum no container,
+  nenhum token do GitHub App e nenhuma credencial no clone.
 - Um PR pode inflar `testes_passaram` imprimindo linhas que imitam o
   enquadramento do `test2json`. Ele não consegue esconder um teste que falhou
   nem fazer o `go test` sair com sucesso, porque a falha real continua no

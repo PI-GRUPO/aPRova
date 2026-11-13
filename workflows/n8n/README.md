@@ -389,7 +389,6 @@ PostgreSQL/Redis nesta migração: suas portas não foram alteradas.
 | `SANDBOX_EXECUTOR` | Go / executor do sandbox | `vazio no loader` | obrigatório ao iniciar worker (local ou azure); local ou azure conforme implantação | worker |
 | `SANDBOX_IMAGEM_GO` | Go / imagem do executor | `vazio` | necessário ao executor local; Imagem construída/publicada pela equipe | worker |
 | `SANDBOX_DIRETORIOS` | Go / subdiretórios por repositório | `vazio` | opcional; dono/repo=diretorio_relativo separados por vírgula | worker |
-| `SANDBOX_REDE_LOCAL` | Go / rede Docker | `none` | opcional; Nome de rede Docker | worker |
 | `WORKER_CONCORRENCIA` | Go / paralelismo | `4` | opcional; Inteiro positivo definido pelo operador | worker |
 | `WORKER_MAX_TENTATIVAS` | Go / limite de tentativas | `3` | opcional; Inteiro positivo definido pelo operador | worker |
 | `ANTHROPIC_API_KEY` | Go / configuração futura | `vazio` | opcional; funcionalidade futura; Provedor Anthropic; segredo | API/worker |
