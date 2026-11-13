@@ -255,22 +255,19 @@ func TestSandboxPythonDiretorioSemPythonEhInfraestrutura(t *testing.T) {
 }
 
 func TestSandboxPythonInstalaORequirementsComSistemaDeArquivosSomenteLeitura(t *testing.T) {
-	resultado := executarCenarioPython(t, cenarioPython{
-		caso: "com_requisitos", prazo: prazoDeUmCasoComum, opcoes: sandbox.OpcoesExecutorLocal{Rede: "bridge"},
-	})
+	resultado := executarCenarioPython(t, cenarioPython{caso: "com_requisitos", prazo: prazoDeUmCasoComum})
 
 	if resultado.TipoFalha != sandbox.FalhaNenhuma || resultado.TestesPassaram != 1 {
 		t.Errorf("a dependência do requirements.txt precisa estar instalada no venv, obtive %+v", resultado)
 	}
 }
 
-func TestSandboxPythonRequirementQueNaoInstalaEhInfraestrutura(t *testing.T) {
-	resultado := executarCenarioPython(t, cenarioPython{
-		caso: "requisito_inexistente", prazo: prazoDeUmCasoComum, opcoes: sandbox.OpcoesExecutorLocal{Rede: "bridge"},
-	})
+func TestSandboxPythonRequirementInexistenteEhCompilacaoComADependencia(t *testing.T) {
+	resultado := executarCenarioPython(t, cenarioPython{caso: "requisito_inexistente", prazo: prazoDeUmCasoComum})
 
-	if resultado.TipoFalha != sandbox.FalhaInfraestrutura || !strings.Contains(resultado.SaidaBruta, "pip install falhou") {
-		t.Errorf("esperava infraestrutura nomeando o pip, obtive %+v", resultado)
+	if resultado.TipoFalha != sandbox.FalhaCompilacao || !strings.Contains(resultado.SaidaBruta, "six==999.0.0") ||
+		!strings.Contains(resultado.SaidaBruta, "não existe no índice ou só existe como sdist") {
+		t.Errorf("dependência inexistente é do PR, com a dependência na evidência: %+v", resultado)
 	}
 }
 

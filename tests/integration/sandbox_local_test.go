@@ -2,6 +2,7 @@ package integracao
 
 import (
 	"context"
+	"fmt"
 	"os/exec"
 	"strings"
 	"testing"
@@ -11,10 +12,11 @@ import (
 )
 
 const (
-	imagemDeTeste         = "alpine:3.20"
-	prefixoDosConteineres = "aprova-sandbox-"
-	tempoLimiteDoDocker   = 10 * time.Second
-	tempoLimiteDeDownload = 3 * time.Minute
+	imagemDeTeste              = "alpine:3.20"
+	prefixoDosConteineres      = "aprova-sandbox-"
+	prefixoDosVolumesDoPreparo = "aprova-preparo-"
+	tempoLimiteDoDocker        = 10 * time.Second
+	tempoLimiteDeDownload      = 3 * time.Minute
 )
 
 func exigirDocker(t *testing.T) {
@@ -36,7 +38,32 @@ func exigirDocker(t *testing.T) {
 		t.Fatalf("não foi possível baixar %s: %v\n%s", imagemDeTeste, err, saida)
 	}
 
-	t.Cleanup(func() { exigirNenhumConteinerSobrando(t) })
+	t.Cleanup(func() {
+		exigirNenhumConteinerSobrando(t)
+		exigirNenhumVolumeDoPreparoSobrando(t)
+	})
+}
+
+func volumesDoPreparo(t *testing.T) []string {
+	t.Helper()
+
+	ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDoDocker)
+	defer cancelar()
+
+	saida, err := exec.CommandContext(ctx, "docker", "volume", "ls",
+		"--filter", "name="+prefixoDosVolumesDoPreparo, "--format", "{{.Name}}").Output()
+	if err != nil {
+		t.Fatalf("listar volumes: %v", err)
+	}
+	return strings.Fields(string(saida))
+}
+
+func exigirNenhumVolumeDoPreparoSobrando(t *testing.T) {
+	t.Helper()
+
+	if sobrando := volumesDoPreparo(t); len(sobrando) > 0 {
+		t.Errorf("volumes do preparo continuam existindo após o teste: %v", sobrando)
+	}
 }
 
 func conteineresDoSandbox(t *testing.T) []string {
@@ -61,10 +88,17 @@ func exigirNenhumConteinerSobrando(t *testing.T) {
 	}
 }
 
+const preparoProntoDeMentira = `echo '{"pronto":true}'`
+
 func executorComComando(comando ...string) sandbox.Executor {
+	return executorComEtapas([]string{"sh", "-c", preparoProntoDeMentira}, comando)
+}
+
+func executorComEtapas(preparo, teste []string) sandbox.Executor {
 	return sandbox.NovoExecutorLocal(sandbox.OpcoesExecutorLocal{
 		ImagemPorLinguagem: map[sandbox.Linguagem]string{sandbox.LinguagemGo: imagemDeTeste},
-		Comando:            comando,
+		ComandoDoPreparo:   preparo,
+		ComandoDoTeste:     teste,
 	})
 }
 
@@ -176,5 +210,49 @@ func TestImagemInexistenteEFalhaDeInfraestruturaENaoDoPR(t *testing.T) {
 
 	if resultado.TipoFalha != sandbox.FalhaInfraestrutura {
 		t.Errorf("imagem ausente é culpa nossa; esperava %q, obtive %q", sandbox.FalhaInfraestrutura, resultado.TipoFalha)
+	}
+}
+
+func TestVolumeDoPreparoEhRemovidoNoSucessoENaFalha(t *testing.T) {
+	exigirDocker(t)
+
+	casos := map[string]sandbox.Executor{
+		"sucesso": executorComComando("sh", "-c", `echo '{"compilou":true,"testes_passaram":1,"tipo_falha":"nenhuma"}'`),
+		"falha classificada no preparo": executorComEtapas(
+			[]string{"sh", "-c", `echo '{"pronto":false,"falha":{"saida_bruta":"dependência inexistente","tipo_falha":"compilacao"}}'`},
+			[]string{"sh", "-c", "echo nunca"}),
+		"preparo sem desfecho": executorComEtapas([]string{"sh", "-c", "exit 3"}, []string{"sh", "-c", "echo nunca"}),
+	}
+	for nome, executor := range casos {
+		t.Run(nome, func(t *testing.T) {
+			ctx, cancelar := context.WithTimeout(t.Context(), time.Minute)
+			defer cancelar()
+
+			if _, err := executor.Executar(ctx, pedidoDeTeste()); err != nil {
+				t.Fatalf("executar: %v", err)
+			}
+			exigirNenhumVolumeDoPreparoSobrando(t)
+		})
+	}
+}
+
+func TestPreparoTemRedeETesteNao(t *testing.T) {
+	exigirDocker(t)
+
+	ctx, cancelar := context.WithTimeout(t.Context(), time.Minute)
+	defer cancelar()
+
+	sondar := `(wget -q -T 5 -O /dev/null http://example.com && echo aberta || echo fechada) > %s`
+	preparo := []string{"sh", "-c", fmt.Sprintf(sondar, "/aprova-preparo/rede-do-preparo") + `; echo '{"pronto":true}'`}
+	teste := []string{"sh", "-c", fmt.Sprintf(sondar, "/tmp/rede-do-teste") +
+		`; printf '{"compilou":true,"saida_bruta":"preparo=%s teste=%s","tipo_falha":"nenhuma"}\n' "$(cat /aprova-preparo/rede-do-preparo)" "$(cat /tmp/rede-do-teste)"`}
+
+	resultado, err := executorComEtapas(preparo, teste).Executar(ctx, pedidoDeTeste())
+	if err != nil {
+		t.Fatalf("executar: %v", err)
+	}
+
+	if resultado.SaidaBruta != "preparo=aberta teste=fechada" {
+		t.Errorf("a rede é fixa por etapa: %q", resultado.SaidaBruta)
 	}
 }

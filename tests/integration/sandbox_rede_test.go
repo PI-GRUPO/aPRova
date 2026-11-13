@@ -30,3 +30,34 @@ func TestSandboxGoBaixaDependenciasNoPreparoETestaSemRede(t *testing.T) {
 func TestSandboxPythonBaixaDependenciasNoPreparoETestaSemRede(t *testing.T) {
 	exigirAtaqueDeRedeBloqueado(t, executarCasoPython(t, casoDeRedeEDependencia, prazoDeUmCasoComum))
 }
+
+func TestSandboxPythonNuncaExecutaOSetupPyDoPRNoPreparo(t *testing.T) {
+	resultado := executarCasoPython(t, "setup_py_marcador", prazoDeUmCasoComum)
+
+	if resultado.TipoFalha != sandbox.FalhaNenhuma || resultado.TestesPassaram != 1 {
+		t.Errorf("o marcador do setup.py não pode existir depois do preparo: %+v", resultado)
+	}
+}
+
+func TestSandboxPythonDependenciaSoEmSdistEhCompilacaoSemRodarSetupPy(t *testing.T) {
+	resultado := executarCasoPython(t, "so_sdist", prazoDeUmCasoComum)
+
+	if resultado.TipoFalha != sandbox.FalhaCompilacao || !strings.Contains(resultado.SaidaBruta, "pycrypto==2.6.1") ||
+		!strings.Contains(resultado.SaidaBruta, "só existe como sdist") {
+		t.Errorf("só sdist é compilação, com a dependência na evidência: %+v", resultado)
+	}
+	for _, sinal := range []string{"setup.py", "running build", "Building wheel"} {
+		if strings.Contains(resultado.SaidaBruta, sinal) {
+			t.Errorf("nada foi construído no preparo, mas a saída fala em %q: %s", sinal, resultado.SaidaBruta)
+		}
+	}
+}
+
+func TestSandboxGoComGoSumDivergenteEhCompilacao(t *testing.T) {
+	resultado := executarCaso(t, "go_sum_divergente", prazoDeUmCasoComum)
+
+	if resultado.TipoFalha != sandbox.FalhaCompilacao || !strings.Contains(resultado.SaidaBruta, "github.com/google/go-cmp") ||
+		!strings.Contains(resultado.SaidaBruta, "checksum divergente do go.sum") {
+		t.Errorf("go.sum divergente é do PR, com o módulo na evidência: %+v", resultado)
+	}
+}
