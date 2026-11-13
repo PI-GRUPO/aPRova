@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net"
 	"net/url"
 	"os"
@@ -15,7 +16,9 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/PI-GRUPO/aPRova/internal/calibracao"
 	"github.com/PI-GRUPO/aPRova/internal/rastro"
 	"github.com/joho/godotenv"
 )
@@ -31,6 +34,10 @@ const (
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
+
+const maximoDeVizinhos = 1000
+
+var regraPadrao = calibracao.RegraPadrao()
 
 var formatoDoNomeDeRede = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]*$`)
 
@@ -100,6 +107,13 @@ type Configuracao struct {
 	GateCaminhosSensiveis []string
 
 	VinculosSlackGitHub map[string]string
+
+	CalibracaoLigada             bool
+	CalibracaoVizinhos           int
+	CalibracaoSimilaridadeMinima float64
+	CalibracaoMinimoDeDesfechos  int
+	CalibracaoTimeout            time.Duration
+	ChaveAPIGemini               string
 }
 
 // Carregar lê as variáveis de ambiente, aplica os valores padrão e valida o
@@ -158,6 +172,13 @@ func Carregar() (Configuracao, error) {
 		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),
 
 		VinculosSlackGitHub: leitura.vinculosSlackGitHub("SLACK_GITHUB_VINCULOS"),
+
+		CalibracaoLigada:             leitura.booleano("CALIBRACAO_LIGADA"),
+		CalibracaoVizinhos:           leitura.inteiroEntre("CALIBRACAO_VIZINHOS", regraPadrao.Vizinhos, 1, maximoDeVizinhos),
+		CalibracaoSimilaridadeMinima: leitura.fracao("CALIBRACAO_SIMILARIDADE_MINIMA", regraPadrao.SimilaridadeMinima),
+		CalibracaoMinimoDeDesfechos:  leitura.inteiroPositivo("CALIBRACAO_MINIMO_DE_DESFECHOS", regraPadrao.MinimoDeDesfechos),
+		CalibracaoTimeout:            leitura.duracaoPositiva("CALIBRACAO_TIMEOUT", calibracao.TimeoutPadrao),
+		ChaveAPIGemini:               lerVariavel("GEMINI_API_KEY"),
 	}
 
 	if err := leitura.erro(); err != nil {
@@ -294,6 +315,46 @@ func (l *leitor) inteiroPositivo(nome string, padrao int) int {
 		return padrao
 	}
 	return numero
+}
+
+func (l *leitor) booleano(nome string) bool {
+	valor := l.opcional(nome, "false")
+	ligado, err := strconv.ParseBool(valor)
+	if err != nil {
+		l.registrarPendencia("%s espera true ou false, obtive %q", nome, valor)
+		return false
+	}
+	return ligado
+}
+
+func (l *leitor) inteiroEntre(nome string, padrao, minimo, maximo int) int {
+	valor := l.opcional(nome, strconv.Itoa(padrao))
+	numero, err := strconv.Atoi(valor)
+	if err != nil || numero < minimo || numero > maximo {
+		l.registrarPendencia("%s espera um inteiro de %d a %d, obtive %q", nome, minimo, maximo, valor)
+		return padrao
+	}
+	return numero
+}
+
+func (l *leitor) fracao(nome string, padrao float64) float64 {
+	valor := l.opcional(nome, strconv.FormatFloat(padrao, 'f', -1, 64))
+	numero, err := strconv.ParseFloat(valor, 64)
+	if err != nil || math.IsNaN(numero) || numero < 0 || numero > 1 {
+		l.registrarPendencia("%s espera um número de 0 a 1, com ponto decimal, obtive %q", nome, valor)
+		return padrao
+	}
+	return numero
+}
+
+func (l *leitor) duracaoPositiva(nome string, padrao time.Duration) time.Duration {
+	valor := l.opcional(nome, padrao.String())
+	duracao, err := time.ParseDuration(valor)
+	if err != nil || duracao <= 0 {
+		l.registrarPendencia("%s espera uma duração positiva, como 5s ou 1500ms, obtive %q", nome, valor)
+		return padrao
+	}
+	return duracao
 }
 
 func (l *leitor) inteiroPositivoOpcional(nome string) int {

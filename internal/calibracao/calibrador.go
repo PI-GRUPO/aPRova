@@ -11,7 +11,9 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 )
 
-const timeoutPadrao = 5 * time.Second
+// TimeoutPadrao é o tempo máximo da calibração, embedding e busca juntos,
+// quando nenhum é configurado.
+const TimeoutPadrao = 5 * time.Second
 
 // ErrCalibradorIncompleto indica calibrador montado sem embedder ou sem
 // histórico.
@@ -69,7 +71,7 @@ func NovoCalibrador(opcoes OpcoesCalibrador) (*Calibrador, error) {
 		opcoes.Regra = RegraPadrao()
 	}
 	if opcoes.Timeout <= 0 {
-		opcoes.Timeout = timeoutPadrao
+		opcoes.Timeout = TimeoutPadrao
 	}
 	return &Calibrador{embedder: opcoes.Embedder, historico: opcoes.Historico, regra: opcoes.Regra, timeout: opcoes.Timeout}, nil
 }
