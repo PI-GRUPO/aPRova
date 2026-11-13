@@ -173,3 +173,37 @@ func TestMigrationDaAssinaturaRecusaHistoricoNoFormatoAntigo(t *testing.T) {
 		t.Errorf("nada pode ser descartado: %d linhas, %v", restantes, err)
 	}
 }
+
+func TestVizinhosTrazemOsMotivosDoGateDeterministicoDeles(t *testing.T) {
+	repo := exigirBanco(t)
+	tenant := novoTenant()
+	vetor := vetorUnitario(0)
+
+	comGate := analiseComVetor(t, repo, tenant, 1, shaDoCommit(1), vetor)
+	err := repo.GravarGateDeRisco(t.Context(), domain.GateDeRisco{
+		TaskRunID: comGate.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoMedio, Motivo: "calibrado",
+		Motivos: []domain.MotivoDeRisco{
+			{ID: "codigo_sem_teste", Nivel: domain.RiscoMedio}, {ID: "calibracao_historico", Nivel: domain.NivelInformativo}, {ID: "area_sensivel", Nivel: domain.RiscoAlto},
+		},
+	})
+	if err != nil {
+		t.Fatalf("gravar o gate: %v", err)
+	}
+	semGate := analiseComVetor(t, repo, tenant, 2, shaDoCommit(2), vetor)
+
+	vizinhos, err := repo.VizinhosParecidos(t.Context(), consultaDeVizinhos(tenant, vetor, 10))
+	if err != nil {
+		t.Fatalf("buscar vizinhos: %v", err)
+	}
+
+	motivos := map[string][]string{}
+	for _, vizinho := range vizinhos {
+		motivos[vizinho.TaskRunID] = vizinho.Motivos
+	}
+	if got := motivos[comGate.ID]; len(got) != 2 || got[0] != "area_sensivel" || got[1] != "codigo_sem_teste" {
+		t.Errorf("os motivos do gate, em ordem e sem o da calibração: %v", got)
+	}
+	if got := motivos[semGate.ID]; len(got) != 0 {
+		t.Errorf("sem gate gravado, nenhum motivo: %v", got)
+	}
+}

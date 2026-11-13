@@ -43,13 +43,20 @@ func vizinho(numero int, similaridade float64, desfecho domain.DesfechoDoVizinho
 		NumeroPR:     numero,
 		Similaridade: similaridade,
 		Desfecho:     desfecho,
+		Motivos:      []string{"area_sensivel"},
 	}
 }
 
 func positivos(quantos int) []domain.VizinhoDaCalibracao {
+	return positivosCom(quantos, "area_sensivel")
+}
+
+func positivosCom(quantos int, motivos ...string) []domain.VizinhoDaCalibracao {
 	vizinhos := make([]domain.VizinhoDaCalibracao, 0, quantos)
 	for numero := range quantos {
-		vizinhos = append(vizinhos, vizinho(numero+1, 0.99, domain.VizinhoAprovadoEMergeado))
+		positivo := vizinho(numero+1, 0.99, domain.VizinhoAprovadoEMergeado)
+		positivo.Motivos = motivos
+		vizinhos = append(vizinhos, positivo)
 	}
 	return vizinhos
 }
@@ -152,8 +159,8 @@ func TestVizinhosPositivosSuficientesDescemUmDegrau(t *testing.T) {
 		esperado domain.NivelRisco
 	}{
 		{"alto vira médio", entradaAlta(positivos(7)), domain.RiscoMedio},
-		{"médio vira baixo", Entrada{TenantID: tenantDaAnalise, Nivel: domain.RiscoMedio, Motivos: []domain.MotivoDeRisco{codigoSemTeste()}, Vizinhos: positivos(5)}, domain.RiscoBaixo},
-		{"alto com motivo médio cai só um degrau", entradaAlta(positivos(10), areaSensivel(), codigoSemTeste()), domain.RiscoMedio},
+		{"médio vira baixo", Entrada{TenantID: tenantDaAnalise, Nivel: domain.RiscoMedio, Motivos: []domain.MotivoDeRisco{codigoSemTeste()}, Vizinhos: positivosCom(5, "codigo_sem_teste")}, domain.RiscoBaixo},
+		{"alto com motivo médio cai só um degrau", entradaAlta(positivosCom(10, "area_sensivel", "codigo_sem_teste"), areaSensivel(), codigoSemTeste()), domain.RiscoMedio},
 	}
 	for _, caso := range casos {
 		t.Run(caso.nome, func(t *testing.T) {
@@ -167,7 +174,7 @@ func TestVizinhosPositivosSuficientesDescemUmDegrau(t *testing.T) {
 }
 
 func TestCalibracaoAcrescentaOMotivoComAEvidenciaDosVizinhos(t *testing.T) {
-	entrada := entradaAlta(positivos(7), areaSensivel(), codigoSemTeste())
+	entrada := entradaAlta(positivosCom(7, "area_sensivel", "codigo_sem_teste"), areaSensivel(), codigoSemTeste())
 	originais := slices.Clone(entrada.Motivos)
 
 	decisao := Decidir(RegraPadrao(), entrada)

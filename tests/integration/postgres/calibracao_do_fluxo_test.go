@@ -32,6 +32,8 @@ var arquivosNaAreaSensivel = []platform.ArquivoAlterado{
 	{Nome: "go/auth/sessao_test.go", Situacao: "modified", Adicoes: 2, Patch: "@@ -1 +1,2 @@\n+func TestValidar(t *testing.T) {}\n"},
 }
 
+var motivosDoHistorico = []domain.MotivoDeRisco{{ID: "area_sensivel", Nivel: domain.RiscoAlto, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"go/auth/sessao.go"}}}
+
 var resultadoVerde = sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 4, SaidaBruta: "ok", DuracaoMS: 900, TipoFalha: sandbox.FalhaNenhuma}
 
 type embedderProibido struct{ chamadas atomic.Int64 }
@@ -77,6 +79,13 @@ func (b bancoDaFila) analiseConcluida(t *testing.T, numeroPR int, vetor []float3
 		domain.EstadoAguardandoAprovacao, domain.EstadoAplicando, domain.EstadoConcluido)
 	if _, err := b.repo.GravarMemoriaDeCodigo(t.Context(), domain.MemoriaDeCodigo{TenantID: tenantDaFila, TaskRunID: criado.ID, Resumo: "histórico", Embedding: vetor}); err != nil {
 		t.Fatalf("gravar a assinatura do PR %d: %v", numeroPR, err)
+	}
+	err = b.repo.GravarGateDeRisco(t.Context(), domain.GateDeRisco{
+		TaskRunID: criado.ID, NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto, Motivo: "area_sensivel: o PR altera um caminho sensível",
+		Motivos: motivosDoHistorico,
+	})
+	if err != nil {
+		t.Fatalf("gravar o gate do PR %d: %v", numeroPR, err)
 	}
 	return criado
 }
