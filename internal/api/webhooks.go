@@ -58,9 +58,10 @@ type cargaPullRequest struct {
 
 type cargaReview struct {
 	Review struct {
-		Estado  string `json:"state"`
-		Corpo   string `json:"body"`
-		Usuario struct {
+		Estado   string `json:"state"`
+		Corpo    string `json:"body"`
+		CommitID string `json:"commit_id"`
+		Usuario  struct {
 			Login string `json:"login"`
 		} `json:"user"`
 	} `json:"review"`
@@ -188,6 +189,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		Revisor:        revisor,
 		Origem:         origem,
 		RecebidoEm:     time.Now().UTC(),
+		CommitSHA:      carga.Review.CommitID,
 	})
 	if errors.Is(err, domain.ErrNaoEncontrado) {
 		entrega.diario.Warn("revisão de pull request sem task_run ignorada",

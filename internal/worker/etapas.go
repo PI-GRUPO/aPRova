@@ -285,6 +285,15 @@ func (c *conducao) decidirAprovacao() (passo, error) {
 			return passo{}, err
 		}
 
+		if aprovacao.CommitSHA != c.taskRun.SHAHead {
+			c.diario.Warn("revisão de outro commit registrada sem decidir", "revisor", aprovacao.Revisor, "id_aprovacao", aprovacao.ID,
+				"commit_revisado", aprovacao.CommitSHA, "commit_analisado", c.taskRun.SHAHead)
+			if err := c.pularAprovacao(aprovacao.ID); err != nil {
+				return passo{}, err
+			}
+			continue
+		}
+
 		decide, err := c.revisorPodeDecidir(aprovacao.Revisor)
 		if err != nil {
 			c.diario.Warn("permissão do revisor indisponível, nova consulta depois da espera", "revisor", aprovacao.Revisor, "erro", err)
@@ -295,11 +304,18 @@ func (c *conducao) decidirAprovacao() (passo, error) {
 		}
 
 		c.diario.Warn("review de quem não pode escrever no repositório ignorado", "revisor", aprovacao.Revisor, "id_aprovacao", aprovacao.ID)
-		if err := c.opcoes.Armazenamento.AvancarCursorDeAprovacao(c.ctx, c.taskRun.ID, c.trabalhador, aprovacao.ID); err != nil {
+		if err := c.pularAprovacao(aprovacao.ID); err != nil {
 			return passo{}, err
 		}
-		c.taskRun.UltimaAprovacaoVista = aprovacao.ID
 	}
+}
+
+func (c *conducao) pularAprovacao(id int64) error {
+	if err := c.opcoes.Armazenamento.AvancarCursorDeAprovacao(c.ctx, c.taskRun.ID, c.trabalhador, id); err != nil {
+		return err
+	}
+	c.taskRun.UltimaAprovacaoVista = id
+	return nil
 }
 
 func (c *conducao) revisorPodeDecidir(revisor string) (bool, error) {

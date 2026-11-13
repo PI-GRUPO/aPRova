@@ -222,6 +222,7 @@ func (r *RepositorioPostgres) RegistrarRevisao(ctx context.Context, decisao doma
 		Revisor:    decisao.Revisor,
 		Origem:     decisao.Origem,
 		DecididaEm: decisao.RecebidoEm,
+		CommitSHA:  decisao.CommitSHA,
 	})
 }
 
@@ -251,6 +252,7 @@ func (r *RepositorioPostgres) RegistrarAprovacao(ctx context.Context, aprovacao 
 		FeedbackReason: motivo,
 		Justification:  aprovacao.Justificativa,
 		DecidedAt:      aprovacao.DecididaEm,
+		CommitSha:      textoOuNulo(aprovacao.CommitSHA),
 	})
 	if err != nil {
 		return traduzir("registrar aprovação", err)
@@ -701,6 +703,13 @@ func paraTaskRun(linha db.TaskRun) domain.TaskRun {
 		TentativasDaEtapa:    int(linha.StepAttempts),
 		UltimaAprovacaoVista: linha.LastApprovalSeen,
 	}
+}
+
+func textoOuNulo(texto string) *string {
+	if texto == "" {
+		return nil
+	}
+	return &texto
 }
 
 func valorOuVazio(texto *string) string {

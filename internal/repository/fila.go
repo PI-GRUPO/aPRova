@@ -219,6 +219,7 @@ func paraAprovacaoRegistrada(linha db.Approval) domain.AprovacaoRegistrada {
 			Origem:         domain.OrigemAprovacao(linha.Origin),
 			MotivoFeedback: motivo,
 			Justificativa:  linha.Justification,
+			CommitSHA:      valorOuVazio(linha.CommitSha),
 			DecididaEm:     linha.DecidedAt,
 		},
 	}

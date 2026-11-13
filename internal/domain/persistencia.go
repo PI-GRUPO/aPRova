@@ -164,7 +164,8 @@ type Recibo struct {
 	CriadoEm time.Time
 }
 
-// Aprovacao é a decisão de uma revisão humana sobre um task_run.
+// Aprovacao é a decisão de uma revisão humana sobre um task_run. CommitSHA é
+// o commit que o revisor viu; a aprovação só decide o task_run desse commit.
 type Aprovacao struct {
 	TaskRunID      string           `validate:"required,uuid"`
 	DeliveryID     string           `validate:"required,max=100"`
@@ -174,6 +175,7 @@ type Aprovacao struct {
 	MotivoFeedback *MotivoFeedback  `validate:"omitempty,oneof=regra_conservadora risco_aceito falso_positivo"`
 	Justificativa  *string          `validate:"omitempty,max=4000"`
 	DecididaEm     time.Time        `validate:"required"`
+	CommitSHA      string           `validate:"omitempty,len=40,hexadecimal,lowercase"`
 }
 
 // AprovacaoRegistrada é uma aprovação já gravada, com o id que a ordena.

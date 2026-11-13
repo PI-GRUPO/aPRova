@@ -22,6 +22,7 @@ type Approval struct {
 	DecidedAt      time.Time `json:"decided_at"`
 	CreatedAt      time.Time `json:"created_at"`
 	Origin         string    `json:"origin"`
+	CommitSha      *string   `json:"commit_sha"`
 }
 
 type CodeMemory struct {

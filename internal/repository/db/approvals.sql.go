@@ -11,11 +11,11 @@ import (
 )
 
 const createApproval = `-- name: CreateApproval :execrows
-INSERT INTO approvals (tenant_id, task_run_id, delivery_id, decision, reviewer, origin, feedback_reason, justification, decided_at)
+INSERT INTO approvals (tenant_id, task_run_id, delivery_id, decision, reviewer, origin, feedback_reason, justification, decided_at, commit_sha)
 SELECT tr.tenant_id, tr.id, $1, $2, $3, $4,
-       $5, $6, $7
+       $5, $6, $7, $8
 FROM task_runs tr
-WHERE tr.id = $8
+WHERE tr.id = $9
 ON CONFLICT (delivery_id) DO NOTHING
 `
 
@@ -27,6 +27,7 @@ type CreateApprovalParams struct {
 	FeedbackReason *string   `json:"feedback_reason"`
 	Justification  *string   `json:"justification"`
 	DecidedAt      time.Time `json:"decided_at"`
+	CommitSha      *string   `json:"commit_sha"`
 	TaskRunID      string    `json:"task_run_id"`
 }
 
@@ -39,6 +40,7 @@ func (q *Queries) CreateApproval(ctx context.Context, arg CreateApprovalParams) 
 		arg.FeedbackReason,
 		arg.Justification,
 		arg.DecidedAt,
+		arg.CommitSha,
 		arg.TaskRunID,
 	)
 	if err != nil {
@@ -48,7 +50,7 @@ func (q *Queries) CreateApproval(ctx context.Context, arg CreateApprovalParams) 
 }
 
 const nextApprovalAfter = `-- name: NextApprovalAfter :one
-SELECT id, tenant_id, task_run_id, delivery_id, decision, reviewer, feedback_reason, justification, decided_at, created_at, origin FROM approvals
+SELECT id, tenant_id, task_run_id, delivery_id, decision, reviewer, feedback_reason, justification, decided_at, created_at, origin, commit_sha FROM approvals
 WHERE task_run_id = $1 AND id > $2
 ORDER BY id
 LIMIT 1
@@ -74,6 +76,7 @@ func (q *Queries) NextApprovalAfter(ctx context.Context, arg NextApprovalAfterPa
 		&i.DecidedAt,
 		&i.CreatedAt,
 		&i.Origin,
+		&i.CommitSha,
 	)
 	return i, err
 }
