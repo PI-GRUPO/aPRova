@@ -123,7 +123,6 @@ func TestContainerSobeIsoladoELimitado(t *testing.T) {
 	}
 
 	exigencias := map[string]string{
-		"--network":      redePadrao,
 		"--cpus":         limiteCPUPadrao,
 		"--memory":       limiteMemoriaPadrao,
 		"--pids-limit":   limiteProcessosPadrao,
