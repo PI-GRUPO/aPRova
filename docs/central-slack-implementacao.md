@@ -1,6 +1,6 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-13**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-14**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
@@ -34,9 +34,12 @@ núcleo nem usar IA para decidir aprovações.
 | Consulta — Relatório Semanal | Publicado | Ferramenta assinada de leitura do relatório. |
 | Feedback — Motivo da Aprovação | Publicado, bloqueado por configuração | Pergunta de motivo para aprovação ALTO; sem vínculo não pergunta; envio à API desabilitado. |
 | Onboarding de Repositório | Publicado, proteção ainda indisponível | Identifica branch, consulta proteção, cria/reutiliza lista Trello e resume no Slack. |
+| SLA — Aprovação Pendente | Publicado, envios aguardam política | Timer persistente com dois limites e escalonamento ao responsável configurado. |
 
 Os estados locais da tabela foram conferidos em 2026-11-08; esta integração
 de código em 2026-11-13 não altera nem revalida a instância n8n.
+Exceção: o SLA e suas conexões no Core foram implementados e publicados em
+2026-11-14. Os demais fluxos não foram revalidados funcionalmente nessa etapa.
 Publicação local não comprova funcionamento integral com GitHub real ou
 produção. Na validação do onboarding, `/health` e `/ready` responderam 200
 a partir do n8n, superando a indisponibilidade registrada anteriormente.
@@ -74,7 +77,7 @@ recarrega seus ambientes. As credenciais GitHub ficam no núcleo.
 
 ### Diferenças entre instância e repositório
 
-Os nove JSONs de workflows em `workflows/n8n/` são portáteis e inativos. O feedback e as
+Os dez JSONs de workflows em `workflows/n8n/` são portáteis e inativos. O feedback e as
 atualizações de Core, Central e Digest estão sincronizados com a instância,
 com remoção de credenciais/referências locais e preservação dos bloqueios:
 
@@ -86,6 +89,8 @@ com remoção de credenciais/referências locais e preservação dos bloqueios:
 | Trello | Export e instância usam cursor `before` para comentários. |
 | Onboarding | `onboarding-repositorio.json`, baseado na versão publicada, sem credenciais ou destinos locais; Trello/Slack desabilitados até configurar a importação. |
 | Core → onboarding | Nó `07L`, por item e aguardando retorno; configurar `APROVA_ONBOARDING_WORKFLOW_ID`. Demais rotas preservadas. |
+| SLA | `sla-aprovacao.json`, baseado na versão publicada, sem credenciais, dados fixados ou IDs locais; tabelas selecionadas por ambiente. |
+| Core → SLA | Nó `07M` nas rotas de espera e decisão, por item e sem aguardar; configurar `APROVA_SLA_WORKFLOW_ID`. Central e feedback preservados. |
 
 Os exports desta revisão foram autorizados. Novas sincronizações exigem
 autorização; preservar a correção Trello e a portabilidade. Na importação,
@@ -94,6 +99,14 @@ o subworkflow no Core/Central e manter a API de feedback desabilitada até
 existir endpoint real. Esta exportação não alterou a instância.
 O workflow manual `aPRova | Testes | Onboarding de Repositório` permanece
 somente na instância, fora da rota de eventos e fora dos exports.
+O SLA funcional e as duas ligações novas do Core foram exportados após
+autorização, preservando as demais configurações dos arquivos existentes.
+As definições de suas tabelas estão em `recursos/tabela-sla-eventos.json` e
+`recursos/tabela-sla-controle.json`, sem dados locais; a segunda inclui a
+linha inicial de controle necessária em uma instalação nova. O workflow
+manual de SLA permanece somente na instância e não foi exportado.
+Esta sincronização não alterou workflows, tabelas ou envios na instância.
+Novas sincronizações também exigem autorização.
 
 ## Core — Entrada e Roteamento de Eventos
 
@@ -113,6 +126,7 @@ aceita. O 202 não comprova sucesso das integrações posteriores.
 | `07H`, `07I Solicitar Motivo da Aprovação` | Decisão registrada para feedback, por item e sem aguardar. |
 | `07E`, `10–12` | Pedido assinado `relatorio_periodico`: GET do relatório e resultado na execução. |
 | `07K`, `07L` | Saída `instalacao` chama Onboarding de Repositório, modo `each`, aguardando o resultado. |
+| `07A`, `07H`, `07M` | Espera e decisão também seguem ao SLA, modo `each`, sem aguardar; Central e feedback preservados. |
 | Demais saídas | Pontos de extensão e registro sem integração. |
 
 O tenant autenticado define a instalação do evento, sem substituição pelo
@@ -120,8 +134,8 @@ ID global de consultas. `relatorio_periodico` é pedido da automação,
 não um sétimo evento emitido pelo worker, e não publica Digest.
 
 Falta validar worker → Core com dados reais; implementar emissão de
-`instalacao` (a de `dependencia_nova` já existe); e construir SLA com limites
-configuráveis, encerramento ao receber decisão e atualização do alerta.
+`instalacao` (a de `dependencia_nova` já existe); configurar e validar os
+avisos reais do SLA e implementar a atualização do alerta original.
 
 ## Onboarding de Repositório
 
@@ -246,6 +260,115 @@ Falta para finalizar a integração:
 - Definir recuperação parcial, reenvio exclusivo do Slack e revalidação
   posterior da proteção. O Core deduplica tenant/evento; reenviar o mesmo
   evento não é um mecanismo de retry das integrações já processadas.
+
+## SLA — Aprovação Pendente
+
+O workflow `aPRova | SLA | Aprovação Pendente` está publicado na instância.
+Política de prazo pertence à equipe e não muda risco, aprovação ou estado do
+núcleo. Usa os eventos existentes, sem `/metrics` ou acesso ao banco do aPRova.
+
+### Entrada, timer e persistência
+
+O Core chama `07M | Acompanhar SLA de Aprovação` a partir de `07A`
+(`aguardando_aprovacao`) e `07H` (`aprovacao_registrada`). A referência vem de
+`APROVA_SLA_WORKFLOW_ID`, modo `each`, sem aguardar; Central e feedback mantêm
+suas conexões. O SLA valida a origem, o contrato normalizado, a instalação,
+`meta.execution_id` (task_run), repositório, PR e horário do evento. Aceita
+início de risco ALTO e encerramento por `aprovada`/`alteracoes_solicitadas`.
+Eventos não escolhem políticas, canal ou responsável.
+
+Data Table `aprova_sla_eventos`: `chave`, `evento_id`, `tipo`, `contexto`
+(String) e `ocorrido_em` (Date). A chave combina instalação, task_run,
+repositório e PR. Guarda fatos de início, encerramento, reserva e resultado
+dos avisos. Encerramento recebido antes do início continua encerrado;
+reenvio não reinicia a contagem. Uma análise mais recente da mesma PR
+substitui a antiga na seleção do temporizador.
+
+O timer verifica a cada minuto. Os dois limites contam desde
+`meta.ocorrido_em`, em minutos corridos; o segundo não soma outro prazo ao
+primeiro. A persistência substitui execuções estacionadas em Wait: após
+reinício, o próximo ciclo retoma os prazos vencidos. Se ambos vencerem na
+interrupção, o primeiro é tratado antes do segundo, que exige confirmação
+do primeiro envio.
+
+Data Table `aprova_sla_controle`: `chave`/`executor` (String) e
+`bloqueado_ate` (Number, timestamp em milissegundos). Possui uma única linha
+`chave=temporizador`. Reserva condicional do ciclo, com validade de 15
+minutos e liberação ao terminar, evita ciclos simultâneos. Até dez avisos
+são processados por ciclo, um por vez; os demais ficam para o próximo.
+
+| Nós | Função |
+| --- | --- |
+| `E01–E04` | Entrada normalizada, validação, persistência e resultado do acompanhamento. |
+| `T01–T04` | Timer, reserva do ciclo, histórico e planejamento dos prazos/pendências. |
+| `T05–T10` | Seleção dos avisos, lote unitário e releitura de decisões/configuração. |
+| `T11–T12` | Reserva persistente do aviso antes da chamada ao Slack. |
+| `T13–T15` | Envio por `aPRova | Slack`, confirmação de canal/timestamp e resultado persistente. |
+| `T16`, `T90`, `T99` | Cancelamento na execução, liberação do ciclo e resumo das pendências. |
+
+### Configuração segundo a padronização
+
+`APROVA_SLA_HABILITADO=true` libera envios apenas para políticas habilitadas
+e válidas. `APROVA_SLA_CANAL_ID` é um canal padrão opcional.
+`APROVA_SLA_POLITICAS_JSON` contém uma lista com os campos abaixo:
+
+| Campo | Uso |
+| --- | --- |
+| `installation_id`, `repositorio` | Instalação e `owner/repo`, sem inferir vínculos. |
+| `habilitado` | Booleano `true`, junto com a flag global, autoriza a política. |
+| `primeiro_limite_minutos` | Inteiro positivo para renotificar o canal. |
+| `segundo_limite_minutos` | Inteiro maior que o primeiro, também desde o início da espera. |
+| `canal_slack` | Canal próprio da política; pode usar o padrão configurado no ambiente. |
+| `responsavel_slack` | ID de usuário confirmado para mencionar no segundo aviso. |
+
+Política ausente/ambígua, prazos inválidos ou canal ausente geram
+`configuracao_pendente`, sem publicação. Sem responsável, o primeiro aviso
+pode funcionar e o segundo fica pendente. Nenhum prazo ou pessoa foi
+escolhido em nome da equipe: a instalação atual tem flag `false`, políticas
+vazias e canal não preenchido; o recebimento dos eventos permanece ativo.
+
+As tabelas são selecionadas pelos IDs explícitos de
+`APROVA_SLA_EVENTOS_TABELA_ID` e `APROVA_SLA_CONTROLE_TABELA_ID`, evitando
+resolução ambígua entre nomes funcionais e de teste.
+Compose, `.env.example` e `.env` receberam as seis variáveis do SLA; só os
+IDs do workflow e das tabelas foram preenchidos no ambiente local. O container foi
+recriado preservando volume, credenciais e segredos existentes. Alterar
+políticas exige recarregar o ambiente, como nas demais integrações.
+
+### Confirmação, validação e pendências
+
+Reserva impede repetir o mesmo estágio. Só canal/timestamp confirmados
+marcam envio concluído. Erro/timeout gera `incerto_1` ou `incerto_2`, sem
+retry automático. Falha entre reserva e confirmação exige conferir Slack e
+histórico antes de recuperar manualmente; não remover reservas às cegas.
+
+A releitura impede avisar após decisão conhecida, mas há corrida entre
+decisão e publicação. Eventos perdidos, fechamento de PR sem decisão ou
+nova análise não recebida podem deixar o acompanhamento desatualizado.
+Ainda não existe endpoint de estado atual: o adaptador retorna
+`revalidacao_nucleo=indisponivel`, e a mensagem informa que a pendência se
+baseia nos eventos recebidos. Uma leitura futura deverá entrar antes do
+envio, distinguindo ausência de dados de pendência confirmada.
+
+Passaram 31 cenários isolados da lógica: contratos, dois prazos, políticas,
+decisões, ordem invertida, duplicatas, instalações, nova análise, reservas,
+responsável ausente e confirmação/falha Slack. Na instância, o workflow
+manual `aPRova | Testes | SLA de Aprovação` usa tabelas próprias com sufixo
+`_teste`, política fictícia e Code sem rede no lugar do Slack. Duas PRs
+percorreram ambos os avisos, sem repetição no ciclo seguinte; decisão
+anterior não reabriu espera. O funcional não contém esse nó de simulação.
+
+Também foram testados persistência/configuração pendente no funcional,
+carregamento das variáveis e evento assinado de pedido de alterações pela
+entrada publicada do Core. Esses testes não validam envio Slack real do
+SLA, GitHub App, horário útil ou pontualidade sob carga.
+
+Falta acordar os dois limites, canal e responsáveis; habilitar políticas;
+validar notificações reais em canal de teste; disponibilizar revalidação do
+estado pelo núcleo; e definir horário útil, retenção, recuperação de envios
+incertos e atualização da mensagem original. Não excluir fatos de
+encerramento/reserva enquanto puderem chegar eventos antigos, pois isso
+pode reabrir acompanhamentos ou repetir avisos.
 
 ## Slack — Central de Operação
 
@@ -485,8 +608,8 @@ opcional estão implementados; testes locais não comprovam integração externa
   estável e rede/configuração próprias.
 - Validar gate/calibração, recibos e publicação reais com as integrações;
   implementar o evento de instalação, respeitando a separação núcleo/periferia.
-- Construir SLA com dois limites configuráveis: renotificação e menção ao
-  responsável, encerrando após decisão. Ainda não há workflow.
+- Configurar prazos, canal e responsáveis do SLA publicado; validar envios
+  reais e futura revalidação de estado, recuperação e retenção.
 - Configurar credenciais/chamadas após importar os exports; preservar
   portabilidade e correção Trello nas próximas sincronizações autorizadas.
 - Definir implantação da API/worker, versões de imagens, backups do n8n/chave

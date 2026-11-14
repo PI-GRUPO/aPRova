@@ -60,8 +60,9 @@ O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
 Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem
 vínculo único do revisor Slack/GitHub, encerra sem pergunta. Os cliques passam
 pela autenticação da Central. O envio à API está desabilitado: faltam endpoint
-específico e integração do feedback com a calibração. Encerramento de SLA e atualização da mensagem
-original ainda não foram implementados.
+específico e integração do feedback com a calibração. O SLA passou a receber
+espera e decisão na instância em 2026-11-14; seus envios aguardam configuração
+de políticas. Atualização da mensagem original continua pendente.
 
 Os exports incluem feedback, suas ligações no Core/Central e leitura da
 variável no Digest. As chamadas ao feedback usam
@@ -257,9 +258,17 @@ disparam feedback. Vínculo e API continuam pendentes, conforme a documentação
 central. A instalação vem do tenant autenticado, sem substituição pelo ID
 global das consultas.
 
-Encerrar o SLA do `task_run_id` e atualizar a mensagem original são usos
-previstos, ainda sem implementação. Exigem correlação e persistência do
-estado/mensagem; não presumir que já ocorrem por receber este evento.
+Na instância, o Core também encaminha este evento ao SLA pelo nó `07M`.
+Tanto `aprovada` quanto `alteracoes_solicitadas` encerram o acompanhamento
+da combinação instalação/task_run/repositório/PR, inclusive quando a decisão
+chega antes do evento de espera. A ligação existente do feedback é preservada.
+O timer consulta os fatos persistidos antes de avisar, sem endpoint atual de
+revalidação no núcleo; eventos perdidos ainda podem deixar dados desatualizados.
+O export funcional `sla-aprovacao.json` e as duas conexões do Core estão
+disponíveis, inativos e sem credenciais/IDs locais. O workflow manual de
+testes não foi exportado. Configuração, testes e pendências estão na
+[documentação do SLA](central-slack-implementacao.md#sla--aprovação-pendente).
+Atualizar a mensagem original continua pendente.
 
 ### `dependencia_nova`
 

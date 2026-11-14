@@ -1,0 +1,24 @@
+{
+  "name": "aprova_sla_controle",
+  "columns": [
+    {
+      "name": "chave",
+      "type": "string"
+    },
+    {
+      "name": "bloqueado_ate",
+      "type": "number"
+    },
+    {
+      "name": "executor",
+      "type": "string"
+    }
+  ],
+  "initialRows": [
+    {
+      "chave": "temporizador",
+      "bloqueado_ate": 0,
+      "executor": ""
+    }
+  ]
+}

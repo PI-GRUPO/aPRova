@@ -1,7 +1,7 @@
 # Workflows do n8n
 
 Guia de execução e configuração. Estado local e pendências atualizados em
-**2026-11-08**; detalhes dos nós e contratos em
+**2026-11-14**; detalhes dos nós e contratos em
 [Central do Slack](../../docs/central-slack-implementacao.md) e
 [eventos do núcleo](../../docs/eventos-n8n.md).
 
@@ -18,6 +18,7 @@ Guia de execução e configuração. Estado local e pendências atualizados em
 | `consulta-relatorio-semanal.json` | Ferramenta de GET assinado e validação de métricas. |
 | `feedback-motivo-aprovacao.json` | Motivo de aprovação ALTO, contexto assinado e envio bloqueado até endpoint/vínculo reais. |
 | `onboarding-repositorio.json` | Consulta de proteção por repositório, criação/reutilização de lista Trello e resumo Slack. |
+| `sla-aprovacao.json` | Acompanhamento persistente de aprovação, dois limites configuráveis e escalonamento Slack. |
 
 JSONs são portáteis e inativos, sem segredos, credenciais pessoais ou dados
 fixados. `../exemplos/` contém payloads de eventos, não workflows importáveis.
@@ -28,8 +29,9 @@ nesta etapa. Nós manuais de inspeção permanecem somente na instância;
 o workflow manual de onboarding também não é exportado. Suas referências
 de canal/quadro/subworkflow usam as mesmas variáveis e ele continua inativo.
 
-O estado original foi preservado: oito workflows de produção ativos e
-Digest inativo. Os nove exports continuam inativos. Backups, credenciais e
+O estado original das demais integrações foi preservado. Com o SLA, são nove
+workflows funcionais ativos na instância e Digest inativo. Os dez exports
+continuam inativos. Backups, credenciais e
 IDs locais ficam fora do versionamento. Novas sincronizações exigem revisão
 das diferenças e autorização para alterar a instância.
 
@@ -96,8 +98,8 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 ## Importar em outra instalação
 
 1. Importe os JSONs pelo menu **Import from File**, incluindo
-   `feedback-motivo-aprovacao.json` e `onboarding-repositorio.json` antes de
-   configurar as chamadas.
+   `feedback-motivo-aprovacao.json`, `onboarding-repositorio.json` e
+   `sla-aprovacao.json` antes de configurar as chamadas.
 2. Associe Slack aos formulários da Central e aos envios do assistente;
    Gemini ao modelo; Trello aos nós `04`, `07`, `10`, `13`.
 3. Configure o ambiente acima. As credenciais GitHub são da API/worker;
@@ -105,17 +107,26 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 4. Copie os IDs gerados pela importação para `APROVA_SLACK_WORKFLOW_ID`,
    `APROVA_OSV_WORKFLOW_ID`, `APROVA_TRELLO_WORKFLOW_ID`,
    `APROVA_FEEDBACK_WORKFLOW_ID`, `APROVA_ONBOARDING_WORKFLOW_ID` e
-   `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID`. As chamadas já usam expressões;
+   `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` e `APROVA_SLA_WORKFLOW_ID`.
+   As chamadas já usam expressões;
    preserve `each`, conexões e opções de espera. Associe `slackApi` aos nós
    `08`/`15` do feedback e mantenha a API de feedback desabilitada.
 5. Crie a Data Table `aprova_osv_por_analise`, com colunas String
    `chave`/`contexto`, conforme `recursos/tabela-contexto-osv.json`.
+   Para o SLA, crie as tabelas conforme `recursos/tabela-sla-eventos.json`
+   e `recursos/tabela-sla-controle.json`. Insira uma única linha inicial de
+   controle conforme `initialRows` e preencha `APROVA_SLA_EVENTOS_TABELA_ID`
+   e `APROVA_SLA_CONTROLE_TABELA_ID` com os IDs gerados. Esses arquivos são
+   definições de recursos, não workflows importáveis nem cópias dos dados.
 6. Preencha quadro/listas `APROVA_TRELLO_*` e canal de onboarding.
    Associe Trello ao onboarding `10`/`13` e Slack ao `17`.
    Só habilite as flags de onboarding após conferir destinos e credenciais.
    Nome/App ID do Check continuam pendentes; não usar dados fictícios.
 7. Recrie o n8n para carregar variáveis e configure as URLs públicas.
    Valide antes de publicar; subworkflows devem estar disponíveis antes do Core.
+   No SLA, associe `slackApi` ao nó `T13`. Mantenha
+   `APROVA_SLA_HABILITADO=false` até acordar prazos e configurar políticas,
+   canal e responsáveis. A importação não autoriza enviar avisos reais.
 
 ## Slack e consultas
 
@@ -278,6 +289,39 @@ exigem autorização. Não sobrescrever correções com versões antigas de qual
 
 ## Contrato de configuração — 2026-11-08
 
+### Extensão SLA — 2026-11-14
+
+O workflow `aPRova | SLA | Aprovação Pendente` foi criado e publicado na
+instância, ligado às rotas de espera e decisão do Core pelo nó `07M`.
+O JSON funcional é `sla-aprovacao.json`; o Core exportado inclui as duas
+conexões de `07M`, sem mudar as rotas anteriores. Os arquivos são inativos,
+sem credenciais ou IDs locais. O workflow manual de testes permanece
+somente na instância, com tabelas próprias e Slack simulado sem rede.
+
+O SLA usa `APROVA_SLA_WORKFLOW_ID`, os dois IDs explícitos das tabelas,
+`APROVA_SLA_HABILITADO`, `APROVA_SLA_CANAL_ID` e
+`APROVA_SLA_POLITICAS_JSON`, conforme a tabela abaixo. A política é uma lista
+de objetos com `installation_id`, `repositorio`, `habilitado`,
+`primeiro_limite_minutos`, `segundo_limite_minutos`, `canal_slack` e
+`responsavel_slack`. Os limites são inteiros positivos e o segundo deve ser
+maior; ambos contam desde o início da espera, em minutos corridos.
+
+Sem valores acordados, a instalação mantém envios desabilitados e políticas
+vazias, mas registra os eventos. O timer avalia a cada minuto e não perde a
+contagem após reinício. Antes de habilitar, preencher a política e os IDs
+confirmados, recriar somente o n8n e validar os avisos em canal de teste.
+Credencial Slack e segredos existentes foram reaproveitados/preservados.
+Implementação, tabelas, testes e limites de confiabilidade estão na
+[documentação do SLA](../../docs/central-slack-implementacao.md#sla--aprovação-pendente).
+
+Os testes do export usam o código dos próprios nós, sem rede:
+
+```sh
+node --test workflows/n8n/tests/sla-aprovacao.test.cjs
+```
+
+### Configuração comum
+
 Valores vazios não autorizam publicar integrações. IDs vêm da instalação de
 destino, nunca dos exports de outra pessoa. Recriar somente `n8n-aprova`
 após mudar seu ambiente; preservar `.n8n/`. API/worker leem o ambiente ao
@@ -299,6 +343,12 @@ correspondência inequívoca na instância. Nenhum vínculo de pessoa foi inferi
 | `APROVA_TRELLO_WORKFLOW_ID` | Core → Trello | vazio; necessário nessa rota | ID da importação Trello | n8n |
 | `APROVA_FEEDBACK_WORKFLOW_ID` | Core/Central → feedback | vazio; necessário nessa rota | ID da importação feedback | n8n |
 | `APROVA_ONBOARDING_WORKFLOW_ID` | Core → onboarding | vazio; necessário nessa rota | ID da importação onboarding | n8n |
+| `APROVA_SLA_WORKFLOW_ID` | Core → SLA, espera e decisão | vazio; necessário na instância com a rota SLA | ID da importação SLA | n8n |
+| `APROVA_SLA_EVENTOS_TABELA_ID` | SLA: histórico persistente | vazio; obrigatório | ID da Data Table `aprova_sla_eventos` | n8n |
+| `APROVA_SLA_CONTROLE_TABELA_ID` | SLA: reserva do temporizador | vazio; obrigatório | ID da Data Table `aprova_sla_controle` | n8n |
+| `APROVA_SLA_HABILITADO` | SLA: habilitar avisos | `false`; libera somente políticas habilitadas | Decisão da equipe | n8n |
+| `APROVA_SLA_CANAL_ID` | SLA: canal padrão | vazio; política pode definir canal próprio | Canal autorizado | n8n |
+| `APROVA_SLA_POLITICAS_JSON` | SLA: limites e responsável por instalação/repositório | `[]`; sem política não há envio | Política e identidades confirmadas | n8n |
 | `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` | Assistente → relatório | vazio; necessário para ferramenta | ID da importação consulta | n8n |
 | `APROVA_SLACK_TEAM_ID` | Assistente/feedback: workspace permitido | vazio bloqueia | Slack workspace | n8n |
 | `APROVA_SLACK_APP_ID` | Assistente/feedback: aplicativo permitido | vazio bloqueia | Slack App | n8n |

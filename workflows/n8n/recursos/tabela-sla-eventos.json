@@ -1,0 +1,25 @@
+{
+  "name": "aprova_sla_eventos",
+  "columns": [
+    {
+      "name": "chave",
+      "type": "string"
+    },
+    {
+      "name": "evento_id",
+      "type": "string"
+    },
+    {
+      "name": "tipo",
+      "type": "string"
+    },
+    {
+      "name": "ocorrido_em",
+      "type": "date"
+    },
+    {
+      "name": "contexto",
+      "type": "string"
+    }
+  ]
+}

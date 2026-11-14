@@ -1,0 +1,748 @@
+{
+  "name": "aPRova | SLA | Aprovação Pendente",
+  "description": "Acompanha aprovação ALTO por eventos do Core, com timer persistente, dois limites configuráveis e escalonamento Slack. Sem política/responsável, registra pendência; não altera risco.",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "b85bcbdf-8778-4d98-ba15-4318536fc964",
+      "name": "E01 | Receber evento normalizado",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function validarEvento(e) {\n const tipos=['aguardando_aprovacao','aprovacao_registrada'];\n if(!tipos.includes(e.evento?.tipo)) return null;\n const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);\n if(e.meta?.origem_verificada!==true||e.meta?.validacao?.valido!==true||e.meta?.versao_evento!==1||!Number.isSafeInteger(e.meta?.tenant_id)||e.meta.tenant_id<=0||!uuid(e.meta.id_evento)||!uuid(e.meta.execution_id))throw new Error('SLA exige evento autenticado e normalizado pelo Core.');\n if(!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(e.repositorio?.full_name||'')||!Number.isSafeInteger(e.pr?.numero)||e.pr.numero<=0||!Number.isFinite(Date.parse(e.meta.ocorrido_em)))throw new Error('Identidade ou horário do evento inválido.');\n const inicio=e.evento.tipo==='aguardando_aprovacao';\n if(inicio&&e.risco?.nivel!=='ALTO')throw new Error('A espera deve ser de risco ALTO informado pelo núcleo.');\n if(!inicio&&!['aprovada','alteracoes_solicitadas'].includes(e.aprovacao?.decisao))throw new Error('Decisão de encerramento inválida.');\n const contexto={installation_id:e.meta.tenant_id,task_run_id:e.meta.execution_id,repositorio:e.repositorio.full_name,numero_pr:e.pr.numero,url_pr:'https://github.com/'+e.repositorio.full_name+'/pull/'+e.pr.numero,decisao:inicio?null:e.aprovacao.decisao};\n return {chave:JSON.stringify([contexto.installation_id,contexto.task_run_id,contexto.repositorio.toLowerCase(),contexto.numero_pr]),evento_id:e.meta.id_evento,tipo:inicio?'inicio':'encerrado',ocorrido_em:new Date(e.meta.ocorrido_em).toISOString(),contexto:JSON.stringify(contexto)};\n}\n\nfunction politicaPara(contexto, env) {\n let politicas;\n try{politicas=JSON.parse(env.APROVA_SLA_POLITICAS_JSON||'[]');}catch{ return {valida:false,motivo:'APROVA_SLA_POLITICAS_JSON inválido.'}; }\n if(!Array.isArray(politicas))return {valida:false,motivo:'Políticas devem ser uma lista.'};\n const encontrados=politicas.filter(p=>p&&p.installation_id===contexto.installation_id&&typeof p.repositorio==='string'&&p.repositorio.toLowerCase()===contexto.repositorio.toLowerCase());\n if(encontrados.length!==1)return {valida:false,motivo:encontrados.length?'Política ambígua.':'Política do repositório não cadastrada.'};\n const p=encontrados[0],canal=p.canal_slack||env.APROVA_SLA_CANAL_ID||'';\n if(env.APROVA_SLA_HABILITADO!=='true'||p.habilitado!==true)return {valida:false,motivo:'Envios do SLA desabilitados por configuração.'};\n if(!Number.isSafeInteger(p.primeiro_limite_minutos)||p.primeiro_limite_minutos<=0||!Number.isSafeInteger(p.segundo_limite_minutos)||p.segundo_limite_minutos<=p.primeiro_limite_minutos)return {valida:false,motivo:'Definir dois limites positivos, com o segundo maior que o primeiro.'};\n if(!/^[CG][A-Z0-9]{8,}$/.test(canal))return {valida:false,motivo:'Canal Slack do SLA não configurado.'};\n if(p.responsavel_slack&&!/^[UW][A-Z0-9]{8,}$/.test(p.responsavel_slack))return {valida:false,motivo:'ID Slack do responsável inválido; não inferir identidade.'};\n return {valida:true,primeiro:p.primeiro_limite_minutos,segundo:p.segundo_limite_minutos,canal,responsavel:p.responsavel_slack||null};\n}\n\nfunction lerRegistros(rows) {\n const vistos=new Map();\n for(const r of rows){\n  if(!r.chave&&!r.tipo&&!r.evento_id)continue;\n  let c;try{c=JSON.parse(r.contexto);}catch{throw new Error('Registro SLA inválido; notificações interrompidas para preservar encerramentos.');}\n  const chave=JSON.stringify([c.installation_id,c.task_run_id,String(c.repositorio).toLowerCase(),c.numero_pr]);\n  if(chave!==r.chave||!Number.isFinite(Date.parse(r.ocorrido_em))||!['inicio','encerrado','reservado_1','reservado_2','enviado_1','enviado_2','incerto_1','incerto_2','cancelado_1','cancelado_2'].includes(r.tipo))throw new Error('Contrato do histórico SLA inválido.');\n  const chaveEvento=r.chave+':'+r.tipo+':'+r.evento_id,anterior=vistos.get(chaveEvento);\n  if(!anterior||Date.parse(r.ocorrido_em)<Date.parse(anterior.ocorrido_em))vistos.set(chaveEvento,{...r,c});\n }\n return [...vistos.values()];\n}\n\nfunction planejar(rows,env,agora) {\n const registros=lerRegistros(rows),grupos=new Map(),ultimas=new Map();\n for(const r of registros){if(!grupos.has(r.chave))grupos.set(r.chave,[]);grupos.get(r.chave).push(r);if(r.tipo==='inicio'){const pr=JSON.stringify([r.c.installation_id,r.c.repositorio.toLowerCase(),r.c.numero_pr]);const a=ultimas.get(pr);if(!a||Date.parse(r.ocorrido_em)>a.tempo)ultimas.set(pr,{chave:r.chave,tempo:Date.parse(r.ocorrido_em)});}}\n const acoes=[],pendencias=[];let encerrados=0;\n for(const [chave,rs] of grupos){\n  if(rs.some(r=>r.tipo==='encerrado')){encerrados++;continue;}\n  const inicios=rs.filter(r=>r.tipo==='inicio').sort((a,b)=>Date.parse(a.ocorrido_em)-Date.parse(b.ocorrido_em));if(!inicios.length)continue;\n  const inicio=inicios[0],c=inicio.c,pr=JSON.stringify([c.installation_id,c.repositorio.toLowerCase(),c.numero_pr]);if(ultimas.get(pr)?.chave!==chave)continue;\n  const p=politicaPara(c,env);if(!p.valida){pendencias.push({chave,motivo:p.motivo});continue;}\n  const tempo=Date.parse(inicio.ocorrido_em);if(tempo>agora+300000){pendencias.push({chave,motivo:'Horário de início está no futuro.'});continue;}\n  const tipos=new Set(rs.map(r=>r.tipo));let etapa=null;\n  if(agora>=tempo+p.primeiro*60000&&!tipos.has('reservado_1')&&!tipos.has('enviado_1')&&!tipos.has('incerto_1')&&!tipos.has('cancelado_1'))etapa=1;\n  else if(agora>=tempo+p.segundo*60000&&tipos.has('enviado_1')&&!tipos.has('reservado_2')&&!tipos.has('enviado_2')&&!tipos.has('incerto_2')&&!tipos.has('cancelado_2'))etapa=2;\n  if(etapa===2&&!p.responsavel){pendencias.push({chave,motivo:'Segundo limite atingido; cadastrar responsável Slack do repositório.'});continue;}\n  if(etapa)acoes.push({chave,etapa,contexto:c,inicio:inicio.ocorrido_em,politica:p,prazo:new Date(tempo+(etapa===1?p.primeiro:p.segundo)*60000).toISOString()});\n }\n return {acoes:acoes.slice(0,10),pendencias:pendencias.slice(0,50),pendencias_total:pendencias.length,encerrados,registros:registros.length,acoes_restantes:Math.max(0,acoes.length-10)};\n}\n\nfunction revalidar(candidato,rows,env,agora,lease) {\n const registros=lerRegistros(rows).filter(r=>r.chave===candidato.chave);\n if(registros.some(r=>r.tipo==='encerrado'))return {...candidato,enviar:false,status:'encerrado_antes_do_aviso'};\n const p=politicaPara(candidato.contexto,env);if(!p.valida)return {...candidato,enviar:false,status:'configuracao_pendente',motivo:p.motivo};\n if(agora>lease-60000)return {...candidato,enviar:false,status:'controle_expirando'};\n if(!registros.some(r=>r.tipo==='inicio'))return {...candidato,enviar:false,status:'inicio_nao_encontrado'};\n if(registros.some(r=>r.tipo==='reservado_'+candidato.etapa||r.tipo==='enviado_'+candidato.etapa||r.tipo==='incerto_'+candidato.etapa||r.tipo==='cancelado_'+candidato.etapa))return {...candidato,enviar:false,status:'aviso_ja_processado'};\n const limite=candidato.etapa===1?p.primeiro:p.segundo;\n if(agora<Date.parse(candidato.inicio)+limite*60000)return {...candidato,enviar:false,status:'prazo_ainda_nao_atingido'};\n if(candidato.etapa===2&&(!p.responsavel||!registros.some(r=>r.tipo==='enviado_1')))return {...candidato,enviar:false,status:'escalonamento_pendente'};\n const c=candidato.contexto;\n const texto=(candidato.etapa===2?'<@'+p.responsavel+'> ':'')+'aPRova — '+(candidato.etapa===1?'lembrete de aprovação':'escalonamento de aprovação')+'\\nPR: '+c.repositorio+' #'+c.numero_pr+'\\n'+c.url_pr+'\\nAguardando decisão desde '+candidato.inicio+'.\\nLimite configurado: '+limite+' minutos desde o início.\\nPendência conforme os eventos recebidos pelo n8n; confirme o estado atual da PR antes de agir.';\n return {...candidato,politica:p,enviar:true,status:'pronto_para_avisar',texto,revalidacao_nucleo:{status:'indisponivel',motivo:'Endpoint de consulta do estado atual ainda não existe; acompanhamento baseado em eventos.'}};\n}\n\nfunction confirmarEnvio(candidato,resposta) {\n const ts=resposta.ts||resposta.message_timestamp;\n const confirmado=resposta.ok!==false&&resposta.channel===candidato.politica.canal&&typeof ts==='string'&&/^\\d+\\.\\d+$/.test(ts);\n return {chave:candidato.chave,evento_id:'sla:'+candidato.chave+':'+candidato.etapa+':resultado',tipo:(confirmado?'enviado_':'incerto_')+candidato.etapa,ocorrido_em:new Date().toISOString(),contexto:JSON.stringify({...candidato.contexto,slack:confirmado?{canal:resposta.channel,ts}:null,resultado:confirmado?'confirmado':'envio_nao_confirmado_sem_retry_automatico'})};\n}\n\nconst entradas=$input.all();if(entradas.length!==1)throw new Error('Chamador deve usar modo each.');const r=validarEvento(entradas[0].json);return r?[{json:r}]:[];"
+      },
+      "id": "a1aa86e4-f2ee-4621-b045-e20a87396f6c",
+      "name": "E02 | Validar e registrar fato",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        0
+      ],
+      "notes": "Contrato do Core: meta.execution_id identifica o task_run. Decisões são fatos persistentes, inclusive quando chegam antes da espera. Eventos não fornecem políticas ou responsáveis."
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_EVENTOS_TABELA_ID }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chave": "={{ $json.chave }}",
+            "evento_id": "={{ $json.evento_id }}",
+            "tipo": "={{ $json.tipo }}",
+            "ocorrido_em": "={{ $json.ocorrido_em }}",
+            "contexto": "={{ $json.contexto }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "840668fd-be7c-4d3d-80ff-6569c1cad2ad",
+      "name": "E03 | Persistir evento SLA",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r=$input.first().json;return [{json:{sla:{status:r.tipo==='encerrado'?'encerramento_registrado':'acompanhamento_registrado',chave:r.chave,tipo:r.tipo,ocorrido_em:r.ocorrido_em,politica:'A contagem usa o horário do evento; o temporizador avalia a política configurada no ambiente.'}}}];"
+      },
+      "id": "f7f25bad-3621-40d2-8528-169202d0c12f",
+      "name": "E04 | Resultado do acompanhamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "b29cb0d0-b943-4f12-b3eb-7182875becc2",
+      "name": "T01 | Timer a cada minuto",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_CONTROLE_TABELA_ID }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "keyValue": "temporizador"
+            },
+            {
+              "keyName": "bloqueado_ate",
+              "condition": "lt",
+              "keyValue": "={{ $now.toMillis() }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "bloqueado_ate": "={{ $now.toMillis() + 900000 }}",
+            "executor": "={{ String($execution.id) }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "6fc9fb86-9b30-4ba2-9f5c-9d1002edbede",
+      "name": "T02 | Reservar ciclo do temporizador",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_EVENTOS_TABELA_ID }}"
+        },
+        "returnAll": true
+      },
+      "id": "a20752fa-e2b4-4483-b9a4-155c1de1f96f",
+      "name": "T03 | Ler histórico persistente",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function validarEvento(e) {\n const tipos=['aguardando_aprovacao','aprovacao_registrada'];\n if(!tipos.includes(e.evento?.tipo)) return null;\n const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);\n if(e.meta?.origem_verificada!==true||e.meta?.validacao?.valido!==true||e.meta?.versao_evento!==1||!Number.isSafeInteger(e.meta?.tenant_id)||e.meta.tenant_id<=0||!uuid(e.meta.id_evento)||!uuid(e.meta.execution_id))throw new Error('SLA exige evento autenticado e normalizado pelo Core.');\n if(!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(e.repositorio?.full_name||'')||!Number.isSafeInteger(e.pr?.numero)||e.pr.numero<=0||!Number.isFinite(Date.parse(e.meta.ocorrido_em)))throw new Error('Identidade ou horário do evento inválido.');\n const inicio=e.evento.tipo==='aguardando_aprovacao';\n if(inicio&&e.risco?.nivel!=='ALTO')throw new Error('A espera deve ser de risco ALTO informado pelo núcleo.');\n if(!inicio&&!['aprovada','alteracoes_solicitadas'].includes(e.aprovacao?.decisao))throw new Error('Decisão de encerramento inválida.');\n const contexto={installation_id:e.meta.tenant_id,task_run_id:e.meta.execution_id,repositorio:e.repositorio.full_name,numero_pr:e.pr.numero,url_pr:'https://github.com/'+e.repositorio.full_name+'/pull/'+e.pr.numero,decisao:inicio?null:e.aprovacao.decisao};\n return {chave:JSON.stringify([contexto.installation_id,contexto.task_run_id,contexto.repositorio.toLowerCase(),contexto.numero_pr]),evento_id:e.meta.id_evento,tipo:inicio?'inicio':'encerrado',ocorrido_em:new Date(e.meta.ocorrido_em).toISOString(),contexto:JSON.stringify(contexto)};\n}\n\nfunction politicaPara(contexto, env) {\n let politicas;\n try{politicas=JSON.parse(env.APROVA_SLA_POLITICAS_JSON||'[]');}catch{ return {valida:false,motivo:'APROVA_SLA_POLITICAS_JSON inválido.'}; }\n if(!Array.isArray(politicas))return {valida:false,motivo:'Políticas devem ser uma lista.'};\n const encontrados=politicas.filter(p=>p&&p.installation_id===contexto.installation_id&&typeof p.repositorio==='string'&&p.repositorio.toLowerCase()===contexto.repositorio.toLowerCase());\n if(encontrados.length!==1)return {valida:false,motivo:encontrados.length?'Política ambígua.':'Política do repositório não cadastrada.'};\n const p=encontrados[0],canal=p.canal_slack||env.APROVA_SLA_CANAL_ID||'';\n if(env.APROVA_SLA_HABILITADO!=='true'||p.habilitado!==true)return {valida:false,motivo:'Envios do SLA desabilitados por configuração.'};\n if(!Number.isSafeInteger(p.primeiro_limite_minutos)||p.primeiro_limite_minutos<=0||!Number.isSafeInteger(p.segundo_limite_minutos)||p.segundo_limite_minutos<=p.primeiro_limite_minutos)return {valida:false,motivo:'Definir dois limites positivos, com o segundo maior que o primeiro.'};\n if(!/^[CG][A-Z0-9]{8,}$/.test(canal))return {valida:false,motivo:'Canal Slack do SLA não configurado.'};\n if(p.responsavel_slack&&!/^[UW][A-Z0-9]{8,}$/.test(p.responsavel_slack))return {valida:false,motivo:'ID Slack do responsável inválido; não inferir identidade.'};\n return {valida:true,primeiro:p.primeiro_limite_minutos,segundo:p.segundo_limite_minutos,canal,responsavel:p.responsavel_slack||null};\n}\n\nfunction lerRegistros(rows) {\n const vistos=new Map();\n for(const r of rows){\n  if(!r.chave&&!r.tipo&&!r.evento_id)continue;\n  let c;try{c=JSON.parse(r.contexto);}catch{throw new Error('Registro SLA inválido; notificações interrompidas para preservar encerramentos.');}\n  const chave=JSON.stringify([c.installation_id,c.task_run_id,String(c.repositorio).toLowerCase(),c.numero_pr]);\n  if(chave!==r.chave||!Number.isFinite(Date.parse(r.ocorrido_em))||!['inicio','encerrado','reservado_1','reservado_2','enviado_1','enviado_2','incerto_1','incerto_2','cancelado_1','cancelado_2'].includes(r.tipo))throw new Error('Contrato do histórico SLA inválido.');\n  const chaveEvento=r.chave+':'+r.tipo+':'+r.evento_id,anterior=vistos.get(chaveEvento);\n  if(!anterior||Date.parse(r.ocorrido_em)<Date.parse(anterior.ocorrido_em))vistos.set(chaveEvento,{...r,c});\n }\n return [...vistos.values()];\n}\n\nfunction planejar(rows,env,agora) {\n const registros=lerRegistros(rows),grupos=new Map(),ultimas=new Map();\n for(const r of registros){if(!grupos.has(r.chave))grupos.set(r.chave,[]);grupos.get(r.chave).push(r);if(r.tipo==='inicio'){const pr=JSON.stringify([r.c.installation_id,r.c.repositorio.toLowerCase(),r.c.numero_pr]);const a=ultimas.get(pr);if(!a||Date.parse(r.ocorrido_em)>a.tempo)ultimas.set(pr,{chave:r.chave,tempo:Date.parse(r.ocorrido_em)});}}\n const acoes=[],pendencias=[];let encerrados=0;\n for(const [chave,rs] of grupos){\n  if(rs.some(r=>r.tipo==='encerrado')){encerrados++;continue;}\n  const inicios=rs.filter(r=>r.tipo==='inicio').sort((a,b)=>Date.parse(a.ocorrido_em)-Date.parse(b.ocorrido_em));if(!inicios.length)continue;\n  const inicio=inicios[0],c=inicio.c,pr=JSON.stringify([c.installation_id,c.repositorio.toLowerCase(),c.numero_pr]);if(ultimas.get(pr)?.chave!==chave)continue;\n  const p=politicaPara(c,env);if(!p.valida){pendencias.push({chave,motivo:p.motivo});continue;}\n  const tempo=Date.parse(inicio.ocorrido_em);if(tempo>agora+300000){pendencias.push({chave,motivo:'Horário de início está no futuro.'});continue;}\n  const tipos=new Set(rs.map(r=>r.tipo));let etapa=null;\n  if(agora>=tempo+p.primeiro*60000&&!tipos.has('reservado_1')&&!tipos.has('enviado_1')&&!tipos.has('incerto_1')&&!tipos.has('cancelado_1'))etapa=1;\n  else if(agora>=tempo+p.segundo*60000&&tipos.has('enviado_1')&&!tipos.has('reservado_2')&&!tipos.has('enviado_2')&&!tipos.has('incerto_2')&&!tipos.has('cancelado_2'))etapa=2;\n  if(etapa===2&&!p.responsavel){pendencias.push({chave,motivo:'Segundo limite atingido; cadastrar responsável Slack do repositório.'});continue;}\n  if(etapa)acoes.push({chave,etapa,contexto:c,inicio:inicio.ocorrido_em,politica:p,prazo:new Date(tempo+(etapa===1?p.primeiro:p.segundo)*60000).toISOString()});\n }\n return {acoes:acoes.slice(0,10),pendencias:pendencias.slice(0,50),pendencias_total:pendencias.length,encerrados,registros:registros.length,acoes_restantes:Math.max(0,acoes.length-10)};\n}\n\nfunction revalidar(candidato,rows,env,agora,lease) {\n const registros=lerRegistros(rows).filter(r=>r.chave===candidato.chave);\n if(registros.some(r=>r.tipo==='encerrado'))return {...candidato,enviar:false,status:'encerrado_antes_do_aviso'};\n const p=politicaPara(candidato.contexto,env);if(!p.valida)return {...candidato,enviar:false,status:'configuracao_pendente',motivo:p.motivo};\n if(agora>lease-60000)return {...candidato,enviar:false,status:'controle_expirando'};\n if(!registros.some(r=>r.tipo==='inicio'))return {...candidato,enviar:false,status:'inicio_nao_encontrado'};\n if(registros.some(r=>r.tipo==='reservado_'+candidato.etapa||r.tipo==='enviado_'+candidato.etapa||r.tipo==='incerto_'+candidato.etapa||r.tipo==='cancelado_'+candidato.etapa))return {...candidato,enviar:false,status:'aviso_ja_processado'};\n const limite=candidato.etapa===1?p.primeiro:p.segundo;\n if(agora<Date.parse(candidato.inicio)+limite*60000)return {...candidato,enviar:false,status:'prazo_ainda_nao_atingido'};\n if(candidato.etapa===2&&(!p.responsavel||!registros.some(r=>r.tipo==='enviado_1')))return {...candidato,enviar:false,status:'escalonamento_pendente'};\n const c=candidato.contexto;\n const texto=(candidato.etapa===2?'<@'+p.responsavel+'> ':'')+'aPRova — '+(candidato.etapa===1?'lembrete de aprovação':'escalonamento de aprovação')+'\\nPR: '+c.repositorio+' #'+c.numero_pr+'\\n'+c.url_pr+'\\nAguardando decisão desde '+candidato.inicio+'.\\nLimite configurado: '+limite+' minutos desde o início.\\nPendência conforme os eventos recebidos pelo n8n; confirme o estado atual da PR antes de agir.';\n return {...candidato,politica:p,enviar:true,status:'pronto_para_avisar',texto,revalidacao_nucleo:{status:'indisponivel',motivo:'Endpoint de consulta do estado atual ainda não existe; acompanhamento baseado em eventos.'}};\n}\n\nfunction confirmarEnvio(candidato,resposta) {\n const ts=resposta.ts||resposta.message_timestamp;\n const confirmado=resposta.ok!==false&&resposta.channel===candidato.politica.canal&&typeof ts==='string'&&/^\\d+\\.\\d+$/.test(ts);\n return {chave:candidato.chave,evento_id:'sla:'+candidato.chave+':'+candidato.etapa+':resultado',tipo:(confirmado?'enviado_':'incerto_')+candidato.etapa,ocorrido_em:new Date().toISOString(),contexto:JSON.stringify({...candidato.contexto,slack:confirmado?{canal:resposta.channel,ts}:null,resultado:confirmado?'confirmado':'envio_nao_confirmado_sem_retry_automatico'})};\n}\n\nconst plano=planejar($input.all().map(i=>i.json),$env,Date.now());return [{json:{...plano,controle:$('T02 | Reservar ciclo do temporizador').first().json}}];"
+      },
+      "id": "45b4787a-b3b0-49f2-8459-7bea9b030003",
+      "name": "T04 | Calcular prazos e pendências",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        304
+      ],
+      "notes": "Políticas em APROVA_SLA_POLITICAS_JSON; flags e destinos no ambiente. Os dois limites são absolutos desde ocorrido_em. Sem política válida, mantém a pendência sem enviar. Máximo de dez avisos por ciclo; avisos em atraso são retomados após reinício."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.acoes.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9fa768b3-e207-4066-90c0-cbe6ea64cf7c",
+      "name": "T05 | Há avisos vencidos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        528,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.acoes.map(a=>({json:a}));"
+      },
+      "id": "83ff4e88-45d9-42bf-966f-22e343d4d3ee",
+      "name": "T06 | Separar avisos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_CONTROLE_TABELA_ID }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "keyValue": "temporizador"
+            },
+            {
+              "keyName": "executor",
+              "keyValue": "={{ String($execution.id) }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "bloqueado_ate": 0,
+            "executor": ""
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "8bc6b406-3847-4a19-8a5e-bc9a8010a691",
+      "name": "T90 | Liberar ciclo do temporizador",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_EVENTOS_TABELA_ID }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "keyValue": "={{ $json.chave }}"
+            }
+          ]
+        },
+        "returnAll": true
+      },
+      "id": "f2a0fc7f-5cea-43f7-8aa8-cadc1ecdea09",
+      "name": "T08 | Reler fatos antes do aviso",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        304
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function validarEvento(e) {\n const tipos=['aguardando_aprovacao','aprovacao_registrada'];\n if(!tipos.includes(e.evento?.tipo)) return null;\n const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);\n if(e.meta?.origem_verificada!==true||e.meta?.validacao?.valido!==true||e.meta?.versao_evento!==1||!Number.isSafeInteger(e.meta?.tenant_id)||e.meta.tenant_id<=0||!uuid(e.meta.id_evento)||!uuid(e.meta.execution_id))throw new Error('SLA exige evento autenticado e normalizado pelo Core.');\n if(!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(e.repositorio?.full_name||'')||!Number.isSafeInteger(e.pr?.numero)||e.pr.numero<=0||!Number.isFinite(Date.parse(e.meta.ocorrido_em)))throw new Error('Identidade ou horário do evento inválido.');\n const inicio=e.evento.tipo==='aguardando_aprovacao';\n if(inicio&&e.risco?.nivel!=='ALTO')throw new Error('A espera deve ser de risco ALTO informado pelo núcleo.');\n if(!inicio&&!['aprovada','alteracoes_solicitadas'].includes(e.aprovacao?.decisao))throw new Error('Decisão de encerramento inválida.');\n const contexto={installation_id:e.meta.tenant_id,task_run_id:e.meta.execution_id,repositorio:e.repositorio.full_name,numero_pr:e.pr.numero,url_pr:'https://github.com/'+e.repositorio.full_name+'/pull/'+e.pr.numero,decisao:inicio?null:e.aprovacao.decisao};\n return {chave:JSON.stringify([contexto.installation_id,contexto.task_run_id,contexto.repositorio.toLowerCase(),contexto.numero_pr]),evento_id:e.meta.id_evento,tipo:inicio?'inicio':'encerrado',ocorrido_em:new Date(e.meta.ocorrido_em).toISOString(),contexto:JSON.stringify(contexto)};\n}\n\nfunction politicaPara(contexto, env) {\n let politicas;\n try{politicas=JSON.parse(env.APROVA_SLA_POLITICAS_JSON||'[]');}catch{ return {valida:false,motivo:'APROVA_SLA_POLITICAS_JSON inválido.'}; }\n if(!Array.isArray(politicas))return {valida:false,motivo:'Políticas devem ser uma lista.'};\n const encontrados=politicas.filter(p=>p&&p.installation_id===contexto.installation_id&&typeof p.repositorio==='string'&&p.repositorio.toLowerCase()===contexto.repositorio.toLowerCase());\n if(encontrados.length!==1)return {valida:false,motivo:encontrados.length?'Política ambígua.':'Política do repositório não cadastrada.'};\n const p=encontrados[0],canal=p.canal_slack||env.APROVA_SLA_CANAL_ID||'';\n if(env.APROVA_SLA_HABILITADO!=='true'||p.habilitado!==true)return {valida:false,motivo:'Envios do SLA desabilitados por configuração.'};\n if(!Number.isSafeInteger(p.primeiro_limite_minutos)||p.primeiro_limite_minutos<=0||!Number.isSafeInteger(p.segundo_limite_minutos)||p.segundo_limite_minutos<=p.primeiro_limite_minutos)return {valida:false,motivo:'Definir dois limites positivos, com o segundo maior que o primeiro.'};\n if(!/^[CG][A-Z0-9]{8,}$/.test(canal))return {valida:false,motivo:'Canal Slack do SLA não configurado.'};\n if(p.responsavel_slack&&!/^[UW][A-Z0-9]{8,}$/.test(p.responsavel_slack))return {valida:false,motivo:'ID Slack do responsável inválido; não inferir identidade.'};\n return {valida:true,primeiro:p.primeiro_limite_minutos,segundo:p.segundo_limite_minutos,canal,responsavel:p.responsavel_slack||null};\n}\n\nfunction lerRegistros(rows) {\n const vistos=new Map();\n for(const r of rows){\n  if(!r.chave&&!r.tipo&&!r.evento_id)continue;\n  let c;try{c=JSON.parse(r.contexto);}catch{throw new Error('Registro SLA inválido; notificações interrompidas para preservar encerramentos.');}\n  const chave=JSON.stringify([c.installation_id,c.task_run_id,String(c.repositorio).toLowerCase(),c.numero_pr]);\n  if(chave!==r.chave||!Number.isFinite(Date.parse(r.ocorrido_em))||!['inicio','encerrado','reservado_1','reservado_2','enviado_1','enviado_2','incerto_1','incerto_2','cancelado_1','cancelado_2'].includes(r.tipo))throw new Error('Contrato do histórico SLA inválido.');\n  const chaveEvento=r.chave+':'+r.tipo+':'+r.evento_id,anterior=vistos.get(chaveEvento);\n  if(!anterior||Date.parse(r.ocorrido_em)<Date.parse(anterior.ocorrido_em))vistos.set(chaveEvento,{...r,c});\n }\n return [...vistos.values()];\n}\n\nfunction planejar(rows,env,agora) {\n const registros=lerRegistros(rows),grupos=new Map(),ultimas=new Map();\n for(const r of registros){if(!grupos.has(r.chave))grupos.set(r.chave,[]);grupos.get(r.chave).push(r);if(r.tipo==='inicio'){const pr=JSON.stringify([r.c.installation_id,r.c.repositorio.toLowerCase(),r.c.numero_pr]);const a=ultimas.get(pr);if(!a||Date.parse(r.ocorrido_em)>a.tempo)ultimas.set(pr,{chave:r.chave,tempo:Date.parse(r.ocorrido_em)});}}\n const acoes=[],pendencias=[];let encerrados=0;\n for(const [chave,rs] of grupos){\n  if(rs.some(r=>r.tipo==='encerrado')){encerrados++;continue;}\n  const inicios=rs.filter(r=>r.tipo==='inicio').sort((a,b)=>Date.parse(a.ocorrido_em)-Date.parse(b.ocorrido_em));if(!inicios.length)continue;\n  const inicio=inicios[0],c=inicio.c,pr=JSON.stringify([c.installation_id,c.repositorio.toLowerCase(),c.numero_pr]);if(ultimas.get(pr)?.chave!==chave)continue;\n  const p=politicaPara(c,env);if(!p.valida){pendencias.push({chave,motivo:p.motivo});continue;}\n  const tempo=Date.parse(inicio.ocorrido_em);if(tempo>agora+300000){pendencias.push({chave,motivo:'Horário de início está no futuro.'});continue;}\n  const tipos=new Set(rs.map(r=>r.tipo));let etapa=null;\n  if(agora>=tempo+p.primeiro*60000&&!tipos.has('reservado_1')&&!tipos.has('enviado_1')&&!tipos.has('incerto_1')&&!tipos.has('cancelado_1'))etapa=1;\n  else if(agora>=tempo+p.segundo*60000&&tipos.has('enviado_1')&&!tipos.has('reservado_2')&&!tipos.has('enviado_2')&&!tipos.has('incerto_2')&&!tipos.has('cancelado_2'))etapa=2;\n  if(etapa===2&&!p.responsavel){pendencias.push({chave,motivo:'Segundo limite atingido; cadastrar responsável Slack do repositório.'});continue;}\n  if(etapa)acoes.push({chave,etapa,contexto:c,inicio:inicio.ocorrido_em,politica:p,prazo:new Date(tempo+(etapa===1?p.primeiro:p.segundo)*60000).toISOString()});\n }\n return {acoes:acoes.slice(0,10),pendencias:pendencias.slice(0,50),pendencias_total:pendencias.length,encerrados,registros:registros.length,acoes_restantes:Math.max(0,acoes.length-10)};\n}\n\nfunction revalidar(candidato,rows,env,agora,lease) {\n const registros=lerRegistros(rows).filter(r=>r.chave===candidato.chave);\n if(registros.some(r=>r.tipo==='encerrado'))return {...candidato,enviar:false,status:'encerrado_antes_do_aviso'};\n const p=politicaPara(candidato.contexto,env);if(!p.valida)return {...candidato,enviar:false,status:'configuracao_pendente',motivo:p.motivo};\n if(agora>lease-60000)return {...candidato,enviar:false,status:'controle_expirando'};\n if(!registros.some(r=>r.tipo==='inicio'))return {...candidato,enviar:false,status:'inicio_nao_encontrado'};\n if(registros.some(r=>r.tipo==='reservado_'+candidato.etapa||r.tipo==='enviado_'+candidato.etapa||r.tipo==='incerto_'+candidato.etapa||r.tipo==='cancelado_'+candidato.etapa))return {...candidato,enviar:false,status:'aviso_ja_processado'};\n const limite=candidato.etapa===1?p.primeiro:p.segundo;\n if(agora<Date.parse(candidato.inicio)+limite*60000)return {...candidato,enviar:false,status:'prazo_ainda_nao_atingido'};\n if(candidato.etapa===2&&(!p.responsavel||!registros.some(r=>r.tipo==='enviado_1')))return {...candidato,enviar:false,status:'escalonamento_pendente'};\n const c=candidato.contexto;\n const texto=(candidato.etapa===2?'<@'+p.responsavel+'> ':'')+'aPRova — '+(candidato.etapa===1?'lembrete de aprovação':'escalonamento de aprovação')+'\\nPR: '+c.repositorio+' #'+c.numero_pr+'\\n'+c.url_pr+'\\nAguardando decisão desde '+candidato.inicio+'.\\nLimite configurado: '+limite+' minutos desde o início.\\nPendência conforme os eventos recebidos pelo n8n; confirme o estado atual da PR antes de agir.';\n return {...candidato,politica:p,enviar:true,status:'pronto_para_avisar',texto,revalidacao_nucleo:{status:'indisponivel',motivo:'Endpoint de consulta do estado atual ainda não existe; acompanhamento baseado em eventos.'}};\n}\n\nfunction confirmarEnvio(candidato,resposta) {\n const ts=resposta.ts||resposta.message_timestamp;\n const confirmado=resposta.ok!==false&&resposta.channel===candidato.politica.canal&&typeof ts==='string'&&/^\\d+\\.\\d+$/.test(ts);\n return {chave:candidato.chave,evento_id:'sla:'+candidato.chave+':'+candidato.etapa+':resultado',tipo:(confirmado?'enviado_':'incerto_')+candidato.etapa,ocorrido_em:new Date().toISOString(),contexto:JSON.stringify({...candidato.contexto,slack:confirmado?{canal:resposta.channel,ts}:null,resultado:confirmado?'confirmado':'envio_nao_confirmado_sem_retry_automatico'})};\n}\n\nconst a=$('T07 | Um aviso por vez').itemMatching(0).json;const controle=$('T02 | Reservar ciclo do temporizador').first().json;return [{json:revalidar(a,$input.all().map(i=>i.json),$env,Date.now(),controle.bloqueado_ate)}];"
+      },
+      "id": "512eed3f-bc44-4d37-a670-01b627daf28e",
+      "name": "T09 | Cancelar se houve decisão",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.enviar === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0c3d5f7a-8203-4a2a-9fd5-3b2ce1047a39",
+      "name": "T10 | Aviso ainda elegível",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        272,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const a=$input.first().json;return [{json:{chave:a.chave,evento_id:'sla:'+a.chave+':'+a.etapa+':reserva',tipo:'reservado_'+a.etapa,ocorrido_em:new Date().toISOString(),contexto:JSON.stringify(a.contexto)}}];"
+      },
+      "id": "8ec86518-bbc4-48f3-9d1a-1684301629c3",
+      "name": "T11 | Preparar reserva de envio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_EVENTOS_TABELA_ID }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chave": "={{ $json.chave }}",
+            "evento_id": "={{ $json.evento_id }}",
+            "tipo": "={{ $json.tipo }}",
+            "ocorrido_em": "={{ $json.ocorrido_em }}",
+            "contexto": "={{ $json.contexto }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "85fdde2f-4e1a-4796-b184-1a1a196c3c1a",
+      "name": "T12 | Persistir reserva antes do Slack",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('T09 | Cancelar se houve decisão').item.json.politica.canal }}"
+        },
+        "text": "={{ $('T09 | Cancelar se houve decisão').item.json.texto }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "link_names": false,
+          "mrkdwn": true,
+          "unfurl_links": false,
+          "unfurl_media": false
+        },
+        "authentication": "accessToken",
+        "resource": "message",
+        "operation": "post",
+        "messageType": "text"
+      },
+      "id": "cde7f37c-d52b-452e-b535-c53b1b59893d",
+      "name": "T13 | Publicar lembrete ou menção",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1040,
+        608
+      ],
+      "onError": "continueRegularOutput",
+      "notes": "A menção usa apenas o ID Slack validado da política. Sem resposta confirmada, registra incerto e não repete automaticamente; conferir Slack e histórico antes de recuperação manual."
+    },
+    {
+      "parameters": {
+        "jsCode": "function validarEvento(e) {\n const tipos=['aguardando_aprovacao','aprovacao_registrada'];\n if(!tipos.includes(e.evento?.tipo)) return null;\n const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);\n if(e.meta?.origem_verificada!==true||e.meta?.validacao?.valido!==true||e.meta?.versao_evento!==1||!Number.isSafeInteger(e.meta?.tenant_id)||e.meta.tenant_id<=0||!uuid(e.meta.id_evento)||!uuid(e.meta.execution_id))throw new Error('SLA exige evento autenticado e normalizado pelo Core.');\n if(!/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(e.repositorio?.full_name||'')||!Number.isSafeInteger(e.pr?.numero)||e.pr.numero<=0||!Number.isFinite(Date.parse(e.meta.ocorrido_em)))throw new Error('Identidade ou horário do evento inválido.');\n const inicio=e.evento.tipo==='aguardando_aprovacao';\n if(inicio&&e.risco?.nivel!=='ALTO')throw new Error('A espera deve ser de risco ALTO informado pelo núcleo.');\n if(!inicio&&!['aprovada','alteracoes_solicitadas'].includes(e.aprovacao?.decisao))throw new Error('Decisão de encerramento inválida.');\n const contexto={installation_id:e.meta.tenant_id,task_run_id:e.meta.execution_id,repositorio:e.repositorio.full_name,numero_pr:e.pr.numero,url_pr:'https://github.com/'+e.repositorio.full_name+'/pull/'+e.pr.numero,decisao:inicio?null:e.aprovacao.decisao};\n return {chave:JSON.stringify([contexto.installation_id,contexto.task_run_id,contexto.repositorio.toLowerCase(),contexto.numero_pr]),evento_id:e.meta.id_evento,tipo:inicio?'inicio':'encerrado',ocorrido_em:new Date(e.meta.ocorrido_em).toISOString(),contexto:JSON.stringify(contexto)};\n}\n\nfunction politicaPara(contexto, env) {\n let politicas;\n try{politicas=JSON.parse(env.APROVA_SLA_POLITICAS_JSON||'[]');}catch{ return {valida:false,motivo:'APROVA_SLA_POLITICAS_JSON inválido.'}; }\n if(!Array.isArray(politicas))return {valida:false,motivo:'Políticas devem ser uma lista.'};\n const encontrados=politicas.filter(p=>p&&p.installation_id===contexto.installation_id&&typeof p.repositorio==='string'&&p.repositorio.toLowerCase()===contexto.repositorio.toLowerCase());\n if(encontrados.length!==1)return {valida:false,motivo:encontrados.length?'Política ambígua.':'Política do repositório não cadastrada.'};\n const p=encontrados[0],canal=p.canal_slack||env.APROVA_SLA_CANAL_ID||'';\n if(env.APROVA_SLA_HABILITADO!=='true'||p.habilitado!==true)return {valida:false,motivo:'Envios do SLA desabilitados por configuração.'};\n if(!Number.isSafeInteger(p.primeiro_limite_minutos)||p.primeiro_limite_minutos<=0||!Number.isSafeInteger(p.segundo_limite_minutos)||p.segundo_limite_minutos<=p.primeiro_limite_minutos)return {valida:false,motivo:'Definir dois limites positivos, com o segundo maior que o primeiro.'};\n if(!/^[CG][A-Z0-9]{8,}$/.test(canal))return {valida:false,motivo:'Canal Slack do SLA não configurado.'};\n if(p.responsavel_slack&&!/^[UW][A-Z0-9]{8,}$/.test(p.responsavel_slack))return {valida:false,motivo:'ID Slack do responsável inválido; não inferir identidade.'};\n return {valida:true,primeiro:p.primeiro_limite_minutos,segundo:p.segundo_limite_minutos,canal,responsavel:p.responsavel_slack||null};\n}\n\nfunction lerRegistros(rows) {\n const vistos=new Map();\n for(const r of rows){\n  if(!r.chave&&!r.tipo&&!r.evento_id)continue;\n  let c;try{c=JSON.parse(r.contexto);}catch{throw new Error('Registro SLA inválido; notificações interrompidas para preservar encerramentos.');}\n  const chave=JSON.stringify([c.installation_id,c.task_run_id,String(c.repositorio).toLowerCase(),c.numero_pr]);\n  if(chave!==r.chave||!Number.isFinite(Date.parse(r.ocorrido_em))||!['inicio','encerrado','reservado_1','reservado_2','enviado_1','enviado_2','incerto_1','incerto_2','cancelado_1','cancelado_2'].includes(r.tipo))throw new Error('Contrato do histórico SLA inválido.');\n  const chaveEvento=r.chave+':'+r.tipo+':'+r.evento_id,anterior=vistos.get(chaveEvento);\n  if(!anterior||Date.parse(r.ocorrido_em)<Date.parse(anterior.ocorrido_em))vistos.set(chaveEvento,{...r,c});\n }\n return [...vistos.values()];\n}\n\nfunction planejar(rows,env,agora) {\n const registros=lerRegistros(rows),grupos=new Map(),ultimas=new Map();\n for(const r of registros){if(!grupos.has(r.chave))grupos.set(r.chave,[]);grupos.get(r.chave).push(r);if(r.tipo==='inicio'){const pr=JSON.stringify([r.c.installation_id,r.c.repositorio.toLowerCase(),r.c.numero_pr]);const a=ultimas.get(pr);if(!a||Date.parse(r.ocorrido_em)>a.tempo)ultimas.set(pr,{chave:r.chave,tempo:Date.parse(r.ocorrido_em)});}}\n const acoes=[],pendencias=[];let encerrados=0;\n for(const [chave,rs] of grupos){\n  if(rs.some(r=>r.tipo==='encerrado')){encerrados++;continue;}\n  const inicios=rs.filter(r=>r.tipo==='inicio').sort((a,b)=>Date.parse(a.ocorrido_em)-Date.parse(b.ocorrido_em));if(!inicios.length)continue;\n  const inicio=inicios[0],c=inicio.c,pr=JSON.stringify([c.installation_id,c.repositorio.toLowerCase(),c.numero_pr]);if(ultimas.get(pr)?.chave!==chave)continue;\n  const p=politicaPara(c,env);if(!p.valida){pendencias.push({chave,motivo:p.motivo});continue;}\n  const tempo=Date.parse(inicio.ocorrido_em);if(tempo>agora+300000){pendencias.push({chave,motivo:'Horário de início está no futuro.'});continue;}\n  const tipos=new Set(rs.map(r=>r.tipo));let etapa=null;\n  if(agora>=tempo+p.primeiro*60000&&!tipos.has('reservado_1')&&!tipos.has('enviado_1')&&!tipos.has('incerto_1')&&!tipos.has('cancelado_1'))etapa=1;\n  else if(agora>=tempo+p.segundo*60000&&tipos.has('enviado_1')&&!tipos.has('reservado_2')&&!tipos.has('enviado_2')&&!tipos.has('incerto_2')&&!tipos.has('cancelado_2'))etapa=2;\n  if(etapa===2&&!p.responsavel){pendencias.push({chave,motivo:'Segundo limite atingido; cadastrar responsável Slack do repositório.'});continue;}\n  if(etapa)acoes.push({chave,etapa,contexto:c,inicio:inicio.ocorrido_em,politica:p,prazo:new Date(tempo+(etapa===1?p.primeiro:p.segundo)*60000).toISOString()});\n }\n return {acoes:acoes.slice(0,10),pendencias:pendencias.slice(0,50),pendencias_total:pendencias.length,encerrados,registros:registros.length,acoes_restantes:Math.max(0,acoes.length-10)};\n}\n\nfunction revalidar(candidato,rows,env,agora,lease) {\n const registros=lerRegistros(rows).filter(r=>r.chave===candidato.chave);\n if(registros.some(r=>r.tipo==='encerrado'))return {...candidato,enviar:false,status:'encerrado_antes_do_aviso'};\n const p=politicaPara(candidato.contexto,env);if(!p.valida)return {...candidato,enviar:false,status:'configuracao_pendente',motivo:p.motivo};\n if(agora>lease-60000)return {...candidato,enviar:false,status:'controle_expirando'};\n if(!registros.some(r=>r.tipo==='inicio'))return {...candidato,enviar:false,status:'inicio_nao_encontrado'};\n if(registros.some(r=>r.tipo==='reservado_'+candidato.etapa||r.tipo==='enviado_'+candidato.etapa||r.tipo==='incerto_'+candidato.etapa||r.tipo==='cancelado_'+candidato.etapa))return {...candidato,enviar:false,status:'aviso_ja_processado'};\n const limite=candidato.etapa===1?p.primeiro:p.segundo;\n if(agora<Date.parse(candidato.inicio)+limite*60000)return {...candidato,enviar:false,status:'prazo_ainda_nao_atingido'};\n if(candidato.etapa===2&&(!p.responsavel||!registros.some(r=>r.tipo==='enviado_1')))return {...candidato,enviar:false,status:'escalonamento_pendente'};\n const c=candidato.contexto;\n const texto=(candidato.etapa===2?'<@'+p.responsavel+'> ':'')+'aPRova — '+(candidato.etapa===1?'lembrete de aprovação':'escalonamento de aprovação')+'\\nPR: '+c.repositorio+' #'+c.numero_pr+'\\n'+c.url_pr+'\\nAguardando decisão desde '+candidato.inicio+'.\\nLimite configurado: '+limite+' minutos desde o início.\\nPendência conforme os eventos recebidos pelo n8n; confirme o estado atual da PR antes de agir.';\n return {...candidato,politica:p,enviar:true,status:'pronto_para_avisar',texto,revalidacao_nucleo:{status:'indisponivel',motivo:'Endpoint de consulta do estado atual ainda não existe; acompanhamento baseado em eventos.'}};\n}\n\nfunction confirmarEnvio(candidato,resposta) {\n const ts=resposta.ts||resposta.message_timestamp;\n const confirmado=resposta.ok!==false&&resposta.channel===candidato.politica.canal&&typeof ts==='string'&&/^\\d+\\.\\d+$/.test(ts);\n return {chave:candidato.chave,evento_id:'sla:'+candidato.chave+':'+candidato.etapa+':resultado',tipo:(confirmado?'enviado_':'incerto_')+candidato.etapa,ocorrido_em:new Date().toISOString(),contexto:JSON.stringify({...candidato.contexto,slack:confirmado?{canal:resposta.channel,ts}:null,resultado:confirmado?'confirmado':'envio_nao_confirmado_sem_retry_automatico'})};\n}\n\nconst a=$('T09 | Cancelar se houve decisão').itemMatching(0).json;return [{json:confirmarEnvio(a,$input.first().json)}];"
+      },
+      "id": "2c4d3912-d318-433e-826f-a07ad186066b",
+      "name": "T14 | Conferir confirmação do Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLA_EVENTOS_TABELA_ID }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chave": "={{ $json.chave }}",
+            "evento_id": "={{ $json.evento_id }}",
+            "tipo": "={{ $json.tipo }}",
+            "ocorrido_em": "={{ $json.ocorrido_em }}",
+            "contexto": "={{ $json.contexto }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "a0996805-4950-4c26-b9b4-d62092146667",
+      "name": "T15 | Persistir resultado do envio",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all();"
+      },
+      "id": "1a308112-1b5b-45e4-b7ae-e391ffe0be5b",
+      "name": "T16 | Aviso cancelado ou pendente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "c670d806-bffb-4d85-9a93-7b953228dced",
+      "name": "T07 | Um aviso por vez",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const p=$('T04 | Calcular prazos e pendências').first().json;return [{json:{sla:{status:p.acoes.length?'ciclo_processado':p.pendencias_total?'configuracao_pendente':'sem_avisos_vencidos',avisos_planejados:p.acoes.length,encerrados:p.encerrados,pendencias_total:p.pendencias_total,pendencias:p.pendencias,acoes_restantes:p.acoes_restantes,fonte:'eventos_recebidos',revalidacao_nucleo:'indisponivel'}}}];"
+      },
+      "id": "ae2620af-0476-4858-9fda-ae65f4420943",
+      "name": "T99 | Resultado do ciclo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        912
+      ]
+    }
+  ],
+  "connections": {
+    "E01 | Receber evento normalizado": {
+      "main": [
+        [
+          {
+            "node": "E02 | Validar e registrar fato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E02 | Validar e registrar fato": {
+      "main": [
+        [
+          {
+            "node": "E03 | Persistir evento SLA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E03 | Persistir evento SLA": {
+      "main": [
+        [
+          {
+            "node": "E04 | Resultado do acompanhamento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T01 | Timer a cada minuto": {
+      "main": [
+        [
+          {
+            "node": "T02 | Reservar ciclo do temporizador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T02 | Reservar ciclo do temporizador": {
+      "main": [
+        [
+          {
+            "node": "T03 | Ler histórico persistente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T03 | Ler histórico persistente": {
+      "main": [
+        [
+          {
+            "node": "T04 | Calcular prazos e pendências",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T04 | Calcular prazos e pendências": {
+      "main": [
+        [
+          {
+            "node": "T05 | Há avisos vencidos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T05 | Há avisos vencidos": {
+      "main": [
+        [
+          {
+            "node": "T06 | Separar avisos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "T90 | Liberar ciclo do temporizador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T06 | Separar avisos": {
+      "main": [
+        [
+          {
+            "node": "T07 | Um aviso por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T90 | Liberar ciclo do temporizador": {
+      "main": [
+        [
+          {
+            "node": "T99 | Resultado do ciclo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T08 | Reler fatos antes do aviso": {
+      "main": [
+        [
+          {
+            "node": "T09 | Cancelar se houve decisão",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T09 | Cancelar se houve decisão": {
+      "main": [
+        [
+          {
+            "node": "T10 | Aviso ainda elegível",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T10 | Aviso ainda elegível": {
+      "main": [
+        [
+          {
+            "node": "T11 | Preparar reserva de envio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "T16 | Aviso cancelado ou pendente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T11 | Preparar reserva de envio": {
+      "main": [
+        [
+          {
+            "node": "T12 | Persistir reserva antes do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T12 | Persistir reserva antes do Slack": {
+      "main": [
+        [
+          {
+            "node": "T13 | Publicar lembrete ou menção",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T13 | Publicar lembrete ou menção": {
+      "main": [
+        [
+          {
+            "node": "T14 | Conferir confirmação do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T14 | Conferir confirmação do Slack": {
+      "main": [
+        [
+          {
+            "node": "T15 | Persistir resultado do envio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T15 | Persistir resultado do envio": {
+      "main": [
+        [
+          {
+            "node": "T07 | Um aviso por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T16 | Aviso cancelado ou pendente": {
+      "main": [
+        [
+          {
+            "node": "T07 | Um aviso por vez",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "T07 | Um aviso por vez": {
+      "main": [
+        [
+          {
+            "node": "T90 | Liberar ciclo do temporizador",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "T08 | Reler fatos antes do aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "pinData": {}
+}
