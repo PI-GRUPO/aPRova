@@ -67,7 +67,7 @@ func novoCenario(t *testing.T) cenarioDeSondagem {
 	return cenarioDeSondagem{home: t.TempDir(), raiz: t.TempDir(), trabalho: t.TempDir()}
 }
 
-func sondar(t *testing.T, executar comportamento) (Relatorio, error, *agenteFalso, cenarioDeSondagem) {
+func sondar(t *testing.T, executar comportamento) (Relatorio, *agenteFalso, cenarioDeSondagem, error) {
 	t.Helper()
 	cenario := novoCenario(t)
 	falso := &agenteFalso{t: t, cenario: cenario, executar: executar}
@@ -79,7 +79,7 @@ func sondar(t *testing.T, executar comportamento) (Relatorio, error, *agenteFals
 		Aleatorio:           aleatorioFixo(),
 	}
 	relatorio, err := sondagem.Verificar(t.Context())
-	return relatorio, err, falso, cenario
+	return relatorio, falso, cenario, err
 }
 
 func gravar(t *testing.T, caminho, conteudo string) {
@@ -101,7 +101,7 @@ func controlesFuncionaram(t *testing.T, cenario cenarioDeSondagem, _ agente.Pedi
 }
 
 func TestTudoBarradoComControlesPositivosPassa(t *testing.T) {
-	relatorio, err, falso, cenario := sondar(t, controlesFuncionaram)
+	relatorio, falso, cenario, err := sondar(t, controlesFuncionaram)
 
 	if err != nil {
 		t.Fatalf("isolamento íntegro foi recusado: %v", err)
@@ -134,7 +134,7 @@ func TestTudoBarradoComControlesPositivosPassa(t *testing.T) {
 func TestEscritaForaDaTarefaVioladaPara(t *testing.T) {
 	for _, nome := range []string{"escrita", "terminal", "redirecionado", "codigo"} {
 		t.Run(nome, func(t *testing.T) {
-			relatorio, err, _, cenario := sondar(t, func(t *testing.T, c cenarioDeSondagem, p agente.Pedido) agente.Execucao {
+			relatorio, _, cenario, err := sondar(t, func(t *testing.T, c cenarioDeSondagem, p agente.Pedido) agente.Execucao {
 				gravar(t, c.alvo(nome), "teste")
 				return controlesFuncionaram(t, c, p)
 			})
@@ -168,7 +168,7 @@ func TestLeituraDoCanarioVioladaPara(t *testing.T) {
 	}
 	for nome, executar := range casos {
 		t.Run(nome, func(t *testing.T) {
-			relatorio, err, _, _ := sondar(t, executar)
+			relatorio, _, _, err := sondar(t, executar)
 
 			if !errors.Is(err, ErrIsolamentoViolado) || barrada(relatorio, "leitura") {
 				t.Fatalf("o canário lido precisa parar a rodada: %v, %+v", err, relatorio)
@@ -192,7 +192,7 @@ func TestSemControlesPositivosASondagemEInconclusiva(t *testing.T) {
 	}
 	for nome, executar := range casos {
 		t.Run(nome, func(t *testing.T) {
-			_, err, _, _ := sondar(t, executar)
+			_, _, _, err := sondar(t, executar)
 
 			if !errors.Is(err, ErrSondagemInconclusiva) {
 				t.Errorf("sem os controles positivos, nada prova que o bloqueio foi do isolamento: %v", err)
@@ -207,7 +207,7 @@ func TestCanariosSaoApagadosSempre(t *testing.T) {
 		"inconclusivo": func(*testing.T, cenarioDeSondagem, agente.Pedido) agente.Execucao { return agente.Execucao{} },
 	} {
 		t.Run(nome, func(t *testing.T) {
-			_, _, _, cenario := sondar(t, executar)
+			_, _, cenario, _ := sondar(t, executar)
 
 			for _, canario := range []string{cenario.canarioDoSsh(), cenario.canarioDoEnv()} {
 				if _, err := os.Stat(canario); !os.IsNotExist(err) {
