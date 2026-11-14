@@ -82,7 +82,7 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodGet && caminho == "/pulls":
 		var encontrados []map[string]any
 		for _, pr := range g.prs {
-			if "dono:"+pr["head"].(string) == r.URL.Query().Get("head") {
+			if "dono:"+texto(pr, "head") == r.URL.Query().Get("head") {
 				encontrados = append(encontrados, pr)
 			}
 		}
@@ -106,6 +106,11 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func texto(corpo map[string]any, chave string) string {
 	valor, _ := corpo[chave].(string)
+	return valor
+}
+
+func lista(corpo map[string]any, chave string) []any {
+	valor, _ := corpo[chave].([]any)
 	return valor
 }
 
@@ -135,7 +140,7 @@ func TestBaseEUmCommitRaizComOsArquivosDaTarefa(t *testing.T) {
 	if _, temBase := arvore["base_tree"]; temBase {
 		t.Error("a árvore da base não parte de outra")
 	}
-	if len(arvore["tree"].([]any)) != 2 || falso.refs["refs/heads/base/go-a"] != base.SHA {
+	if len(lista(arvore, "tree")) != 2 || falso.refs["refs/heads/base/go-a"] != base.SHA {
 		t.Errorf("dois arquivos e a ref apontando para o commit: %v, %v", arvore, falso.refs)
 	}
 	conteudos := map[string]bool{}
@@ -162,7 +167,7 @@ func TestSolucaoParteDaBaseERegistraApagados(t *testing.T) {
 	}
 
 	commit := falso.commits[solucao.SHA]
-	if pais := commit["parents"].([]any); len(pais) != 1 || pais[0] != base.SHA {
+	if pais := lista(commit, "parents"); len(pais) != 1 || pais[0] != base.SHA {
 		t.Errorf("a solução tem a base como pai: %v", commit["parents"])
 	}
 	arvore := falso.arvores[solucao.Arvore]
@@ -170,8 +175,8 @@ func TestSolucaoParteDaBaseERegistraApagados(t *testing.T) {
 		t.Errorf("a árvore da solução parte da árvore da base: %v", arvore)
 	}
 	apagado := false
-	for _, entrada := range arvore["tree"].([]any) {
-		item := entrada.(map[string]any)
+	for _, entrada := range lista(arvore, "tree") {
+		item, _ := entrada.(map[string]any)
 		if item["path"] == "cases_test.go" && item["sha"] == nil {
 			apagado = true
 		}
