@@ -57,13 +57,19 @@ func ehDownload(comando processo.Comando) bool {
 	return slices.Contains(comando.Argumentos, "download")
 }
 
-func lerRequisitosGravados(t *testing.T, cache string) string {
+func listaGravadaPeloUidDoPR(t *testing.T, rodador *rodadorDasEtapas, cache string) string {
 	t.Helper()
-	conteudo, err := os.ReadFile(filepath.Join(cache, "requisitos.txt"))
-	if err != nil {
-		t.Fatalf("ler a lista gravada no cache: %v", err)
+	for _, comando := range rodador.rodados {
+		argumentos := comando.Argumentos
+		if comando.Binario == "python" && len(argumentos) == 5 && argumentos[0] == "-I" && argumentos[3] == filepath.Join(cache, "requisitos.txt") {
+			if !strings.Contains(argumentos[2], "'x'") {
+				t.Errorf("a lista é criada de forma exclusiva: %q", argumentos[2])
+			}
+			return argumentos[4]
+		}
 	}
-	return string(conteudo)
+	t.Fatalf("a lista não foi gravada pelo rodador do uid do PR: %q", rodador.linhas())
+	return ""
 }
 
 func TestPreparoBaixaSoWheelsDosRequirementsSemConstruirNada(t *testing.T) {
@@ -80,14 +86,15 @@ func TestPreparoBaixaSoWheelsDosRequirementsSemConstruirNada(t *testing.T) {
 	if falha != nil {
 		t.Fatalf("preparo: %+v", falha)
 	}
-	if lista := lerRequisitosGravados(t, cache); lista != "pytest-mock\nsix==1.17.0\n" {
+	if lista := listaGravadaPeloUidDoPR(t, rodador, cache); lista != "pytest-mock\nsix==1.17.0\n" {
 		t.Errorf("lista no cache = %q", lista)
 	}
 	esperado := "python -m pip download --only-binary=:all: --dest " + filepath.Join(cache, "wheels") + " -r " + filepath.Join(cache, "requisitos.txt")
-	if linhas := rodador.linhas(); !slices.Equal(linhas, []string{esperado}) {
-		t.Fatalf("o preparo só baixa wheels:\n%q\nesperava\n%q", linhas, esperado)
+	linhas := rodador.linhas()
+	if len(linhas) != 2 || linhas[1] != esperado {
+		t.Fatalf("o preparo grava a lista e só baixa wheels:\n%q\nesperava por último\n%q", linhas, esperado)
 	}
-	for _, argumento := range rodador.rodados[0].Argumentos {
+	for _, argumento := range rodador.rodados[1].Argumentos {
 		if argumento == "." || argumento == "install" || strings.Contains(argumento, "setup.py") || argumento == "-e" {
 			t.Errorf("o preparo nunca constrói nem instala o projeto: %v", rodador.rodados[0].Argumentos)
 		}
@@ -116,7 +123,7 @@ func TestPreparoLeOPyprojectComoDadoEmModoIsolado(t *testing.T) {
 	if !strings.Contains(strings.Join(leitura.Argumentos, " "), "tomllib") {
 		t.Errorf("a leitura usa tomllib: %v", leitura.Argumentos)
 	}
-	if lista := lerRequisitosGravados(t, cache); lista != "requests>=2\npytest-mock\n" {
+	if lista := listaGravadaPeloUidDoPR(t, rodador, cache); lista != "requests>=2\npytest-mock\n" {
 		t.Errorf("lista no cache = %q", lista)
 	}
 }
