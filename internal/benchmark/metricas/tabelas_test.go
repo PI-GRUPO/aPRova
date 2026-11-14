@@ -45,6 +45,7 @@ func tempos(agente, publicacao, decisao, oraculo int64) resultado.Tempos {
 func conjuntoFixo() []resultado.Tarefa {
 	pythonA := decidida("python-a", "python", "medio", resultado.OraculoFalhou, tempos(50, 10, 40, 10), 2000, 1000)
 	pythonA.TestesAdulterados = []string{"frete_test.py"}
+	pythonA.Decisao.Motivos = []string{"codigo_sem_teste"}
 
 	javaB := resultado.Tarefa{
 		ID: "java-b", Grupo: resultado.GrupoCorrecao, Linguagem: "java",
@@ -97,6 +98,7 @@ Comparáveis: 5 de 7 tarefas (PR aberto, decisão do aPRova e oráculo concluíd
 | Com a camada: soluções quebradas que passariam assim mesmo | 1 de 5 |
 | Bloqueios desnecessários | 1 de 5 |
 | PRs liberados sem intervenção humana | 3 de 5 |
+| Nível médio só por codigo_sem_teste | 1 de 5 |
 
 Fora da comparação: 2 de 7.
 
@@ -188,6 +190,19 @@ func TestOracleQueNaoRodouTiraATarefaDaComparacao(t *testing.T) {
 		if !strings.Contains(tabelas, esperado) {
 			t.Errorf("faltou %q em:\n%s", esperado, tabelas)
 		}
+	}
+}
+
+func TestMedioSoPorCodigoSemTesteNaoContaQuandoHaOutroMotivo(t *testing.T) {
+	soCodigoSemTeste := decidida("go-x", "go", "medio", resultado.OraculoPassou, tempos(10, 10, 10, 10), 1, 1)
+	soCodigoSemTeste.Decisao.Motivos = []string{"codigo_sem_teste"}
+	comOutroMotivo := decidida("go-y", "go", "alto", resultado.OraculoPassou, tempos(10, 10, 10, 10), 1, 1)
+	comOutroMotivo.Decisao.Motivos = []string{"codigo_sem_teste", "configuracao_ci"}
+
+	tabelas := Tabelas([]resultado.Tarefa{soCodigoSemTeste, comOutroMotivo})
+
+	if !strings.Contains(tabelas, "| Nível médio só por codigo_sem_teste | 1 de 2 |") {
+		t.Errorf("só conta a tarefa cujo nível veio apenas de codigo_sem_teste:\n%s", tabelas)
 	}
 }
 
