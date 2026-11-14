@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"testing"
+
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
 func TestEtapaPedidaPeloSubcomando(t *testing.T) {
@@ -29,5 +31,16 @@ func TestSubcomandoDesconhecidoERecusado(t *testing.T) {
 		if _, err := etapaPedida(argumentos); !errors.Is(err, errSubcomandoDesconhecido) {
 			t.Errorf("%q: %v", argumentos, err)
 		}
+	}
+}
+
+func TestJavaSoRodaEmDuasEtapas(t *testing.T) {
+	montado := programa()
+
+	if _, emEtapas := montado.Etapas[sandbox.LinguagemJava]; !emEtapas {
+		t.Error("o executor local chama preparar e testar para Java")
+	}
+	if _, legado := montado.Linguagens[sandbox.LinguagemJava]; legado {
+		t.Error("o fluxo sem subcomando é só da Azure, que não tem Java até o card 61")
 	}
 }

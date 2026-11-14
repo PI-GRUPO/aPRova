@@ -65,7 +65,6 @@ func TestCarregarRecusaLinguagensInvalidas(t *testing.T) {
 		"=python",
 		"Azulpasta/aPRova-TESTES=",
 		"Azulpasta/aPRova-TESTES=ruby",
-		"Azulpasta/aPRova-TESTES=java",
 		"a/b=go,a/b=python",
 	}
 
