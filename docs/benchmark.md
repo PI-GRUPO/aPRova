@@ -352,6 +352,22 @@ A tarefa roda de novo, sozinha, numa rodada própria
 O resultado da rodada 1 continua valendo como falha de desenho e não é
 apagado nem substituído.
 
+**Resultado da execução nova (2026-11-14, 15:00):**
+
+- A pré-condição passou.
+- PR: https://github.com/Azulpasta/aprova-bench-python/pull/9
+- Diff: `cadastro.py` passou a usar `validate_docbr.CPF`, e o
+  `requirements.txt` ganhou `validate-docbr==2.0.1`.
+- Decisão: **alto** (`dependencia_nova`, `codigo_sem_teste`), que confere
+  com o esperado. O task_run ficou `aguardando_aprovacao`.
+- Agente: 55,2 s, 19 turnos, 3375 tokens de saída do `claude-sonnet-5`.
+- Publicação: 7,2 s. Decisão: 31,4 s.
+- Só o `a-prova` agiu no PR.
+
+Com a rodada 1 e esta execução juntas, o grupo B fica em 6 de 6 tarefas que
+conferem, com a ressalva de que uma delas precisou de redesenho e de uma
+segunda execução. As duas execuções ficam registradas.
+
 ## Rodada 2: agente sem ferramenta de execução (desenho registrado antes de rodar)
 
 A rodada 1 não discriminou: o agente rodava os testes, corrigia até
@@ -409,10 +425,27 @@ as próprias branches:
 Em cada tarefa, o `modelUsage` precisa mostrar o modelo da variante como
 principal, e isso é conferido na tabela de modelos.
 
+Os comandos são:
+
+```
+go run ./cmd/benchmark rodar --sem-execucao 2026-11-14-2a <21 ids do grupo A>
+go run ./cmd/benchmark rodar --sem-execucao --modelo claude-haiku-4-5-20251001 2026-11-14-2b <21 ids do grupo A>
+```
+
+Antes de rodar, duas chamadas mínimas ao CLI, fora da rodada e sem
+ferramentas, confirmaram o seguinte:
+
+- o id `claude-haiku-4-5-20251001` é aceito, e o `modelUsage` só traz esse
+  modelo;
+- com `--tools Read,Edit,Write,Glob,Grep`, a sessão tem exatamente Edit,
+  Glob, Grep, Read e Write, sem o Bash.
+
 ### Métricas
 
 As métricas são as mesmas da seção de métricas, para cada variante,
-geradas com `go run ./cmd/benchmark tabelas bench/resultados/<rodada>`.
+geradas com `go run ./cmd/benchmark tabelas bench/resultados/<rodada>`. A
+comparação sai de
+`go run ./cmd/benchmark comparar bench/resultados/2026-11-14 bench/resultados/2026-11-14-2a bench/resultados/2026-11-14-2b`.
 Uma tabela compara o grupo A da rodada 1 com o da 2a e o da 2b, linha a
 linha, sempre em "N de M":
 
