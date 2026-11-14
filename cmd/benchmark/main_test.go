@@ -40,3 +40,22 @@ func TestTabelasImprimeORelatorioDaRodada(t *testing.T) {
 		t.Errorf("a tabela sai do JSON bruto:\n%s", saida.String())
 	}
 }
+
+func TestTabelasRecusaRodadaInexistenteOuSemTarefas(t *testing.T) {
+	inexistente := filepath.Join(t.TempDir(), "2026-11-14")
+	vazia := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(vazia, "tarefas"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+
+	for nome, rodada := range map[string]string{"inexistente": inexistente, "sem tarefas": vazia} {
+		var saida bytes.Buffer
+		err := executar([]string{"tabelas", rodada}, &saida)
+		if err == nil || !strings.Contains(err.Error(), rodada) {
+			t.Errorf("%s: as tabelas não podem sair zeradas sem erro; obtive %v", nome, err)
+		}
+		if saida.Len() != 0 {
+			t.Errorf("%s: nada é impresso quando a rodada é recusada:\n%s", nome, saida.String())
+		}
+	}
+}
