@@ -95,3 +95,17 @@ func TestValoresCurtosOuVaziosNaoViramSegredo(t *testing.T) {
 		t.Errorf("esperava 4 variáveis conferidas, obtive %v", segredos.Nomes())
 	}
 }
+
+func TestAutotesteConfirmaQueCadaValorDoEnvSeriaRecusado(t *testing.T) {
+	quantas, err := segredosDeExemplo().Autoteste()
+
+	if err != nil || quantas != 4 {
+		t.Errorf("as 4 variáveis conferidas recusam o próprio valor: %d, %v", quantas, err)
+	}
+}
+
+func TestAutotesteRecusaEnvSemNenhumSegredo(t *testing.T) {
+	if _, err := SegredosDoEnv([]byte("# vazio\nSANDBOX_EXECUTOR=local\n")).Autoteste(); !errors.Is(err, ErrEnvSemSegredos) {
+		t.Errorf("um .env sem nada a conferir indica que o arquivo errado foi lido: %v", err)
+	}
+}
