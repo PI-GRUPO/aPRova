@@ -21,6 +21,8 @@ var (
 	ErrArquivoDeCache = errors.New("conferencia: arquivo de cache no diff")
 	// ErrSegredoNoDiff indica que o diff contém o valor de uma variável do .env.
 	ErrSegredoNoDiff = errors.New("conferencia: valor do .env no diff")
+	// ErrEnvSemSegredos indica um .env sem nenhum valor a conferir.
+	ErrEnvSemSegredos = errors.New("conferencia: o .env não tem nenhum valor a conferir; o arquivo lido é o certo?")
 
 	diretoriosDeCache = []string{".gocache", ".pytest_cache", "__pycache__", ".m2", "target", ".claude"}
 )
@@ -114,4 +116,19 @@ func interpretarLinha(linha string) (nome, valor string, valida bool) {
 		valor = valor[1 : len(valor)-1]
 	}
 	return strings.TrimSpace(nome), valor, true
+}
+
+// Autoteste confere, sem expor os valores, que um diff com o valor de cada
+// variável seria recusado. Devolve quantas variáveis foram conferidas.
+func (s Segredos) Autoteste() (int, error) {
+	if len(s.lista) == 0 {
+		return 0, ErrEnvSemSegredos
+	}
+	for _, item := range s.lista {
+		diff := append([]byte("+++ b/autoteste.txt\n+"), item.valores[0]...)
+		if err := Conferir([]string{"autoteste.txt"}, diff, s); !errors.Is(err, ErrSegredoNoDiff) {
+			return 0, fmt.Errorf("conferencia: o valor de %s não seria recusado", item.nome)
+		}
+	}
+	return len(s.lista), nil
 }
