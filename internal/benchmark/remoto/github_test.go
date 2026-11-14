@@ -56,7 +56,7 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodPost && caminho == "/git/blobs":
 		sha := g.novoSHA()
-		conteudo, _ := base64.StdEncoding.DecodeString(corpo["content"].(string))
+		conteudo, _ := base64.StdEncoding.DecodeString(texto(corpo, "content"))
 		g.blobs[sha] = string(conteudo)
 		responder(http.StatusCreated, map[string]any{"sha": sha})
 	case r.Method == http.MethodPost && caminho == "/git/trees":
@@ -68,16 +68,16 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		g.commits[sha] = corpo
 		responder(http.StatusCreated, map[string]any{"sha": sha, "tree": map[string]any{"sha": corpo["tree"]}})
 	case r.Method == http.MethodPost && caminho == "/git/refs":
-		ref := corpo["ref"].(string)
+		ref := texto(corpo, "ref")
 		if _, existe := g.refs[ref]; existe {
 			responder(http.StatusUnprocessableEntity, map[string]any{"message": "Reference already exists"})
 			return
 		}
-		g.refs[ref] = corpo["sha"].(string)
+		g.refs[ref] = texto(corpo, "sha")
 		responder(http.StatusCreated, map[string]any{"ref": ref})
 	case r.Method == http.MethodPatch && strings.HasPrefix(caminho, "/git/refs/"):
 		ref := "refs/" + strings.TrimPrefix(caminho, "/git/refs/")
-		g.refs[ref] = corpo["sha"].(string)
+		g.refs[ref] = texto(corpo, "sha")
 		responder(http.StatusOK, map[string]any{"ref": ref, "forcado": corpo["force"]})
 	case r.Method == http.MethodGet && caminho == "/pulls":
 		var encontrados []map[string]any
@@ -102,6 +102,11 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "rota desconhecida "+r.Method+" "+r.URL.Path, http.StatusNotFound)
 	}
+}
+
+func texto(corpo map[string]any, chave string) string {
+	valor, _ := corpo[chave].(string)
+	return valor
 }
 
 func clienteDeTeste(t *testing.T) (*GitHub, *githubFalso) {
