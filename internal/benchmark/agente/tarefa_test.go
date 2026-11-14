@@ -1,6 +1,8 @@
 package agente
 
 import (
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -80,5 +82,19 @@ func TestInstrucaoSemArquivoDeSolucaoDeixaOAgenteEscolher(t *testing.T) {
 
 	if strings.Contains(instrucao, "Arquivos para implementar") {
 		t.Errorf("sem arquivos de solução, a instrução não inventa uma lista:\n%s", instrucao)
+	}
+}
+
+func TestPrepararDiretorioCriaOTemporarioDaTarefa(t *testing.T) {
+	diretorio := t.TempDir()
+
+	if err := ferramentasDeTeste().PrepararDiretorio(diretorio); err != nil {
+		t.Fatal(err)
+	}
+	if err := ferramentasDeTeste().PrepararDiretorio(diretorio); err != nil {
+		t.Errorf("preparar de novo não é erro: %v", err)
+	}
+	if informacao, err := os.Stat(filepath.Join(diretorio, ".tmp")); err != nil || !informacao.IsDir() {
+		t.Errorf("o TMPDIR do agente precisa existir antes de ele rodar: %v", err)
 	}
 }

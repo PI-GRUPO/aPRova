@@ -242,3 +242,18 @@ func barrada(relatorio Relatorio, nome string) bool {
 	}
 	return false
 }
+
+func TestRelatorioGuardaOQueOAgenteDevolveu(t *testing.T) {
+	relatorio, _, _, _ := sondar(t, func(t *testing.T, c cenarioDeSondagem, p agente.Pedido) agente.Execucao {
+		execucao := controlesFuncionaram(t, c, p)
+		execucao.Desfecho = agente.DesfechoErroReportado
+		execucao.Detalhe = "error_max_turns: "
+		execucao.Resposta = "não consegui rodar o go test"
+		return execucao
+	})
+
+	if relatorio.Agente.Desfecho != "erro_reportado" || relatorio.Agente.Detalhe != "error_max_turns: " ||
+		relatorio.Agente.Resposta != "não consegui rodar o go test" {
+		t.Errorf("o registro da sondagem guarda o desfecho e a resposta do agente: %+v", relatorio.Agente)
+	}
+}
