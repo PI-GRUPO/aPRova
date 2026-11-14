@@ -1,6 +1,7 @@
 package integracao
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -9,10 +10,12 @@ import (
 
 const casoDeRedeEDependencia = "rede_e_dependencia"
 
+var ataqueQueAlcancou = regexp.MustCompile(`ataque: alcançou (dns|tcp)`)
+
 func exigirAtaqueDeRedeBloqueado(t *testing.T, resultado sandbox.ResultadoSandbox) {
 	t.Helper()
 
-	if strings.Contains(resultado.SaidaBruta, "ataque: alcançou") {
+	if ataqueQueAlcancou.MatchString(resultado.SaidaBruta) {
 		t.Fatalf("o código do PR alcançou a rede na etapa de testes:\n%s", resultado.SaidaBruta)
 	}
 	if resultado.TipoFalha != sandbox.FalhaTeste || resultado.TestesPassaram != 1 || resultado.TestesFalharam != 1 {
