@@ -19,7 +19,7 @@ type publicadorFalso struct {
 	limpou   bool
 }
 
-func (p *publicadorFalso) Publicar(_ context.Context, repositorio, nome string) (Publicacao, func(), error) {
+func (p *publicadorFalso) Publicar(ctx context.Context, repositorio, nome string) (Publicacao, func(), error) {
 	p.arquivos = map[string]string{}
 	_ = filepath.WalkDir(repositorio, func(caminho string, entrada os.DirEntry, err error) error {
 		if err != nil {
@@ -35,7 +35,7 @@ func (p *publicadorFalso) Publicar(_ context.Context, repositorio, nome string) 
 		}
 		return nil
 	})
-	saida, err := exec.Command("git", "-C", repositorio, "rev-parse", "HEAD").Output()
+	saida, err := exec.CommandContext(ctx, "git", "-C", repositorio, "rev-parse", "HEAD").Output()
 	if err != nil {
 		p.t.Fatalf("o repositório publicado precisa ter um commit: %v", err)
 	}

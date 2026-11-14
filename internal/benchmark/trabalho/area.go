@@ -179,3 +179,16 @@ func interpretarSituacoes(bruto []byte) []Arquivo {
 	slices.SortFunc(arquivos, func(x, y Arquivo) int { return strings.Compare(x.Caminho, y.Caminho) })
 	return arquivos
 }
+
+var diretoriosDeCache = []string{".git", ".gocache", ".gomodcache", "__pycache__", ".pytest_cache", ".m2", "target", ".claude"}
+
+// EhCache diz se o caminho relativo está dentro de um diretório de cache, de
+// build ou do git, que nunca faz parte da solução.
+func EhCache(relativo string) bool {
+	for _, componente := range strings.Split(filepath.ToSlash(relativo), "/") {
+		if slices.Contains(diretoriosDeCache, componente) {
+			return true
+		}
+	}
+	return false
+}
