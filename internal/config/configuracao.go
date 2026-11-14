@@ -175,8 +175,7 @@ func Carregar() (Configuracao, error) {
 		ChaveAPIGemini:               lerVariavel("GEMINI_API_KEY"),
 	}
 
-	leitura.recusarVariavelRemovida("SANDBOX_REDE_LOCAL",
-		"a rede do sandbox local agora é fixa por etapa (preparar com rede, testar sem rede nenhuma); remova a variável do .env")
+	leitura.recusarVariaveisRemovidas()
 
 	if err := leitura.erro(); err != nil {
 		return Configuracao{}, err
@@ -386,12 +385,6 @@ func (l *leitor) urlHTTP(nome, padrao string) string {
 		l.registrarPendencia("%s espera uma URL começando com http:// ou https://, obtive %q", nome, valor)
 	}
 	return valor
-}
-
-func (l *leitor) recusarVariavelRemovida(nome, motivo string) {
-	if _, presente := os.LookupEnv(nome); presente {
-		l.registrarPendencia("%s não existe mais: %s", nome, motivo)
-	}
 }
 
 func (l *leitor) diretoriosDoSandbox(nome string) map[string]string {
