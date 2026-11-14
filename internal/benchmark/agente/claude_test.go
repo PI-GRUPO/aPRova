@@ -64,7 +64,7 @@ func agenteFalso(t *testing.T) (*Claude, string) {
 	return &Claude{Binario: caminho, Modelo: "claude-sonnet-5"}, binarios
 }
 
-func rodar(t *testing.T, cenario cenarioDoFalso) (Execucao, error, cenarioDoFalso) {
+func rodar(t *testing.T, cenario cenarioDoFalso) (Execucao, cenarioDoFalso, error) {
 	t.Helper()
 	claude, _ := agenteFalso(t)
 	cenario.registro = t.TempDir()
@@ -77,7 +77,7 @@ func rodar(t *testing.T, cenario cenarioDoFalso) (Execucao, error, cenarioDoFals
 	}, cenario.ambiente...)
 
 	execucao, err := claude.Executar(t.Context(), Pedido{Diretorio: cenario.tarefa, Instrucao: "Implemente a tarefa.", Prazo: cenario.prazo})
-	return execucao, err, cenario
+	return execucao, cenario, err
 }
 
 func lerRegistro(t *testing.T, cenario cenarioDoFalso, nome string) string {
@@ -90,7 +90,7 @@ func lerRegistro(t *testing.T, cenario cenarioDoFalso, nome string) string {
 }
 
 func TestSucessoRegistraModelosTokensETurnos(t *testing.T) {
-	execucao, err, cenario := rodar(t, cenarioDoFalso{modo: "sucesso"})
+	execucao, cenario, err := rodar(t, cenarioDoFalso{modo: "sucesso"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,19 +114,19 @@ func TestSucessoRegistraModelosTokensETurnos(t *testing.T) {
 }
 
 func TestCodigoDeSaidaNuncaDecideODesfecho(t *testing.T) {
-	sucesso, err, _ := rodar(t, cenarioDoFalso{modo: "sucesso_com_saida_1"})
+	sucesso, _, err := rodar(t, cenarioDoFalso{modo: "sucesso_com_saida_1"})
 	if err != nil || sucesso.Desfecho != DesfechoConcluida || sucesso.CodigoDeSaida != 1 {
 		t.Errorf("JSON de sucesso com saída 1 é concluída, com o código registrado: %+v, %v", sucesso, err)
 	}
 
-	erro, err, _ := rodar(t, cenarioDoFalso{modo: "erro"})
+	erro, _, err := rodar(t, cenarioDoFalso{modo: "erro"})
 	if err != nil || erro.Desfecho != DesfechoErroReportado || erro.CodigoDeSaida != 0 || !strings.Contains(erro.Detalhe, "error_max_turns") {
 		t.Errorf("erro reportado com saída 0 é erro, com o subtipo no detalhe: %+v, %v", erro, err)
 	}
 }
 
 func TestSaidaIlegivelEFalhaDoAgente(t *testing.T) {
-	execucao, err, _ := rodar(t, cenarioDoFalso{modo: "ilegivel"})
+	execucao, _, err := rodar(t, cenarioDoFalso{modo: "ilegivel"})
 
 	if err != nil || execucao.Desfecho != DesfechoSaidaIlegivel {
 		t.Errorf("saída que não é o JSON do claude: %+v, %v", execucao, err)
@@ -136,7 +136,7 @@ func TestSaidaIlegivelEFalhaDoAgente(t *testing.T) {
 func TestLimiteDeUsoEDesfechoProprio(t *testing.T) {
 	for _, modo := range []string{"limite", "limite_no_stderr"} {
 		t.Run(modo, func(t *testing.T) {
-			execucao, err, _ := rodar(t, cenarioDoFalso{modo: modo})
+			execucao, _, err := rodar(t, cenarioDoFalso{modo: modo})
 
 			if err != nil || execucao.Desfecho != DesfechoLimiteDeUso {
 				t.Errorf("limite de uso não é falha da tarefa: %+v, %v", execucao, err)
@@ -148,7 +148,7 @@ func TestLimiteDeUsoEDesfechoProprio(t *testing.T) {
 func TestPrazoEsgotadoMataOGrupoDeProcessos(t *testing.T) {
 	inicio := time.Now()
 
-	execucao, err, cenario := rodar(t, cenarioDoFalso{modo: "trava", prazo: time.Second})
+	execucao, cenario, err := rodar(t, cenarioDoFalso{modo: "trava", prazo: time.Second})
 
 	if err != nil || execucao.Desfecho != DesfechoPrazoEsgotado {
 		t.Fatalf("prazo esgotado: %+v, %v", execucao, err)
@@ -173,7 +173,7 @@ func TestPrazoEsgotadoMataOGrupoDeProcessos(t *testing.T) {
 func TestAmbienteDoAgenteNuncaLevaChavesDeAPI(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "chave-do-processo-pai")
 
-	_, err, cenario := rodar(t, cenarioDoFalso{modo: "sucesso", ambiente: []string{
+	_, cenario, err := rodar(t, cenarioDoFalso{modo: "sucesso", ambiente: []string{
 		"GEMINI_API_KEY=chave-gemini", "GOOGLE_API_KEY=chave-google", "ANTHROPIC_API_KEY=chave-anthropic", "LANG=C.UTF-8",
 	}})
 	if err != nil {
@@ -192,7 +192,7 @@ func TestAmbienteDoAgenteNuncaLevaChavesDeAPI(t *testing.T) {
 }
 
 func TestArgumentosFixamModeloPermissoesESandbox(t *testing.T) {
-	_, err, cenario := rodar(t, cenarioDoFalso{modo: "sucesso"})
+	_, cenario, err := rodar(t, cenarioDoFalso{modo: "sucesso"})
 	if err != nil {
 		t.Fatal(err)
 	}
