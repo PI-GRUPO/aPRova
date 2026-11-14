@@ -74,6 +74,9 @@ func imprimirTabelas(rodada string, saida io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if len(tarefas) == 0 {
+		return fmt.Errorf("nenhum resultado de tarefa em %s: confira o caminho da rodada", rodada)
+	}
 	_, err = io.WriteString(saida, metricas.Tabelas(tarefas))
 	return err
 }
