@@ -22,7 +22,7 @@ const (
 )
 
 var padroesExcluidos = []string{
-	"/.gocache/", "/.gomodcache/", "__pycache__/", ".pytest_cache/", "/.m2/", "target/", "/.claude/",
+	"/.gocache/", "/.gomodcache/", "__pycache__/", ".pytest_cache/", "/.m2/", "target/", "/.claude/", "/.tmp/",
 }
 
 // Area é o diretório de trabalho de uma tarefa e o commit-base gravado antes
@@ -101,6 +101,9 @@ func Preparar(origem, destino string) (Area, error) {
 		return Area{}, err
 	}
 	area.CommitBase = strings.TrimSpace(string(commit))
+	if err := os.Mkdir(filepath.Join(destino, ".tmp"), 0o750); err != nil {
+		return Area{}, fmt.Errorf("trabalho: criar o diretório temporário da tarefa: %w", err)
+	}
 	return area, nil
 }
 
@@ -180,7 +183,7 @@ func interpretarSituacoes(bruto []byte) []Arquivo {
 	return arquivos
 }
 
-var diretoriosDeCache = []string{".git", ".gocache", ".gomodcache", "__pycache__", ".pytest_cache", ".m2", "target", ".claude"}
+var diretoriosDeCache = []string{".git", ".gocache", ".gomodcache", "__pycache__", ".pytest_cache", ".m2", "target", ".claude", ".tmp"}
 
 // EhCache diz se o caminho relativo está dentro de um diretório de cache, de
 // build ou do git, que nunca faz parte da solução.

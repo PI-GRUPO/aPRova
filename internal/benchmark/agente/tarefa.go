@@ -17,7 +17,6 @@ var comandoDeTestePorLinguagem = map[string]string{
 type Ferramentas struct {
 	Home             string
 	Usuario          string
-	Temporario       string
 	Venv             string
 	JavaHome         string
 	DiretorioDoGo    string
@@ -35,7 +34,7 @@ func (f Ferramentas) Ambiente(diretorio string) []string {
 	return []string{
 		"HOME=" + f.Home,
 		"USER=" + f.Usuario,
-		"TMPDIR=" + f.Temporario,
+		"TMPDIR=" + filepath.Join(diretorio, ".tmp"),
 		"LANG=en_US.UTF-8",
 		"PATH=" + caminho,
 		"JAVA_HOME=" + f.JavaHome,

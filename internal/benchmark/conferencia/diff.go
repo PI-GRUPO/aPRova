@@ -24,7 +24,7 @@ var (
 	// ErrEnvSemSegredos indica um .env sem nenhum valor a conferir.
 	ErrEnvSemSegredos = errors.New("conferencia: o .env não tem nenhum valor a conferir; o arquivo lido é o certo?")
 
-	diretoriosDeCache = []string{".gocache", ".pytest_cache", "__pycache__", ".m2", "target", ".claude"}
+	diretoriosDeCache = []string{".gocache", ".gomodcache", ".pytest_cache", "__pycache__", ".m2", "target", ".claude", ".tmp"}
 )
 
 type segredo struct {

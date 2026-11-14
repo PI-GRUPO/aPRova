@@ -8,7 +8,7 @@ import (
 
 func ferramentasDeTeste() Ferramentas {
 	return Ferramentas{
-		Home: "/Users/alguem", Usuario: "alguem", Temporario: "/var/tmp/x",
+		Home: "/Users/alguem", Usuario: "alguem",
 		Venv: "/Users/Shared/aprova-bench/venv", JavaHome: "/opt/homebrew/opt/openjdk@21",
 		DiretorioDoGo: "/usr/local/go/bin", BinariosDoBrew: "/opt/homebrew/bin",
 		RepositorioMaven: "/Users/Shared/aprova-bench/m2",
