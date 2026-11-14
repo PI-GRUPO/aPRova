@@ -1,0 +1,42 @@
+{
+  "id": "python-affine-cipher",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 1,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/1",
+    "branch": "solucao/2026-11-14-python-affine-cipher",
+    "sha": "32f21d56984da42dc510c5dc3e434aa87965a175"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "bcea8b1a-b785-4b9a-a8b2-9db936b5cee8",
+    "recibo_hash": "4e7dd62207ee6381b9342d5951146faf3a4584e60107c7f7b6591a7a1f077bcf"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 18846,
+    "publicacao_ms": 6490,
+    "decisao_ms": 31146,
+    "oraculo_ms": 8795
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 10,
+        "tokens_de_saida": 964
+      }
+    },
+    "tokens_de_entrada": 10,
+    "tokens_de_saida": 964,
+    "turnos": 5,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

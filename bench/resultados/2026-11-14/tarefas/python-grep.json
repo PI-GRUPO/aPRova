@@ -1,0 +1,42 @@
+{
+  "id": "python-grep",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 5,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/5",
+    "branch": "solucao/2026-11-14-python-grep",
+    "sha": "6a964b797561392c42d858afc622073dfd6bb9bd"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "8139582c-32eb-42f3-b4fd-9af5b88646be",
+    "recibo_hash": "2c0bd4b3c0442d0becbb5fa41b933dc5101e3b84448cfd5d8f3d48a3eaafab15"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 20829,
+    "publicacao_ms": 6634,
+    "decisao_ms": 15932,
+    "oraculo_ms": 10097
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 12,
+        "tokens_de_saida": 1049
+      }
+    },
+    "tokens_de_entrada": 12,
+    "tokens_de_saida": 1049,
+    "turnos": 6,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

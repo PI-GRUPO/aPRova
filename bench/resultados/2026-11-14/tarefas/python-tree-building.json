@@ -1,0 +1,42 @@
+{
+  "id": "python-tree-building",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 7,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/7",
+    "branch": "solucao/2026-11-14-python-tree-building",
+    "sha": "d96486ee0ef61a310ab373249fa0cb5dfe096d38"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "e7e2f602-be61-40bc-9bb6-4137428aa0b8",
+    "recibo_hash": "755e59464b7fff8e5d905f6c22e1cf2d34a07827f0c57ec54aeafbea4eac2f8e"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 33094,
+    "publicacao_ms": 5830,
+    "decisao_ms": 15736,
+    "oraculo_ms": 2444
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 14,
+        "tokens_de_saida": 2264
+      }
+    },
+    "tokens_de_entrada": 14,
+    "tokens_de_saida": 2264,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

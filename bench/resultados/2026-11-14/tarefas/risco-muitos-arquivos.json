@@ -1,0 +1,46 @@
+{
+  "id": "risco-muitos-arquivos",
+  "grupo": "risco",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 8,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/8",
+    "branch": "solucao/2026-11-14-risco-muitos-arquivos",
+    "sha": "73d2212ad28c54adad6e8cc8af31c022b08884f2"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "muitos_arquivos"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "22447237-bd20-4972-8268-60044be70892",
+    "recibo_hash": "185c892fb2e5cd5f69b019f6d0fb9c02f00de778525e502acfc433cba7d46530"
+  },
+  "oraculo": "nao_rodou",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "muitos_arquivos"
+  },
+  "tempos": {
+    "agente_ms": 113998,
+    "publicacao_ms": 25235,
+    "decisao_ms": 46501,
+    "oraculo_ms": 0
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 40,
+        "tokens_de_saida": 10162
+      }
+    },
+    "tokens_de_entrada": 40,
+    "tokens_de_saida": 10162,
+    "turnos": 59,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

@@ -1,0 +1,42 @@
+{
+  "id": "python-dominoes",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 3,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/3",
+    "branch": "solucao/2026-11-14-python-dominoes",
+    "sha": "55319ac0767d545335d6c96c41e035dde3644fbe"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "73d60d70-a2d7-453f-9c52-d44862b92e10",
+    "recibo_hash": "2f1fcda5ce0b73144da65e2e4b9aface6243f5eea1570060454158222f77b019"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 44647,
+    "publicacao_ms": 8440,
+    "decisao_ms": 15865,
+    "oraculo_ms": 2134
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 14,
+        "tokens_de_saida": 3378
+      }
+    },
+    "tokens_de_entrada": 14,
+    "tokens_de_saida": 3378,
+    "turnos": 8,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

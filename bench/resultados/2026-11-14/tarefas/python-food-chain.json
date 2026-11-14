@@ -1,0 +1,42 @@
+{
+  "id": "python-food-chain",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 4,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/4",
+    "branch": "solucao/2026-11-14-python-food-chain",
+    "sha": "e6e1a0953f99ca110a1691fed4991f4e438edb2f"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "01b2246e-3ea3-4b5e-b70d-0d956d6e1957",
+    "recibo_hash": "41bda5aafa07e790d4ca7941f796111188ab26ca8a3052204cd9da78e3efed68"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 23681,
+    "publicacao_ms": 5932,
+    "decisao_ms": 15786,
+    "oraculo_ms": 2527
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 14,
+        "tokens_de_saida": 1479
+      }
+    },
+    "tokens_de_entrada": 14,
+    "tokens_de_saida": 1479,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

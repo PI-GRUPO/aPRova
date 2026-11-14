@@ -1,0 +1,46 @@
+{
+  "id": "go-matrix",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 1,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/1",
+    "branch": "solucao/go-matrix",
+    "sha": "11aba47fc7d419c2848d62d0bd4e43225112cd8c"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "b4f10238-8792-4394-aa23-4276c46dad0b",
+    "recibo_hash": "b87c74a0148e6ff23ca7fc5b9a99a8352331d0cb89461d46879fc2a3b83242a1"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 38311,
+    "publicacao_ms": 7780,
+    "decisao_ms": 46668,
+    "oraculo_ms": 35022
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 1296,
+        "tokens_de_saida": 12
+      },
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 10,
+        "tokens_de_saida": 2268
+      }
+    },
+    "tokens_de_entrada": 1306,
+    "tokens_de_saida": 2280,
+    "turnos": 6,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}
