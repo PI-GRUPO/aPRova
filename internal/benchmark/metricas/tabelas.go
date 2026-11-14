@@ -262,9 +262,16 @@ func descreverEsperado(tarefa resultado.Tarefa) string {
 
 func descreverObtido(tarefa resultado.Tarefa) string {
 	if tarefa.Desfecho != resultado.DesfechoDecidido || tarefa.Decisao == nil {
-		return semDecisao
+		return desfechoSemDecisao(tarefa)
 	}
 	return strings.Join(append([]string{tarefa.Decisao.Nivel}, tarefa.Decisao.Motivos...), ", ")
+}
+
+func desfechoSemDecisao(tarefa resultado.Tarefa) string {
+	if descricao, conhecido := motivoDaExclusao[tarefa.Desfecho]; conhecido {
+		return descricao
+	}
+	return semDecisao
 }
 
 func conferePeloEsperado(tarefa resultado.Tarefa) bool {
