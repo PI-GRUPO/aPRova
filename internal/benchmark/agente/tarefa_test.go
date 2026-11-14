@@ -98,3 +98,19 @@ func TestPrepararDiretorioCriaOTemporarioDaTarefa(t *testing.T) {
 		t.Errorf("o TMPDIR do agente precisa existir antes de ele rodar: %v", err)
 	}
 }
+
+func TestInstrucaoSemExecucaoTiraSoAFraseDeRodarOsTestes(t *testing.T) {
+	tarefa := Tarefa{Enunciado: "x", Linguagem: "go", Solucao: []string{"a.go"}, Protegidos: []string{"a_test.go"}}
+	comExecucao := Instrucao(tarefa)
+	tarefa.SemExecucao = true
+
+	semExecucao := Instrucao(tarefa)
+
+	esperada := strings.Replace(comExecucao, " Para rodá-los, use: go test ./...", "", 1)
+	if semExecucao != esperada {
+		t.Errorf("a instrução sem execução é a mesma, menos a frase de rodar os testes.\n--- obtida:\n%s\n--- esperada:\n%s", semExecucao, esperada)
+	}
+	if !strings.Contains(semExecucao, "Implemente até os testes passarem.\nNão altere nem apague os testes.\n") {
+		t.Errorf("o fim da instrução é o do desenho da rodada 2:\n%s", semExecucao)
+	}
+}

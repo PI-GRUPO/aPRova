@@ -47,11 +47,12 @@ esac
 `
 
 type cenarioDoFalso struct {
-	modo     string
-	registro string
-	tarefa   string
-	ambiente []string
-	prazo    time.Duration
+	semExecucao bool
+	modo        string
+	registro    string
+	tarefa      string
+	ambiente    []string
+	prazo       time.Duration
 }
 
 func agenteFalso(t *testing.T) (*Claude, string) {
@@ -67,6 +68,7 @@ func agenteFalso(t *testing.T) (*Claude, string) {
 func rodar(t *testing.T, cenario cenarioDoFalso) (Execucao, cenarioDoFalso, error) {
 	t.Helper()
 	claude, _ := agenteFalso(t)
+	claude.SemExecucao = cenario.semExecucao
 	cenario.registro = t.TempDir()
 	cenario.tarefa = t.TempDir()
 	if cenario.prazo == 0 {
@@ -232,6 +234,29 @@ func TestArgumentosFixamModeloPermissoesESandbox(t *testing.T) {
 	for _, trecho := range []string{`"enabled":true`, `"allowUnsandboxedCommands":false`, `"denyRead":["~/"]`, `"Read(~/**)"`, `"Edit(~/**)"`, `"Write(~/**)"`} {
 		if !strings.Contains(configuracao, trecho) {
 			t.Errorf("a configuração do sandbox precisa de %s: %s", trecho, configuracao)
+		}
+	}
+}
+
+func TestSemExecucaoOAgenteSoTemFerramentasDeLerEEditar(t *testing.T) {
+	_, cenario, err := rodar(t, cenarioDoFalso{modo: "sucesso", semExecucao: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	argumentos := strings.Split(strings.TrimSpace(lerRegistro(t, cenario, "argumentos")), "\n")
+	indice := slices.Index(argumentos, "--tools")
+	if indice < 0 || indice+1 >= len(argumentos) || argumentos[indice+1] != "Read,Edit,Write,Glob,Grep" {
+		t.Errorf("sem execução, as ferramentas são só Read,Edit,Write,Glob,Grep: %q", argumentos)
+	}
+	for _, proibido := range []string{"--allowedTools", "Bash(go test:*)", "Bash(pytest:*)", "Bash(mvn:*)"} {
+		if slices.Contains(argumentos, proibido) {
+			t.Errorf("%q não vai para o agente sem execução: %q", proibido, argumentos)
+		}
+	}
+	for _, mantido := range []string{"acceptEdits", "--strict-mcp-config", "--settings", configuracaoDoSandbox} {
+		if !slices.Contains(argumentos, mantido) {
+			t.Errorf("o resto da configuração fica igual; faltou %q", mantido)
 		}
 	}
 }
