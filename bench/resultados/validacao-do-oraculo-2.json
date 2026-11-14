@@ -1,0 +1,128 @@
+[
+  {
+    "id": "go-crypto-square",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-dnd-character",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-matrix",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-palindrome-products",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-sublist",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-transpose",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "go-tree-building",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-ledger",
+    "referencia": "passou",
+    "stub": "passou",
+    "confere": false
+  },
+  {
+    "id": "java-palindrome-products",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-poker",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-resistor-color-trio",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-satellite",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-transpose",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "java-twelve-days",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-affine-cipher",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-bottle-song",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-dominoes",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-food-chain",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-grep",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-list-ops",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  },
+  {
+    "id": "python-tree-building",
+    "referencia": "passou",
+    "stub": "falhou",
+    "confere": true
+  }
+]
