@@ -171,3 +171,21 @@ func TestMontarTarefaJavaConverteParaMavenERegistraAConversao(t *testing.T) {
 		t.Errorf("a conversão fica registrada: %v", tarefa.Conversao)
 	}
 }
+
+func TestReferenciaDoExercicioMapeiaParaOsArquivosDeSolucao(t *testing.T) {
+	raiz := polyglotFalso(t)
+	escrever(t, raiz, "java/exercises/practice/poker/.meta/config.json",
+		`{"files":{"solution":["src/main/java/Poker.java"],"test":["src/test/java/PokerTest.java"],"example":[".meta/src/reference/java/Card.java",".meta/src/reference/java/Poker.java"]}}`)
+	escrever(t, raiz, "java/exercises/practice/poker/.meta/src/reference/java/Card.java", "class Card {}\n")
+	escrever(t, raiz, "java/exercises/practice/poker/.meta/src/reference/java/Poker.java", "class Poker {}\n")
+
+	goRef, err := ReferenciaDoExercicio(raiz, "go", "alphametics")
+	if err != nil || len(goRef) != 1 || !strings.HasSuffix(goRef["alphametics.go"], ".meta/example.go") {
+		t.Errorf("Go: o example.go vai para o arquivo de solução: %v, %v", goRef, err)
+	}
+	javaRef, err := ReferenciaDoExercicio(raiz, "java", "poker")
+	if err != nil || len(javaRef) != 2 || !strings.HasSuffix(javaRef["src/main/java/Card.java"], "reference/java/Card.java") ||
+		!strings.HasSuffix(javaRef["src/main/java/Poker.java"], "reference/java/Poker.java") {
+		t.Errorf("Java: cada classe de referência vai para src/main/java: %v, %v", javaRef, err)
+	}
+}
