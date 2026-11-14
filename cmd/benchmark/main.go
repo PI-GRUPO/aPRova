@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -48,7 +49,7 @@ func executar(argumentos []string, saida io.Writer) error {
 
 func montarSuite(polyglot string, saida io.Writer) error {
 	//nolint:gosec // G204: o binário é fixo; o argumento é o diretório do clone informado por quem roda o benchmark.
-	commit, err := exec.Command("git", "-C", polyglot, "rev-parse", "HEAD").Output()
+	commit, err := exec.CommandContext(context.Background(), "git", "-C", polyglot, "rev-parse", "HEAD").Output()
 	if err != nil {
 		return fmt.Errorf("conferir o commit do polyglot: %w", err)
 	}
