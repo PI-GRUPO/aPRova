@@ -162,6 +162,7 @@ func TestTesteApagaRelatoriosVersionadosCompilaETestaComOMavenDaImagemOffline(t 
 			"PATH=/opt/java/openjdk/bin:/usr/local/bin:/usr/bin:/bin",
 			"HOME=" + diretorioDeCache + "/home",
 			"JAVA_HOME=/opt/java/openjdk",
+			"LC_ALL=C.UTF-8",
 		}
 		if !slices.Equal(maven.Ambiente, esperado) {
 			t.Errorf("ambiente do mvn: %v, esperava só %v", maven.Ambiente, esperado)
