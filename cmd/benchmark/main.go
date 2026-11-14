@@ -23,7 +23,7 @@ const (
 	codigoDeErro           = 1
 )
 
-var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark tabelas <diretório da rodada>")
+var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark validar-oraculo <clone do polyglot> | benchmark tabelas <diretório da rodada>")
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
@@ -42,6 +42,8 @@ func executar(argumentos []string, saida io.Writer) error {
 		return montarSuite(argumentos[1], saida)
 	case "tabelas":
 		return imprimirTabelas(argumentos[1], saida)
+	case "validar-oraculo":
+		return validarOraculo(context.Background(), argumentos[1], saida)
 	default:
 		return errUsoErrado
 	}
