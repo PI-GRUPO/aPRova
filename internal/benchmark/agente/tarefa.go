@@ -50,12 +50,14 @@ func (f Ferramentas) Ambiente(diretorio string) []string {
 }
 
 // Tarefa é o que a instrução precisa: o enunciado, a linguagem, os arquivos a
-// implementar (pode ser vazio) e os testes que não podem mudar.
+// implementar (pode ser vazio) e os testes que não podem mudar. SemExecucao
+// tira da instrução o comando para rodar os testes.
 type Tarefa struct {
-	Enunciado  string
-	Linguagem  string
-	Solucao    []string
-	Protegidos []string
+	Enunciado   string
+	Linguagem   string
+	Solucao     []string
+	Protegidos  []string
+	SemExecucao bool
 }
 
 // Instrucao monta o pedido ao agente: o enunciado e os arquivos da tarefa,
@@ -71,7 +73,11 @@ func Instrucao(tarefa Tarefa) string {
 	if len(tarefa.Protegidos) > 0 {
 		fmt.Fprintf(&instrucao, "Testes: %s\n", strings.Join(tarefa.Protegidos, ", "))
 	}
-	fmt.Fprintf(&instrucao, "\nImplemente até os testes passarem. Para rodá-los, use: %s\n", comandoDeTestePorLinguagem[tarefa.Linguagem])
+	instrucao.WriteString("\nImplemente até os testes passarem.")
+	if !tarefa.SemExecucao {
+		fmt.Fprintf(&instrucao, " Para rodá-los, use: %s", comandoDeTestePorLinguagem[tarefa.Linguagem])
+	}
+	instrucao.WriteString("\n")
 	instrucao.WriteString("Não altere nem apague os testes.\n")
 	return instrucao.String()
 }

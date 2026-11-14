@@ -22,19 +22,22 @@ const (
 )
 
 var (
-	ferramentasPermitidas = []string{"Bash(go test:*)", "Bash(go build:*)", "Bash(pytest:*)", "Bash(mvn:*)"}
-	chavesProibidas       = []string{"ANTHROPIC_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"}
-	sinalDeLimiteDeUso    = regexp.MustCompile(`(?i)usage limit|hit your limit|limit reached|rate limit`)
+	ferramentasSemExecucao = "Read,Edit,Write,Glob,Grep"
+	ferramentasPermitidas  = []string{"Bash(go test:*)", "Bash(go build:*)", "Bash(pytest:*)", "Bash(mvn:*)"}
+	chavesProibidas        = []string{"ANTHROPIC_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY"}
+	sinalDeLimiteDeUso     = regexp.MustCompile(`(?i)usage limit|hit your limit|limit reached|rate limit`)
 )
 
 // Claude roda o claude CLI em modo headless, com o sandbox do Claude Code
 // ligado, edição só no cwd e uma lista fechada de comandos de teste. Binario é
 // o caminho absoluto do executável; Ambiente é todo o ambiente do processo,
-// do qual as chaves de API são sempre retiradas.
+// do qual as chaves de API são sempre retiradas. SemExecucao deixa o agente
+// só com as ferramentas de ler e editar, sem nenhum comando.
 type Claude struct {
-	Binario  string
-	Modelo   string
-	Ambiente []string
+	Binario     string
+	Modelo      string
+	Ambiente    []string
+	SemExecucao bool
 }
 
 type saidaDoClaude struct {
@@ -93,7 +96,7 @@ func (c *Claude) Executar(ctx context.Context, pedido Pedido) (Execucao, error) 
 }
 
 func (c *Claude) argumentos(instrucao string) []string {
-	return append([]string{
+	argumentos := []string{
 		"-p", instrucao,
 		"--output-format", "json",
 		"--model", c.Modelo,
@@ -101,8 +104,11 @@ func (c *Claude) argumentos(instrucao string) []string {
 		"--setting-sources", "",
 		"--strict-mcp-config",
 		"--settings", configuracaoDoSandbox,
-		"--allowedTools",
-	}, ferramentasPermitidas...)
+	}
+	if c.SemExecucao {
+		return append(argumentos, "--tools", ferramentasSemExecucao)
+	}
+	return append(append(argumentos, "--allowedTools"), ferramentasPermitidas...)
 }
 
 func classificar(execucao *Execucao) {
