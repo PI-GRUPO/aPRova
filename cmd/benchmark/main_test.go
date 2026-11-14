@@ -59,3 +59,45 @@ func TestTabelasRecusaRodadaInexistenteOuSemTarefas(t *testing.T) {
 		}
 	}
 }
+
+func gravarRodadaDeUmaTarefa(t *testing.T, nome, oraculo string) string {
+	t.Helper()
+	rodada := filepath.Join(t.TempDir(), nome)
+	tarefas := filepath.Join(rodada, "tarefas")
+	if err := os.MkdirAll(tarefas, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	conteudo := `{"id":"go-a","grupo":"correcao","linguagem":"go","desfecho":"decidido","pr":{"numero":1},` +
+		`"decisao":{"nivel":"alto","motivos":["falha_teste"]},"oraculo":"` + oraculo + `","tempos":{"agente_ms":2000},` +
+		`"agente":{"modelo_principal":"claude-sonnet-5","tokens_de_entrada":10,"tokens_de_saida":5}}`
+	if err := os.WriteFile(filepath.Join(tarefas, "go-a.json"), []byte(conteudo), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return rodada
+}
+
+func TestCompararUsaONomeDeCadaRodadaComoColuna(t *testing.T) {
+	primeira := gravarRodadaDeUmaTarefa(t, "2026-11-14", "passou")
+	segunda := gravarRodadaDeUmaTarefa(t, "2026-11-14-2a", "falhou")
+
+	var saida bytes.Buffer
+	if err := executar([]string{"comparar", primeira, segunda}, &saida); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, esperado := range []string{"| Métrica | 2026-11-14 | 2026-11-14-2a |", "| Quebradas contidas | 0 de 1 | 1 de 1 |"} {
+		if !strings.Contains(saida.String(), esperado) {
+			t.Errorf("faltou %q em:\n%s", esperado, saida.String())
+		}
+	}
+}
+
+func TestCompararRecusaMenosDeDuasRodadasOuRodadaSemTarefas(t *testing.T) {
+	existente := gravarRodadaDeUmaTarefa(t, "2026-11-14", "passou")
+	for _, argumentos := range [][]string{{"comparar", existente}, {"comparar", existente, filepath.Join(t.TempDir(), "nao-existe")}} {
+		var saida bytes.Buffer
+		if err := executar(argumentos, &saida); err == nil || saida.Len() != 0 {
+			t.Errorf("%q precisa ser recusado sem imprimir nada: %v", argumentos, err)
+		}
+	}
+}
