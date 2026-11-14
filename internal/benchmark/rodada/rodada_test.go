@@ -86,7 +86,6 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type agenteFalso struct {
-	diretorio string
 	escrever  map[string]string
 	apagar    []string
 	desfecho  agente.Desfecho

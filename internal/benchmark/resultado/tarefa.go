@@ -49,6 +49,7 @@ type Tarefa struct {
 	Esperado          *Esperado   `json:"esperado,omitempty"`
 	Tempos            Tempos      `json:"tempos"`
 	Agente            UsoDoAgente `json:"agente"`
+	ExecucoesDoAgente int         `json:"execucoes_do_agente"`
 }
 
 // PR identifica o pull request aberto para a solução.
@@ -91,6 +92,8 @@ type UsoDoAgente struct {
 	TokensDeEntrada int64                  `json:"tokens_de_entrada"`
 	TokensDeSaida   int64                  `json:"tokens_de_saida"`
 	Turnos          int                    `json:"turnos,omitempty"`
+	Desfecho        string                 `json:"desfecho,omitempty"`
+	Detalhe         string                 `json:"detalhe,omitempty"`
 }
 
 // UsoDoModelo são os tokens de um modelo dentro de uma execução.
