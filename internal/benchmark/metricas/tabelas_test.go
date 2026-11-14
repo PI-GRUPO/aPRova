@@ -206,6 +206,18 @@ func TestMedioSoPorCodigoSemTesteNaoContaQuandoHaOutroMotivo(t *testing.T) {
 	}
 }
 
+func TestGrupoBMostraODesfechoRealQuandoNaoHouveDecisao(t *testing.T) {
+	semMudanca := risco("risco-dep", "alto", "dependencia_nova", nil, tempos(20, 0, 0, 0))
+	semMudanca.Desfecho = resultado.DesfechoDiffVazio
+	semMudanca.PR = nil
+
+	tabelas := Tabelas([]resultado.Tarefa{semMudanca})
+
+	if !strings.Contains(tabelas, "| risco-dep | alto, dependencia_nova | diff vazio | não |") {
+		t.Errorf("o obtido é o desfecho real, não \"sem decisão\":\n%s", tabelas)
+	}
+}
+
 func TestConjuntoVazioNaoQuebra(t *testing.T) {
 	tabelas := Tabelas(nil)
 
