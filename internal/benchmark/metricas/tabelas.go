@@ -13,6 +13,8 @@ import (
 
 const (
 	nivelBloqueado = "alto"
+	nivelMedio     = "medio"
+	codigoSemTeste = "codigo_sem_teste"
 	semDecisao     = "sem decisão"
 )
 
@@ -34,6 +36,7 @@ type celulas struct {
 	bloqueiosDesnecessarios int
 	quebradasQuePassariam   int
 	quebradasContidas       int
+	medioSoPorFaltaDeTeste  int
 }
 
 func (c celulas) quebradas() int {
@@ -77,7 +80,8 @@ func escreverGrupoA(saida *strings.Builder, correcao []resultado.Tarefa) {
 	fmt.Fprintf(saida, "| Sem a camada: soluções quebradas que chegariam à main | %s |\n", nDeM(total.quebradas(), n))
 	fmt.Fprintf(saida, "| Com a camada: soluções quebradas que passariam assim mesmo | %s |\n", nDeM(total.quebradasQuePassariam, n))
 	fmt.Fprintf(saida, "| Bloqueios desnecessários | %s |\n", nDeM(total.bloqueiosDesnecessarios, n))
-	fmt.Fprintf(saida, "| PRs liberados sem intervenção humana | %s |\n\n", nDeM(total.liberadas(), n))
+	fmt.Fprintf(saida, "| PRs liberados sem intervenção humana | %s |\n", nDeM(total.liberadas(), n))
+	fmt.Fprintf(saida, "| Nível médio só por codigo_sem_teste | %s |\n\n", nDeM(total.medioSoPorFaltaDeTeste, n))
 
 	excluidas := filtrar(correcao, func(t resultado.Tarefa) bool { return !comparavel(t) })
 	fmt.Fprintf(saida, "Fora da comparação: %s.\n\n", nDeM(len(excluidas), len(correcao)))
@@ -197,6 +201,9 @@ func cruzar(tarefas []resultado.Tarefa) celulas {
 	var total celulas
 	for _, tarefa := range filtrar(tarefas, comparavel) {
 		total.comparaveis++
+		if medioSoPorFaltaDeTeste(tarefa) {
+			total.medioSoPorFaltaDeTeste++
+		}
 		passou := tarefa.Oraculo == resultado.OraculoPassou
 		switch {
 		case passou && liberada(tarefa):
@@ -215,6 +222,10 @@ func cruzar(tarefas []resultado.Tarefa) celulas {
 func comparavel(tarefa resultado.Tarefa) bool {
 	return tarefa.Desfecho == resultado.DesfechoDecidido && tarefa.Decisao != nil &&
 		(tarefa.Oraculo == resultado.OraculoPassou || tarefa.Oraculo == resultado.OraculoFalhou)
+}
+
+func medioSoPorFaltaDeTeste(tarefa resultado.Tarefa) bool {
+	return tarefa.Decisao.Nivel == nivelMedio && slices.Equal(tarefa.Decisao.Motivos, []string{codigoSemTeste})
 }
 
 func liberada(tarefa resultado.Tarefa) bool {
