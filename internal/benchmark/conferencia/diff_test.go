@@ -44,7 +44,7 @@ func TestArquivoDeCacheERecusado(t *testing.T) {
 	caches := []string{
 		".gocache/ab/cdef-d", ".pytest_cache/v/cache/nodeids", "pacote/__pycache__/frete.cpython-314.pyc",
 		".m2/repository/org/x.jar", "target/classes/Frete.class", "modulo/target/surefire-reports/TEST-x.xml",
-		".claude/settings.local.json",
+		".claude/settings.local.json", ".tmp/pytest-of-alguem/x",
 	}
 	for _, caminho := range caches {
 		if err := Conferir([]string{caminho}, nil, segredosDeExemplo()); !errors.Is(err, ErrArquivoDeCache) {

@@ -64,7 +64,7 @@ func TestDiffTrazAlteradosCriadosEApagadosSemOsCaches(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, cache := range []string{".gocache/ab/x", ".gomodcache/m/x", "__pycache__/a.pyc", "pacote/__pycache__/b.pyc",
-		".pytest_cache/v", ".m2/repo/x.jar", "target/classes/A.class", ".claude/settings.local.json"} {
+		".pytest_cache/v", ".m2/repo/x.jar", "target/classes/A.class", ".claude/settings.local.json", ".tmp/surefire123/x"} {
 		escrever(t, area.Diretorio, cache, "cache")
 	}
 

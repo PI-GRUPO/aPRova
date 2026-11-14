@@ -20,6 +20,7 @@ func TestAmbienteDaTarefaTemAsFerramentasECachesDentroDaTarefa(t *testing.T) {
 
 	for _, esperada := range []string{
 		"HOME=/Users/alguem",
+		"TMPDIR=/Users/Shared/aprova-bench/trabalho/go-a/.tmp",
 		"PATH=/Users/Shared/aprova-bench/venv/bin:/opt/homebrew/opt/openjdk@21/bin:/usr/local/go/bin:/opt/homebrew/bin:/usr/bin:/bin",
 		"JAVA_HOME=/opt/homebrew/opt/openjdk@21",
 		"GOCACHE=/Users/Shared/aprova-bench/trabalho/go-a/.gocache",
