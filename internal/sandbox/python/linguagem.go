@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/arquivo"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
@@ -67,7 +68,7 @@ func Nova(opcoes Opcoes) *Linguagem {
 		rodador:          opcoes.Rodador,
 		diretorioDeCache: opcoes.DiretorioDeCache,
 		agora:            agora,
-		lerRelatorio:     lerArquivoComSeguranca,
+		lerRelatorio:     arquivo.LerDoPR,
 	}
 }
 

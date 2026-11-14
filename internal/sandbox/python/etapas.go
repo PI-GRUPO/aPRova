@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/arquivo"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 )
 
@@ -117,13 +118,13 @@ func (l *Linguagem) coletarRequisitos(ctx context.Context, projeto string) ([]st
 	}
 
 	var especificacoes, recusas []string
-	for _, arquivo := range arquivosDeRequisitos(nomes) {
-		conteudo, err := lerArquivoComSeguranca(filepath.Join(projeto, arquivo))
+	for _, requisitos := range arquivosDeRequisitos(nomes) {
+		conteudo, err := arquivo.LerDoPR(filepath.Join(projeto, requisitos))
 		if err != nil {
-			recusas = append(recusas, fmt.Sprintf("%s não pôde ser lido como arquivo comum: %v", arquivo, err))
+			recusas = append(recusas, fmt.Sprintf("%s não pôde ser lido como arquivo comum: %v", requisitos, err))
 			continue
 		}
-		lidas, recusadas := interpretarArquivoDeRequisitos(arquivo, string(conteudo))
+		lidas, recusadas := interpretarArquivoDeRequisitos(requisitos, string(conteudo))
 		especificacoes, recusas = append(especificacoes, lidas...), append(recusas, recusadas...)
 	}
 
