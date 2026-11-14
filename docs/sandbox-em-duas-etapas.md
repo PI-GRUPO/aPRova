@@ -139,34 +139,80 @@ preparo as ferramentas de `build-system.requires` como wheels. Hoje o projeto
 não é instalado, e o pytest importa pela raiz. Fica fora deste card para não
 criar um modo de falha novo perto da apresentação.
 
-## Java: não há sandbox Java na dev
+## Java
 
-O sandbox suporta Go e Python. Quando houver Java, a regra do preparo é a
-mesma, e estes pontos já se sabem:
+O sandbox Java veio da branch `test` (Sara Rodrigues) e foi adaptado às duas
+etapas. Só Maven é suportado.
 
-- **Gradle não é suportado.** Resolver dependências executa o build script do
-  PR (`build.gradle` é código).
-- **Maven com o `mvn` da imagem, nunca o `mvnw` do repositório.** Mesmo assim, o
-  Maven carrega código ou opções do PR já na resolução, e estes casos teriam de
-  ser recusados:
-  - `.mvn/extensions.xml`: extensões do núcleo do Maven;
-  - `<extensions>true</extensions>` em plugin e `<build><extensions>`: classes
-    carregadas ao montar o modelo do projeto, inclusive no
-    `dependency:go-offline`;
-  - `.mvn/jvm.config`: opções da JVM do próprio Maven, como `-javaagent`
-    apontando para um jar do repositório;
-  - `.mvn/maven.config`: opções de linha de comando;
-  - `<repositories>` e `<pluginRepositories>` próprios: o mesmo risco dos
-    índices próprios do Python.
-- O `dependency:go-offline` não resolve tudo: os providers do surefire, por
-  exemplo, são resolvidos na hora do teste, e o testar sem rede falharia.
+| Etapa | Comando | Ambiente |
+| --- | --- | --- |
+| `preparar` | nenhum: só o clone e a conferência do `pom.xml` | rede `bridge`, mas nenhum `mvn` roda |
+| `testar` | `mvn -o -B -ntp test-compile`, depois `mvn -o -B -ntp test` | `--network none`, uid 10001, repositório local no tmpfs encadeado ao cache da imagem, só leitura |
+
+No Java o preparo não baixa nada: tudo o que o Maven pode usar já está na
+imagem. Assim nenhuma resolução do Maven acontece com rede a partir do PR. O
+Maven é sempre o `/usr/share/maven/bin/mvn` da imagem; o `mvnw` do repositório
+nunca roda.
+
+**O que é aquecido no cache.** No build da imagem, um projeto próprio
+(`imagens/java/aquecimento/`) roda `mvn clean test` para cada combinação de:
+
+| | Versões |
+| --- | --- |
+| JUnit Jupiter | 5.10.2, 5.11.4, 5.14.4, 6.1.3 |
+| JUnit 4 | 4.13.2 |
+| maven-surefire-plugin | 3.2.5, 3.5.2, 3.5.4 (padrão do Maven 3.9.16), 3.6.1 |
+
+Rodar os testes, e não só `dependency:go-offline`, é o que traz os providers
+do surefire e o `junit-platform-launcher`: o surefire só os resolve na hora do
+teste, e o `go-offline` não os baixa. Isso foi medido: com o `go-offline` de um
+projeto JUnit 5.10.2, o `test-compile` passa e o `mvn -o test` falha em
+`junit-platform-launcher:1.10.2`. O surefire 3.6 não publica mais o
+`surefire-junit4`; o JUnit 4 roda pela plataforma, com a vintage engine. As 20
+combinações somam uns 5 minutos ao build e 38 MB à imagem.
+
+| Situação | Classificação |
+| --- | --- |
+| sem `pom.xml` na raiz do projeto | `infraestrutura`, como "sem `go.mod`" |
+| Java do projeto mais novo que o JDK 21 | `infraestrutura`, como "go.mod exige Go mais novo" |
+| dependência, plugin, extensão ou provider fora do cache | `compilacao`, com o artefato na evidência |
+| erro de compilação | `compilacao` |
+| relatórios do surefire | `nenhuma` ou `teste`, cruzados com o código de saída do `mvn test` |
+| projeto sem testes | `nenhuma` com 0/0, como no Python; o gate trata pela regra `codigo_sem_teste` |
+
+Os `target/surefire-reports` que vierem versionados no repositório são apagados
+antes do `mvn`, para não entrarem na contagem.
+
+**Medição com o aPRova-TESTES.** O executor local foi rodado direto contra a
+pasta `java/` da `main` do aPRova-TESTES (commit `2ce4ba4`; JUnit 5.10.2 com
+surefire 3.2.5, compilado para Java 8), duas rodadas: `nenhuma`, 13 testes
+passando (9 `@Test` e um `@ParameterizedTest` com 3 valores, contados como o
+surefire conta), em 16,6 s e 11,7 s.
+
+**O `.mvn/` não é brecha.** `.mvn/extensions.xml`, `.mvn/jvm.config` e
+`.mvn/maven.config` carregam código ou opções do PR no Maven. Como o Maven só
+roda na etapa `testar`, sem rede e como uid 10001, eles têm o mesmo alcance que
+o próprio código do PR, e não são recusados.
+
+**Não suportado e por quê:**
+
+- **Gradle**: resolver dependências executa o build script do PR, e o sandbox
+  exige `pom.xml`.
+- **Versões e artefatos fora do cache**: a análise não tem rede. JUnit, surefire
+  ou plugin em outra versão, dependência de produção (guava, por exemplo) ou
+  plugin além dos usados até a fase `test` (jacoco, por exemplo) viram
+  `compilacao` com o nome do artefato que falta.
+- **Teste que trava**: é encerrado no prazo do executor e vira
+  `infraestrutura`; não há timeout por teste, como o `-timeout` do Go.
 
 ## Azure: até o card 61
 
 O executor da Azure continua com o fluxo de uma etapa só: o job roda o binário
 sem subcomando, e ele clona, baixa e testa no mesmo contêiner, com a rede que o
-job tiver. As duas etapas na Azure ficam para o card 61 (retorno do resultado
-do sandbox na Azure), que depende da implantação.
+job tiver. O Java não roda na Azure: a imagem Java só entra no executor local,
+e o binário não tem fluxo de uma etapa para Java. As duas etapas na Azure ficam
+para o card 61 (retorno do resultado do sandbox na Azure), que depende da
+implantação.
 
 O fluxo sem subcomando existe só para isso. O executor local sempre chama
 `preparar` e depois `testar`, e não há opção de rede.

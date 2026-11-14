@@ -41,7 +41,9 @@ os testes de repositórios Go vem de `SANDBOX_IMAGEM_GO`; veja
 [imagens/go/README.md](imagens/go/README.md) para construir a imagem e entender
 por que o código do PR não consegue forjar o próprio resultado. A de repositórios
 Python vem de `SANDBOX_IMAGEM_PYTHON`; veja
-[imagens/python/README.md](imagens/python/README.md).
+[imagens/python/README.md](imagens/python/README.md). A de repositórios Maven
+vem de `SANDBOX_IMAGEM_JAVA` e só roda no executor local; veja
+[imagens/java/README.md](imagens/java/README.md).
 
 `SANDBOX_DIRETORIOS` diz em que diretório de cada repositório fica o projeto
 que o sandbox testa, no formato `dono/repositorio=diretorio`, separado por
@@ -50,7 +52,8 @@ testado a partir da raiz. O diretório vem sempre daqui, nunca do conteúdo do
 PR.
 
 `SANDBOX_LINGUAGENS` diz a linguagem do projeto de cada repositório, no mesmo
-formato (por exemplo `Azulpasta/aPRova-TESTES=python`), e aceita `go` e `python`.
+formato (por exemplo `Azulpasta/aPRova-TESTES=python`), e aceita `go`, `python`
+e `java`.
 Repositório sem entrada é testado como Go. Como o diretório, a linguagem vem
 sempre daqui, nunca do conteúdo do PR.
 

@@ -414,7 +414,8 @@ Essas implementações não substituem a validação do n8n com serviços reais.
 | Variável incorporada da dev | Consumidor e configuração | Recarga |
 | --- | --- | --- |
 | `SANDBOX_IMAGEM_PYTHON` | worker; imagem construída para executar projetos Python | worker |
-| `SANDBOX_LINGUAGENS` | worker; pares `dono/repo=python` ou `dono/repo=go`; padrão Go | worker |
+| `SANDBOX_IMAGEM_JAVA` | worker; imagem construída para executar projetos Maven, só no executor local | worker |
+| `SANDBOX_LINGUAGENS` | worker; pares `dono/repo=go`, `dono/repo=python` ou `dono/repo=java`; padrão Go | worker |
 | `GATE_MAX_ARQUIVOS` | worker; padrão 20, limite da regra de tamanho | worker |
 | `GATE_CAMINHOS_SENSIVEIS` | worker; configuração de caminhos do gate; ver `README.md`, seção Gate de risco | worker |
 | `CALIBRACAO_LIGADA` | worker; `false` por padrão | worker |
