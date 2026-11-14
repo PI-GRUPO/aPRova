@@ -73,6 +73,7 @@ func (l *Linguagem) rodarMaven(ctx context.Context, projeto, fase string) proces
 			caminhoDosExecutaveis,
 			"HOME=" + filepath.Join(l.diretorioDeCache, "home"),
 			"JAVA_HOME=" + javaHome,
+			"LC_ALL=C.UTF-8",
 		},
 	})
 }
