@@ -63,6 +63,9 @@ type agentePorDiretorio struct {
 }
 
 func (a agentePorDiretorio) Executar(ctx context.Context, pedido agente.Pedido) (agente.Execucao, error) {
+	if err := a.ferramentas.PrepararDiretorio(pedido.Diretorio); err != nil {
+		return agente.Execucao{}, err
+	}
 	claude := &agente.Claude{Binario: binarioDoClaude, Modelo: modeloDaRodada, Ambiente: a.ferramentas.Ambiente(pedido.Diretorio)}
 	return claude.Executar(ctx, pedido)
 }

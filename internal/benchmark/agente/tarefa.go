@@ -2,6 +2,7 @@ package agente
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -73,4 +74,13 @@ func Instrucao(tarefa Tarefa) string {
 	fmt.Fprintf(&instrucao, "\nImplemente até os testes passarem. Para rodá-los, use: %s\n", comandoDeTestePorLinguagem[tarefa.Linguagem])
 	instrucao.WriteString("Não altere nem apague os testes.\n")
 	return instrucao.String()
+}
+
+// PrepararDiretorio cria o diretório temporário da tarefa, que o ambiente usa
+// como TMPDIR; os comandos de teste falham sem ele.
+func (f Ferramentas) PrepararDiretorio(diretorio string) error {
+	if err := os.MkdirAll(filepath.Join(diretorio, ".tmp"), 0o750); err != nil {
+		return fmt.Errorf("agente: criar o diretório temporário da tarefa: %w", err)
+	}
+	return nil
 }

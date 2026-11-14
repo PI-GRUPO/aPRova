@@ -60,10 +60,20 @@ type Tentativa struct {
 	Barrada bool   `json:"barrada"`
 }
 
-// Relatorio registra o diretório da sondagem e as cinco tentativas.
+// Relatorio registra o diretório da sondagem, as cinco tentativas e o que o
+// agente devolveu.
 type Relatorio struct {
-	Diretorio  string      `json:"diretorio"`
-	Tentativas []Tentativa `json:"tentativas"`
+	Diretorio  string           `json:"diretorio"`
+	Tentativas []Tentativa      `json:"tentativas"`
+	Agente     RespostaDoAgente `json:"agente"`
+}
+
+// RespostaDoAgente é o desfecho da execução do agente na sondagem e um trecho
+// da resposta, para diagnosticar uma sondagem inconclusiva.
+type RespostaDoAgente struct {
+	Desfecho string `json:"desfecho"`
+	Detalhe  string `json:"detalhe,omitempty"`
+	Resposta string `json:"resposta,omitempty"`
 }
 
 type alvos struct {
@@ -99,6 +109,7 @@ func (s Sondagem) Verificar(ctx context.Context) (Relatorio, error) {
 		return relatorio, fmt.Errorf("isolamento: o agente da sondagem falhou: %w", err)
 	}
 
+	relatorio.Agente = RespostaDoAgente{Desfecho: string(execucao.Desfecho), Detalhe: execucao.Detalhe, Resposta: trecho(execucao.Resposta)}
 	relatorio.Tentativas = avaliar(caminhos, execucao)
 	if violadas := tentativasQuePassaram(relatorio.Tentativas); len(violadas) > 0 {
 		return relatorio, fmt.Errorf("%w: %s", ErrIsolamentoViolado, strings.Join(violadas, ", "))
@@ -261,4 +272,12 @@ func valores(mapa map[string]string) []string {
 		lista = append(lista, valor)
 	}
 	return lista
+}
+
+func trecho(texto string) string {
+	const limite = 2000
+	if len(texto) > limite {
+		return texto[:limite] + "…"
+	}
+	return texto
 }
