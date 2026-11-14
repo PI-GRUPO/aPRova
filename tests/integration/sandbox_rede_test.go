@@ -34,6 +34,10 @@ func TestSandboxPythonBaixaDependenciasNoPreparoETestaSemRede(t *testing.T) {
 	exigirAtaqueDeRedeBloqueado(t, executarCasoPython(t, casoDeRedeEDependencia, prazoDeUmCasoComum))
 }
 
+func TestSandboxJavaUsaOCacheDaImagemETestaSemRede(t *testing.T) {
+	exigirAtaqueDeRedeBloqueado(t, executarCasoJava(t, casoDeRedeEDependencia, prazoDeUmCasoComum))
+}
+
 func TestSandboxPythonNuncaExecutaOSetupPyDoPRNoPreparo(t *testing.T) {
 	resultado := executarCasoPython(t, "setup_py_marcador", prazoDeUmCasoComum)
 

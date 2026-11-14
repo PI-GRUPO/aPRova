@@ -18,6 +18,9 @@ func TestAfetaOSandboxReconheceCadaCaminhoMonitorado(t *testing.T) {
 		".github/workflows/ci.yml",
 		".github/workflows/imagem-sandbox-go.yml",
 		"imagens/python/Dockerfile",
+		"imagens/java/Dockerfile",
+		"imagens/java/aquecimento/junit5/pom.xml",
+		"tests/integration/testdata/java/ok/pom.xml",
 		"tests/integration/sandbox_go_test.go",
 		"tests/integration/testdata/go/ok/frete.go",
 	}

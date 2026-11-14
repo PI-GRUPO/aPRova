@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -15,42 +14,12 @@ import (
 )
 
 const (
-	imagemDoSandboxGo     = "aprova-sandbox-go:teste-de-integracao"
-	tempoLimiteDoBuild    = 10 * time.Minute
+	tempoLimiteDoBuild    = 15 * time.Minute
 	pontoDeMontagem       = "/repositorios"
 	prazoDeUmCasoComum    = 3 * time.Minute
 	prazoDoCasoQueTrava   = 150 * time.Second
 	prefixoDosRepositorio = ".repositorios-"
 )
-
-var (
-	construcaoDaImagem sync.Once
-	erroDaConstrucao   error
-	saidaDaConstrucao  []byte
-)
-
-func exigirImagemDoSandboxGo(t *testing.T) {
-	t.Helper()
-	exigirDocker(t)
-
-	construcaoDaImagem.Do(func() {
-		ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDoBuild)
-		defer cancelar()
-
-		raiz, err := filepath.Abs(filepath.Join("..", ".."))
-		if err != nil {
-			erroDaConstrucao = err
-			return
-		}
-		construcao := exec.CommandContext(ctx, "docker", "build", "-q",
-			"-f", filepath.Join(raiz, "imagens", "go", "Dockerfile"), "-t", imagemDoSandboxGo, raiz)
-		saidaDaConstrucao, erroDaConstrucao = construcao.CombinedOutput()
-	})
-
-	if erroDaConstrucao != nil {
-		t.Fatalf("construir a imagem do sandbox Go: %v\n%s", erroDaConstrucao, saidaDaConstrucao)
-	}
-}
 
 type repositoriosLocais struct {
 	diretorio string
@@ -153,13 +122,13 @@ func executarCasoComOpcoes(t *testing.T, caso string, prazo time.Duration, opcoe
 
 func executarCenario(t *testing.T, cenario cenarioDeIntegracao) sandbox.ResultadoSandbox {
 	t.Helper()
-	exigirImagemDoSandboxGo(t)
+	imagemGo.exigir(t)
 
 	caso, prazo, opcoes := cenario.caso, cenario.prazo, cenario.opcoes
 	repositorios := novosRepositoriosLocais(t)
 	endereco, sha := repositorios.publicar(t, caso, cenario.ajustar)
 
-	opcoes.ImagemPorLinguagem = map[sandbox.Linguagem]string{sandbox.LinguagemGo: imagemDoSandboxGo}
+	opcoes.ImagemPorLinguagem = map[sandbox.Linguagem]string{sandbox.LinguagemGo: imagemGo.nome()}
 	opcoes.Montagens = []string{repositorios.diretorio + ":" + pontoDeMontagem + ":ro"}
 	executor := sandbox.NovoExecutorLocal(opcoes)
 

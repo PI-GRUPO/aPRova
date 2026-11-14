@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "o mvnw do repositório foi executado"
+exit 1
