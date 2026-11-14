@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/PI-GRUPO/aPRova/internal/benchmark/metricas"
@@ -23,7 +24,7 @@ const (
 	codigoDeErro           = 1
 )
 
-var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark validar-oraculo <clone do polyglot> | benchmark rodar [--modelo <id>] [--sem-execucao] <data> [ids...] | benchmark tabelas <diretório da rodada>")
+var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark validar-oraculo <clone do polyglot> | benchmark rodar [--modelo <id>] [--sem-execucao] <data> [ids...] | benchmark tabelas <diretório da rodada> | benchmark comparar <diretório de cada rodada, ao menos dois>")
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
@@ -40,6 +41,9 @@ func executar(argumentos []string, saida io.Writer) error {
 			return err
 		}
 		return rodar(context.Background(), opcoes, saida)
+	}
+	if len(argumentos) >= 1 && argumentos[0] == "comparar" {
+		return imprimirComparacao(argumentos[1:], saida)
 	}
 	if len(argumentos) != 2 {
 		return errUsoErrado
@@ -74,13 +78,37 @@ func montarSuite(polyglot string, saida io.Writer) error {
 }
 
 func imprimirTabelas(rodada string, saida io.Writer) error {
-	tarefas, err := resultado.LerDiretorio(rodada)
+	tarefas, err := lerRodada(rodada)
 	if err != nil {
 		return err
 	}
-	if len(tarefas) == 0 {
-		return fmt.Errorf("nenhum resultado de tarefa em %s: confira o caminho da rodada", rodada)
-	}
 	_, err = io.WriteString(saida, metricas.Tabelas(tarefas))
 	return err
+}
+
+func imprimirComparacao(diretorios []string, saida io.Writer) error {
+	if len(diretorios) < 2 {
+		return errUsoErrado
+	}
+	rodadas := make([]metricas.Rodada, 0, len(diretorios))
+	for _, diretorio := range diretorios {
+		tarefas, err := lerRodada(diretorio)
+		if err != nil {
+			return err
+		}
+		rodadas = append(rodadas, metricas.Rodada{Rotulo: filepath.Base(diretorio), Tarefas: tarefas})
+	}
+	_, err := io.WriteString(saida, metricas.Comparacao(rodadas))
+	return err
+}
+
+func lerRodada(rodada string) ([]resultado.Tarefa, error) {
+	tarefas, err := resultado.LerDiretorio(rodada)
+	if err != nil {
+		return nil, err
+	}
+	if len(tarefas) == 0 {
+		return nil, fmt.Errorf("nenhum resultado de tarefa em %s: confira o caminho da rodada", rodada)
+	}
+	return tarefas, nil
 }
