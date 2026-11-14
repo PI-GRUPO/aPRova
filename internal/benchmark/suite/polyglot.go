@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/PI-GRUPO/aPRova/internal/benchmark/resultado"
@@ -134,6 +135,11 @@ func MontarDoPolyglot(raiz, commit, linguagem, exercicio, destino string) (Taref
 	}
 
 	copiar := append(append(append([]string{}, configuracao.Arquivos.Solucao...), tarefa.ArquivosProtegidos...), configuracao.Arquivos.Invalidador...)
+	if linguagem == "go" && !slices.Contains(copiar, "go.mod") {
+		if _, err := os.Stat(filepath.Join(origem, "go.mod")); err == nil {
+			copiar = append(copiar, "go.mod")
+		}
+	}
 	if err := copiarArquivos(origem, filepath.Join(destino, diretorioDosArquivos), linguagem, copiar); err != nil {
 		return Tarefa{}, err
 	}
