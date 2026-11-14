@@ -173,6 +173,7 @@ func novoCenario(t *testing.T, grupo resultado.Grupo) *cenario {
 	juiz := &oraculoFalso{veredito: resultado.OraculoPassou, julgadas: &julgadas}
 	c := &cenario{github: github, execucoes: &execucoes, julgadas: &julgadas, agente: falso, oraculo: juiz}
 	c.rodada = Rodada{
+		Nome:                "2026-11-15",
 		Suite:               suite.Suite{Tarefas: []suite.Tarefa{tarefa}},
 		RaizDaSuite:         raizDaSuite,
 		Resultados:          t.TempDir(),
@@ -214,7 +215,7 @@ func TestFluxoCompletoDeUmaTarefa(t *testing.T) {
 
 	tarefa := lerResultado(t, c)
 	if tarefa.Desfecho != resultado.DesfechoDecidido || tarefa.PR == nil || tarefa.PR.Numero != 1 ||
-		!strings.HasSuffix(tarefa.PR.URL, "/pull/1") || tarefa.PR.Branch != "solucao/go-a" {
+		!strings.HasSuffix(tarefa.PR.URL, "/pull/1") || tarefa.PR.Branch != "solucao/2026-11-15-go-a" {
 		t.Errorf("PR aberto e decisão coletada: %+v", tarefa)
 	}
 	if tarefa.Decisao == nil || tarefa.Decisao.Nivel != "alto" || tarefa.Decisao.ReciboID != idDoRecibo ||
@@ -228,8 +229,8 @@ func TestFluxoCompletoDeUmaTarefa(t *testing.T) {
 		tarefa.ExecucoesDoAgente != 1 {
 		t.Errorf("uso do agente registrado: %+v", tarefa.Agente)
 	}
-	if c.github.refs["refs/heads/base/go-a"] == "" || c.github.refs["refs/heads/solucao/go-a"] == "" {
-		t.Errorf("as duas branches existem: %v", c.github.refs)
+	if c.github.refs["refs/heads/base/2026-11-15-go-a"] == "" || c.github.refs["refs/heads/solucao/2026-11-15-go-a"] == "" {
+		t.Errorf("as duas branches existem com o nome da rodada, para não reaproveitar PR de outra rodada: %v", c.github.refs)
 	}
 }
 
