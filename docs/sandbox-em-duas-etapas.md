@@ -61,6 +61,20 @@ As garantias do contêiner valem nas duas etapas:
   de 1 GB em `/tmp`;
 - prazo: um único, dividido entre as duas etapas.
 
+## Medição com o PR #1
+
+O executor local foi rodado direto contra o PR #1 do aPRova-TESTES (head
+`57e36c5`, diretório `go`), duas rodadas em cada versão, na mesma máquina:
+
+| Versão | Rede dos testes | Rodada 1 | Rodada 2 | Resultado |
+| --- | --- | --- | --- | --- |
+| antes, um contêiner | `bridge` | 24,6 s | 23,7 s | `teste`: 10 passaram, 1 falhou |
+| depois, duas etapas | `none` | 24,1 s | 24,1 s | `teste`: 10 passaram, 1 falhou |
+
+O PR #1 não tem dependências, então o preparo é basicamente o clone, que
+antes também acontecia. Num PR com dependências, o tempo de baixá-las só muda
+de contêiner.
+
 ## Go
 
 | Etapa | Comando | Ambiente |
