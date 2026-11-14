@@ -57,10 +57,12 @@ type Julgador interface {
 	Julgar(ctx context.Context, entrada oraculo.Entrada) (oraculo.Veredito, error)
 }
 
-// Rodada é uma execução da suíte. Resultados é bench/resultados/<data>;
+// Rodada é uma execução da suíte. Nome identifica a rodada e entra no nome
+// das branches; Resultados é bench/resultados/<data>;
 // Trabalho recebe as áreas de trabalho, fora do HOME. Agentes constrói o
 // agente para o diretório de cada tarefa.
 type Rodada struct {
+	Nome                string
 	Suite               suite.Suite
 	RaizDaSuite         string
 	Resultados          string
@@ -191,7 +193,8 @@ func (r Rodada) publicar(ctx context.Context, tarefa suite.Tarefa, registro resu
 	if err != nil {
 		return pendente{}, err
 	}
-	base, err := r.GitHub.PublicarCommit(ctx, repositorio, "base/"+tarefa.ID, remoto.Commit{Mensagem: "Base da tarefa " + tarefa.ID, Arquivos: originais})
+	branchDaBase := "base/" + r.Nome + "-" + tarefa.ID
+	base, err := r.GitHub.PublicarCommit(ctx, repositorio, branchDaBase, remoto.Commit{Mensagem: "Base da tarefa " + tarefa.ID, Arquivos: originais})
 	if err != nil {
 		return pendente{}, err
 	}
@@ -207,12 +210,12 @@ func (r Rodada) publicar(ctx context.Context, tarefa suite.Tarefa, registro resu
 		}
 		solucao.Arquivos[arquivo.Caminho] = conteudo
 	}
-	branch := "solucao/" + tarefa.ID
+	branch := "solucao/" + r.Nome + "-" + tarefa.ID
 	publicado, err := r.GitHub.PublicarCommit(ctx, repositorio, branch, solucao)
 	if err != nil {
 		return pendente{}, err
 	}
-	pr, err := r.GitHub.AbrirPR(ctx, repositorio, branch, "base/"+tarefa.ID, "Tarefa "+tarefa.ID,
+	pr, err := r.GitHub.AbrirPR(ctx, repositorio, branch, branchDaBase, "Tarefa "+tarefa.ID,
 		"Solução gerada por um agente de código para a tarefa "+tarefa.ID+".")
 	if err != nil {
 		return pendente{}, err

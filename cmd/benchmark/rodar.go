@@ -159,6 +159,7 @@ func montarRodada(ctx context.Context, data string, ids []string) (rodada.Rodada
 	cliente := &http.Client{Timeout: prazoDasChamadas}
 	trabalhoDaRodada := filepath.Join(raizDoBenchmark, "trabalho", data)
 	execucao := rodada.Rodada{
+		Nome:  data,
 		Suite: montada, RaizDaSuite: diretorioDaSuite,
 		Resultados: filepath.Join("bench", "resultados", data), Trabalho: trabalhoDaRodada,
 		Agentes: func(string) agente.Agente { return agentePorDiretorio{ferramentas: ferramentas} },
