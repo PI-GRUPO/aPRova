@@ -67,3 +67,34 @@ func TestEstadoDoTaskRunVemDoBanco(t *testing.T) {
 		t.Errorf("estado do task_run: %q, %v", estado, err)
 	}
 }
+
+func TestOpcoesDaRodadaTemOPadraoDaRodada1(t *testing.T) {
+	opcoes, err := lerOpcoesDaRodada([]string{"2026-11-14", "go-a", "go-b"})
+
+	if err != nil || opcoes.Data != "2026-11-14" || opcoes.Modelo != "claude-sonnet-5" || opcoes.SemExecucao ||
+		strings.Join(opcoes.IDs, ",") != "go-a,go-b" {
+		t.Errorf("sem opções, a rodada é a da rodada 1: %+v, %v", opcoes, err)
+	}
+}
+
+func TestOpcoesDaRodadaLeModeloESemExecucao(t *testing.T) {
+	opcoes, err := lerOpcoesDaRodada([]string{"--modelo", "claude-haiku-4-5-20251001", "--sem-execucao", "2026-11-14-2b", "go-a"})
+
+	if err != nil || opcoes.Data != "2026-11-14-2b" || opcoes.Modelo != "claude-haiku-4-5-20251001" || !opcoes.SemExecucao ||
+		strings.Join(opcoes.IDs, ",") != "go-a" {
+		t.Errorf("modelo e sem execução lidos antes da data: %+v, %v", opcoes, err)
+	}
+}
+
+func TestOpcoesDaRodadaRecusamModeloForaDoDesenhoESemData(t *testing.T) {
+	for _, argumentos := range [][]string{
+		{"--modelo", "claude-haiku-4-5", "2026-11-14-2b"},
+		{"--modelo"},
+		{"--sem-execucao"},
+		{"--rapido", "2026-11-14"},
+	} {
+		if _, err := lerOpcoesDaRodada(argumentos); err == nil {
+			t.Errorf("%q precisa ser recusado", argumentos)
+		}
+	}
+}
