@@ -130,6 +130,49 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 
 ## Slack e consultas
 
+### Correlação dos alertas da Central
+
+A Central possui um caminho de publicação pelo bot que guarda canal e
+timestamp para futuras atualizações da mensagem. Por padrão,
+`APROVA_SLACK_CORRELACAO_HABILITADA=false` mantém o Incoming Webhook anterior.
+Os retornos dos formulários continuam no caminho existente. A correlação
+não atualiza o alerta após decisão ou chegada posterior de OSV nesta fase.
+
+| Variável | Função |
+| --- | --- |
+| `APROVA_SLACK_CORRELACAO_HABILITADA` | `true` habilita o caminho correlacionado; padrão `false`. |
+| `APROVA_SLACK_CANAL_ALERTAS_ID` | Canal confirmado dos alertas da Central, sem fallback para outros canais. |
+| `APROVA_SLACK_MENSAGENS_TABELA_ID` | ID da Data Table `aprova_slack_mensagens`. |
+| `APROVA_SLACK_CONTROLE_TABELA_ID` | ID da Data Table `aprova_slack_controle`. |
+
+Crie as tabelas conforme [mensagens](recursos/tabela-slack-mensagens.json) e
+[controle](recursos/tabela-slack-controle.json), incluindo exatamente uma
+linha inicial de controle conforme `initialRows`. Associe `slackApi` ao nó
+`C09 | Publicar alerta pelo bot`, com permissão para publicar no canal.
+Carregue as variáveis no container antes de habilitar a flag e valide o
+envio em destino autorizado. O export permanece inativo e sem credenciais.
+
+A chave combina instalação, análise, repositório, PR e tipo de alerta;
+SHA incompatível impede reutilização. A publicação usa controle persistente
+de 15 minutos e reserva antes da chamada Slack. Confirmação exige canal e
+timestamp válidos e persistência conferida. Estados `reservado`, `incerto`
+e `falha` impedem retry automático; confira Slack e execução antes de recuperar.
+Controle ocupado gera erro explícito sem envio e exige reprocessamento
+controlado do subworkflow; não há fila automática. Não apague registros ou
+reservas para repetir um envio cujo resultado seja desconhecido.
+
+### Links e interatividade
+
+Na Central, o alerta de aprovação preserva os botões de decisão e oferece
+links para a PR, o recibo e sua verificação. `url_recibo` emitida pelo worker
+já termina em `/verify`; o alerta aceita também a URL do recibo sem esse
+sufixo. A base vem do evento, por `APROVA_URL_PUBLICA` no worker, e precisa
+ser acessível a quem usa o Slack. Não usar a URL interna da API como base
+pública. Sem URL de recibo compatível, o alerta informa indisponibilidade.
+O link não atesta validade: a resposta de `/receipts/{id}/verify` deve ter
+`valido=true`, além de HTTP 200. O envio assinado a `/acoes-remotas` não
+segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
+
 Interatividade dos botões: HTTPS público com
 `/webhook/aprova/slack/interacoes`, em **Interactivity & Shortcuts**.
 

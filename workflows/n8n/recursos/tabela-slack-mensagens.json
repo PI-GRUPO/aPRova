@@ -1,0 +1,33 @@
+{
+  "name": "aprova_slack_mensagens",
+  "columns": [
+    {
+      "name": "chave",
+      "type": "string"
+    },
+    {
+      "name": "estado",
+      "type": "string"
+    },
+    {
+      "name": "contexto",
+      "type": "string"
+    },
+    {
+      "name": "canal",
+      "type": "string"
+    },
+    {
+      "name": "ts",
+      "type": "string"
+    },
+    {
+      "name": "executor",
+      "type": "string"
+    },
+    {
+      "name": "atualizado_em",
+      "type": "date"
+    }
+  ]
+}

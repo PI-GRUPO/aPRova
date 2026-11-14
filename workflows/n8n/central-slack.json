@@ -85,7 +85,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const evento = $json;\n\nconst resumoOsv = String(evento.contexto_osv?.resumo ||\n  'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.').slice(0, 1000);\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n  osv_resumo: resumoOsv,\n};\n\nconst autor = evento.pr?.autor?.login;\nconst motivo = evento.risco?.motivo || evento.risco?.explicacao;\n\nif (\n  evento.evento?.tipo !== 'aguardando_aprovacao' ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  !autor ||\n  !motivo\n) {\n  throw new Error('Evento de aprovação incompleto ou incompatível.');\n}\n\nconst valorBotao = JSON.stringify(contexto);\n\nif (valorBotao.length > 2000) {\n  throw new Error('Contexto dos botões excede o limite do Slack.');\n}\nconst slack_payload = {\n  text: `Aprovação pendente: ${contexto.repositorio} #${contexto.numero_pr}\\n${resumoOsv}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `PR aguardando aprovação\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}\\n` +\n          `Autor: ${autor}`,\n      },\n    },\n    {\n       type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Motivo do risco:\\n${String(motivo).slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'section',\n      text: { type: 'plain_text', text: 'Contexto OSV para a decisão:\\n' + resumoOsv },\n    },\n    {\n      type: 'actions',\n      elements: [\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Aprovar' },\n          style: 'primary',\n          action_id: 'aprovar',\n          value: valorBotao,\n        },\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Pedir revisão' },\n          action_id: 'solicitar_alteracao',\n          value: valorBotao,\n        },\n      ],\n    },\n  ],\n};\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};\n\n"
+        "jsCode": "const evento = $json;\n\nconst resumoOsv = String(evento.contexto_osv?.resumo ||\n  'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.').slice(0, 1000);\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n  osv_resumo: resumoOsv,\n};\n\nconst autor = evento.pr?.autor?.login;\nconst motivo = evento.risco?.motivo || evento.risco?.explicacao;\n\nif (\n  evento.evento?.tipo !== 'aguardando_aprovacao' ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  !autor ||\n  !motivo\n) {\n  throw new Error('Evento de aprovação incompleto ou incompatível.');\n}\n\nconst valorBotao = JSON.stringify(contexto);\n\nif (valorBotao.length > 2000) {\n  throw new Error('Contexto dos botões excede o limite do Slack.');\n}\nconst urlPr = `https://github.com/${contexto.repositorio}/pull/${contexto.numero_pr}`;\nconst urlInformada = evento.recibo?.url;\nconst recibo = typeof urlInformada === 'string' && urlInformada.length <= 1900\n  ? /^(https?:\\/\\/[^/?#@\\s\\\\]+(?:\\/[^/?#@\\s\\\\]+)*)\\/receipts\\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:\\/verify)?\\/?$/i.exec(urlInformada)\n  : null;\nconst urlRecibo = recibo ? `${recibo[1]}/receipts/${recibo[2]}` : null;\nconst navegacao = [{\n  type: 'button',\n  text: { type: 'plain_text', text: 'Abrir PR' },\n  action_id: 'abrir_pr',\n  url: urlPr,\n}];\nif (urlRecibo) {\n  navegacao.push(\n    {\n      type: 'button',\n      text: { type: 'plain_text', text: 'Ver recibo' },\n      action_id: 'abrir_recibo',\n      url: urlRecibo,\n    },\n    {\n      type: 'button',\n      text: { type: 'plain_text', text: 'Verificar recibo' },\n      action_id: 'verificar_recibo',\n      url: urlRecibo + '/verify',\n    },\n  );\n}\nconst mensagemRecibo = urlRecibo\n  ? 'Consulte o recibo e o resultado da verificação no núcleo.'\n  : 'Recibo indisponível neste alerta.';\nconst slack_payload = {\n  text: `Aprovação pendente: ${contexto.repositorio} #${contexto.numero_pr}\\n${urlPr}\\n${resumoOsv}\\n${mensagemRecibo}` +\n    (urlRecibo ? `\\nRecibo: ${urlRecibo}\\nVerificação: ${urlRecibo}/verify` : ''),\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `PR aguardando aprovação\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}\\n` +\n          `Autor: ${autor}`,\n      },\n    },\n    {\n       type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Motivo do risco:\\n${String(motivo).slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'section',\n      text: { type: 'plain_text', text: 'Contexto OSV para a decisão:\\n' + resumoOsv },\n    },\n    {\n      type: 'actions',\n      elements: [\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Aprovar' },\n          style: 'primary',\n          action_id: 'aprovar',\n          value: valorBotao,\n        },\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Pedir revisão' },\n          action_id: 'solicitar_alteracao',\n          value: valorBotao,\n        },\n      ],\n    },\n    {\n      type: 'section',\n      text: { type: 'plain_text', text: mensagemRecibo },\n    },\n    { type: 'actions', elements: navegacao },\n  ],\n  unfurl_links: false,\n  unfurl_media: false,\n};\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};\n\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -405,7 +405,12 @@
               "neverError": true
             }
           },
-          "timeout": 15000
+          "timeout": 15000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
         }
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -715,6 +720,418 @@
           "waitForSubWorkflow": false
         }
       }
+    },
+    {
+      "id": "2631f53f-67d6-4a51-9ea8-358a2a6c71ed",
+      "name": "C01 | Preparar correlação do alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const itens = $input.all();\nif (itens.length !== 1) throw new Error('Correlação exige um evento por execução.');\nconst evento = itens[0].json;\nconst habilitada = $env.APROVA_SLACK_CORRELACAO_HABILITADA === 'true';\nif (!habilitada) return [{ json: { ...evento, correlacao_alerta: { habilitada: false } } }];\nconst uuid = v => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);\nconst tipo = evento.evento?.tipo;\nif (evento.meta?.origem_verificada !== true || evento.meta?.validacao?.valido !== true ||\n    evento.meta?.versao_evento !== 1 || !Number.isSafeInteger(evento.meta?.tenant_id) ||\n    evento.meta.tenant_id <= 0 || !uuid(evento.meta.id_evento) || !uuid(evento.meta.execution_id) ||\n    !['aguardando_aprovacao', 'falha_recuperavel'].includes(tipo) ||\n    !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\\/[A-Za-z0-9._-]{1,100}$/.test(evento.repositorio?.full_name || '') ||\n    ['.', '..'].includes(evento.repositorio.full_name.split('/')[1]) ||\n    !Number.isSafeInteger(evento.pr?.numero) || evento.pr.numero <= 0 ||\n    !Number.isFinite(Date.parse(evento.meta.ocorrido_em)) ||\n    !evento.slack_payload || !Array.isArray(evento.slack_payload.blocks) ||\n    typeof evento.slack_payload.text !== 'string' || !evento.slack_payload.text.trim()) {\n  throw new Error('Correlação exige alerta autenticado e normalizado pelo Core.');\n}\nconst canal = String($env.APROVA_SLACK_CANAL_ALERTAS_ID || '').trim();\nconst mensagens = String($env.APROVA_SLACK_MENSAGENS_TABELA_ID || '').trim();\nconst controle = String($env.APROVA_SLACK_CONTROLE_TABELA_ID || '').trim();\nif (!/^[CG][A-Z0-9]{8,}$/.test(canal) || !mensagens || !controle) {\n  throw new Error('Configurar canal e tabelas antes de habilitar a correlação da Central.');\n}\nconst sha = evento.pr?.sha || '';\nif (typeof sha !== 'string' || (sha && !/^[0-9a-f]{40,64}$/i.test(sha))) throw new Error('SHA incompatível com a análise.');\nconst contexto = {\n  versao: 1, installation_id: evento.meta.tenant_id, task_run_id: evento.meta.execution_id,\n  repositorio: evento.repositorio.full_name, numero_pr: evento.pr.numero,\n  sha, tipo_alerta: tipo, id_evento: evento.meta.id_evento,\n  ocorrido_em: evento.meta.ocorrido_em, slack_payload: evento.slack_payload,\n};\nconst chave = JSON.stringify([contexto.installation_id, contexto.task_run_id,\n  contexto.repositorio.toLowerCase(), contexto.numero_pr, tipo]);\nreturn [{ json: { ...evento, correlacao_alerta: {\n  habilitada: true, chave, canal, mensagens_tabela_id: mensagens, controle_tabela_id: controle,\n  executor: String($execution.id), contexto: JSON.stringify(contexto),\n} } }];"
+      }
+    },
+    {
+      "id": "471c2f61-2e8d-4807-bb91-e831ef862dbc",
+      "name": "C02 | Correlação habilitada",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        -500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.correlacao_alerta.habilitada }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "89800e2e-b7ac-4e60-8415-9e66fbd86d29",
+      "name": "C03 | Reservar publicação",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1280,
+        -500
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.controle_tabela_id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "condition": "eq",
+              "keyValue": "publicacao"
+            },
+            {
+              "keyName": "bloqueado_ate",
+              "condition": "lt",
+              "keyValue": "={{ $now.toMillis() }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "bloqueado_ate": "={{ $now.toMillis() + 900000 }}",
+            "executor": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.executor }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "003ddead-37dd-4e78-97ba-1787c299a297",
+      "name": "C04 | Conferir exclusão de publicação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst origem = $('C01 | Preparar correlação do alerta').first().json;\nif (rows.length !== 1 || rows[0].executor !== origem.correlacao_alerta.executor ||\n    rows[0].chave !== 'publicacao' || !Number.isFinite(rows[0].bloqueado_ate) ||\n    rows[0].bloqueado_ate <= Date.now()) {\n  throw new Error('Publicação ocupada ou controle inválido; nenhum envio efetuado. Reprocessar o subworkflow após conferir a execução concorrente.');\n}\nreturn [{ json: origem }];"
+      }
+    },
+    {
+      "id": "8ef974af-d235-40ce-9824-113ceb581aeb",
+      "name": "C05 | Buscar mensagem correlacionada",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1760,
+        -500
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.mensagens_tabela_id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "condition": "eq",
+              "keyValue": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.chave }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 2
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a880a14c-2d8e-4d62-ac63-709dd1aa1df2",
+      "name": "C06 | Decidir publicação do alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const origem = $('C01 | Preparar correlação do alerta').first().json;\nconst correlacao = origem.correlacao_alerta;\nconst entradas = $input.all().map(i => i.json);\nif (entradas.some(r => r.error || (Object.keys(r).length && !Number.isSafeInteger(r.id)))) {\n  throw new Error('Leitura da correlação inválida; publicação interrompida antes do envio.');\n}\nconst rows = entradas.filter(r => Number.isSafeInteger(r.id));\nlet status = 'novo';\nlet enviar = rows.length === 0;\nlet existente = null;\nif (rows.length > 1) { status = 'correlacao_ambigua'; enviar = false; }\nif (rows.length === 1) {\n  existente = rows[0];\n  let anterior;\n  try { anterior = JSON.parse(existente.contexto); } catch {}\n  const atual = JSON.parse(correlacao.contexto);\n  const compativel = anterior && anterior.versao === 1 &&\n    anterior.installation_id === atual.installation_id &&\n    anterior.task_run_id === atual.task_run_id &&\n    typeof anterior.repositorio === 'string' &&\n    anterior.repositorio.toLowerCase() === atual.repositorio.toLowerCase() &&\n    anterior.numero_pr === atual.numero_pr && anterior.tipo_alerta === atual.tipo_alerta &&\n    existente.chave === correlacao.chave && existente.canal === correlacao.canal &&\n    !(anterior.sha && atual.sha && anterior.sha !== atual.sha);\n  const confirmado = existente.estado === 'confirmado' &&\n    typeof existente.ts === 'string' && /^\\d+\\.\\d+$/.test(existente.ts);\n  status = !compativel ? 'correlacao_incompativel' :\n    confirmado ? 'ja_publicado' :\n    ['reservado', 'incerto', 'falha'].includes(existente.estado) ? 'recuperacao_manual' : 'registro_invalido';\n}\nreturn [{ json: { ...origem, correlacao_alerta: { ...correlacao, enviar, status,\n  existente: existente ? { id: existente.id, estado: existente.estado, ts: existente.ts || '' } : null,\n} } }];"
+      }
+    },
+    {
+      "id": "f540b479-6dca-483c-92e0-ff3a82a06997",
+      "name": "C07 | Publicar alerta novo",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        -500
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.correlacao_alerta.enviar }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "af6687a4-325d-4df5-ad02-20319797c367",
+      "name": "C08 | Persistir reserva da mensagem",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2480,
+        -500
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.mensagens_tabela_id }}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chave": "={{ $('C06 | Decidir publicação do alerta').first().json.correlacao_alerta.chave }}",
+            "estado": "reservado",
+            "contexto": "={{ $('C06 | Decidir publicação do alerta').first().json.correlacao_alerta.contexto }}",
+            "canal": "={{ $('C06 | Decidir publicação do alerta').first().json.correlacao_alerta.canal }}",
+            "ts": "",
+            "executor": "={{ $('C06 | Decidir publicação do alerta').first().json.correlacao_alerta.executor }}",
+            "atualizado_em": "={{ $now.toISO() }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b796ed4e-fc59-4ee4-b622-70111d31a146",
+      "name": "C09 | Publicar alerta pelo bot",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        2720,
+        -500
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C06 | Decidir publicação do alerta').first().json.correlacao_alerta.canal }}"
+        },
+        "messageType": "block",
+        "text": "={{ $('C06 | Decidir publicação do alerta').first().json.slack_payload.text }}",
+        "blocksUi": "={{ JSON.stringify({ blocks: $('C06 | Decidir publicação do alerta').first().json.slack_payload.blocks }) }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "link_names": false,
+          "mrkdwn": false,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
+    },
+    {
+      "id": "8f93aeb8-7b2d-408d-9dce-813f7964d2c7",
+      "name": "C10 | Conferir publicação do alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2960,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const origem = $('C06 | Decidir publicação do alerta').first().json;\nconst reserva = $('C08 | Persistir reserva da mensagem').first().json;\nconst c = origem.correlacao_alerta;\nif (!Number.isSafeInteger(reserva.id) || reserva.chave !== c.chave ||\n    reserva.estado !== 'reservado' || reserva.executor !== c.executor) {\n  throw new Error('Reserva da mensagem não confirmada; conferir a execução antes de recuperar.');\n}\nconst resposta = $input.first().json;\nconst ts = resposta.ts || resposta.message_timestamp;\nconst confirmado = !resposta.error && resposta.simulado !== true && resposta.simulacao !== true &&\n  resposta.ok !== false && resposta.channel === c.canal &&\n  typeof ts === 'string' && /^\\d+\\.\\d+$/.test(ts);\nconst estado = confirmado ? 'confirmado' : resposta.ok === false ? 'falha' : 'incerto';\nreturn [{ json: { ...origem, correlacao_alerta: { ...c, estado, status: estado,\n  reserva_id: reserva.id, ts: confirmado ? ts : '', atualizado_em: new Date().toISOString(),\n} } }];"
+      }
+    },
+    {
+      "id": "27198255-1d51-435d-a680-e056b2d190c9",
+      "name": "C11 | Persistir resultado da publicação",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3200,
+        -500
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.mensagens_tabela_id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.correlacao_alerta.reserva_id }}"
+            },
+            {
+              "keyName": "executor",
+              "condition": "eq",
+              "keyValue": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.executor }}"
+            },
+            {
+              "keyName": "estado",
+              "condition": "eq",
+              "keyValue": "reservado"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "estado": "={{ $json.correlacao_alerta.estado }}",
+            "ts": "={{ $json.correlacao_alerta.ts }}",
+            "atualizado_em": "={{ $json.correlacao_alerta.atualizado_em }}"
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "f74ac869-9edd-43e8-bb0d-36d110913c53",
+      "name": "C12 | Liberar publicação",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3440,
+        -500
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.controle_tabela_id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chave",
+              "condition": "eq",
+              "keyValue": "publicacao"
+            },
+            {
+              "keyName": "executor",
+              "condition": "eq",
+              "keyValue": "={{ $('C01 | Preparar correlação do alerta').first().json.correlacao_alerta.executor }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "bloqueado_ate": 0,
+            "executor": ""
+          },
+          "schema": [],
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "119a2a64-b208-4a96-9625-c38d9870e08d",
+      "name": "C13 | Retornar correlação do alerta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3680,
+        -500
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const publicado = $('C10 | Conferir publicação do alerta').isExecuted;\nconst origem = publicado ? $('C10 | Conferir publicação do alerta').first().json : $('C06 | Decidir publicação do alerta').first().json;\nconst c = origem.correlacao_alerta;\nconst controles = $input.all().map(i => i.json);\nif (controles.length !== 1 || controles[0].chave !== 'publicacao' ||\n    controles[0].executor !== '' || controles[0].bloqueado_ate !== 0) {\n  throw new Error('Liberação do controle não confirmada; conferir reservas antes de reprocessar.');\n}\nreturn [{ json: { correlacao_alerta: {\n  chave: c.chave, status: c.status, publicada: c.status === 'confirmado' || c.status === 'ja_publicado',\n  canal: c.canal, ts: c.status === 'confirmado' ? c.ts : c.status === 'ja_publicado' ? c.existente.ts : '',\n  exige_recuperacao_manual: ['incerto', 'falha', 'recuperacao_manual', 'correlacao_ambigua',\n    'correlacao_incompativel', 'registro_invalido'].includes(c.status),\n} } }];"
+      }
+    },
+    {
+      "id": "7d4c1dd4-0738-4e09-9d20-af8e977f3a98",
+      "name": "C08B | Conferir reserva antes do Slack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        -280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst origem = $('C06 | Decidir publicação do alerta').first().json;\nconst c = origem.correlacao_alerta;\nconst lock = $('C03 | Reservar publicação').first().json;\nif (rows.length !== 1 || !Number.isSafeInteger(rows[0].id) || rows[0].id <= 0 ||\n    rows[0].chave !== c.chave || rows[0].estado !== 'reservado' || rows[0].executor !== c.executor ||\n    rows[0].canal !== c.canal || rows[0].contexto !== c.contexto ||\n    lock.executor !== c.executor || lock.bloqueado_ate < Date.now() + 60000) {\n  throw new Error('Reserva ou exclusão não confirmada antes do Slack; nenhum envio autorizado nesta execução.');\n}\nreturn [{ json: origem }];"
+      }
+    },
+    {
+      "id": "ddcfdc06-87e9-4392-b4dc-66247bba7099",
+      "name": "C11B | Conferir persistência da publicação",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3500,
+        -280
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst origem = $('C10 | Conferir publicação do alerta').first().json;\nconst c = origem.correlacao_alerta;\nif (rows.length !== 1 || rows[0].id !== c.reserva_id || rows[0].chave !== c.chave ||\n    rows[0].executor !== c.executor || rows[0].estado !== c.estado ||\n    rows[0].ts !== c.ts || rows[0].canal !== c.canal) {\n  throw new Error('Resultado da publicação não persistido; conferir Slack e reserva antes de recuperar.');\n}\nreturn [{ json: origem }];"
+      }
     }
   ],
   "connections": {
@@ -741,28 +1158,6 @@
         [
           {
             "node": "03B | Preparar Falha",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "03A | Preparar Aprovação": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "03B | Preparar Falha": {
-      "main": [
-        [
-          {
-            "node": "HTTP Request",
             "type": "main",
             "index": 0
           }
@@ -992,6 +1387,196 @@
         [
           {
             "node": "08 | Separar Tipo de Interação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03A | Preparar Aprovação": {
+      "main": [
+        [
+          {
+            "node": "C01 | Preparar correlação do alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03B | Preparar Falha": {
+      "main": [
+        [
+          {
+            "node": "C01 | Preparar correlação do alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C01 | Preparar correlação do alerta": {
+      "main": [
+        [
+          {
+            "node": "C02 | Correlação habilitada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C02 | Correlação habilitada": {
+      "main": [
+        [
+          {
+            "node": "C03 | Reservar publicação",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C03 | Reservar publicação": {
+      "main": [
+        [
+          {
+            "node": "C04 | Conferir exclusão de publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C04 | Conferir exclusão de publicação": {
+      "main": [
+        [
+          {
+            "node": "C05 | Buscar mensagem correlacionada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C05 | Buscar mensagem correlacionada": {
+      "main": [
+        [
+          {
+            "node": "C06 | Decidir publicação do alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C06 | Decidir publicação do alerta": {
+      "main": [
+        [
+          {
+            "node": "C07 | Publicar alerta novo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C07 | Publicar alerta novo": {
+      "main": [
+        [
+          {
+            "node": "C08 | Persistir reserva da mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "C12 | Liberar publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C08 | Persistir reserva da mensagem": {
+      "main": [
+        [
+          {
+            "node": "C08B | Conferir reserva antes do Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C08B | Conferir reserva antes do Slack": {
+      "main": [
+        [
+          {
+            "node": "C09 | Publicar alerta pelo bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C09 | Publicar alerta pelo bot": {
+      "main": [
+        [
+          {
+            "node": "C10 | Conferir publicação do alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C10 | Conferir publicação do alerta": {
+      "main": [
+        [
+          {
+            "node": "C11 | Persistir resultado da publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C11 | Persistir resultado da publicação": {
+      "main": [
+        [
+          {
+            "node": "C11B | Conferir persistência da publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C11B | Conferir persistência da publicação": {
+      "main": [
+        [
+          {
+            "node": "C12 | Liberar publicação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "C12 | Liberar publicação": {
+      "main": [
+        [
+          {
+            "node": "C13 | Retornar correlação do alerta",
             "type": "main",
             "index": 0
           }
