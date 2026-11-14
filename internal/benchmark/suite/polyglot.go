@@ -38,6 +38,7 @@ type configuracaoDoExercicio struct {
 		Teste       []string `json:"test"`
 		Editor      []string `json:"editor"`
 		Invalidador []string `json:"invalidator"`
+		Exemplo     []string `json:"example"`
 	} `json:"files"`
 }
 
@@ -223,4 +224,28 @@ func gravar(caminho string, conteudo []byte) error {
 		return fmt.Errorf("suite: gravar %s: %w", caminho, err)
 	}
 	return nil
+}
+
+// ReferenciaDoExercicio mapeia cada arquivo de solução para o arquivo da
+// solução de referência do .meta que o substitui: um para um quando há um só
+// de cada; em Java, cada classe de referência vai para src/main/java.
+func ReferenciaDoExercicio(raiz, linguagem, exercicio string) (map[string]string, error) {
+	origem := filepath.Join(raiz, linguagem, "exercises", "practice", exercicio)
+	configuracao, err := lerConfiguracao(origem)
+	if err != nil {
+		return nil, err
+	}
+	exemplos, solucoes := configuracao.Arquivos.Exemplo, configuracao.Arquivos.Solucao
+	referencia := map[string]string{}
+	switch {
+	case len(exemplos) == 1 && len(solucoes) == 1:
+		referencia[solucoes[0]] = filepath.Join(origem, filepath.FromSlash(exemplos[0]))
+	case linguagem == linguagemJava:
+		for _, exemplo := range exemplos {
+			referencia["src/main/java/"+path.Base(exemplo)] = filepath.Join(origem, filepath.FromSlash(exemplo))
+		}
+	default:
+		return nil, fmt.Errorf("suite: %s/%s tem %d arquivos de referência para %d de solução", linguagem, exercicio, len(exemplos), len(solucoes))
+	}
+	return referencia, nil
 }
