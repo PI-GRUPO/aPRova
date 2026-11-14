@@ -58,11 +58,13 @@ type Julgador interface {
 }
 
 // Rodada é uma execução da suíte. Nome identifica a rodada e entra no nome
-// das branches; Resultados é bench/resultados/<data>;
+// das branches; SemExecucao tira da instrução o comando de teste;
+// Resultados é bench/resultados/<data>;
 // Trabalho recebe as áreas de trabalho, fora do HOME. Agentes constrói o
 // agente para o diretório de cada tarefa.
 type Rodada struct {
 	Nome                string
+	SemExecucao         bool
 	Suite               suite.Suite
 	RaizDaSuite         string
 	Resultados          string
@@ -157,7 +159,10 @@ func (r Rodada) rodarAgente(ctx context.Context, tarefa suite.Tarefa) (resultado
 	}
 	execucao, err := r.Agentes(diretorio).Executar(ctx, agente.Pedido{
 		Diretorio: diretorio, Prazo: r.PrazoDoAgente,
-		Instrucao: agente.Instrucao(agente.Tarefa{Enunciado: string(enunciado), Linguagem: tarefa.Linguagem, Solucao: tarefa.ArquivosDaSolucao, Protegidos: tarefa.ArquivosProtegidos}),
+		Instrucao: agente.Instrucao(agente.Tarefa{
+			Enunciado: string(enunciado), Linguagem: tarefa.Linguagem, Solucao: tarefa.ArquivosDaSolucao,
+			Protegidos: tarefa.ArquivosProtegidos, SemExecucao: r.SemExecucao,
+		}),
 	})
 	if err != nil {
 		return registro, area, trabalho.Mudanca{}, err
