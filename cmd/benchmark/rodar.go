@@ -30,7 +30,7 @@ import (
 
 const (
 	binarioDoClaude     = "/usr/local/bin/claude"
-	modeloDaRodada      = "claude-sonnet-5"
+	modeloPadrao        = "claude-sonnet-5"
 	raizDoBenchmark     = "/Users/Shared/aprova-bench"
 	urlDaAPIDoGitHub    = "https://api.github.com"
 	urlPadraoDoAPRova   = "http://localhost:8080"
@@ -40,7 +40,41 @@ const (
 	prazoDasChamadas    = 60 * time.Second
 )
 
-var linguagensDaRodada = []string{"go", "python", "java"}
+var (
+	linguagensDaRodada = []string{"go", "python", "java"}
+	modelosDoDesenho   = []string{modeloPadrao, "claude-haiku-4-5-20251001"}
+)
+
+type opcoesDaRodada struct {
+	Data        string
+	IDs         []string
+	Modelo      string
+	SemExecucao bool
+}
+
+func lerOpcoesDaRodada(argumentos []string) (opcoesDaRodada, error) {
+	opcoes := opcoesDaRodada{Modelo: modeloPadrao}
+	for len(argumentos) > 0 && strings.HasPrefix(argumentos[0], "--") {
+		switch {
+		case argumentos[0] == "--sem-execucao":
+			opcoes.SemExecucao = true
+			argumentos = argumentos[1:]
+		case argumentos[0] == "--modelo" && len(argumentos) >= 2:
+			opcoes.Modelo = argumentos[1]
+			argumentos = argumentos[2:]
+		default:
+			return opcoesDaRodada{}, fmt.Errorf("opção inválida: %s: %w", argumentos[0], errUsoErrado)
+		}
+	}
+	if !slices.Contains(modelosDoDesenho, opcoes.Modelo) {
+		return opcoesDaRodada{}, fmt.Errorf("o modelo %s não está no desenho do benchmark (%s)", opcoes.Modelo, strings.Join(modelosDoDesenho, ", "))
+	}
+	if len(argumentos) == 0 {
+		return opcoesDaRodada{}, errUsoErrado
+	}
+	opcoes.Data, opcoes.IDs = argumentos[0], argumentos[1:]
+	return opcoes, nil
+}
 
 type buscadorDeTaskRun interface {
 	BuscarTaskRun(ctx context.Context, id string) (domain.TaskRun, error)
@@ -60,13 +94,17 @@ func (e estadosDoBanco) Estado(ctx context.Context, taskRunID string) (string, e
 
 type agentePorDiretorio struct {
 	ferramentas agente.Ferramentas
+	modelo      string
+	semExecucao bool
 }
 
 func (a agentePorDiretorio) Executar(ctx context.Context, pedido agente.Pedido) (agente.Execucao, error) {
 	if err := a.ferramentas.PrepararDiretorio(pedido.Diretorio); err != nil {
 		return agente.Execucao{}, err
 	}
-	claude := &agente.Claude{Binario: binarioDoClaude, Modelo: modeloDaRodada, Ambiente: a.ferramentas.Ambiente(pedido.Diretorio)}
+	claude := &agente.Claude{
+		Binario: binarioDoClaude, Modelo: a.modelo, Ambiente: a.ferramentas.Ambiente(pedido.Diretorio), SemExecucao: a.semExecucao,
+	}
 	return claude.Executar(ctx, pedido)
 }
 
@@ -102,8 +140,8 @@ func repositoriosDoAmbiente(ler func(string) string) (map[string]string, error) 
 	return repositorios, nil
 }
 
-func rodar(ctx context.Context, data string, ids []string, saida io.Writer) error {
-	execucao, sondagem, encerrar, err := montarRodada(ctx, data, ids)
+func rodar(ctx context.Context, opcoes opcoesDaRodada, saida io.Writer) error {
+	execucao, sondagem, encerrar, err := montarRodada(ctx, opcoes)
 	if err != nil {
 		return err
 	}
@@ -118,16 +156,16 @@ func rodar(ctx context.Context, data string, ids []string, saida io.Writer) erro
 		}
 		return err
 	}
-	_, err = fmt.Fprintf(saida, "rodada %s concluída: %d tarefas em %s\n", data, len(execucao.Suite.Tarefas), execucao.Resultados)
+	_, err = fmt.Fprintf(saida, "rodada %s concluída: %d tarefas em %s\n", opcoes.Data, len(execucao.Suite.Tarefas), execucao.Resultados)
 	return err
 }
 
-func montarRodada(ctx context.Context, data string, ids []string) (rodada.Rodada, isolamento.Sondagem, func(), error) {
+func montarRodada(ctx context.Context, opcoes opcoesDaRodada) (rodada.Rodada, isolamento.Sondagem, func(), error) {
 	montada, err := lerSuite()
 	if err != nil {
 		return rodada.Rodada{}, isolamento.Sondagem{}, nil, err
 	}
-	if montada, err = filtrarTarefas(montada, ids); err != nil {
+	if montada, err = filtrarTarefas(montada, opcoes.IDs); err != nil {
 		return rodada.Rodada{}, isolamento.Sondagem{}, nil, err
 	}
 	repositorios, err := repositoriosDoAmbiente(os.Getenv)
@@ -157,12 +195,13 @@ func montarRodada(ctx context.Context, data string, ids []string) (rodada.Rodada
 		RepositorioMaven: filepath.Join(raizDoBenchmark, "m2"),
 	}
 	cliente := &http.Client{Timeout: prazoDasChamadas}
-	trabalhoDaRodada := filepath.Join(raizDoBenchmark, "trabalho", data)
+	trabalhoDaRodada := filepath.Join(raizDoBenchmark, "trabalho", opcoes.Data)
+	agenteDaRodada := agentePorDiretorio{ferramentas: ferramentas, modelo: opcoes.Modelo, semExecucao: opcoes.SemExecucao}
 	execucao := rodada.Rodada{
-		Nome:  data,
+		Nome: opcoes.Data, SemExecucao: opcoes.SemExecucao,
 		Suite: montada, RaizDaSuite: diretorioDaSuite,
-		Resultados: filepath.Join("bench", "resultados", data), Trabalho: trabalhoDaRodada,
-		Agentes: func(string) agente.Agente { return agentePorDiretorio{ferramentas: ferramentas} },
+		Resultados: filepath.Join("bench", "resultados", opcoes.Data), Trabalho: trabalhoDaRodada,
+		Agentes: func(string) agente.Agente { return agenteDaRodada },
 		GitHub:  &remoto.GitHub{URLBase: urlDaAPIDoGitHub, Token: strings.TrimSpace(string(token)), Cliente: cliente},
 		Recibos: remoto.APRova{URLBase: valorOuPadrao(os.Getenv("BENCH_URL_APROVA"), urlPadraoDoAPRova), Cliente: cliente},
 		Estados: estadosDoBanco{buscador: repository.NovoRepositorioPostgres(pool, repository.OpcoesPostgres{})},
@@ -176,7 +215,7 @@ func montarRodada(ctx context.Context, data string, ids []string) (rodada.Rodada
 		Segredos: conferencia.SegredosDoEnv(env), Repositorios: repositorios,
 		PrazoDoAgente: prazoDoAgente, PrazoDaDecisao: prazoDaDecisao, IntervaloDeConsulta: intervaloDeConsulta,
 	}
-	if err := registrarAmbiente(ctx, execucao.Resultados, montada, repositorios); err != nil {
+	if err := registrarAmbiente(ctx, execucao.Resultados, montada, repositorios, opcoes); err != nil {
 		pool.Close()
 		return rodada.Rodada{}, isolamento.Sondagem{}, nil, err
 	}
@@ -186,7 +225,7 @@ func montarRodada(ctx context.Context, data string, ids []string) (rodada.Rodada
 		return rodada.Rodada{}, isolamento.Sondagem{}, nil, err
 	}
 	sondagem := isolamento.Sondagem{
-		Agente: agentePorDiretorio{ferramentas: ferramentas}, Home: home, RaizDoAPRova: raizDoAPRova, DiretorioDeTrabalho: trabalhoDaRodada,
+		Agente: agentePorDiretorio{ferramentas: ferramentas, modelo: modeloPadrao}, Home: home, RaizDoAPRova: raizDoAPRova, DiretorioDeTrabalho: trabalhoDaRodada,
 	}
 	return execucao, sondagem, pool.Close, nil
 }
@@ -203,14 +242,16 @@ func lerSuite() (suite.Suite, error) {
 	return montada, nil
 }
 
-func registrarAmbiente(ctx context.Context, resultados string, montada suite.Suite, repositorios map[string]string) error {
+func registrarAmbiente(ctx context.Context, resultados string, montada suite.Suite, repositorios map[string]string, opcoes opcoesDaRodada) error {
 	ids := make([]string, 0, len(montada.Tarefas))
 	for _, tarefa := range montada.Tarefas {
 		ids = append(ids, tarefa.ID)
 	}
 	ambiente := map[string]any{
 		"iniciada_em":        time.Now().Format(time.RFC3339),
-		"modelo":             modeloDaRodada,
+		"modelo":             opcoes.Modelo,
+		"sem_execucao":       opcoes.SemExecucao,
+		"modelo_da_sondagem": modeloPadrao,
 		"semente_da_suite":   montada.Semente,
 		"commit_do_polyglot": montada.CommitDoPolyglot,
 		"tarefas":            ids,

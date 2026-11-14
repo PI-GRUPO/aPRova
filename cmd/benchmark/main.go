@@ -23,7 +23,7 @@ const (
 	codigoDeErro           = 1
 )
 
-var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark validar-oraculo <clone do polyglot> | benchmark rodar <data> [ids...] | benchmark tabelas <diretório da rodada>")
+var errUsoErrado = errors.New("uso: benchmark montar-suite <clone do polyglot> | benchmark validar-oraculo <clone do polyglot> | benchmark rodar [--modelo <id>] [--sem-execucao] <data> [ids...] | benchmark tabelas <diretório da rodada>")
 
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
@@ -35,7 +35,11 @@ func main() {
 
 func executar(argumentos []string, saida io.Writer) error {
 	if len(argumentos) >= 2 && argumentos[0] == "rodar" {
-		return rodar(context.Background(), argumentos[1], argumentos[2:], saida)
+		opcoes, err := lerOpcoesDaRodada(argumentos[1:])
+		if err != nil {
+			return err
+		}
+		return rodar(context.Background(), opcoes, saida)
 	}
 	if len(argumentos) != 2 {
 		return errUsoErrado
