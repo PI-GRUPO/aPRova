@@ -62,7 +62,10 @@ vínculo único do revisor Slack/GitHub, encerra sem pergunta. Os cliques passam
 pela autenticação da Central. O envio à API está desabilitado: faltam endpoint
 específico e integração do feedback com a calibração. O SLA passou a receber
 espera e decisão na instância em 2026-11-14; seus envios aguardam configuração
-de políticas. Atualização da mensagem original continua pendente.
+de políticas. A Central já implementa atualização da mensagem original por
+`aprovacao_registrada` quando a correlação está habilitada. A flag global
+permanece desabilitada; a validação com Slack real utilizou uma decisão
+fictícia na mensagem de teste, sem ação em PR real.
 
 Os exports incluem feedback, suas ligações no Core/Central e leitura da
 variável no Digest. As chamadas ao feedback usam
@@ -218,6 +221,15 @@ desmonte essa URL por conta própria precisa passar a usar
 `/receipts/<id>/verify`. Como verificar um recibo sem depender do núcleo está em
 [verificacao-recibo.md](verificacao-recibo.md).
 
+Na Central Slack, a Fase 3 consulta documento e verificação automaticamente
+pela base `APROVA_API_URL`, usando apenas o UUID extraído da URL pública.
+Confere a identidade nos bytes de `payload_base64` contra tenant, análise,
+repositório, PR, SHA e risco do evento autenticado, além de hash e chave.
+O resultado aparece como válido, inválido ou indisponível sem mudar o risco
+ou autorizar ações. Os links públicos permanecem com a base do evento.
+Configuração, evidências e a pendência de validar um recibo válido na API
+atual estão em [central-slack-implementacao.md](central-slack-implementacao.md).
+
 ### `aguardando_aprovacao`
 
 Emitido quando o risco é alto e o PR fica bloqueado até uma decisão humana. Tem
@@ -268,7 +280,8 @@ O export funcional `sla-aprovacao.json` e as duas conexões do Core estão
 disponíveis, inativos e sem credenciais/IDs locais. O workflow manual de
 testes não foi exportado. Configuração, testes e pendências estão na
 [documentação do SLA](central-slack-implementacao.md#sla--aprovação-pendente).
-Atualizar a mensagem original continua pendente.
+A atualização por decisão fica na Central, condicionada à correlação
+habilitada. Os lembretes e escalonamentos do SLA não editam o alerta original.
 
 ### `dependencia_nova`
 

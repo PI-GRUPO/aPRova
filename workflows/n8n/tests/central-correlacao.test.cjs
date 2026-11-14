@@ -17,9 +17,13 @@ function run(prefixo, rows, sources = {}, ambiente = env) {
   return new Function('$input', '$', '$env', '$execution', node(prefixo).parameters.jsCode)(
     { all: () => rows.map(json => ({ json })), first: () => ({ json: rows[0] }) },
     name => {
-      if (!(name in sources)) throw new Error('Origem de teste ausente: ' + name);
+      const presente = name in sources;
       const value = sources[name];
-      return { first: () => ({ json: value }), all: () => [{ json: value }], isExecuted: value !== null };
+      const item = () => {
+        if (!presente) throw new Error('Origem de teste ausente: ' + name);
+        return { json: value };
+      };
+      return { first: item, all: () => [item()], isExecuted: presente && value !== null };
     }, ambiente, { id: 'execucao-de-teste' },
   )[0].json;
 }

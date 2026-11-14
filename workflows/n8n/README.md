@@ -135,12 +135,13 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 A Central possui um caminho de publicação pelo bot que guarda canal e
 timestamp para futuras atualizações da mensagem. Por padrão,
 `APROVA_SLACK_CORRELACAO_HABILITADA=false` mantém o Incoming Webhook anterior.
-Os retornos dos formulários continuam no caminho existente. A correlação
-não atualiza o alerta após decisão ou chegada posterior de OSV nesta fase.
+Os retornos dos formulários continuam no caminho existente. Com a correlação
+habilitada, o evento `aprovacao_registrada` atualiza o alerta da mesma análise;
+a atualização posterior por OSV continua pendente.
 
 | Variável | Função |
 | --- | --- |
-| `APROVA_SLACK_CORRELACAO_HABILITADA` | `true` habilita o caminho correlacionado; padrão `false`. |
+| `APROVA_SLACK_CORRELACAO_HABILITADA` | `true` habilita publicação correlacionada e atualização após decisão; padrão `false`. |
 | `APROVA_SLACK_CANAL_ALERTAS_ID` | Canal confirmado dos alertas da Central, sem fallback para outros canais. |
 | `APROVA_SLACK_MENSAGENS_TABELA_ID` | ID da Data Table `aprova_slack_mensagens`. |
 | `APROVA_SLACK_CONTROLE_TABELA_ID` | ID da Data Table `aprova_slack_controle`. |
@@ -148,7 +149,8 @@ não atualiza o alerta após decisão ou chegada posterior de OSV nesta fase.
 Crie as tabelas conforme [mensagens](recursos/tabela-slack-mensagens.json) e
 [controle](recursos/tabela-slack-controle.json), incluindo exatamente uma
 linha inicial de controle conforme `initialRows`. Associe `slackApi` ao nó
-`C09 | Publicar alerta pelo bot`, com permissão para publicar no canal.
+`C09 | Publicar alerta pelo bot` e `D04 | Atualizar alerta após decisão`,
+com permissão para publicar e editar as mensagens do próprio bot no canal.
 Carregue as variáveis no container antes de habilitar a flag e valide o
 envio em destino autorizado. O export permanece inativo e sem credenciais.
 
@@ -161,6 +163,24 @@ Controle ocupado gera erro explícito sem envio e exige reprocessamento
 controlado do subworkflow; não há fila automática. Não apague registros ou
 reservas para repetir um envio cujo resultado seja desconhecido.
 
+O Core chama a Central também pela saída `aprovacao_registrada`, usando
+`APROVA_SLACK_WORKFLOW_ID`, por evento e sem aguardar. A decisão registrada
+remove os botões de aprovação/revisão da mensagem, preservando risco, OSV e
+links do recibo. Um formulário enviado não substitui esse evento do núcleo.
+Somente decisões de risco original ALTO participam desse caminho.
+
+Uma decisão recebida antes do alerta fica na mesma tabela com estado
+`aguardando_alerta`; quando o alerta chega, já é publicado com a decisão
+exibida. Não são necessárias novas tabelas ou colunas. A decisão e seu estado
+de atualização ficam no contexto da associação existente. Decisões repetidas
+confirmadas não executam outro `chat.update`; conflitos ou atualizações
+reservadas/incertas/falhas exigem conferência manual. A edição só é confirmada
+para o mesmo canal e timestamp, com persistência do resultado conferida.
+
+Com a flag desligada, eventos de decisão são ignorados sem publicação;
+o Incoming Webhook legado não recebe esses eventos. Não há backfill automático
+ao ativar a flag nem localização automática de alertas antigos sem correlação.
+
 ### Links e interatividade
 
 Na Central, o alerta de aprovação preserva os botões de decisão e oferece
@@ -169,8 +189,22 @@ já termina em `/verify`; o alerta aceita também a URL do recibo sem esse
 sufixo. A base vem do evento, por `APROVA_URL_PUBLICA` no worker, e precisa
 ser acessível a quem usa o Slack. Não usar a URL interna da API como base
 pública. Sem URL de recibo compatível, o alerta informa indisponibilidade.
-O link não atesta validade: a resposta de `/receipts/{id}/verify` deve ter
-`valido=true`, além de HTTP 200. O envio assinado a `/acoes-remotas` não
+Antes do alerta, `V01–V07` consultam documento e verificação em
+`APROVA_API_URL`, extraindo somente o UUID da URL pública. As rotas são públicas,
+sem credenciais; cada GET tem timeout de 5 s, sem redirects ou repetição
+automática. O fluxo confere os bytes de `payload_base64` contra tenant, análise,
+repositório, PR, SHA, risco e hash do evento autenticado. Ignora o `payload`
+legível e limita o base64 a 262144 caracteres. `/verify` exige booleano `valido`,
+identidade/hash/chave e cinco conferências coerentes; HTTP 200 sozinho não basta.
+O núcleo realiza a verificação criptográfica. A Central distingue válido,
+inválido e indisponível, sem alterar risco, autorização ou botões de decisão.
+Ausência, incompatibilidade ou falha de consulta permitem preparar o alerta
+com estado indisponível. Não há novas tabelas ou variáveis; isso independe
+da flag de correlação. A Fase 2 preserva o bloco do recibo no snapshot original.
+A API real foi alcançada, mas o recibo histórico retornou 404; a validação
+integrada de um recibo válido ainda está pendente.
+
+O envio assinado a `/acoes-remotas` não
 segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
 
 Interatividade dos botões: HTTPS público com

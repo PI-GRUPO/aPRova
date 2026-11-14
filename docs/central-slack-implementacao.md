@@ -25,11 +25,14 @@ e `AGENTS.md` são contexto local e devem permanecer fora dos próximos commits.
 
 ## Checklist do plano de atualizacao
 
-Auditoria da Fase 0 concluída em 2026-11-14. A Fase 1 foi implementada,
-testada sem rede externa, publicada com a correlação desabilitada e exportada.
-Sua validação com Slack real continua pendente, portanto a fase ainda não
-está concluída. Os links de PR/recibo já existentes não equivalem à
-verificação automática prevista na Fase 3.
+Fases 0, 1 e 2 concluídas nos seus critérios de implementação e validação.
+A Central e a nova ligação do Core foram publicadas e exportadas; publicação
+e atualização da mesma mensagem foram validadas com Slack real e fixtures,
+sem ações em PRs. A correlação continua desabilitada globalmente; sua ativação
+operacional depende de decisão e carregamento da configuração. A Fase 3 está
+implementada, publicada e exportada, com testes isolados completos e consulta
+real com retorno 404 tratada. Sua validação integrada de recibo válido permanece
+pendente; a fase ainda não está encerrada em todos os critérios do checklist.
 
 O plano agora inclui a **Etapa S — Simplificação da persistência do n8n**:
 transferir estado e controle dos avisos para o núcleo, reduzir a associação
@@ -55,27 +58,27 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 - [x] Implementado no n8n.
 - [x] Testado de forma isolada, incluindo duplicatas e resultados incertos.
 - [x] Publicado na instância, com a correlação desabilitada por configuração.
-- [ ] Validado com integração real.
+- [x] Validado com integração real do Slack: um envio autorizado e reprocessamento sem duplicata, usando tabelas de teste.
 - [x] Exportado e revisado no repositório, incluindo definições de tabelas.
 - [x] Documentação atualizada com configuração, evidências e pendências.
 
 ### Fase 2 — Atualização após decisão
 
-- [ ] Implementado no n8n.
-- [ ] Testado de forma isolada, incluindo ordem invertida e análises distintas.
-- [ ] Publicado na instância.
-- [ ] Validado com integração real.
-- [ ] Exportado e revisado no repositório.
-- [ ] Documentação atualizada com configuração, evidências e pendências.
+- [x] Implementado no n8n, reutilizando as tabelas existentes.
+- [x] Testado de forma isolada, incluindo ordem invertida, análises distintas, conflitos e resultados incertos.
+- [x] Publicado na instância, mantendo a correlação global desabilitada.
+- [x] Validado com Slack real na mensagem de teste da Fase 1; repetição sem novo `chat.update`.
+- [x] Exportado e revisado no repositório: Central e Core, sem workflows manuais.
+- [x] Documentação atualizada com contratos, evidências e limites da validação.
 
 ### Fase 3 — Verificação do recibo
 
-- [ ] Implementado no n8n.
-- [ ] Testado de forma isolada: válido, inválido, indisponível e correlação.
-- [ ] Publicado na instância.
-- [ ] Validado com integração real.
-- [ ] Exportado e revisado no repositório.
-- [ ] Documentação atualizada com configuração, evidências e pendências.
+- [x] Implementado no n8n, sem novas tabelas, credenciais ou variáveis.
+- [x] Testado de forma isolada: válido, inválido, indisponível e correlação, inclusive múltiplos itens.
+- [x] Publicado na instância, sem ativar a correlação global.
+- [ ] Validado com integração real de recibo válido: API acessível, mas o recibo histórico retornou 404; indisponibilidade tratada e validada.
+- [x] Exportado e revisado no repositório: somente Central nesta fase, portátil e inativa.
+- [x] Documentação atualizada com configuração, evidências e pendências.
 
 ### Fase 4 — Atualização posterior com OSV
 
@@ -125,10 +128,10 @@ export especifica `1`; essa diferença foi preservada, sem publicar seu rascunho
 Os dois nós manuais de inspeção Trello existem somente na instância e também
 foram preservados. IDs de webhook, credenciais e configurações de instância
 são diferenças esperadas dos arquivos portáteis. Não foi feita sincronização
-dos workflows alheios à Fase 1.
+dos workflows alheios às fases 1 e 2.
 
-A base anterior passou em 123 testes locais. Com os 14 testes novos de
-correlação, passaram 137 testes em 12 arquivos; o Compose foi validado sem
+A base anterior passou em 123 testes locais. Com os testes de correlação
+e os 20 testes da Fase 2, passaram 157 testes em 13 arquivos; o Compose foi validado sem
 imprimir sua configuração expandida. `.env` e container confirmaram presença
 dos segredos de eventos/ações, configuração da API e instalação de consultas;
 vínculos Slack/GitHub continuam vazios, SLA desabilitado e políticas vazias.
@@ -139,12 +142,19 @@ A sequência permanece 0 → 1 → 2. A Fase 4 depende da correlação e da
 preservação das decisões da Fase 2. A Fase 3 depende dos endpoints de recibos
 existentes e de sua validação de identidade; não deve ser confundida com os
 links já publicados. Resiliência de métricas/Digest pode ser trabalhada
-independentemente, mantendo o Digest desativado. Não iniciar as atualizações
-dependentes da Central antes de encerrar a validação pendente da Fase 1.
+independentemente, mantendo o Digest desativado. As atualizações
+dependentes da Central devem respeitar também a Etapa S antes de ampliar
+a persistência. As validações de publicação, atualização e duplicatas das fases 1 e 2 foram encerradas;
+isso não autoriza iniciar automaticamente outra fase ou a migração do backend.
 
-Próximo passo da Fase 1: teste autorizado de uma mensagem no canal já usado
-pela Central, confirmação de canal/timestamp e reprocessamento que não publique
-outra mensagem. Não habilitar globalmente a correlação antes dessa validação.
+O teste real autorizado publicou uma mensagem identificada como teste no
+canal já usado pela Central. A primeira execução confirmou canal, timestamp,
+persistência e releitura. A segunda processou o mesmo alerta e retornou
+`ja_publicado` com o mesmo timestamp, sem executar o nó de envio. A correlação
+global permaneceu desabilitada. A mensagem também recebeu uma decisão
+fictícia na validação da Fase 2, sem nova publicação. Próximo passo operacional: decidir sua
+ativação e carregar a configuração, sem confundir esse passo com a autorização
+restrita ao teste já realizado.
 
 ## Arquitetura e estado atual
 
@@ -255,6 +265,7 @@ aceita. O 202 não comprova sucesso das integrações posteriores.
 | `07G`, `09` | Análise concluída para Trello. |
 | `07I dependencia_nova` e chamada OSV | Dependências para consulta pública. |
 | `07H`, `07I Solicitar Motivo da Aprovação` | Decisão registrada para feedback, por item e sem aguardar. |
+| `07H`, `07N` | Decisão registrada também chama a Central para atualizar o alerta; `each`, sem aguardar, preservando feedback e SLA. |
 | `07E`, `10–12` | Pedido assinado `relatorio_periodico`: GET do relatório e resultado na execução. |
 | `07K`, `07L` | Saída `instalacao` chama Onboarding de Repositório, modo `each`, aguardando o resultado. |
 | `07A`, `07H`, `07M` | Espera e decisão também seguem ao SLA, modo `each`, sem aguardar; Central e feedback preservados. |
@@ -266,7 +277,9 @@ não um sétimo evento emitido pelo worker, e não publica Digest.
 
 Falta validar worker → Core com dados reais; implementar emissão de
 `instalacao` (a de `dependencia_nova` já existe); configurar e validar os
-avisos reais do SLA e implementar a atualização do alerta original.
+avisos reais do SLA. A atualização do alerta original já está implementada
+na Central, condicionada à correlação habilitada; falta validar esse caminho
+com uma decisão real emitida pelo worker, sem fixtures.
 
 ## Onboarding de Repositório
 
@@ -497,7 +510,8 @@ SLA, GitHub App, horário útil ou pontualidade sob carga.
 Falta acordar os dois limites, canal e responsáveis; habilitar políticas;
 validar notificações reais em canal de teste; disponibilizar revalidação do
 estado pelo núcleo; e definir horário útil, retenção, recuperação de envios
-incertos e atualização da mensagem original. Não excluir fatos de
+incertos e eventual edição do alerta pelos lembretes. A atualização por
+decisão já fica na Central. Não excluir fatos de
 encerramento/reserva enquanto puderem chegar eventos antigos, pois isso
 pode reabrir acompanhamentos ou repetir avisos.
 
@@ -512,6 +526,7 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | --- | --- |
 | `01–02`, `03A–03B`, `HTTP Request` | Recebem evento, separam e publicam alertas; `03A` inclui acesso à PR, recibo e verificação. |
 | `02A–02F` | Buscam/validam contexto OSV e fazem consulta complementar quando possível. |
+| `V01–V07` | Consultam documento e verificação do recibo no núcleo, conferem identidade e classificam válido, inválido ou indisponível antes de `03A`. |
 | `05–07`, `07E` | Interações, assinatura Slack, confirmação e recusa. |
 | `07F–07G` | Encaminham ações `aprova_feedback_*` ao feedback, preservando as demais rotas. |
 | `08–09`, `10`, `10B` | Separam botões/formulários e abrem aprovação/revisão. |
@@ -521,6 +536,9 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | `C03–C07` | Reservam o controle de publicação, consultam correlação e bloqueiam duplicatas/ambiguidades. |
 | `C08–C08B`, `C09–C11B` | Persistem e conferem reserva; publicam pelo bot; classificam e conferem persistência do resultado. |
 | `C12–C13` | Liberam o controle e retornam o resultado da correlação. |
+| `C00`, `D00–D01` | Impedem enviar decisões ao Incoming Webhook e selecionam a atualização ou o registro anterior ao alerta. |
+| `D02–D07` | Reservam, executam `chat.update` e conferem confirmação e persistência da decisão. |
+| `D08–D09` | Guardam e conferem a decisão recebida antes de existir uma mensagem confirmada. |
 
 ### Correlação persistente — Fase 1
 
@@ -575,13 +593,109 @@ conta como validação; as configurações de execução foram corrigidas e os t
 cenários chegaram ao nó final. O nó temporário de recuperação dessa reserva
 de teste ficou desabilitado. O funcional não contém nós de simulação.
 
+A validação real autorizada utilizou temporariamente o mesmo workflow
+manual, com a credencial Slack do projeto, canal atual da Central e tabelas
+de teste. O alerta era fictício, sem botões de decisão nem ação em PR real;
+seus identificadores foram mantidos iguais nas duas execuções. Houve um
+único envio real, com canal/timestamp confirmados, gravação e releitura da
+correlação. No reprocessamento, o seletor reutilizou a mensagem e o nó Slack
+não executou. Isso valida a publicação e supressão sequencial de duplicata;
+não comprova emissão worker → Core, operação sob carga ou autorização de PR.
+Após a validação, o nó de envio real e o seletor temporários foram removidos
+e os parâmetros/conexões do workflow manual foram restaurados ao teste
+isolado, mantendo suas tabelas e evidências. A Central funcional não foi
+alterada; seu export existente permanece correspondente à versão publicada.
+O workflow manual não foi exportado.
+
 O `.env` local recebeu as quatro variáveis, com flag `false`; Compose e
 `.env.example` receberam o contrato portátil. O container não foi recriado
 nesta fase, portanto as variáveis novas ainda precisam ser carregadas.
 Sem configuração carregada, o padrão também mantém o caminho anterior.
-Falta o teste Slack real e a decisão de habilitar a correlação; atualizar
-mensagem após decisão, OSV posterior e verificação automática do recibo
-continuam nas fases seguintes.
+O teste Slack real foi concluído. Falta decidir a ativação global da
+correlação e carregar suas variáveis; a autorização do teste não habilita
+essa mudança. A Fase 2 acrescentou a atualização após decisão, descrita abaixo.
+OSV posterior continua na Fase 4, respeitando a Etapa S. A verificação automática
+do recibo está implementada na Fase 3, com a pendência integrada descrita abaixo.
+
+### Atualização após decisão — Fase 2
+
+O Core encaminha `aprovacao_registrada` à Central pelo nó `07N`, em modo
+`each` e sem aguardar. As conexões anteriores de feedback e SLA foram
+preservadas. A Central usa somente o evento autenticado/normalizado; retorno
+de formulário e HTTP 202 de ação remota não substituem uma decisão registrada.
+Decisões de risco original BAIXO/MEDIO são ignoradas por esse caminho, que
+atualiza o alerta de espera ALTO da análise correspondente.
+
+O contrato de entrada confere instalação, UUID da análise/evento, repositório,
+PR, ID positivo da aprovação, decisão (`aprovada`/`alteracoes_solicitadas`),
+revisor e origem (`github`/`slack`). A decisão aponta a chave de
+`aguardando_aprovacao`; não altera alertas de falha, outra análise ou outro
+tenant. SHA divergente, quando disponível nas duas fontes, impede reutilização.
+O worker não envia SHA no contrato atual de decisão: o vínculo principal é
+a análise autenticada, sem presumir uma consulta do estado atual da PR.
+
+Com a correlação desligada, a decisão é descartada sem publicação nem
+persistência; `C00` impede que chegue ao Incoming Webhook legado. Não existe
+reposição automática desses eventos ao habilitar a flag. Alertas antigos sem
+canal/timestamp correlacionados não são localizados por inferência.
+
+Antes de ampliar os consumidores, foi conferido que o uso funcional das
+duas tabelas Slack está na Central; o Core só encaminha eventos. A Fase 2
+não criou tabelas, colunas, migrations ou endpoints. Reutiliza o controle
+`publicacao` e acrescenta ao `contexto` somente a decisão correlacionada e
+o estado de sua atualização. O payload original já existente foi preservado,
+sem cópia do envelope bruto nem histórico adicional. Essa é uma solução de
+transição; a redução/migração prevista na Etapa S continua pendente e não
+deve apagar referências ou reservas sem substituição validada.
+
+Para uma mensagem confirmada, `D02–D03` persistem e conferem a reserva da
+atualização antes de `chat.update`. O texto passa a mostrar a decisão e o
+revisor; os botões `aprovar` e `solicitar_alteracao` são removidos. Recibos,
+links, contexto OSV e risco original são preservados. A confirmação exige o
+mesmo canal e o mesmo timestamp reservados, além de conferir a escrita do
+resultado e a liberação do controle.
+
+`contexto.atualizacao_decisao` distingue `reservado`, `confirmado`, `incerto`
+e `falha`. O estado geral da mensagem continua `confirmado`, pois ela já
+existe, mesmo se uma edição falhar; isso não comprova que a decisão foi
+exibida. Timeout, resposta incompleta ou erro explícito impedem repetição
+automática e exigem conferir Slack, execução e registro. Uma decisão aplicada
+retorna `decisao_ja_aplicada`. Outra aprovação, decisão, revisor ou origem
+conflitante não substitui automaticamente a primeira decisão armazenada.
+
+Se a decisão chegar antes do alerta, `D08–D09` guardam a referência mínima
+com `estado=aguardando_alerta`, sem publicar mensagem. Quando o alerta chega,
+`C06` compõe a mensagem já encerrada, e `C08` reutiliza esse registro por
+upsert condicionado ao estado de espera. Se o envio anterior estiver
+`reservado`, `incerto` ou `falha`, a decisão é guardada preservando esse
+estado; não autoriza republicar uma mensagem possivelmente já enviada.
+Conflitos/ambiguidades exigem recuperação manual. Controle ocupado continua
+gerando erro explícito, sem fila automática ou promessa de entrega exatamente
+uma vez; o estado atual no núcleo continua sendo dependência da Etapa S.
+
+Os testes locais da Fase 2 cobrem os dois resultados, identidade, risco
+elegível, preservação de conteúdo, duplicatas, ordem invertida, reserva,
+confirmação e persistência. Na instância, o workflow manual
+`aPRova | Testes | Atualização de Decisão` usa as tabelas `_teste` existentes
+e Code no lugar do Slack. Exercitou atualização, duplicata, decisão anterior
+ao alerta, conflito, outra análise, SHA divergente, falha/timeout e
+supressão de novas tentativas; risco não elegível terminou sem publicar.
+
+A validação real editou somente a mensagem de teste já confirmada na Fase 1,
+identificando a decisão como fictícia. O Slack confirmou o mesmo canal e
+timestamp; o resultado foi persistido. No reprocessamento, retornou
+`decisao_ja_aplicada`, sem executar outro `chat.update` ou publicar mensagem.
+Não houve aprovação/revisão real, acesso ao GitHub ou disparo pelo worker.
+Os adaptadores temporários de rede foram removidos e o teste manual voltou
+ao modo isolado, com execução final confirmada. Ele não foi exportado.
+
+A Central recebeu 11 nós e ajustes no caminho correlacionado; o Core recebeu
+somente o novo nó e sua ligação à saída de decisão. Publicação e exports foram
+conferidos, preservando rotas não relacionadas, credenciais na instância e
+portabilidade. A flag global continua `false`, e nenhuma variável foi
+alterada ou recarregada nesta fase. A integração com GitHub/worker reais e
+a ativação operacional permanecem validações próprias, não consequência
+do teste de uma mensagem com dados fictícios.
 
 ### Ações e recibos
 
@@ -606,27 +720,65 @@ duplicar `/verify`. Preserva a base pública recebida, inclusive prefixo de
 caminho; não a troca por `APROVA_API_URL`, que pode ser interna ao n8n.
 URL ausente ou incompatível deixa o recibo indisponível no alerta, sem
 inventar ID/link. URLs com credenciais, query ou fragmento não são usadas.
-Exibir o link não comprova validade do recibo: a consulta só ocorre quando
-a pessoa o abre. O resultado de `/verify` exige conferir `valido` e suas
-verificações, pois HTTP 200 também pode trazer recibo inválido.
+Na Fase 3, `V01–V07` fazem a consulta automática descrita abaixo; os links
+continuam disponíveis para navegação. HTTP 200 também pode trazer recibo inválido.
 
 O nó `13` não segue redirects ao enviar o pedido assinado para
 `/acoes-remotas`. A resposta original segue para a classificação existente,
 sem reenviar o corpo a outro destino ou confirmar ação por HTTP 3xx.
-Esses dois ajustes estão no arquivo portátil e na versão publicada da
-Central. A atualização da instância preservou os outros 25 nós, conexões
-e credenciais, sem avisos de validação do n8n. Passaram 123 testes locais
-dos workflows, incluindo os formatos de URL do worker e os casos de recibo
-ausente/incompatível. Não foram enviados eventos, mensagens Slack ou
-pedidos de ação; a navegação e a verificação de recibo real continuam
-pendentes de validação integrada.
+Esses ajustes permanecem no arquivo portátil e na versão publicada da
+Central. A validação integrada de ações e navegação pública continua pendente.
+
+### Verificação automática do recibo — Fase 3
+
+Antes de preparar o alerta, a Central extrai o UUID da URL pública e consulta
+`GET /receipts/{id}` em `APROVA_API_URL`. Só consulta `/verify` após confirmar
+a identidade do documento. As rotas são públicas, sem credenciais. Os dois
+GETs têm timeout de 5 segundos, não seguem redirects e não repetem chamadas
+automaticamente. Erro HTTP, timeout ou resposta incompatível deixam o estado
+indisponível e permitem preparar o alerta. Isso funciona também com a correlação
+global desligada, sem novas configurações ou persistência.
+
+A associação confere instalação/tenant, análise, repositório, PR, SHA, nível de
+risco, ID e chave nos bytes de `payload_base64`, ignorando o campo `payload`
+de conveniência. O hash armazenado deve coincidir com o evento autenticado;
+o SHA-256 dos bytes é recalculado para conferir a resposta de `/verify`.
+Base64 deve ser canônico, UTF-8 válido e ter no máximo 262144 caracteres
+(192 KiB decodificados). Recibo de outra análise fica indisponível para este
+alerta, sem apresentar como inválida uma evidência que não lhe pertence.
+
+O veredito exige booleano `valido`, ID/chave/hash correspondentes e as cinco
+conferências na ordem `hash`, `chave`, `assinatura`, `conteudo`, `elo`, com
+resultados coerentes. Uma reprovação confirmada aparece como inválida; resposta
+incompleta/incoerente aparece como indisponível. A verificação criptográfica é
+do núcleo: o n8n não faz verificação Ed25519 independente. O status e o motivo
+legível entram no bloco `aprova_recibo_verificacao`, preservado pelo snapshot
+da Fase 2 nas atualizações de decisão. Não mudam risco, autorização ou botões.
+Os links públicos continuam usando a base do evento, nunca o host interno.
+
+Foram adicionados sete nós e alterado somente `03A` entre os nós existentes;
+as duas entradas anteriores de `03A` passam pela verificação. Core e demais
+workflows funcionais não foram alterados nesta fase. A Central de 60 nós foi
+publicada e seu export revisado está inativo, sem credenciais ou dados fixados.
+Passaram **185 testes em 14 arquivos**, incluindo 28 novos testes de recibos.
+Na instância, cenários isolados confirmaram válido, assinatura inválida com
+HTTP 200, API indisponível, referência ausente, timeout, isolamento de tenant
+e dois itens de análises diferentes. O workflow manual foi restaurado ao modo
+isolado, sem nós HTTP, e permanece inativo e fora dos exports.
+
+A consulta real à API pelo n8n retornou 404 para o recibo histórico citado em
+`verificacao-recibo.md`. Uma execução com expectativa de válido falhou nesse
+pressuposto; a execução seguinte confirmou o estado indisponível, uma única
+consulta e risco/ações preservados. Não houve envio Slack nem ação em PR nesta
+fase. Falta um recibo existente da análise correspondente para confirmar o
+percurso real de válido; essa pendência mantém a validação integrada aberta.
 
 Falta configurar vínculos na API, conferir/aplicar migrations e validar em
 PR real: autorizado, sem permissão, autoaprovação, repetição, erro e proteção
 de branch. Reexecução ainda usa `ReenfileiradorIndisponivel`, sem executor
-real. A Fase 1 prepara o armazenamento/correlação da mensagem; a atualização
-do alerta após decisão ainda pertence à Fase 2. O retorno do formulário não
-faz essa atualização.
+real. A Fase 2 atualiza o alerta correlacionado ao receber a decisão do
+núcleo, desde que a correlação esteja habilitada. O retorno do formulário
+não faz essa atualização.
 
 No Slack App, **Interactivity & Shortcuts** usa HTTPS público com
 `/webhook/aprova/slack/interacoes`. Conferir a URL quando o túnel mudar.
