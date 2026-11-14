@@ -90,10 +90,14 @@ type agenteFalso struct {
 	apagar    []string
 	desfecho  agente.Desfecho
 	execucoes *int
+	instrucao *string
 }
 
 func (a agenteFalso) Executar(_ context.Context, pedido agente.Pedido) (agente.Execucao, error) {
 	*a.execucoes++
+	if a.instrucao != nil {
+		*a.instrucao = pedido.Instrucao
+	}
 	for nome, conteudo := range a.escrever {
 		_ = os.WriteFile(filepath.Join(pedido.Diretorio, nome), []byte(conteudo), 0o600)
 	}
@@ -231,6 +235,23 @@ func TestFluxoCompletoDeUmaTarefa(t *testing.T) {
 	}
 	if c.github.refs["refs/heads/base/2026-11-15-go-a"] == "" || c.github.refs["refs/heads/solucao/2026-11-15-go-a"] == "" {
 		t.Errorf("as duas branches existem com o nome da rodada, para não reaproveitar PR de outra rodada: %v", c.github.refs)
+	}
+}
+
+func TestRodadaSemExecucaoNaoMandaOComandoDeTesteNaInstrucao(t *testing.T) {
+	for _, semExecucao := range []bool{false, true} {
+		c := novoCenario(t, resultado.GrupoCorrecao)
+		var instrucao string
+		c.agente.instrucao = &instrucao
+		c.rodada.SemExecucao = semExecucao
+
+		if err := c.rodada.Executar(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+
+		if strings.Contains(instrucao, "Para rodá-los") == semExecucao {
+			t.Errorf("SemExecucao=%v, instrução:\n%s", semExecucao, instrucao)
+		}
 	}
 }
 
