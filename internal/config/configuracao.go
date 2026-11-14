@@ -37,7 +37,7 @@ const maximoDeVizinhos = 1000
 
 var regraPadrao = calibracao.RegraPadrao()
 
-var linguagensComImagem = []string{"go", "python"}
+var linguagensComImagem = []string{"go", "python", "java"}
 
 var nomesDosNiveisDeLog = []string{"debug", "info", "warn", "error"}
 
@@ -79,6 +79,7 @@ type Configuracao struct {
 	SandboxImagemGo string
 
 	SandboxImagemPython string
+	SandboxImagemJava   string
 
 	AzureSubscriptionID   string
 	AzureTenantID         string
@@ -143,6 +144,7 @@ func Carregar() (Configuracao, error) {
 		SandboxImagemGo: leitura.opcional("SANDBOX_IMAGEM_GO", ""),
 
 		SandboxImagemPython: leitura.opcional("SANDBOX_IMAGEM_PYTHON", ""),
+		SandboxImagemJava:   leitura.opcional("SANDBOX_IMAGEM_JAVA", ""),
 
 		AzureSubscriptionID:   lerVariavel("AZURE_SUBSCRIPTION_ID"),
 		AzureTenantID:         lerVariavel("AZURE_TENANT_ID"),

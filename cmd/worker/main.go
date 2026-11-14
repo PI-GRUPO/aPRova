@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"maps"
 	"os"
 	"os/signal"
 	"syscall"
@@ -220,16 +221,18 @@ func linguagensDoSandbox(configuracao config.Configuracao) map[string]sandbox.Li
 }
 
 func configuracaoDoSandbox(configuracao config.Configuracao) sandbox.ConfiguracaoExecutor {
-	imagens := map[sandbox.Linguagem]string{
+	imagensDaAzure := map[sandbox.Linguagem]string{
 		sandbox.LinguagemGo:     configuracao.SandboxImagemGo,
 		sandbox.LinguagemPython: configuracao.SandboxImagemPython,
 	}
+	imagensLocais := maps.Clone(imagensDaAzure)
+	imagensLocais[sandbox.LinguagemJava] = configuracao.SandboxImagemJava
 
 	return sandbox.ConfiguracaoExecutor{
 		Tipo:  configuracao.SandboxExecutor,
-		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagens},
+		Local: sandbox.OpcoesExecutorLocal{ImagemPorLinguagem: imagensLocais},
 		Azure: sandbox.OpcoesExecutorAzure{
-			ImagemPorLinguagem: imagens,
+			ImagemPorLinguagem: imagensDaAzure,
 			SubscriptionID:     configuracao.AzureSubscriptionID,
 			TenantID:           configuracao.AzureTenantID,
 			ClientID:           configuracao.AzureClientID,

@@ -14,6 +14,7 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/conteiner"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/golang"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox/java"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/processo"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/python"
 )
@@ -22,6 +23,7 @@ const (
 	usuarioDoCodigoDoPR         = 10001
 	diretorioDeTrabalho         = "/tmp/aprova"
 	diretorioDeCache            = "/tmp/aprova-cache"
+	repositorioMavenDaImagem    = "/opt/aprova-cache/m2"
 	permissaoDoPaiCompartilhado = 0o1777
 	caminhoDosExecutaveis       = "PATH=/usr/local/bin:/usr/bin:/bin"
 	codigoDeUsoErrado           = 2
@@ -95,6 +97,9 @@ func programa() conteiner.Programa {
 		Etapas: map[sandbox.Linguagem]conteiner.LinguagemEmEtapas{
 			sandbox.LinguagemGo:     goLang,
 			sandbox.LinguagemPython: pythonLang,
+			sandbox.LinguagemJava: java.Nova(java.Opcoes{
+				Rodador: rodador, DiretorioDeCache: diretorioDeCache, RepositorioDaImagem: repositorioMavenDaImagem,
+			}),
 		},
 		PrepararDiretorio: prepararParaOCodigoDoPR(rodador),
 		Agora:             time.Now,
