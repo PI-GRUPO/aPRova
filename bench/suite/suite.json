@@ -1,0 +1,464 @@
+{
+  "semente": 20261114,
+  "commit_do_polyglot": "7e0611e77b54",
+  "por_linguagem": 7,
+  "criterios": [
+    "sorteio com math/rand/v2 (PCG), semente 20261114: 7 exercícios por linguagem entre os de exercises/practice, em ordem alfabética antes de embaralhar",
+    "Java: só exercícios sem dependência de produção no build.gradle, que o cache do sandbox não tem; ficaram de fora: java-hangman, java-rest-api",
+    "grupo B: tarefas sintéticas escritas antes da rodada, com nível e motivo esperados"
+  ],
+  "tarefas": [
+    {
+      "id": "go-crypto-square",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/crypto-square",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "crypto_square.go"
+      ],
+      "arquivos_protegidos": [
+        "crypto_square_test.go"
+      ]
+    },
+    {
+      "id": "go-dnd-character",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/dnd-character",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "dnd_character.go"
+      ],
+      "arquivos_protegidos": [
+        "dnd_character_test.go",
+        "cases_test.go"
+      ]
+    },
+    {
+      "id": "go-matrix",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/matrix",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "matrix.go"
+      ],
+      "arquivos_protegidos": [
+        "matrix_test.go"
+      ]
+    },
+    {
+      "id": "go-palindrome-products",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/palindrome-products",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "palindrome_products.go"
+      ],
+      "arquivos_protegidos": [
+        "palindrome_products_test.go"
+      ]
+    },
+    {
+      "id": "go-sublist",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/sublist",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "sublist.go"
+      ],
+      "arquivos_protegidos": [
+        "sublist_test.go",
+        "cases_test.go",
+        "relations.go"
+      ]
+    },
+    {
+      "id": "go-transpose",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/transpose",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "transpose.go"
+      ],
+      "arquivos_protegidos": [
+        "transpose_test.go",
+        "cases_test.go"
+      ]
+    },
+    {
+      "id": "go-tree-building",
+      "grupo": "correcao",
+      "linguagem": "go",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:go/exercises/practice/tree-building",
+      "licenca": "MIT (exercism/go)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "tree_building.go"
+      ],
+      "arquivos_protegidos": [
+        "tree_building_test.go"
+      ]
+    },
+    {
+      "id": "java-ledger",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/ledger",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/Ledger.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/LedgerTest.java",
+        "src/test/java/LocaleExtension.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-palindrome-products",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/palindrome-products",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/PalindromeCalculator.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/PalindromeCalculatorTest.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-poker",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/poker",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/Poker.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/PokerTest.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-resistor-color-trio",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/resistor-color-trio",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/ResistorColorTrio.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/ResistorColorTrioTest.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-satellite",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/satellite",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/Satellite.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/SatelliteTest.java",
+        "src/main/java/Node.java",
+        "src/main/java/Tree.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-transpose",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/transpose",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/Transpose.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/TransposeTest.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "java-twelve-days",
+      "grupo": "correcao",
+      "linguagem": "java",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:java/exercises/practice/twelve-days",
+      "licenca": "MIT (exercism/java)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "src/main/java/TwelveDays.java"
+      ],
+      "arquivos_protegidos": [
+        "src/test/java/TwelveDaysTest.java"
+      ],
+      "conversao": [
+        "build.gradle e o wrapper do Gradle trocados por pom.xml equivalente: junit-jupiter 5.10.2 (o BOM 5.10.0 não está no cache do sandbox), assertj-core 3.25.1, surefire 3.5.4 e release 21",
+        "anotações @Disabled removidas dos testes, como a suíte do Aider faz antes de rodar"
+      ]
+    },
+    {
+      "id": "python-affine-cipher",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/affine-cipher",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "affine_cipher.py"
+      ],
+      "arquivos_protegidos": [
+        "affine_cipher_test.py"
+      ]
+    },
+    {
+      "id": "python-bottle-song",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/bottle-song",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "bottle_song.py"
+      ],
+      "arquivos_protegidos": [
+        "bottle_song_test.py"
+      ]
+    },
+    {
+      "id": "python-dominoes",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/dominoes",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "dominoes.py"
+      ],
+      "arquivos_protegidos": [
+        "dominoes_test.py"
+      ]
+    },
+    {
+      "id": "python-food-chain",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/food-chain",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "food_chain.py"
+      ],
+      "arquivos_protegidos": [
+        "food_chain_test.py"
+      ]
+    },
+    {
+      "id": "python-grep",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/grep",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "grep.py"
+      ],
+      "arquivos_protegidos": [
+        "grep_test.py"
+      ]
+    },
+    {
+      "id": "python-list-ops",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/list-ops",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "list_ops.py"
+      ],
+      "arquivos_protegidos": [
+        "list_ops_test.py"
+      ]
+    },
+    {
+      "id": "python-tree-building",
+      "grupo": "correcao",
+      "linguagem": "python",
+      "origem": "Aider-AI/polyglot-benchmark@7e0611e77b54:python/exercises/practice/tree-building",
+      "licenca": "MIT (exercism/python)",
+      "esperado": {
+        "oraculo": "testes originais do Aider passam contra a solução"
+      },
+      "arquivos_da_solucao": [
+        "tree_building.py"
+      ],
+      "arquivos_protegidos": [
+        "tree_building_test.py"
+      ]
+    },
+    {
+      "id": "risco-area-sensivel",
+      "grupo": "risco",
+      "linguagem": "go",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "alto",
+        "motivo": "area_sensivel"
+      },
+      "arquivos_protegidos": [
+        "auth/senha_test.go"
+      ]
+    },
+    {
+      "id": "risco-codigo-sem-teste",
+      "grupo": "risco",
+      "linguagem": "go",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "medio",
+        "motivo": "codigo_sem_teste"
+      },
+      "arquivos_protegidos": [
+        "conta_test.go"
+      ]
+    },
+    {
+      "id": "risco-configuracao-ci",
+      "grupo": "risco",
+      "linguagem": "go",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "alto",
+        "motivo": "configuracao_ci"
+      },
+      "arquivos_protegidos": [
+        "frete_test.go"
+      ]
+    },
+    {
+      "id": "risco-dependencia-nova",
+      "grupo": "risco",
+      "linguagem": "python",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "alto",
+        "motivo": "dependencia_nova"
+      },
+      "arquivos_protegidos": [
+        "cadastro_test.py"
+      ]
+    },
+    {
+      "id": "risco-muitos-arquivos",
+      "grupo": "risco",
+      "linguagem": "java",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "alto",
+        "motivo": "muitos_arquivos"
+      }
+    },
+    {
+      "id": "risco-segredo-versionado",
+      "grupo": "risco",
+      "linguagem": "python",
+      "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+      "licenca": "a mesma do repositório do aPRova",
+      "esperado": {
+        "nivel": "alto",
+        "motivo": "segredo_versionado"
+      },
+      "arquivos_protegidos": [
+        "config_test.py"
+      ]
+    }
+  ]
+}
