@@ -17,7 +17,7 @@ import (
 const (
 	arquivoDaLista        = "requisitos.txt"
 	subdiretorioDasWheels = "wheels"
-	permissaoDaLista      = 0o644
+	scriptDaGravacao      = "import sys; open(sys.argv[1], 'x').write(sys.argv[2])"
 
 	scriptDoPyproject = `import json, sys, tomllib
 with open(sys.argv[1], "rb") as arquivo:
@@ -60,8 +60,9 @@ func (l *Linguagem) Preparar(ctx context.Context, projeto, cache string) *sandbo
 	}
 
 	lista := filepath.Join(cache, arquivoDaLista)
-	if err := os.WriteFile(lista, []byte(strings.Join(especificacoes, "\n")+"\n"), permissaoDaLista); err != nil {
-		falha := infraestrutura(fmt.Sprintf("gravar a lista de requisitos no cache: %v", err))
+	gravacao := l.rodar(ctx, projeto, binarioPython, "-I", "-c", scriptDaGravacao, lista, strings.Join(especificacoes, "\n")+"\n")
+	if !concluiu(gravacao) {
+		falha := infraestrutura(descreverInterrupcao("gravação da lista de requisitos no cache", gravacao), gravacao.Saida)
 		return &falha
 	}
 
