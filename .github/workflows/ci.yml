@@ -208,7 +208,7 @@ jobs:
           cache: true
 
       - name: integração com a imagem real do sandbox
-        run: go test ./tests/integration -race -count=1 -timeout 20m -v
+        run: go test ./tests/integration -race -count=1 -timeout 35m -v
 
   sandbox:
     name: sandbox

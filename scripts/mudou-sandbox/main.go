@@ -12,6 +12,7 @@ var diretoriosDoSandbox = []string{
 	"internal/sandbox/",
 	"imagens/go/",
 	"imagens/python/",
+	"imagens/java/",
 	"cmd/sandbox/",
 	".github/workflows/",
 	"tests/integration/",

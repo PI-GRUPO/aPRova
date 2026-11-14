@@ -5,3 +5,4 @@
 !internal/
 **/*_test.go
 **/testdata/
+!imagens/java/aquecimento/
