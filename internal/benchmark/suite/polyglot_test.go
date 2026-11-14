@@ -189,3 +189,22 @@ func TestReferenciaDoExercicioMapeiaParaOsArquivosDeSolucao(t *testing.T) {
 		t.Errorf("Java: cada classe de referência vai para src/main/java: %v, %v", javaRef, err)
 	}
 }
+
+func TestGoSempreLevaOGoModMesmoForaDoConfig(t *testing.T) {
+	raiz := polyglotFalso(t)
+	base := "go/exercises/practice/dnd-character/"
+	escrever(t, raiz, base+".meta/config.json", `{"files":{"solution":["dnd.go"],"test":["dnd_test.go"],"example":[".meta/example.go"]}}`)
+	escrever(t, raiz, base+"dnd.go", "package dnd\n")
+	escrever(t, raiz, base+"dnd_test.go", "package dnd\n")
+	escrever(t, raiz, base+"go.mod", "module dnd\n\ngo 1.18\n")
+	escrever(t, raiz, base+".docs/instructions.md", "# D&D\n")
+	destino := t.TempDir()
+
+	if _, err := MontarDoPolyglot(raiz, "7e0611e77b54", "go", "dnd-character", destino); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(destino, "arquivos", "go.mod")); err != nil {
+		t.Errorf("o go.mod é o manifesto do módulo e vai mesmo sem estar no config.json: %v", err)
+	}
+}
