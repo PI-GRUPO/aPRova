@@ -14,6 +14,7 @@ FROM maven:3.9.16-eclipse-temurin-21@sha256:99e61abcff91a9b1333463bd8451fb18495d
 ARG VERSOES_DO_SUREFIRE="3.2.5 3.5.2 3.5.4 3.6.1"
 ARG VERSOES_DO_JUNIT5="5.10.2 5.11.4 5.14.4 6.1.3"
 ARG VERSOES_DO_JUNIT4="4.13.2"
+ARG VERSAO_DO_ASSERTJ="3.25.1"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git procps \
@@ -26,7 +27,7 @@ COPY imagens/java/aquecimento/ /tmp/aquecimento/
 RUN set -eu; \
     aquecer() { \
         mvn -B -ntp -q -Dmaven.repo.local=/opt/aprova-cache/m2 \
-            -Djunit.version="$2" -Dsurefire.version="$3" -f "/tmp/aquecimento/$1/pom.xml" clean test; \
+            -Djunit.version="$2" -Dsurefire.version="$3" -Dassertj.version="$VERSAO_DO_ASSERTJ" -f "/tmp/aquecimento/$1/pom.xml" clean test; \
     }; \
     for surefire in $VERSOES_DO_SUREFIRE; do \
         for junit in $VERSOES_DO_JUNIT5; do aquecer junit5 "$junit" "$surefire"; done; \

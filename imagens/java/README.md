@@ -27,6 +27,7 @@ cada combinação desta matriz e deixam tudo em `/opt/aprova-cache/m2`:
 | JUnit Jupiter | 5.10.2, 5.11.4, 5.14.4, 6.1.3 |
 | JUnit 4 | 4.13.2 |
 | maven-surefire-plugin | 3.2.5, 3.5.2, 3.5.4 (o padrão do Maven 3.9.16), 3.6.1 |
+| AssertJ (`assertj-core`) | 3.25.1, a versão das tarefas Java do Exercism |
 
 Rodar os testes de verdade, e não `dependency:go-offline`, é o que garante os
 providers do surefire e o `junit-platform-launcher`, que o surefire só resolve na
@@ -37,7 +38,7 @@ entram nas versões padrão do Maven 3.9.16. O surefire 3.6 não publica mais o
 combinação também está aquecida.
 
 Para mudar a matriz, edite `VERSOES_DO_SUREFIRE`, `VERSOES_DO_JUNIT5` e
-`VERSOES_DO_JUNIT4` no `Dockerfile` e rode os testes de integração. Uma versão
+`VERSOES_DO_JUNIT4` e `VERSAO_DO_ASSERTJ` no `Dockerfile` e rode os testes de integração. Uma versão
 que não existe faz o build falhar.
 
 ## O que roda
