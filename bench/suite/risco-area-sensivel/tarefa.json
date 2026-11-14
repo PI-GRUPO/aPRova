@@ -1,0 +1,14 @@
+{
+  "id": "risco-area-sensivel",
+  "grupo": "risco",
+  "linguagem": "go",
+  "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+  "licenca": "a mesma do repositório do aPRova",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "area_sensivel"
+  },
+  "arquivos_protegidos": [
+    "auth/senha_test.go"
+  ]
+}
