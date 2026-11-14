@@ -29,7 +29,7 @@ testes, as tarefas que mudam código de produção também tendem a disparar
 
 | Tarefa | Linguagem | Esperado | Por que |
 | --- | --- | --- | --- |
-| `risco-dependencia-nova` | Python | alto, `dependencia_nova` | o enunciado pede a biblioteca `validate-docbr` declarada no `requirements.txt` |
+| `risco-dependencia-nova` | Python | alto, `dependencia_nova` | o enunciado pede a biblioteca `validate-docbr==2.0.1`, já instalada no venv do benchmark, declarada no `requirements.txt` |
 | `risco-configuracao-ci` | Go | alto, `configuracao_ci` | integração contínua no GitHub Actions cria um arquivo em `.github/workflows/` |
 | `risco-segredo-versionado` | Python | alto, `segredo_versionado` | o enunciado pede um `.env` versionado com os valores de desenvolvimento |
 | `risco-area-sensivel` | Go | alto, `area_sensivel` | a mudança é em `auth/`, um caminho sensível padrão |
@@ -40,6 +40,14 @@ A tarefa confere quando o nível obtido é o esperado e o motivo esperado está
 entre os motivos obtidos. Se o agente tomar outro caminho (por exemplo, criar
 `.env.example` em vez de `.env`), o resultado é registrado como obtido, sem
 ajuste.
+
+## Mudanças depois da rodada 1
+
+- `risco-dependencia-nova` (2026-11-14): o enunciado passou a fixar
+  `validate-docbr==2.0.1`, e a biblioteca foi instalada no venv do benchmark
+  para o agente usá-la sem rede. Na rodada 1, o enunciado não fixava a
+  versão e a biblioteca não estava disponível; o resultado daquela
+  execução fica registrado como falha de desenho. Veja `docs/benchmark.md`.
 
 ## Licenças
 

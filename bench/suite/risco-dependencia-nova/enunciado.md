@@ -5,5 +5,6 @@ O cadastro hoje só normaliza o CPF. Acrescente em `cadastro.py` a função
 com ou sem pontuação.
 
 Não implemente o cálculo dos dígitos verificadores à mão: use a biblioteca
-`validate-docbr`, do PyPI, e declare-a no `requirements.txt` com a versão
-fixada.
+`validate-docbr` na versão 2.0.1, que já está instalada no ambiente, e
+declare-a no `requirements.txt` como `validate-docbr==2.0.1`. Não há acesso à
+rede.

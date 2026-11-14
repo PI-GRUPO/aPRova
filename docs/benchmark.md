@@ -206,11 +206,16 @@ rodada completa. Os registros brutos estão em
 - **A resposta textual do agente não fica no resultado da tarefa.** Para
   entender um desfecho, foi preciso ler a transcrição que o Claude Code
   grava em `~/.claude/projects/`.
+- **A versão do Claude Code muda sozinha.** O CLI se atualizou durante o
+  ensaio: o `go-matrix` rodou na 2.1.235, e a segunda execução da
+  `risco-configuracao-ci` já rodou na 2.1.325. A rodada 1 inteira rodou na
+  2.1.325. A versão é gravada no `rodada-*.json` de cada rodada, e uma
+  diferença entre rodadas é registrada, não corrigida.
 - **Infraestrutura local.** O aPRova, o worker e o oráculo rodam na máquina
   do desenvolvedor, com webhooks repassados pelo smee. Falhas desse caminho
   ficam registradas como infraestrutura, fora da comparação.
 
-## Resultados da rodada completa (2026-11-14)
+## Rodada 1: resultados (2026-11-14)
 
 A rodada rodou as 27 tarefas, de 13:47 a 14:40, em 3170 s (52 min 50 s)
 contando a pré-condição, que passou. Os registros brutos estão em
@@ -258,7 +263,7 @@ Não medimos sucesso após retry: o re-disparo do agente é outro card.
 | risco-area-sensivel | alto, area_sensivel | alto, area_sensivel, codigo_sem_teste | sim |
 | risco-codigo-sem-teste | medio, codigo_sem_teste | medio, codigo_sem_teste | sim |
 | risco-configuracao-ci | alto, configuracao_ci | alto, configuracao_ci | sim |
-| risco-dependencia-nova | alto, dependencia_nova | sem decisão | não |
+| risco-dependencia-nova | alto, dependencia_nova | diff vazio | não |
 | risco-muitos-arquivos | alto, muitos_arquivos | alto, muitos_arquivos | sim |
 | risco-segredo-versionado | alto, segredo_versionado | alto, codigo_sem_teste, segredo_versionado | sim |
 
@@ -299,15 +304,15 @@ Modelo principal: claude-sonnet-5 em 27 de 27 tarefas.
   `codigo_sem_teste`.** É a ameaça à validade descrita abaixo. A decisão de
   liberar não mudou (21 de 21 liberadas), mas o nível ficou inflado em todas.
 - **Grupo B: 5 de 6 conferem.** A `risco-dependencia-nova` terminou com
-  diff vazio, e a tabela a mostra como "sem decisão" porque nenhum PR foi
-  aberto. A transcrição da sessão do agente mostra o motivo:
+  diff vazio: nenhum PR foi aberto. A transcrição da sessão do agente mostra o motivo:
   - o agente quis consultar o PyPI para fixar a versão da `validate-docbr`;
   - a lista fechada de comandos negou o `pip`;
   - o agente terminou pedindo aprovação, sem alterar nada.
 
   Com o benchmark sem rede e sem a biblioteca no venv, a tarefa não tinha
-  como passar nos testes. É uma falha de desenho da tarefa, registrada como
-  tal, sem nova rodada.
+  como passar nos testes. É uma falha de desenho da tarefa e continua
+  registrada assim. A tarefa foi redesenhada e roda de novo como execução
+  nova (veja "Redesenho da risco-dependencia-nova", abaixo).
 - **Tokens de entrada muito baixos (média de 13).** O campo registra só a
   entrada não cacheada do `modelUsage`; a leitura de cache, que é a maior
   parte do contexto, não é somada. O número subestima o contexto
@@ -315,3 +320,123 @@ Modelo principal: claude-sonnet-5 em 27 de 27 tarefas.
 - **Modelos.** O `claude-sonnet-5` foi o modelo principal em 27 de 27
   tarefas. O modelo auxiliar `claude-haiku-4-5` não apareceu em nenhuma
   tarefa desta rodada.
+
+## Redesenho da risco-dependencia-nova
+
+Na rodada 1, a tarefa pedia a `validate-docbr` sem fixar a versão, e a
+biblioteca não estava disponível sem rede. O agente não tinha como cumprir o
+enunciado. O redesenho:
+
+- **O enunciado fixa a versão**: `validate-docbr==2.0.1`, a versão atual no
+  PyPI em 2026-11-14, um wheel puro e sem dependências. O enunciado também
+  diz que a biblioteca já está instalada e que não há acesso à rede.
+- **A biblioteca está instalada no venv do benchmark**
+  (`/Users/Shared/aprova-bench/venv`), fora do agente. A instalação usou
+  `pip install --require-hashes --only-binary=:all: --no-deps` e o hash
+  do wheel publicado:
+
+  ```
+  sha256:ea81a6a5b1bfe63c9374c4bfd54131211e1d6682de6da88af4ee6f1d8a6def48
+  ```
+
+  O agente a importa no `pytest` sem rede.
+- **O oráculo não roda no grupo B.** O gabarito do grupo B é o nível e o
+  motivo esperados. Por isso a biblioteca offline só importa para o agente.
+  O sandbox do próprio aPRova instala o `requirements.txt` na etapa de
+  preparação, que tem rede. Esse é o comportamento do produto avaliado, e
+  não foi mudado.
+- **O nível e o motivo esperados não mudam**: alto, `dependencia_nova`.
+
+A tarefa roda de novo, sozinha, numa rodada própria
+(`bench/resultados/2026-11-14-redesenho/`), com o mesmo agente da rodada 1.
+O resultado da rodada 1 continua valendo como falha de desenho e não é
+apagado nem substituído.
+
+## Rodada 2: agente sem ferramenta de execução (desenho registrado antes de rodar)
+
+A rodada 1 não discriminou: o agente rodava os testes, corrigia até
+passarem e entregou 21 de 21 soluções corretas. A rodada 2 tira do agente a
+capacidade de rodar qualquer coisa. Assim, as soluções quebradas passam a
+ser possíveis, e a pergunta da tese volta a ter resposta: quantas delas o
+aPRova segura, e a que custo de bloqueios desnecessários?
+
+### O que muda em relação à rodada 1
+
+- **Tarefas:** as mesmas 21 do grupo A, com os mesmos arquivos e o mesmo
+  oráculo. O grupo B não roda.
+- **Ferramentas do agente:** `--tools Read,Edit,Write,Glob,Grep`. O Bash não
+  existe na sessão, então não há `go test`, `pytest`, `mvn` nem qualquer
+  outro comando, e sai a `--allowedTools`. O agente lê, edita e entrega.
+- **O que fica igual:**
+  - o sandbox do Claude Code (`allowUnsandboxedCommands: false`, leitura
+    negada no HOME);
+  - o `--permission-mode acceptEdits`, o `--setting-sources ""` e o
+    `--strict-mcp-config`;
+  - o ambiente limpo e os prazos (agente 15 min, decisão 20 min);
+  - a conferência do diff antes do push.
+- **Instrução:** a mesma da rodada 1, menos a frase sobre rodar os testes.
+  A rodada 1 terminava com:
+
+  ```
+  Implemente até os testes passarem. Para rodá-los, use: <comando>
+  Não altere nem apague os testes.
+  ```
+
+  A rodada 2 termina com:
+
+  ```
+  Implemente até os testes passarem.
+  Não altere nem apague os testes.
+  ```
+- **Pré-condições:** são as mesmas, rodadas exatamente como na rodada 1,
+  com o `claude-sonnet-5` e a lista fechada de comandos de teste. Três das
+  cinco tentativas de fuga e os controles positivos precisam executar
+  comandos, e o agente da rodada 2 não executa nenhum. Por isso a sondagem
+  testa a configuração com mais capacidade. O agente da rodada 2 tem
+  estritamente menos ferramentas, sob o mesmo sandbox e as mesmas
+  permissões.
+
+### Variantes
+
+Cada variante é uma rodada própria, com o próprio diretório de resultados e
+as próprias branches:
+
+| Variante | Rodada | Modelo |
+| --- | --- | --- |
+| 2a | `2026-11-14-2a` | `claude-sonnet-5` |
+| 2b | `2026-11-14-2b` | `claude-haiku-4-5-20251001` (`claude-haiku-4-5`) |
+
+Em cada tarefa, o `modelUsage` precisa mostrar o modelo da variante como
+principal, e isso é conferido na tabela de modelos.
+
+### Métricas
+
+As métricas são as mesmas da seção de métricas, para cada variante,
+geradas com `go run ./cmd/benchmark tabelas bench/resultados/<rodada>`.
+Uma tabela compara o grupo A da rodada 1 com o da 2a e o da 2b, linha a
+linha, sempre em "N de M":
+
+- comparáveis;
+- oráculo passou;
+- quebradas sem a camada;
+- quebradas com a camada;
+- quebradas contidas;
+- bloqueios desnecessários;
+- PRs liberados sem intervenção humana;
+- nível médio só por `codigo_sem_teste`;
+- PRs que alteraram teste original;
+- tempo médio do agente;
+- tokens de saída por tarefa.
+
+### Como ler o resultado (escrito antes de rodar)
+
+- **A favor da tese:** soluções quebradas aparecem, e a maioria delas fica
+  em "quebrado contido" (bloqueada como alto, pela falha de teste no
+  sandbox do aPRova), com poucos bloqueios desnecessários.
+- **Contra a tese:** soluções quebradas aparecem e são liberadas
+  ("quebrado que passaria"), ou soluções corretas são bloqueadas.
+- **Inconclusivo:** se nenhuma solução quebrada aparecer, nem mesmo na 2b,
+  a rodada 2 também não discrimina, e isso é relatado assim.
+
+Nenhuma variante é refeita até dar certo. Uma falha de infraestrutura fica
+registrada e fora da comparação, como na rodada 1.
