@@ -569,27 +569,27 @@ Modelo principal: claude-haiku-4-5-20251001 em 21 de 21 tarefas.
 
 | Tarefa | Oráculo | Decisão | Motivos | Tokens de saída | Turnos | Agente |
 | --- | --- | --- | --- | --- | --- | --- |
-| go-crypto-square | passou | medio | codigo_sem_teste | 13407 | 8 | 82.9 s |
-| go-dnd-character | passou | medio | codigo_sem_teste | 4612 | 7 | 33.0 s |
-| go-matrix | falhou | alto | codigo_sem_teste, falha_sandbox | 12244 | 13 | 92.9 s |
-| go-palindrome-products | passou | medio | codigo_sem_teste | 7038 | 9 | 49.2 s |
-| go-sublist | passou | medio | codigo_sem_teste | 1888 | 9 | 18.6 s |
-| go-transpose | falhou | alto | codigo_sem_teste, falha_sandbox | 5964 | 8 | 40.1 s |
-| go-tree-building | falhou | alto | codigo_sem_teste, falha_sandbox | 9023 | 14 | 74.8 s |
-| java-ledger | passou | medio | codigo_sem_teste | 27649 | 23 | 187.3 s |
-| java-palindrome-products | passou | medio | codigo_sem_teste | 5476 | 11 | 41.4 s |
-| java-poker | passou | medio | codigo_sem_teste | 21383 | 13 | 124.6 s |
-| java-resistor-color-trio | passou | medio | codigo_sem_teste | 3426 | 6 | 26.7 s |
-| java-satellite | passou | medio | codigo_sem_teste | 6407 | 13 | 53.4 s |
-| java-transpose | passou | medio | codigo_sem_teste | 11942 | 9 | 78.1 s |
-| java-twelve-days | passou | medio | codigo_sem_teste | 11322 | 14 | 81.9 s |
-| python-affine-cipher | passou | medio | codigo_sem_teste | 9319 | 9 | 61.1 s |
-| python-bottle-song | passou | medio | codigo_sem_teste | 3873 | 8 | 30.5 s |
-| python-dominoes | passou | baixo | nenhum | 24755 | 13 | 141.9 s |
-| python-food-chain | falhou | alto | codigo_sem_teste, falha_sandbox | 11524 | 9 | 70.1 s |
-| python-grep | passou | medio | codigo_sem_teste | 10004 | 8 | 74.1 s |
-| python-list-ops | passou | baixo | nenhum | 12460 | 18 | 83.4 s |
-| python-tree-building | passou | baixo | nenhum | 17836 | 14 | 118.5 s |
+| go-crypto-square | passou | medio | codigo_sem_teste | 13407 | 8 | 82,9 s |
+| go-dnd-character | passou | medio | codigo_sem_teste | 4612 | 7 | 33,0 s |
+| go-matrix | falhou | alto | codigo_sem_teste, falha_sandbox | 12244 | 13 | 92,9 s |
+| go-palindrome-products | passou | medio | codigo_sem_teste | 7038 | 9 | 49,2 s |
+| go-sublist | passou | medio | codigo_sem_teste | 1888 | 9 | 18,6 s |
+| go-transpose | falhou | alto | codigo_sem_teste, falha_sandbox | 5964 | 8 | 40,1 s |
+| go-tree-building | falhou | alto | codigo_sem_teste, falha_sandbox | 9023 | 14 | 74,8 s |
+| java-ledger | passou | medio | codigo_sem_teste | 27649 | 23 | 187,3 s |
+| java-palindrome-products | passou | medio | codigo_sem_teste | 5476 | 11 | 41,4 s |
+| java-poker | passou | medio | codigo_sem_teste | 21383 | 13 | 124,6 s |
+| java-resistor-color-trio | passou | medio | codigo_sem_teste | 3426 | 6 | 26,7 s |
+| java-satellite | passou | medio | codigo_sem_teste | 6407 | 13 | 53,4 s |
+| java-transpose | passou | medio | codigo_sem_teste | 11942 | 9 | 78,1 s |
+| java-twelve-days | passou | medio | codigo_sem_teste | 11322 | 14 | 81,9 s |
+| python-affine-cipher | passou | medio | codigo_sem_teste | 9319 | 9 | 61,1 s |
+| python-bottle-song | passou | medio | codigo_sem_teste | 3873 | 8 | 30,5 s |
+| python-dominoes | passou | baixo | nenhum | 24755 | 13 | 141,9 s |
+| python-food-chain | falhou | alto | codigo_sem_teste, falha_sandbox | 11524 | 9 | 70,1 s |
+| python-grep | passou | medio | codigo_sem_teste | 10004 | 8 | 74,1 s |
+| python-list-ops | passou | baixo | nenhum | 12460 | 18 | 83,4 s |
+| python-tree-building | passou | baixo | nenhum | 17836 | 14 | 118,5 s |
 
 #### O que a 2b mostrou
 
