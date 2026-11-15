@@ -1,0 +1,43 @@
+{
+  "id": "go-tree-building",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 19,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/19",
+    "branch": "solucao/2026-11-15-2b-go-tree-building",
+    "sha": "0f26c71bdba2e83fdf6984863124356848508c12"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "codigo_sem_teste",
+      "falha_sandbox"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "075ecbbc-368f-471c-bfe5-22825d720b22",
+    "recibo_hash": "b9df0d8038e452b2fd377434ee1072a285a8859503abec2b82c9afd6362ecb41"
+  },
+  "oraculo": "falhou",
+  "tempos": {
+    "agente_ms": 74849,
+    "publicacao_ms": 7135,
+    "decisao_ms": 15868,
+    "oraculo_ms": 1240
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 105,
+        "tokens_de_saida": 9023
+      }
+    },
+    "tokens_de_entrada": 105,
+    "tokens_de_saida": 9023,
+    "turnos": 14,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

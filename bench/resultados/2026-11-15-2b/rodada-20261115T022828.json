@@ -1,0 +1,43 @@
+{
+  "commit_do_polyglot": "7e0611e77b54",
+  "iniciada_em": "2026-11-15T02:28:27-03:00",
+  "modelo": "claude-haiku-4-5-20251001",
+  "modelo_da_sondagem": "claude-sonnet-5",
+  "repositorios": {
+    "go": "Azulpasta/aprova-bench-go",
+    "java": "Azulpasta/aprova-bench-java",
+    "python": "Azulpasta/aprova-bench-python"
+  },
+  "sem_execucao": true,
+  "semente_da_suite": 20261114,
+  "tarefas": [
+    "go-crypto-square",
+    "go-dnd-character",
+    "go-matrix",
+    "go-palindrome-products",
+    "go-sublist",
+    "go-transpose",
+    "go-tree-building",
+    "java-ledger",
+    "java-palindrome-products",
+    "java-poker",
+    "java-resistor-color-trio",
+    "java-satellite",
+    "java-transpose",
+    "java-twelve-days",
+    "python-affine-cipher",
+    "python-bottle-song",
+    "python-dominoes",
+    "python-food-chain",
+    "python-grep",
+    "python-list-ops",
+    "python-tree-building"
+  ],
+  "versoes": {
+    "claude": "2.1.325 (Claude Code)",
+    "go": "go version go1.26.11 darwin/arm64",
+    "maven": "Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)",
+    "pytest": "pytest 9.2.0",
+    "python": "Python 3.14.5"
+  }
+}

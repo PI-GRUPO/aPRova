@@ -1,0 +1,42 @@
+{
+  "id": "go-sublist",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 17,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/17",
+    "branch": "solucao/2026-11-15-2b-go-sublist",
+    "sha": "1dbe6036d88a829f1c739b1094cef90166f80315"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "da7c3f59-d747-4c0c-b0d3-da45942cb0fb",
+    "recibo_hash": "aa13a48fcb3b9089f6b1a373a235ccc8465ad429a28ab5028c59457b658d9a1b"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 18559,
+    "publicacao_ms": 7072,
+    "decisao_ms": 31114,
+    "oraculo_ms": 26337
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 49,
+        "tokens_de_saida": 1888
+      }
+    },
+    "tokens_de_entrada": 49,
+    "tokens_de_saida": 1888,
+    "turnos": 9,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

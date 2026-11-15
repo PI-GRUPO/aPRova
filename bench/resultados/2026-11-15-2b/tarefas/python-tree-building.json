@@ -1,0 +1,40 @@
+{
+  "id": "python-tree-building",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 16,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/16",
+    "branch": "solucao/2026-11-15-2b-python-tree-building",
+    "sha": "1bed0afffc2a6bf2027c267328236476ba53cfe6"
+  },
+  "decisao": {
+    "nivel": "baixo",
+    "motivos": null,
+    "estado_do_task_run": "concluido",
+    "recibo_id": "dab2eb8e-591d-4a05-b0b9-3611cf2da36b",
+    "recibo_hash": "8f8a0492414e22467c037f9148a5e67d1d3d505488c63e30d40be9d57f3765d6"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 118477,
+    "publicacao_ms": 6362,
+    "decisao_ms": 15760,
+    "oraculo_ms": 1713
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 105,
+        "tokens_de_saida": 17836
+      }
+    },
+    "tokens_de_entrada": 105,
+    "tokens_de_saida": 17836,
+    "turnos": 14,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

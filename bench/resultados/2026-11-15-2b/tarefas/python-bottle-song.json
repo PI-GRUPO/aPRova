@@ -1,0 +1,42 @@
+{
+  "id": "python-bottle-song",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 11,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/11",
+    "branch": "solucao/2026-11-15-2b-python-bottle-song",
+    "sha": "6ed6d1f4d882072bcfde7c73b2d020a78744e2c9"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "f78fa57d-4d98-41f2-8331-297112fa937e",
+    "recibo_hash": "5408880bea61850ee4502d8a3f3cfa71af32c932464a46a322cdbc98d6bb332b"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 30544,
+    "publicacao_ms": 6185,
+    "decisao_ms": 15681,
+    "oraculo_ms": 1698
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 65,
+        "tokens_de_saida": 3873
+      }
+    },
+    "tokens_de_entrada": 65,
+    "tokens_de_saida": 3873,
+    "turnos": 8,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

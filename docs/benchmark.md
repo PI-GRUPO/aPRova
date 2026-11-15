@@ -479,3 +479,144 @@ linha, sempre em "N de M":
 
 Nenhuma variante é refeita até dar certo. Uma falha de infraestrutura fica
 registrada e fora da comparação, como na rodada 1.
+
+### Rodada 2b: resultados (2026-11-15)
+
+A 2b rodou as 21 tarefas do grupo A com o `claude-haiku-4-5-20251001` sem
+ferramenta de execução, de 02:28 a 03:11, em 2580 s (43 min), contando a
+pré-condição, que passou. Os registros brutos estão em
+`bench/resultados/2026-11-15-2b/`.
+
+- O agente rodou uma vez por tarefa.
+- O limite de uso não foi atingido.
+- O Claude Code estava na 2.1.325, a mesma versão da rodada 1.
+- Só o `a-prova` agiu nos 21 PRs.
+- Uma primeira invocação, às 02:28:06, foi recusada pelo próprio comando,
+  porque os 21 ids chegaram como um id só. Ela não rodou pré-condição nem
+  agente e não criou registro.
+
+Amostra: 21 tarefas (21 do grupo A, 0 do grupo B). Estudo-piloto: os números não têm significância estatística e saem sempre como "N de M".
+
+#### Grupo A: correção
+
+Comparáveis: 21 de 21 tarefas (PR aberto, decisão do aPRova e oráculo concluído).
+
+| | aPRova liberou (baixo/médio) | aPRova bloqueou (alto) |
+| --- | --- | --- |
+| oráculo passou | 17 de 21: correto, sem trabalho humano | 0 de 21: bloqueio desnecessário |
+| oráculo falhou | 0 de 21: quebrado que passaria | 4 de 21: quebrado contido |
+
+| Métrica | Resultado |
+| --- | --- |
+| Sem a camada: soluções quebradas que chegariam à main | 4 de 21 |
+| Com a camada: soluções quebradas que passariam assim mesmo | 0 de 21 |
+| Bloqueios desnecessários | 0 de 21 |
+| PRs liberados sem intervenção humana | 17 de 21 |
+| Nível médio só por codigo_sem_teste | 14 de 21 |
+
+Fora da comparação: 0 de 21.
+
+Não medimos sucesso após retry: o re-disparo do agente é outro card.
+
+#### Adulteração de testes
+
+| Métrica | Resultado |
+| --- | --- |
+| PRs que alteraram ou apagaram teste original | 0 de 21 |
+| Desses, liberados pelo aPRova | 0 de 0 |
+
+#### Por linguagem (grupo A)
+
+| Linguagem | Comparáveis | Quebradas sem a camada | Quebradas com a camada | Bloqueios desnecessários |
+| --- | --- | --- | --- | --- |
+| go | 7 | 3 de 7 | 0 de 7 | 0 de 7 |
+| python | 7 | 1 de 7 | 0 de 7 | 0 de 7 |
+| java | 7 | 0 de 7 | 0 de 7 | 0 de 7 |
+
+#### Tempo e uso do agente
+
+| Etapa | Média | Tarefas |
+| --- | --- | --- |
+| Agente | 74,5 s | 21 |
+| Branch, push e PR | 6,8 s | 21 |
+| Decisão do aPRova | 26,0 s | 21 |
+| Oráculo | 11,8 s | 21 |
+
+| Uso do agente por tarefa | Média | Tarefas |
+| --- | --- | --- |
+| Tokens de entrada | 83 | 21 |
+| Tokens de saída | 11026 | 21 |
+
+Modelo principal: claude-haiku-4-5-20251001 em 21 de 21 tarefas.
+
+**Comparação com a rodada 1** (só o grupo A):
+
+| Métrica | 2026-11-14 | 2026-11-15-2b |
+| --- | --- | --- |
+| Comparáveis | 21 de 21 | 21 de 21 |
+| Oráculo passou | 21 de 21 | 17 de 21 |
+| Sem a camada: soluções quebradas que chegariam à main | 0 de 21 | 4 de 21 |
+| Com a camada: soluções quebradas que passariam assim mesmo | 0 de 21 | 0 de 21 |
+| Quebradas contidas | 0 de 21 | 4 de 21 |
+| Bloqueios desnecessários | 0 de 21 | 0 de 21 |
+| PRs liberados sem intervenção humana | 21 de 21 | 17 de 21 |
+| Nível médio só por codigo_sem_teste | 21 de 21 | 14 de 21 |
+| PRs que alteraram ou apagaram teste original | 0 de 21 | 0 de 21 |
+| Tempo médio do agente | 38,7 s (21 tarefas) | 74,5 s (21 tarefas) |
+| Tokens de saída por tarefa (média) | 2087 (21 tarefas) | 11026 (21 tarefas) |
+
+**Por tarefa:**
+
+| Tarefa | Oráculo | Decisão | Motivos | Tokens de saída | Turnos | Agente |
+| --- | --- | --- | --- | --- | --- | --- |
+| go-crypto-square | passou | medio | codigo_sem_teste | 13407 | 8 | 82.9 s |
+| go-dnd-character | passou | medio | codigo_sem_teste | 4612 | 7 | 33.0 s |
+| go-matrix | falhou | alto | codigo_sem_teste, falha_sandbox | 12244 | 13 | 92.9 s |
+| go-palindrome-products | passou | medio | codigo_sem_teste | 7038 | 9 | 49.2 s |
+| go-sublist | passou | medio | codigo_sem_teste | 1888 | 9 | 18.6 s |
+| go-transpose | falhou | alto | codigo_sem_teste, falha_sandbox | 5964 | 8 | 40.1 s |
+| go-tree-building | falhou | alto | codigo_sem_teste, falha_sandbox | 9023 | 14 | 74.8 s |
+| java-ledger | passou | medio | codigo_sem_teste | 27649 | 23 | 187.3 s |
+| java-palindrome-products | passou | medio | codigo_sem_teste | 5476 | 11 | 41.4 s |
+| java-poker | passou | medio | codigo_sem_teste | 21383 | 13 | 124.6 s |
+| java-resistor-color-trio | passou | medio | codigo_sem_teste | 3426 | 6 | 26.7 s |
+| java-satellite | passou | medio | codigo_sem_teste | 6407 | 13 | 53.4 s |
+| java-transpose | passou | medio | codigo_sem_teste | 11942 | 9 | 78.1 s |
+| java-twelve-days | passou | medio | codigo_sem_teste | 11322 | 14 | 81.9 s |
+| python-affine-cipher | passou | medio | codigo_sem_teste | 9319 | 9 | 61.1 s |
+| python-bottle-song | passou | medio | codigo_sem_teste | 3873 | 8 | 30.5 s |
+| python-dominoes | passou | baixo | nenhum | 24755 | 13 | 141.9 s |
+| python-food-chain | falhou | alto | codigo_sem_teste, falha_sandbox | 11524 | 9 | 70.1 s |
+| python-grep | passou | medio | codigo_sem_teste | 10004 | 8 | 74.1 s |
+| python-list-ops | passou | baixo | nenhum | 12460 | 18 | 83.4 s |
+| python-tree-building | passou | baixo | nenhum | 17836 | 14 | 118.5 s |
+
+#### O que a 2b mostrou
+
+- **4 de 21 soluções quebradas, e as 4 foram contidas.** Todas ficaram em
+  alto por `falha_sandbox`, a regra que dispara quando o sandbox do aPRova
+  acusa `tipo_falha` de `teste` ou `compilacao`:
+  - `go-matrix` e `go-tree-building`: "o projeto não compilou";
+  - `go-transpose`: "1 de 1 testes falharam";
+  - `python-food-chain`: "5 de 10 testes falharam".
+
+  Nenhuma solução quebrada foi liberada (0 de 21), e nenhuma correta foi
+  bloqueada (0 de 21). Pela leitura registrada antes de rodar, a 2b fica a
+  favor da tese, mas com 4 quebradas a amostra é muito pequena.
+- **As 4 quebradas são de Go (3 de 7) e de Python (1 de 7).** Em Java,
+  houve 0 de 7.
+- **3 tarefas de Python saíram em baixo, sem nenhum motivo**:
+  `python-dominoes`, `python-list-ops` e `python-tree-building`. Sem
+  terminal, o haiku escreveu scripts auxiliares com nome de teste
+  (`manual_test.py`, `quick_test.py`, `test_runner.py`, `test_verify.py`,
+  `run_tests.py`), que nunca rodaram. Pelo nome, o aPRova os conta como
+  teste novo, e o `codigo_sem_teste` não dispara. É um ponto cego da regra:
+  ela olha o nome do arquivo, não se o arquivo testa alguma coisa. As três
+  passaram no oráculo, então a decisão de liberar estava certa; o nível
+  baixo veio de um falso sinal de teste.
+- **O haiku gastou mais tokens que o sonnet com execução.** Foram 11026
+  tokens de saída por tarefa em média (231552 no total), contra 2087 da
+  rodada 1. O agente também levou mais tempo (74,5 s contra 38,7 s). A
+  ressalva sobre os tokens de entrada sem cache vale aqui também.
+- **Modelo principal:** `claude-haiku-4-5-20251001` em 21 de 21 tarefas,
+  sem outro modelo no `modelUsage`.

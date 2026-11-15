@@ -1,0 +1,43 @@
+{
+  "id": "go-matrix",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 15,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/15",
+    "branch": "solucao/2026-11-15-2b-go-matrix",
+    "sha": "f0aa8adde9253c6a43dfc23bc73c31557e788a48"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "codigo_sem_teste",
+      "falha_sandbox"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "8e09e269-96fd-4a97-8750-a1b22e26131d",
+    "recibo_hash": "5d4828df565be78eb0d6a19db506ec683e3d72604086f1075c46f83df57e4595"
+  },
+  "oraculo": "falhou",
+  "tempos": {
+    "agente_ms": 92929,
+    "publicacao_ms": 6106,
+    "decisao_ms": 31078,
+    "oraculo_ms": 22446
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 105,
+        "tokens_de_saida": 12244
+      }
+    },
+    "tokens_de_entrada": 105,
+    "tokens_de_saida": 12244,
+    "turnos": 13,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}
