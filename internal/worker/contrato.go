@@ -89,6 +89,13 @@ type PublicadorPR interface {
 	PublicarFalha(ctx context.Context, taskRun domain.TaskRun, diagnostico string) error
 }
 
+// EnviadorSARIF envia ao code scanning do GitHub o SARIF de uma publicação,
+// sem bloquear quem chama e sem devolver erro: o SARIF é uma saída a mais e
+// nunca muda o estado da análise. O sarif.Enviador é a implementação.
+type EnviadorSARIF interface {
+	Enviar(publicacao Publicacao)
+}
+
 // EmissorEventos envia um evento ao n8n sem bloquear quem chama.
 type EmissorEventos interface {
 	Emitir(diario *slog.Logger, pedido eventos.Pedido)

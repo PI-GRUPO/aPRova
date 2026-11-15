@@ -27,7 +27,8 @@ var ErrDependenciaAusente = errors.New("worker: dependência ausente")
 // dono/repositorio ao diretório do projeto dentro do repositório. Linguagens
 // mapeia dono/repositorio à linguagem do projeto; sem entrada, é Go. URLPublica
 // é a base dos links de recibo. MaxTentativas e EsperaBase limitam as novas
-// tentativas de falhas transitórias, com espera que dobra a cada uma.
+// tentativas de falhas transitórias, com espera que dobra a cada uma. SARIF é
+// opcional: nulo desliga o envio ao code scanning.
 type Opcoes struct {
 	Armazenamento Armazenamento
 	LeitorDePR    LeitorDePR
@@ -38,6 +39,7 @@ type Opcoes struct {
 	Recibos       EmissorRecibo
 	Publicador    PublicadorPR
 	Eventos       EmissorEventos
+	SARIF         EnviadorSARIF
 	Diretorios    map[string]string
 	Linguagens    map[string]sandbox.Linguagem
 	URLPublica    string
