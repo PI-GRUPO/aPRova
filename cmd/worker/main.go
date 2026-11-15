@@ -7,6 +7,7 @@ import (
 	"maps"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 	"time"
 
@@ -20,10 +21,15 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/internal/sarif"
 	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
-const limiteDoDesligamento = 30 * time.Second
+const (
+	limiteDoDesligamento  = 30 * time.Second
+	versaoSemRevisao      = "desenvolvimento"
+	chaveDaRevisaoDoBuild = "vcs.revision"
+)
 
 func main() {
 	if err := executar(); err != nil {
@@ -80,15 +86,11 @@ func executar() error {
 	}
 	slog.Info("recibos assinados com Ed25519", "key_id", assinador.IDChave())
 
-	calibrador, err := montarCalibrador(configuracao, repositorio)
+	motor, enviadorSARIF, err := montarMotor(configuracao, repositorio, clienteGitHub, executorSandbox, emissorDeRecibos, publicador, emissorDeEventos)
 	if err != nil {
 		return err
 	}
-
-	motor, err := worker.NovoMotor(opcoesDoMotor(configuracao, repositorio, clienteGitHub, executorSandbox, calibrador, emissorDeRecibos, publicador, emissorDeEventos))
-	if err != nil {
-		return err
-	}
+	defer encerrarEnvioDeSARIF(enviadorSARIF)
 
 	pool, err := worker.NovoPool(worker.OpcoesPool{
 		Motor:         motor,
@@ -116,6 +118,63 @@ func executar() error {
 	return nil
 }
 
+func montarMotor(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, clienteGitHub *platform.Cliente,
+	executorSandbox sandbox.Executor, recibos *receipt.Emissor, publicador *publicacao.Publicador,
+	emissorDeEventos *eventos.Emissor) (*worker.Motor, *sarif.Enviador, error) {
+	calibrador, err := montarCalibrador(configuracao, repositorio)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	enviadorSARIF, err := montarEnviadorSARIF(configuracao, clienteGitHub, repositorio)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	motor, err := worker.NovoMotor(opcoesDoMotor(configuracao, repositorio, clienteGitHub, executorSandbox, calibrador, recibos, publicador,
+		emissorDeEventos, enviadorSARIF))
+	if err != nil {
+		encerrarEnvioDeSARIF(enviadorSARIF)
+		return nil, nil, err
+	}
+	return motor, enviadorSARIF, nil
+}
+
+func encerrarEnvioDeSARIF(enviador *sarif.Enviador) {
+	if enviador != nil {
+		enviador.Encerrar()
+	}
+}
+
+func montarEnviadorSARIF(configuracao config.Configuracao, clienteGitHub *platform.Cliente, repositorio *repository.RepositorioPostgres) (*sarif.Enviador, error) {
+	if !configuracao.SARIFLigado {
+		slog.Info("SARIF_LIGADO desligada, nenhum resultado é enviado ao code scanning")
+		return nil, nil
+	}
+
+	enviador, err := sarif.NovoEnviador(sarif.OpcoesEnviador{
+		GitHub: clienteGitHub, Registro: repositorio, Versao: versaoDoBinario(), MaxTentativas: configuracao.WorkerMaxTentativas,
+	})
+	if err != nil {
+		return nil, err
+	}
+	slog.Info("envio de SARIF ao code scanning ligado", "versao", versaoDoBinario())
+	return enviador, nil
+}
+
+func versaoDoBinario() string {
+	informacao, lida := debug.ReadBuildInfo()
+	if !lida {
+		return versaoSemRevisao
+	}
+	for _, ajuste := range informacao.Settings {
+		if ajuste.Key == chaveDaRevisaoDoBuild && ajuste.Value != "" {
+			return ajuste.Value
+		}
+	}
+	return versaoSemRevisao
+}
+
 func montarEmissorDeEventos(configuracao config.Configuracao) (*eventos.Emissor, error) {
 	emissorDeEventos, err := eventos.NovoEmissor(eventos.OpcoesEmissor{
 		URL:     configuracao.URLWebhookN8N,
@@ -132,8 +191,8 @@ func montarEmissorDeEventos(configuracao config.Configuracao) (*eventos.Emissor,
 
 func opcoesDoMotor(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, clienteGitHub *platform.Cliente,
 	executorSandbox sandbox.Executor, calibrador worker.CalibradorRisco, recibos *receipt.Emissor, publicador *publicacao.Publicador,
-	emissorDeEventos *eventos.Emissor) worker.Opcoes {
-	return worker.Opcoes{
+	emissorDeEventos *eventos.Emissor, enviadorSARIF *sarif.Enviador) worker.Opcoes {
+	opcoes := worker.Opcoes{
 		Armazenamento: repositorio,
 		LeitorDePR:    clienteGitHub,
 		Permissoes:    clienteGitHub,
@@ -148,6 +207,10 @@ func opcoesDoMotor(configuracao config.Configuracao, repositorio *repository.Rep
 		URLPublica:    configuracao.URLPublica,
 		MaxTentativas: configuracao.WorkerMaxTentativas,
 	}
+	if enviadorSARIF != nil {
+		opcoes.SARIF = enviadorSARIF
+	}
+	return opcoes
 }
 
 func montarCalibrador(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) (worker.CalibradorRisco, error) {
