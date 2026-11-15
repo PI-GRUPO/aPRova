@@ -73,8 +73,21 @@ Documento e `/verify` do recibo foram conferidos na API; sua releitura no
 n8n, com validadores da Central, confirmou `valido`. A entrada GitHub na API
 foi controlada/manual e assinada; não comprova entrega automática pelo GitHub.
 O Core encaminhou ao Trello, que encerrou sem card vinculado e sem escrita
-ou réplica Slack. Não houve `aguardando_aprovacao` nem `dependencia_nova`;
-continuam pendentes o alerta automático de recibo válido e a origem OSV real.
+ou réplica Slack nesse cenário BAIXO. A 6B usou o PR 3 do mesmo repositório,
+com dependência nova real: 10 testes passaram, gate ALTO, os três eventos
+autenticados chegaram ao Core, OSV respondeu 200 e persistiu consulta
+concluída sem avisos conhecidos. A Central verificou o recibo válido e o
+Slack confirmou o alerta automático de aprovação.
+
+Com a correlação global desligada, o encaminhamento final do contexto OSV
+foi ensaiado por relay manual do resultado real capturado, em tabelas de
+teste. A mesma mensagem Slack foi editada e persistida; reprocessamento não
+publicou nem editou novamente. Isso valida o caminho controlado da 6B, sem
+afirmar ativação automática do callback em produção. O workflow manual foi
+restaurado ao modo isolado e inativo, sem rede/credenciais.
+O PR 2 criado pelo App revelou rejeição de `AutorPR` com sufixo `[bot]` no
+emissor; o PR 3 usa autoria humana autenticada. A limitação para autores bot
+continua pendente no núcleo, sem enfraquecer identidades de decisões.
 A identidade do Check está configurada; proteção de branch não confirmada.
 
 O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
@@ -274,9 +287,11 @@ persistido de `dependencia_nova`, quando a correlação está habilitada.
 não acrescenta tipo ao contrato assinado do worker. Consultas síncronas de
 contexto não fazem esse retorno. A Central valida identidade/validade do
 snapshot e atualiza somente o alerta da mesma análise, preservando risco,
-recibos e decisões. O desenvolvimento está publicado; envio/edição Slack reais
-foram validados com contexto OSV fictício. A validação da origem OSV/worker
-real permanece pendente no checklist da Central.
+recibos e decisões. O desenvolvimento está publicado. Após os testes com
+contexto fictício, a 6B confirmou worker → Core → OSV reais e contexto
+persistido; um relay manual desse resultado validou a edição da mesma
+mensagem e a supressão de repetição nas tabelas de teste. A correlação global
+permanece desligada; ativação de produção e decisões humanas são separadas.
 
 ### `aprovacao_registrada`
 

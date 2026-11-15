@@ -165,6 +165,20 @@ A preparação usa o evento real capturado, sem alterar seu risco ou executar
 o alerta da Central. A entrada GitHub foi manual/assinada; sua entrega
 automática pelo GitHub ainda não foi comprovada.
 
+A 6B validou o PR 3 com `github.com/google/uuid v1.6.0` declarado: 10 testes
+passaram, gate ALTO por dependência nova, Check `action_required`, comentário
+e espera por aprovação. Os três eventos reais chegaram autenticados ao Core;
+OSV respondeu 200 e persistiu consulta concluída sem avisos conhecidos.
+A Central verificou o recibo válido e o Slack confirmou o alerta automático.
+
+O contexto OSV real foi entregue por relay manual ao teste da Central, com
+tabelas isoladas: publicação identificada, edição no mesmo canal/ts,
+persistência conferida e repetição `osv_ja_aplicado`, sem publicação/edição.
+Não se ativou a correlação global. O workflow manual foi restaurado ao modo
+isolado, inativo e sem rede/credenciais. Passaram 113 testes em seis arquivos.
+Autores de PR com sufixo `[bot]` ainda são rejeitados pelo contrato de eventos;
+o cenário completo usou autoria humana autenticada, sem alterar identidade.
+
 Faltam vínculos Slack/GitHub confirmados, proteção, ações humanas, política
 SLA e os demais cenários integrados. Digest, SLA e correlação continuam
 desligados; a Fase 6 permanece parcial. Nenhum workflow funcional precisou
@@ -239,7 +253,10 @@ Central e OSV estão publicados e exportados. A Fase 4 passou em testes locais
 e na instância com tabelas isoladas. O teste Slack real autorizado confirmou
 um envio, atualização da mesma mensagem e reprocessamento sem duplicata,
 usando contexto OSV fictício. Os adaptadores temporários foram removidos.
-Falta validar a origem OSV/worker real. A correlação global continua desligada.
+A 6B confirmou origem worker → Core → OSV real e resultado persistido. Seu
+relay manual ao teste da Central confirmou a edição da mesma mensagem e a
+supressão de repetição com contexto real. A correlação global continua
+desligada; esse ensaio não habilita o callback automático em produção.
 
 Com a flag desligada, eventos de decisão são ignorados e OSV não é encaminhado;
 o Incoming Webhook legado não recebe esses eventos. Não há backfill automático
@@ -265,10 +282,10 @@ inválido e indisponível, sem alterar risco, autorização ou botões de decis�
 Ausência, incompatibilidade ou falha de consulta permitem preparar o alerta
 com estado indisponível. Não há novas tabelas ou variáveis; isso independe
 da flag de correlação. A Fase 2 preserva o bloco do recibo no snapshot original.
-O recibo histórico retornou 404. A 6A produziu um recibo válido e confirmou
-sua releitura real pelo n8n com os validadores da Central; o PR era BAIXO e
-não passou pelo alerta de aprovação. Falta esse percurso automático com
-`aguardando_aprovacao` e apresentação do recibo válido no Slack.
+O recibo histórico retornou 404. A 6A confirmou releitura real de um recibo
+válido no n8n; a 6B confirmou o percurso automático `aguardando_aprovacao` →
+Central V01–V07 → alerta Slack com recibo válido, encerrando a pendência
+integrada da Fase 3. Nenhuma decisão humana foi enviada.
 
 O envio assinado a `/acoes-remotas` não
 segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
