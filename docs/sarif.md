@@ -17,7 +17,7 @@ O SARIF é uma saída a mais. Ele não decide nada.
   `risk_gates`, a mesma que o recibo assina.
 - Não muda o nível, o estado do task_run nem o Check Run `aPRova`.
 - Não reprova o pull request. Nenhum resultado sai com nível `error` e nenhuma
-  regra tem `security-severity`, então o check "Code scanning results" do GitHub
+  regra tem `security-severity`, então o check que o code scanning cria no PR
   não falha com o limiar padrão.
 - Não usa modelo de IA.
 - Não falha a análise. Um envio que dá errado fica no banco e no log, e o
@@ -78,8 +78,8 @@ escolher a linha. Se ela falhar, os resultados saem na linha 1.
 | alto | `warning` |
 | médio | `note` |
 
-O GitHub reprova o check "Code scanning results" quando há resultado `error`
-(ou de severidade de segurança alta). Se um motivo alto virasse `error`, todo
+O GitHub reprova o check do code scanning quando há resultado `error` (ou de
+severidade de segurança alta). Se um motivo alto virasse `error`, todo
 PR de risco alto ganharia um segundo check vermelho, que continuaria vermelho
 mesmo depois da aprovação humana. Como o SARIF não decide, ele também não
 reprova: quem bloqueia o merge é só o Check Run `aPRova`.
@@ -206,3 +206,44 @@ O schema oficial do SARIF 2.1.0 (errata 01) está versionado em
 `internal/sarif/testdata/sarif-schema-2.1.0.json`. Os testes validam contra ele,
 sem rede, o SARIF do PR #1 do aPRova-TESTES (válido e sem resultados, porque o
 único motivo dele é `falha_sandbox`) e o de cada motivo do gate.
+
+## Ponta a ponta
+
+Rodado em 2026-11-15 contra o PR #20 de `Azulpasta/aprova-bench-go`, criado só
+para este teste (branches `base/sarif-e2e` e `solucao/sarif-e2e`), com a mesma
+mudança da tarefa `risco-area-sensivel` da rodada 1 do benchmark em um commit
+novo. Worker local, com `SARIF_LIGADO=true` só naquela execução.
+
+| O que | Resultado |
+| --- | --- |
+| Gate | alto, por `area_sensivel` (alto) e `codigo_sem_teste` (médio) |
+| Check Run `aPRova` (app a-prova) | `action_required`, merge bloqueado |
+| Envio | aceito 3 s depois da transição para `aguardando_aprovacao` e processado 6 s depois de aceito |
+| `sarif_uploads` | `processado`, com o id do envio |
+| Alertas | dois, em `auth/senha.go`, linha 3: `area_sensivel` como `warning` e `codigo_sem_teste` como `note` |
+| Anotações no PR | duas, na linha 3 do diff, em uma review de `github-advanced-security[bot]` |
+| Check do code scanning | `success`, com o título "2 new alerts" |
+
+- PR: <https://github.com/Azulpasta/aprova-bench-go/pull/20>
+- Alertas do PR na aba Security:
+  <https://github.com/Azulpasta/aprova-bench-go/security/code-scanning?query=pr%3A20>
+- Check do code scanning:
+  <https://github.com/Azulpasta/aprova-bench-go/runs/132842631042>
+
+### O check do code scanning tem o nome da ferramenta
+
+A documentação do GitHub chama esse check de "Code scanning results". Na
+prática, para um SARIF enviado pela API, o check veio com o nome da ferramenta:
+`aPRova`, criado pelo app `github-advanced-security`. O PR ficou com dois checks
+de mesmo nome, um de cada app.
+
+Isso importa para quem exige o check `aPRova` antes do merge:
+
+- exigência amarrada ao app (`app_id` do a-prova), como na `main` do
+  aPRova-TESTES: só o Check Run do aPRova conta;
+- exigência só pelo nome, como no ruleset dos repositórios do benchmark: os
+  dois checks têm o nome exigido. No teste o PR continuou bloqueado, mas o caso
+  em que só o check do code scanning existe não foi exercitado.
+
+Antes de ligar `SARIF_LIGADO` em um repositório, amarre o check obrigatório ao
+app.
