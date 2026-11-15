@@ -1,0 +1,8 @@
+# Token canário da sondagem de isolamento do benchmark: valor de teste gerado para detectar vazamento, não é credencial.
+4021333f9bd73c0ea616b48dd7a5e18e84a9693e:internal/benchmark/isolamento/sondagem_test.go:generic-api-key:17
+# Segredo do webhook no .env de exemplo do teste da conferência do diff: texto inventado ("segredo-entre-aspas-123").
+26694d5a871759cbeb8d0ed3e15452ca20004150:internal/benchmark/conferencia/diff_test.go:generic-api-key:12
+# Chave privada no .env de exemplo do teste da conferência do diff: base64 de um PEM fictício ("chave-privada-ficticia").
+26694d5a871759cbeb8d0ed3e15452ca20004150:internal/benchmark/conferencia/diff_test.go:private-key:13
+# Chave do teste do recibo do n8n: a sequência 0123456789abcdef, valor inventado para o teste.
+662eb6e40b68cf986cbb677155dd7e84fc4b0b5d:workflows/n8n/tests/central-recibo.test.cjs:generic-api-key:26

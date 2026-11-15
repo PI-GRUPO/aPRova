@@ -215,6 +215,19 @@ rodada completa. Os registros brutos estão em
   do desenvolvedor, com webhooks repassados pelo smee. Falhas desse caminho
   ficam registradas como infraestrutura, fora da comparação.
 
+## Trabalho futuro
+
+- **`codigo_sem_teste` conta o arquivo pelo nome.** Um PR que cria um
+  arquivo com nome de teste (`*_test.go`, `test_*.py`, `*Test.java`) não
+  dispara a regra, mesmo que o arquivo nunca execute um teste. Na 2b, o
+  haiku criou scripts como `quick_test.py` e `test_runner.py`, que nunca
+  rodaram, e três tarefas saíram em baixo por isso. A correção seria
+  conferir no relatório do sandbox se o arquivo executou algum teste antes
+  de considerá-lo teste novo. Não foi implementado no benchmark, para não
+  mudar o produto avaliado no meio das rodadas.
+- **Re-disparo do agente.** O sucesso após retry não é medido aqui; é outro
+  card.
+
 ## Rodada 1: resultados (2026-11-14)
 
 A rodada rodou as 27 tarefas, de 13:47 a 14:40, em 3170 s (52 min 50 s)
