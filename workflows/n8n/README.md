@@ -137,11 +137,11 @@ timestamp para futuras atualizações da mensagem. Por padrão,
 `APROVA_SLACK_CORRELACAO_HABILITADA=false` mantém o Incoming Webhook anterior.
 Os retornos dos formulários continuam no caminho existente. Com a correlação
 habilitada, o evento `aprovacao_registrada` atualiza o alerta da mesma análise;
-a atualização posterior por OSV continua pendente.
+o OSV também pode atualizar o contexto quando a consulta termina depois.
 
 | Variável | Função |
 | --- | --- |
-| `APROVA_SLACK_CORRELACAO_HABILITADA` | `true` habilita publicação correlacionada e atualização após decisão; padrão `false`. |
+| `APROVA_SLACK_CORRELACAO_HABILITADA` | `true` habilita publicação correlacionada e atualizações após decisão/OSV; padrão `false`. |
 | `APROVA_SLACK_CANAL_ALERTAS_ID` | Canal confirmado dos alertas da Central, sem fallback para outros canais. |
 | `APROVA_SLACK_MENSAGENS_TABELA_ID` | ID da Data Table `aprova_slack_mensagens`. |
 | `APROVA_SLACK_CONTROLE_TABELA_ID` | ID da Data Table `aprova_slack_controle`. |
@@ -177,7 +177,30 @@ confirmadas não executam outro `chat.update`; conflitos ou atualizações
 reservadas/incertas/falhas exigem conferência manual. A edição só é confirmada
 para o mesmo canal e timestamp, com persistência do resultado conferida.
 
-Com a flag desligada, eventos de decisão são ignorados sem publicação;
+Na Fase 4, OSV encaminha à Central o resultado já persistido de
+`dependencia_nova`, via `APROVA_SLACK_WORKFLOW_ID`, por evento e sem aguardar.
+Consultas síncronas de contexto da aprovação não fazem esse encaminhamento,
+evitando ciclo Central → OSV → Central. O alerta independente de dependência
+continua no caminho existente. `O01` valida estrutura, identidade, SHA quando
+disponível, validade de 24h e até 5 minutos de relógio futuro.
+
+A atualização reutiliza a mesma associação e reserva de decisão, preservando
+risco, recibos, links e decisões já exibidas. Não reintroduz botões removidos;
+atualiza o resumo dos botões ainda disponíveis. OSV anterior ao alerta fica
+como contexto mínimo em `aguardando_alerta`, junto da eventual decisão, e é
+incorporado no primeiro envio. Não cria tabelas, colunas ou variáveis.
+Resultado repetido/antigo ou menos completo não substitui contexto recente.
+Conflito no mesmo instante e atualização reservada/incerta/falha exigem
+conferência manual, impedindo outra edição automática até recuperação.
+Completo sem avisos, parcial e indisponível são estados distintos.
+
+Central e OSV estão publicados e exportados. A Fase 4 passou em testes locais
+e na instância com tabelas isoladas. O teste Slack real autorizado confirmou
+um envio, atualização da mesma mensagem e reprocessamento sem duplicata,
+usando contexto OSV fictício. Os adaptadores temporários foram removidos.
+Falta validar a origem OSV/worker real. A correlação global continua desligada.
+
+Com a flag desligada, eventos de decisão são ignorados e OSV não é encaminhado;
 o Incoming Webhook legado não recebe esses eventos. Não há backfill automático
 ao ativar a flag nem localização automática de alertas antigos sem correlação.
 
@@ -227,8 +250,18 @@ IA fornece somente `inicio` à consulta; instalação, destino, método e
 assinatura ficam fora do seu controle. Não existem consultas de PR pendente
 ou detalhe de execução, nem ferramentas de ação. Não há ramo de simulação.
 
-Falta validar os endpoints de negócio com métricas reais e tratar falhas/cota
-do modelo com aviso ao usuário. Para múltiplas equipes, falta autorização por
+Na Fase 5, erros do agente, falta de cota, timeout retornado pelo provedor e
+saída vazia recebem um aviso fixo de indisponibilidade, pelo mesmo destino
+autenticado. Erro e sucesso convergem em `06`: não há dois ramos capazes de
+duplicar o aviso. Erros/headers/stack internos não entram na resposta.
+O retry do n8n está desligado; `alwaysOutputData` permite tratar saída vazia.
+O nó Gemini instalado não expõe timeout de requisição; o tratamento cobre
+falhas devolvidas pelo agente, sem garantir prazo global. O assistente foi
+publicado e exportado, com ferramentas e memória preservadas. Os testes
+foram isolados, sem chamadas ao provedor ou envio Slack real nesta fase.
+
+Falta validar os endpoints de negócio com métricas reais e o aviso no percurso
+real. Para múltiplas equipes, falta autorização por
 usuário/instalação e revisão de memória/retenção/concorrência.
 
 ## Digest semanal
@@ -249,9 +282,19 @@ completa, com fim exclusivo, e publica segunda às 09h de São Paulo.
 Funciona sem evento ou agente; o envio de saída não exige ngrok.
 API inválida/indisponível interrompe o envio, sem relatório fictício.
 
-Falta validar relatório real e primeiro disparo; continua **desativado**.
-Não há deduplicação nem recuperação de horários perdidos. Execução manual
-envia ao canal; conferir antes de repetir após timeout.
+Na Fase 5, erros de rede e HTTP chegam aos validadores, sem redirects ou
+retry do n8n. Relatório inválido/indisponível para antes do envio. A confirmação
+exige HTTP 200 e texto `ok`, sem erro de transporte; mantém `status=enviado`
+e acrescenta `estado_envio=confirmado`. Recusa HTTP 3xx/4xx (exceto 408) é
+`falha`; timeout, 5xx e resposta inesperada são `incerto`. Falha/incerteza
+exigem conferência manual e nunca autorizam reenvio automático.
+
+O rascunho foi salvo e exportado; continua **desativado**, sem ativar o cron.
+Não há controle persistente de disparos por instalação/período nem recuperação
+de horários perdidos. Essa parte depende das operações de reserva/confirmação
+do núcleo previstas na Etapa S, ainda ausentes na API; não foi criada tabela
+paralela. Faltam relatório real e primeiro disparo autorizado. Execução manual
+ainda envia ao canal; confira antes de repetir, sobretudo após envio incerto.
 
 ## Core, OSV, Trello e feedback
 

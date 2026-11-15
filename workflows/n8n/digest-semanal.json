@@ -73,7 +73,8 @@
           "response": {
             "response": {
               "fullResponse": true,
-              "responseFormat": "json"
+              "responseFormat": "json",
+              "neverError": true
             }
           },
           "timeout": 15000
@@ -86,12 +87,14 @@
       "position": [
         784,
         320
-      ]
+      ],
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const esperado = $('03 | Assinar Consulta à API').item.json;\nconst r = $json.body;\nconst contagens = ['total_execucoes', 'concluidas', 'rejeitadas', 'falhas', 'em_andamento',\n  'exigiram_aprovacao_humana', 'revertidas'];\nconst finalizadas = r ? r.concluidas + r.rejeitadas + r.falhas : NaN;\nif ($json.statusCode !== 200 || !r || Array.isArray(r) ||\n    r.installation_id !== esperado.installation_id ||\n    r.inicio !== esperado.inicio + 'T00:00:00Z' || r.fim !== esperado.fim + 'T00:00:00Z' ||\n    contagens.some(k => !Number.isSafeInteger(r[k]) || r[k] < 0) ||\n    finalizadas + r.em_andamento !== r.total_execucoes ||\n    r.exigiram_aprovacao_humana > r.total_execucoes ||\n    (finalizadas === 0 ? r.taxa_sucesso !== null :\n      typeof r.taxa_sucesso !== 'number' || !Number.isFinite(r.taxa_sucesso) ||\n      Math.abs(r.taxa_sucesso - r.concluidas / finalizadas) > 0.000001)) {\n  throw new Error('Relatório semanal inválido ou de instalação/período diferente. Digest não enviado.');\n}\nconst data = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);\nconst ultimoDia = new Date(r.fim);\nultimoDia.setUTCDate(ultimoDia.getUTCDate() - 1);\nconst taxa = r.taxa_sucesso === null ? 'Não disponível — nenhuma execução finalizada.' :\n  (r.taxa_sucesso * 100).toFixed(1).replace('.', ',') + '%';\nconst texto = [\n  'aPRova | Digest semanal',\n  'Instalação: ' + r.installation_id,\n  'Período: ' + data(r.inicio) + ' a ' + data(ultimoDia.toISOString()) + ' (UTC)',\n  '',\n  'Total de execuções: ' + r.total_execucoes,\n  'Taxa de sucesso: ' + taxa,\n  'Exigiram aprovação humana: ' + r.exigiram_aprovacao_humana,\n  'Revertidas: ' + r.revertidas,\n  '',\n  'Taxa de sucesso = concluídas / (concluídas + rejeitadas + falhas).',\n  'Execuções em andamento: ' + r.em_andamento + '.',\n  'Reversões contabilizadas pelo núcleo na semana; podem se referir a análises anteriores.',\n].join('\\n');\nreturn { json: {\n  installation_id: r.installation_id, inicio: r.inicio, fim: r.fim, metricas: r,\n  slack_payload: { text: texto, blocks: [{ type: 'section', text: { type: 'plain_text', text: texto } }],\n    mrkdwn: false, unfurl_links: false, unfurl_media: false },\n} };"
+        "jsCode": "const esperado = $('03 | Assinar Consulta à API').item.json;\nconst r = $json.body;\nconst contagens = ['total_execucoes', 'concluidas', 'rejeitadas', 'falhas', 'em_andamento',\n  'exigiram_aprovacao_humana', 'revertidas'];\nconst finalizadas = r ? r.concluidas + r.rejeitadas + r.falhas : NaN;\nif ($json.error || $json.statusCode !== 200 || !r || Array.isArray(r) ||\n    r.installation_id !== esperado.installation_id ||\n    r.inicio !== esperado.inicio + 'T00:00:00Z' || r.fim !== esperado.fim + 'T00:00:00Z' ||\n    contagens.some(k => !Number.isSafeInteger(r[k]) || r[k] < 0) ||\n    finalizadas + r.em_andamento !== r.total_execucoes ||\n    r.exigiram_aprovacao_humana > r.total_execucoes ||\n    (finalizadas === 0 ? r.taxa_sucesso !== null :\n      typeof r.taxa_sucesso !== 'number' || !Number.isFinite(r.taxa_sucesso) ||\n      Math.abs(r.taxa_sucesso - r.concluidas / finalizadas) > 0.000001)) {\n  throw new Error('Relatório semanal inválido ou de instalação/período diferente. Digest não enviado.');\n}\nconst data = iso => iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4);\nconst ultimoDia = new Date(r.fim);\nultimoDia.setUTCDate(ultimoDia.getUTCDate() - 1);\nconst taxa = r.taxa_sucesso === null ? 'Não disponível — nenhuma execução finalizada.' :\n  (r.taxa_sucesso * 100).toFixed(1).replace('.', ',') + '%';\nconst texto = [\n  'aPRova | Digest semanal',\n  'Instalação: ' + r.installation_id,\n  'Período: ' + data(r.inicio) + ' a ' + data(ultimoDia.toISOString()) + ' (UTC)',\n  '',\n  'Total de execuções: ' + r.total_execucoes,\n  'Taxa de sucesso: ' + taxa,\n  'Exigiram aprovação humana: ' + r.exigiram_aprovacao_humana,\n  'Revertidas: ' + r.revertidas,\n  '',\n  'Taxa de sucesso = concluídas / (concluídas + rejeitadas + falhas).',\n  'Execuções em andamento: ' + r.em_andamento + '.',\n  'Reversões contabilizadas pelo núcleo na semana; podem se referir a análises anteriores.',\n].join('\\n');\nreturn { json: {\n  installation_id: r.installation_id, inicio: r.inicio, fim: r.fim, metricas: r,\n  slack_payload: { text: texto, blocks: [{ type: 'section', text: { type: 'plain_text', text: texto } }],\n    mrkdwn: false, unfurl_links: false, unfurl_media: false },\n} };"
       },
       "id": "53446934-4ef6-4c6a-8403-4472df8ac987",
       "name": "05 | Validar e Formatar Digest",
@@ -118,7 +121,8 @@
           "response": {
             "response": {
               "fullResponse": true,
-              "responseFormat": "text"
+              "responseFormat": "text",
+              "neverError": true
             }
           },
           "timeout": 15000
@@ -131,12 +135,14 @@
       "position": [
         1296,
         320
-      ]
+      ],
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const resposta = $json.body ?? $json.data;\nif ($json.statusCode !== 200 || typeof resposta !== 'string' || resposta.trim() !== 'ok') {\n  throw new Error('Slack não confirmou o recebimento. Confira a execução antes de reenviar para evitar duplicação.');\n}\nconst digest = $('05 | Validar e Formatar Digest').item.json;\nreturn { json: { status: 'enviado', installation_id: digest.installation_id,\n  inicio: digest.inicio, fim: digest.fim } };"
+        "jsCode": "const digest=$('05 | Validar e Formatar Digest').item.json;\nif(!Number.isSafeInteger(digest.installation_id)||digest.installation_id<=0||\n typeof digest.inicio!=='string'||typeof digest.fim!=='string')throw new Error('Identidade do Digest indisponível para confirmar envio.');\nconst resposta=$json.body??$json.data;\nconst confirmado=!$json.error&&$json.statusCode===200&&typeof resposta==='string'&&resposta.trim()==='ok';\nconst codigo=$json.statusCode;\nconst recusado=!$json.error&&Number.isInteger(codigo)&&codigo>=300&&codigo<500&&codigo!==408;\nconst estado=confirmado?'confirmado':recusado?'falha':'incerto';\nreturn {json:{status:confirmado?'enviado':estado,estado_envio:estado,installation_id:digest.installation_id,\n inicio:digest.inicio,fim:digest.fim,exige_conferencia_manual:!confirmado,reenviar_automaticamente:false}};"
       },
       "id": "8fd8e89d-cb6d-449d-96ea-23a3ba10d9b5",
       "name": "07 | Confirmar Publicação",

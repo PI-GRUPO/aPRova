@@ -49,6 +49,13 @@ na execução. Consulta semanal e Digest da instância leem a instalação por
 no container, sem ID fixo nos parâmetros. O Digest continua desativado até
 validar o relatório real e o disparo agendado.
 
+Na Fase 5, o assistente passou a responder com aviso seguro quando o agente
+retorna erro ou saída vazia, mantendo o destino autenticado e as ferramentas
+de leitura. O Digest classifica confirmação, falha e resultado incerto, sem
+retry automático, e permanece desativado. Seu controle persistente de disparos
+aguarda as operações do núcleo previstas na Etapa S; elas não existem nas
+rotas atuais. Essa fase está parcialmente implementada, conforme o checklist.
+
 App ID, chave privada válida, webhook secret e slug GitHub já estão no
 `.env` do núcleo. Falta validar instalação/permissões reais, configurar
 `SLACK_GITHUB_VINCULOS` e validar API/worker. No teste do onboarding,
@@ -246,6 +253,16 @@ fornece em `aguardando_aprovacao`, permitindo consulta antes do alerta mesmo
 sem evento anterior. Essa lista não é obrigatória no contrato v1; esta
 integração não alterou o emissor Go. Sem contexto disponível, o alerta deve
 informar a indisponibilidade, nunca afirmar que não há vulnerabilidades.
+
+Na Fase 4, o subworkflow OSV também encaminha à Central o resultado já
+persistido de `dependencia_nova`, quando a correlação está habilitada.
+É uma entrega interna entre subworkflows, preservando o evento normalizado;
+não acrescenta tipo ao contrato assinado do worker. Consultas síncronas de
+contexto não fazem esse retorno. A Central valida identidade/validade do
+snapshot e atualiza somente o alerta da mesma análise, preservando risco,
+recibos e decisões. O desenvolvimento está publicado; envio/edição Slack reais
+foram validados com contexto OSV fictício. A validação da origem OSV/worker
+real permanece pendente no checklist da Central.
 
 ### `aprovacao_registrada`
 

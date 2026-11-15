@@ -33,6 +33,9 @@ operacional depende de decisão e carregamento da configuração. A Fase 3 está
 implementada, publicada e exportada, com testes isolados completos e consulta
 real com retorno 404 tratada. Sua validação integrada de recibo válido permanece
 pendente; a fase ainda não está encerrada em todos os critérios do checklist.
+Na Fase 4, a atualização posterior por OSV também está implementada, publicada
+e exportada. Passou nos testes locais, na instância e em envio/edição no Slack
+real com contexto OSV fictício. Falta validar a origem OSV/worker real.
 
 O plano agora inclui a **Etapa S — Simplificação da persistência do n8n**:
 transferir estado e controle dos avisos para o núcleo, reduzir a associação
@@ -82,21 +85,24 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 
 ### Fase 4 — Atualização posterior com OSV
 
-- [ ] Implementado no n8n.
-- [ ] Testado de forma isolada, incluindo concorrência com decisões.
-- [ ] Publicado na instância.
-- [ ] Validado com integração real.
-- [ ] Exportado e revisado no repositório.
-- [ ] Documentação atualizada com configuração, evidências e pendências.
+- [x] Implementado no n8n, reutilizando cache, associação e reserva existentes.
+- [x] Testado de forma isolada, incluindo ordens de chegada, exclusão entre edições, resultados incertos e preservação das decisões.
+- [x] Publicado na instância: Central e OSV; correlação global mantida desligada.
+- [ ] Validado com integração real OSV → Central → Slack: envio, edição e duplicata confirmados no Slack real com contexto fictício; falta origem OSV/worker real.
+- [x] Exportado e revisado no repositório: Central e OSV, portáteis e inativos.
+- [x] Documentação atualizada com configuração, evidências e pendências.
 
 ### Fase 5 — Resiliência das consultas e do Digest
 
-- [ ] Implementado no n8n, preservando o Digest desativado.
-- [ ] Testado de forma isolada: erros do assistente e controle de envios.
-- [ ] Publicado na instância onde aplicável, sem ativação automática do Digest.
+- [x] Assistente: erro, cota, timeout retornado pelo agente e saída vazia geram aviso seguro no destino autenticado.
+- [x] Digest: falhas de rede chegam aos validadores; resultado distingue confirmado, falha e incerto, sem retry automático.
+- [ ] Digest: controle persistente por instalação/período; depende das operações de reserva/confirmação da Etapa S, ausentes na API atual.
+- [x] Testado de forma isolada o escopo independente: 228 testes locais e cenários na instância, com exatamente uma resposta por erro do assistente.
+- [ ] Testar reinício, concorrência e duplicatas do controle persistente do Digest após implementar seu suporte no núcleo.
+- [x] Assistente publicado; rascunho do Digest salvo e exportado, mantendo-o desativado.
 - [ ] Validado com integração real dentro das autorizações disponíveis.
-- [ ] Exportado e revisado no repositório, incluindo definições de tabelas.
-- [ ] Documentação atualizada com configuração, evidências e pendências.
+- [x] Exportados e revisados assistente e Digest; nenhuma tabela ou variável nova.
+- [x] Documentação atualizada com evidências e bloqueio; a Fase 5 permanece parcialmente implementada.
 
 ### Fase 6 — Configuração e validação integrada
 
@@ -526,6 +532,7 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | --- | --- |
 | `01–02`, `03A–03B`, `HTTP Request` | Recebem evento, separam e publicam alertas; `03A` inclui acesso à PR, recibo e verificação. |
 | `02A–02F` | Buscam/validam contexto OSV e fazem consulta complementar quando possível. |
+| `O01`, `C01–C13`, `D00–D09` | Validam OSV posterior e reutilizam associação, reserva e confirmação das edições, preservando decisões. |
 | `V01–V07` | Consultam documento e verificação do recibo no núcleo, conferem identidade e classificam válido, inválido ou indisponível antes de `03A`. |
 | `05–07`, `07E` | Interações, assinatura Slack, confirmação e recusa. |
 | `07F–07G` | Encaminham ações `aprova_feedback_*` ao feedback, preservando as demais rotas. |
@@ -614,8 +621,9 @@ Sem configuração carregada, o padrão também mantém o caminho anterior.
 O teste Slack real foi concluído. Falta decidir a ativação global da
 correlação e carregar suas variáveis; a autorização do teste não habilita
 essa mudança. A Fase 2 acrescentou a atualização após decisão, descrita abaixo.
-OSV posterior continua na Fase 4, respeitando a Etapa S. A verificação automática
-do recibo está implementada na Fase 3, com a pendência integrada descrita abaixo.
+OSV posterior foi implementado na Fase 4, reutilizando as estruturas existentes
+e respeitando a Etapa S. A verificação automática do recibo está implementada
+na Fase 3; as pendências integradas de ambas estão descritas abaixo.
 
 ### Atualização após decisão — Fase 2
 
@@ -696,6 +704,85 @@ portabilidade. A flag global continua `false`, e nenhuma variável foi
 alterada ou recarregada nesta fase. A integração com GitHub/worker reais e
 a ativação operacional permanecem validações próprias, não consequência
 do teste de uma mensagem com dados fictícios.
+
+### Atualização posterior com OSV — Fase 4
+
+Após guardar o snapshot em `aprova_osv_por_analise`, o workflow OSV passa por
+`06E–06F` e encaminha `dependencia_nova` enriquecido à Central usando
+`APROVA_SLACK_WORKFLOW_ID`, um evento por execução e sem aguardar retorno.
+A entrega usa um marcador interno entre subworkflows; não é um novo evento
+assinado do worker nem muda o contrato v1. Consultas síncronas com
+`modo_osv=contexto_aprovacao` não voltam à Central, evitando ciclo.
+O alerta independente de dependência e o retorno síncrono foram preservados.
+
+`O01` exige origem autenticada/normalizada e valida identidade do snapshot,
+tenant, análise, repositório, PR e SHA quando disponível nos dois lados.
+Confere estrutura/completude, até 50 dependências, validade de 24h e tolerância
+de 5 minutos para relógio futuro. O contrato atual de `dependencia_nova` pode
+não trazer SHA ou risco; nenhum deles é inventado pelo workflow.
+Consulta concluída sem avisos, parcial e indisponível mantêm rótulos distintos.
+
+`C01/C06` encontram a associação de aprovação da mesma análise. `D00–D07`
+reutilizam a reserva e o `chat.update` existentes para o mesmo canal/ts.
+Os nomes históricos de alguns nós ainda mencionam decisão, mas o caminho é
+compartilhado. A exclusão é a mesma de publicação/decisão: resultado ocupado
+ou reserva perto do vencimento impede escrita/edição e requer reprocessamento
+controlado, sem fila automática. Não há nova tabela, coluna, segredo ou variável.
+O contexto da associação acrescenta somente resumo/status/data/impressão do
+OSV e o estado de sua atualização; não duplica o snapshot completo de pacotes.
+Os consumidores atuais e a migração futura continuam sujeitos à Etapa S.
+
+A edição altera o bloco `aprova_contexto_osv`, o resumo do texto e o contexto
+dos botões que ainda estiverem disponíveis. Também reconhece o bloco antigo
+sem `block_id`. Preserva risco, PR, recibo e links. Se já existe decisão,
+renderiza novamente o alerta fechado a partir do snapshot e da decisão
+confirmada, sem reintroduzir botões nem duplicar seções. Uma decisão que
+chegue depois usa o resumo OSV mais recente. Formulários já abertos não são
+atualizados automaticamente; não há consulta nova durante o clique.
+
+Se OSV chegar antes do alerta, `D08–D09` guardam seu contexto mínimo na mesma
+associação `aguardando_alerta`, preservando eventual decisão. O primeiro envio
+já incorpora os dois. Contexto OSV vencido não bloqueia essa publicação e
+não é apresentado como resultado atual. A tabela de contexto OSV é mantida.
+Resultados idênticos são descartados; resultados antigos ou de completude
+menor não substituem contexto recente mais completo. Conteúdos diferentes
+no mesmo instante geram conflito para conferência manual.
+
+`contexto.atualizacao_osv` distingue `reservado`, `confirmado`, `incerto` e
+`falha`. A confirmação exige canal/ts correspondentes e persistência conferida.
+Uma edição OSV ou de decisão com resultado reservado/incerto/falho impede
+outra edição automática sobre o mesmo alerta até recuperação. Isso evita
+sobrescrever um estado cuja entrega ao Slack ainda não foi confirmada.
+
+Passaram **213 testes em 15 arquivos**, incluindo 28 novos testes da Fase 4.
+O workflow manual `aPRova | Testes | OSV Posterior` validou na instância
+atualização completa/parcial, duplicata, decisão preservada, timeout sem
+confirmação, supressão da repetição e OSV antes do alerta. Usou somente as
+tabelas `_teste`, com chave de controle própria e Code no lugar do Slack.
+Permanece inativo, sem credenciais/nós de rede e fora dos exports. Casos de
+ordem invertida, identidade, validade, exclusão e falhas também foram cobertos
+pelos testes locais. O teste inicial permaneceu isolado; a validação Slack
+real autorizada posteriormente está descrita abaixo. Não houve ação em PR.
+
+O teste real autorizado publicou uma mensagem identificada como
+`TESTE FASE 4 — SEM AÇÃO EM PR`, no canal já configurado da Central, usando
+as tabelas de teste e sem botões que executem decisões. Em seguida, a entrega
+de contexto OSV fictício e parcial atualizou essa mesma mensagem. O Slack
+confirmou o mesmo canal e timestamp, e o resultado foi persistido e relido.
+No reprocessamento, retornou `osv_ja_aplicado` sem executar os nós de publicação
+ou edição. A simulação é do resultado OSV; o envio e a edição Slack foram reais.
+O usuário confirmou visualmente a chegada da mensagem no canal.
+Os adaptadores temporários de rede foram removidos, e o workflow manual
+voltou ao modo isolado, inativo e sem credenciais. A flag global permaneceu
+`false`; nenhum workflow funcional foi alterado por esse teste.
+
+Central (61 nós) e OSV (13 nós) foram publicados e exportados; Core e demais
+workflows não foram alterados. A flag global foi conferida como `false` dentro
+do n8n e não foi alterada. Falta validar o encaminhamento com OSV/worker reais,
+além de decidir a ativação operacional. Essa pendência mantém a validação
+integrada completa da Fase 4 aberta; envio/edição Slack já foram confirmados.
+Retenção/limpeza dos contextos aguardando alerta continua pendente junto
+à política das associações e do cache existentes.
 
 ### Ações e recibos
 
@@ -795,6 +882,7 @@ não significam ausência de vulnerabilidades.
 | `04–06` | Consulta paginada, consolidação de CVEs/completude e alerta. |
 | `06A–06C` | Agrupamento, persistência e retorno do contexto por análise. |
 | `06D`, `07` | Separam contextualização e publicação do alerta. |
+| `06E–06F` | Encaminham contexto já persistido à Central, quando a correlação está habilitada e a consulta não é síncrona. |
 
 Data Table `aprova_osv_por_analise`: colunas String `chave` e
 `contexto`. Correlaciona tenant, análise, repositório e PR; SHA incompatível
@@ -807,9 +895,11 @@ conhecidas/contexto válido, declara indisponibilidade. Formulários reutilizam
 o resumo do alerta, sem consulta no clique ou alteração da justificativa.
 
 O worker já emite `dependencia_nova` quando o gate identifica dependências
-novas; falta validar worker → Core → OSV com uma PR real. Permanecem
-pendentes contexto na review GitHub e atualização do alerta quando OSV chega
-depois. Definir retenção/limpeza do cache e validar cobertura além dos limites.
+novas; falta validar worker → Core → OSV com uma PR real. A atualização
+posterior do alerta foi implementada na Fase 4, com envio/edição Slack reais
+validados usando contexto OSV fictício. Permanecem pendentes origem OSV/worker
+real, contexto na review GitHub, retenção/limpeza
+do cache e validação de cobertura além dos limites.
 
 ## Trello — Sugestão de Movimentação
 
@@ -854,11 +944,31 @@ completa, segunda 00h até segunda 00h, fim exclusivo.
 Instância e export usam um ID derivado do ambiente, sem valor fixo no JSON.
 Nenhum dos dois contém nós de simulação. Digest consulta API diretamente,
 sem evento ou IA; envio de saída ao Slack não exige ngrok.
-Não há deduplicação, retry automático de envio ou recuperação de disparos
-perdidos; conferir o canal antes de repetir após timeout.
+Na Fase 5, os dois HTTP Request usam `neverError`, continuam para os
+validadores em falha de rede e têm retry do n8n explicitamente desligado.
+O validador recusa também uma resposta com `error`, mesmo acompanhada de
+corpo/HTTP aparentemente válidos. API indisponível ou relatório incompatível
+interrompe antes do Slack, sem transformar indisponibilidade em métricas zero.
 
-Falta disponibilizar API/banco/migrations e validar o relatório real; depois
-ativar e conferir o primeiro disparo. O Digest continua **desativado**.
+O resultado final expõe somente instalação, período e estado do envio:
+`estado_envio=confirmado` exige HTTP 200 e texto `ok`, sem erro de transporte;
+preserva `status=enviado` no caso confirmado. Recusas HTTP 3xx/4xx, exceto
+408, são `falha`; timeout, 5xx e respostas inesperadas são `incerto`.
+Falha/incerteza indicam conferência manual; `reenviar_automaticamente=false`
+em todos os casos. Erros/corpos internos não são copiados para esse resultado.
+Essa classificação não é um registro persistente de disparos.
+
+Não há deduplicação persistente ou recuperação de disparos perdidos. A API
+atual (`internal/api/servidor.go`) oferece relatório, recibos e ações remotas,
+mas não reserva/confirmação dos avisos previstos na Etapa S. A implementação
+do controle por instalação/período aguarda esse suporte em escopo próprio
+do núcleo, conforme o plano local. Não foi criada uma tabela paralela no n8n.
+Reexecutar manualmente ainda pode duplicar uma mensagem; conferir o canal
+antes de repetir, principalmente após resultado incerto.
+
+O workflow de sete nós recebeu o rascunho validado e foi exportado, sem
+publicação/ativação do agendamento. O Digest continua **desativado**. Faltam
+controle persistente, relatório integrado real e primeiro disparo autorizado.
 
 ## Slack — Consulta de Métricas e Consulta — Relatório Semanal
 
@@ -889,8 +999,28 @@ usa HTTPS público com `/webhook/aprova/slack/consultas`, eventos
 `chat:write`. Habilitar Messages no App Home, convidar bot ao canal e
 reinstalar App após mudar scopes. Interatividade mantém sua URL separada.
 
-Falta validar métricas reais e tratar erros/cota do modelo com aviso Slack;
-falha do agente ainda pode deixar conversa sem resposta. Para várias equipes,
+Na Fase 5, `AI Agent` usa `onError=continueRegularOutput`, sem retry do n8n,
+com `alwaysOutputData=true`. `06` trata erro, saída vazia e texto inválido
+com um aviso fixo de indisponibilidade; nunca copia erro, stack, headers ou
+corpo do provedor. Destino é sempre o contexto já autenticado de `04`,
+com validação de modo/canal/workspace/app/usuário. Respostas válidas continuam
+limitadas/escapadas e sem thread. Ferramentas, memória e autenticação foram
+preservadas. O assistente de 18 nós foi publicado e exportado.
+
+Erro e saída vazia convergem no mesmo caminho. Os testes na instância
+confirmaram exatamente uma resposta por caso, incluindo cota no canal,
+timeout em DM, saída vazia e texto válido. Agente, API e Slack foram
+substituídos por Code nos workflows manuais de teste, sem rede/credenciais.
+Digest confirmou envio, recusa e incerteza com respostas controladas;
+API com erro parou antes do nó de envio, inclusive quando trazia corpo 200.
+Passaram **228 testes em 16 arquivos**, sendo 15 novos de resiliência.
+Os dois workflows manuais permanecem inativos e fora dos exports.
+
+São tratados os erros/timeout que o agente devolver. O nó Gemini instalado
+não expõe timeout de requisição nos parâmetros disponíveis; não foi inventada
+uma opção nem prometido um prazo global de resposta. A validação com provedor
+e envio Slack reais ainda não foi executada nesta fase. Falta validar métricas
+reais. Para várias equipes,
 definir autorização por usuário/instalação, memória persistente, retenção e
 concorrência. Novas consultas dependem de endpoints de leitura adicionais;
 não conectar ações remotas ao agente.
