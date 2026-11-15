@@ -20,7 +20,7 @@ import (
 const (
 	enderecoDoSchema   = "https://json.schemastore.org/sarif-2.1.0.json"
 	versaoDoFormato    = "2.1.0"
-	nomeDaFerramenta   = "aPRova"
+	nomeDaFerramenta   = "aPRova SARIF"
 	enderecoDoProjeto  = "https://github.com/PI-GRUPO/aPRova"
 	chaveDaImpressao   = "primaryLocationLineHash"
 	separadorDaChave   = "\x00"

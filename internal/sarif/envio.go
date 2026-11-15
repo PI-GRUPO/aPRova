@@ -234,9 +234,10 @@ func (v *envio) arquivosDoPR() []platform.ArquivoAlterado {
 func (v *envio) enviarComNovasTentativas(documento []byte) (string, error) {
 	taskRun := v.publicacao.TaskRun
 	pedido := platform.EnvioSARIF{
-		CommitSHA: taskRun.SHAHead,
-		Ref:       "refs/pull/" + strconv.Itoa(taskRun.NumeroPR) + "/head",
-		Documento: documento,
+		CommitSHA:  taskRun.SHAHead,
+		Ref:        "refs/pull/" + strconv.Itoa(taskRun.NumeroPR) + "/head",
+		Ferramenta: nomeDaFerramenta,
+		Documento:  documento,
 	}
 
 	for tentativa := 1; ; tentativa++ {

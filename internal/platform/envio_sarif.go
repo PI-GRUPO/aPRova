@@ -10,8 +10,6 @@ import (
 	"net/url"
 )
 
-const nomeDaFerramentaDoSARIF = "aPRova"
-
 // SituacaoSARIF é o andamento do processamento de um SARIF enviado, como a
 // API do GitHub o nomeia.
 type SituacaoSARIF string
@@ -24,11 +22,13 @@ const (
 )
 
 // EnvioSARIF é uma análise a enviar ao code scanning: o commit analisado, o
-// ref completo, como refs/pull/12/head, e o documento SARIF sem compactar.
+// ref completo, como refs/pull/12/head, o nome da ferramenta, igual ao
+// declarado no documento, e o documento SARIF sem compactar.
 type EnvioSARIF struct {
-	CommitSHA string
-	Ref       string
-	Documento []byte
+	CommitSHA  string
+	Ref        string
+	Ferramenta string
+	Documento  []byte
 }
 
 // ProcessamentoSARIF é o que o GitHub fez com um SARIF enviado. Erros só vem
@@ -56,7 +56,7 @@ func (c *Cliente) EnviarSARIF(ctx context.Context, installationID int64, dono, r
 		metodo:       http.MethodPost,
 		caminho:      caminhoDosEnviosSARIF(dono, repositorio),
 		corpo: map[string]string{
-			"commit_sha": envio.CommitSHA, "ref": envio.Ref, "sarif": compactado, "tool_name": nomeDaFerramentaDoSARIF,
+			"commit_sha": envio.CommitSHA, "ref": envio.Ref, "sarif": compactado, "tool_name": envio.Ferramenta,
 		},
 		resposta: &resposta,
 	})

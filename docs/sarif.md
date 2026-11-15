@@ -54,7 +54,7 @@ envio gravado, o enviador não manda nada de novo.
 
 | Campo do SARIF | Origem |
 | --- | --- |
-| `tool.driver.name` | fixo, `aPRova` |
+| `tool.driver.name` | fixo, `aPRova SARIF` (ver "O nome da ferramenta") |
 | `tool.driver.version` | revisão do git embutida no binário (`vcs.revision`); `desenvolvimento` quando o build não a traz |
 | `tool.driver.informationUri` | fixo, o repositório do aPRova |
 | `tool.driver.rules` | catálogo fixo em `internal/sarif/regras.go`, uma regra por motivo do gate |
@@ -133,7 +133,7 @@ de referência versionado (`internal/sarif/testdata/todos_os_motivos.sarif`).
 - `sarif`: o documento em gzip e depois base64;
 - `commit_sha`: o head analisado;
 - `ref`: `refs/pull/<número>/head`;
-- `tool_name`: `aPRova`.
+- `tool_name`: `aPRova SARIF`, o mesmo nome declarado no documento.
 
 O `202` só diz que o GitHub recebeu o arquivo. O enviador então consulta
 `GET .../sarifs/{id}` a cada 5 segundos, por até 2 minutos, até `complete` ou
@@ -230,20 +230,36 @@ novo. Worker local, com `SARIF_LIGADO=true` só naquela execução.
 - Check do code scanning:
   <https://github.com/Azulpasta/aprova-bench-go/runs/132842631042>
 
-### O check do code scanning tem o nome da ferramenta
+O ponta a ponta rodou com o nome antigo da ferramenta, `aPRova`. O nome atual,
+`aPRova SARIF`, foi adotado por causa do que esse teste mostrou (seção
+seguinte) e não passou por um ponta a ponta próprio. O PR #20 foi fechado e as
+branches dele apagadas depois do teste.
 
-A documentação do GitHub chama esse check de "Code scanning results". Na
-prática, para um SARIF enviado pela API, o check veio com o nome da ferramenta:
-`aPRova`, criado pelo app `github-advanced-security`. O PR ficou com dois checks
-de mesmo nome, um de cada app.
+## O nome da ferramenta
 
-Isso importa para quem exige o check `aPRova` antes do merge:
+A ferramenta se chama `aPRova SARIF`, e não `aPRova`, para que o check que o
+code scanning cria no pull request nunca tenha o nome do Check Run obrigatório.
 
-- exigência amarrada ao app (`app_id` do a-prova), como na `main` do
-  aPRova-TESTES: só o Check Run do aPRova conta;
-- exigência só pelo nome, como no ruleset dos repositórios do benchmark: os
-  dois checks têm o nome exigido. No teste o PR continuou bloqueado, mas o caso
-  em que só o check do code scanning existe não foi exercitado.
+A documentação do GitHub chama esse check de "Code scanning results". No ponta
+a ponta, para um SARIF enviado pela API, o check veio com o nome da ferramenta,
+criado pelo app `github-advanced-security`. Com a ferramenta chamada `aPRova`,
+o PR ficou com dois checks `aPRova`, um de cada app.
 
-Antes de ligar `SARIF_LIGADO` em um repositório, amarre o check obrigatório ao
-app.
+Isso era um risco para quem exige o check só pelo nome. Uma regra de proteção
+que pede "um check chamado `aPRova`" poderia ser satisfeita pelo check do code
+scanning, que fica `success` porque nenhum resultado sai como `error`. O merge
+seria liberado sem a decisão do aPRova.
+
+Duas proteções fecham esse caminho, e uma não depende da outra:
+
+- o nome da ferramenta é diferente do nome do Check Run, e um teste garante
+  isso comparando com `publicacao.NomeDoCheckRun`;
+- o check obrigatório é amarrado ao app a-prova: na `main` do aPRova-TESTES pelo
+  `app_id` e nos rulesets dos `aprova-bench-*` pelo `integration_id` 4810767.
+  Assim, nenhum check de mesmo nome vindo de outro app conta.
+
+Ao instalar o aPRova em um repositório novo, amarre o check obrigatório ao app
+antes de ligar `SARIF_LIGADO`.
+
+Trocar o nome muda a ferramenta para o code scanning. Os alertas enviados com
+o nome antigo continuam sob a ferramenta `aPRova` e não se juntam aos novos.
