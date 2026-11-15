@@ -22,7 +22,10 @@ test('erros e saídas vazias do agente convergem em um caminho sem resposta dupl
   const n = node(chat, 'AI Agent');
   assert.equal(n.onError, 'continueRegularOutput'); assert.equal(n.retryOnFail, false); assert.equal(n.alwaysOutputData, true);
   assert.ok(chat.connections[n.name].main.slice(1).every(saida => saida.length === 0));
-  assert.deepEqual(chat.connections[n.name].main[0].map(n => n.node), [node(chat, '06 |').name]);
+  assert.deepEqual(chat.connections[n.name].main[0].map(n => n.node), [node(chat, '05R |').name]);
+  assert.deepEqual(chat.connections[node(chat, '05R |').name].main[0].map(n => n.node), [node(chat, '05S |').name]);
+  assert.deepEqual(chat.connections[node(chat, '05R |').name].main[1].map(n => n.node), [node(chat, '06 |').name]);
+  assert.deepEqual(chat.connections[node(chat, '05S |').name].main[0].map(n => n.node), [node(chat, '06 |').name]);
 });
 for (const dm of [false, true]) {
   for (const [name, input] of [
@@ -57,9 +60,9 @@ test('destino ausente, modo/tipo incompatível ou identidade inválida interromp
     assert.throws(() => runChat('06 |', { output: 'Olá' }, o), /Destino Slack/);
   }
 });
-test('rota de erro não acrescenta ferramentas ou altera autenticação, memória e envio sem thread', () => {
+test('rota de erro preserva ferramentas somente leitura, autenticação, memória e envio sem thread', () => {
   const tools = Object.entries(chat.connections).filter(([, c]) => c.ai_tool).map(([n]) => n).sort();
-  assert.deepEqual(tools, ['consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
+  assert.deepEqual(tools, ['comparar_relatorios_semanais', 'consultar_detalhe_execucao', 'consultar_execucoes', 'consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
   assert.equal(chat.connections[node(chat, '02 |').name].main[1][0].node, node(chat, '02E |').name);
   for (const p of ['08A |', '08B |']) {
     const n = node(chat, p); assert.equal(n.parameters.channelId.value, '={{ $json.slack.channel }}');
@@ -106,4 +109,52 @@ test('Digest: relatório indisponível não chega ao envio e a classificação p
   assert.throws(() => validate({ statusCode: 200, body, error: 'timeout' }));
   const r = runDigest({ error: 'timeout' }); assert.equal(r.installation_id, period.installation_id); assert.equal(r.inicio, period.inicio);
   assert.throws(() => runDigest({ statusCode: 200, body: 'ok' }, {}), /Identidade do Digest/);
+});
+
+test('chamada de função malformada não é publicada como resposta útil', () => {
+  const n = node(chat, '06 |');
+  const origem = {slack:{tipo_conversa:'canal',channel:'C123',team_id:'T123',app_id:'A123',user:'U123'}};
+  for (const output of [
+    'Calling consultar_relatorio_semanal with input: {"inicio":"2026-11-02"}',
+    'Calling consultar_detalhe_execucao{id:\nb390994b-b6b3-456c-832b-236a21ea02e9\n}',
+  ]) {
+    const [r] = new Function('$json','$',n.parameters.jsCode)({output},()=>({first:()=>({json:origem})}));
+    assert.equal(r.json.consulta.status,'indisponivel');assert.match(r.json.resposta,/Não foi possível/);assert.ok(!r.json.resposta.includes('Calling'));
+  }
+});
+
+test('resposta usa texto sem asteriscos duplos e datas legíveis sem mudar URLs ou IDs', () => {
+  const input = '**Última atualização:** 2026-11-15T21:43:22.852007068Z (UTC)\n**Período:** de 2026-11-02 a 2026-11-09 (UTC; fim não incluído)\nID: b390994b-b6b3-456c-832b-236a21ea02e9\nhttps://api.example.test?inicio=2026-11-02';
+  const r = runChat('06 |', {output:input});
+  assert.match(r.resposta,/Última atualização: 15\/11\/2026 às 18h43 \(Brasília\)/);
+  assert.match(r.resposta,/de 02\/11\/2026 a 09\/11\/2026 \(UTC; fim não incluído\)/);
+  assert.ok(!r.resposta.includes('**'));assert.ok(!r.resposta.includes('(Brasília) (UTC)'));
+  assert.ok(r.resposta.includes('b390994b-b6b3-456c-832b-236a21ea02e9'));
+  assert.ok(r.resposta.includes('https://api.example.test?inicio=2026-11-02'));
+});
+
+test('conversão de horário respeita offset, virada de dia e calendário inválido', () => {
+  for (const [iso,expected] of [
+    ['2026-11-16T01:30:00Z','15/11/2026 às 22h30 (Brasília)'],
+    ['2026-11-15T13:29:05.17749-03:00','15/11/2026 às 13h29 (Brasília)'],
+  ]) assert.equal(runChat('06 |',{output:iso}).resposta,expected);
+  assert.equal(runChat('06 |',{output:'2026-02-30'}).resposta,'2026-02-30');
+});
+
+test('recuperação ocorre somente para chamada malformada, sem repetir cota ou falha de rede', () => {
+  const condition = node(chat,'05R |').parameters.conditions.conditions[0].leftValue;
+  const recover = input => new Function('$json','return ('+condition.slice(3,-2)+');')(input);
+  for (const output of ['Calling consultar_execucoes with input: {}','Calling comparar_relatorios_semanais{inicio_a:}']) assert.equal(recover({output}),true);
+  for (const input of [{output:'Há uma análise pendente.'},{error:{statusCode:429}},{error:{code:'ETIMEDOUT'}},{output:''},{}, {output:null}]) assert.equal(recover(input),false);
+});
+
+test('segunda tentativa é isolada, usa a pergunta autenticada e somente as mesmas leituras', () => {
+  const fallback=node(chat,'05S |');assert.equal(fallback.onError,'continueRegularOutput');assert.equal(fallback.alwaysOutputData,true);assert.equal(fallback.retryOnFail,false);
+  assert.match(fallback.parameters.text,/04 \| Preparar Consulta do Slack/);assert.match(fallback.parameters.text,/chatInput/);assert.ok(!fallback.parameters.text.includes('$json.output'));
+  const targets=kind=>Object.entries(chat.connections).filter(([,c])=>c[kind]?.flat().some(t=>t.node===fallback.name)).map(([n])=>n).sort();
+  assert.deepEqual(targets('ai_memory'),[]);
+  assert.deepEqual(targets('ai_tool'),['comparar_relatorios_semanais','consultar_detalhe_execucao','consultar_execucoes','consultar_prontidao_api','consultar_relatorio_semanal','consultar_saude_api']);
+  assert.deepEqual(targets('ai_languageModel'),['Google Gemini Chat Model']);
+  assert.match(fallback.parameters.options.systemMessage,/Não envie datas vazias/);
+  assert.deepEqual(chat.connections[fallback.name].main[0].map(n=>n.node),[node(chat,'06 |').name]);
 });

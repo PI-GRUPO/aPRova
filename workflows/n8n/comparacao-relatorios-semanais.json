@@ -1,0 +1,166 @@
+{
+  "name": "aPRova | Consulta | Comparação Semanal",
+  "description": "Compara duas janelas de sete dias consultando o mesmo GET /reports/weekly do Digest. Valida cada resultado e calcula diferenças, sem modificar execuções nem decisões.",
+  "nodes": [
+    {
+      "id": "95dad651-7ac3-440f-919e-abb94cb8c197",
+      "name": "Quando Comparar Semanas",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "inicio_a",
+              "type": "string"
+            },
+            {
+              "name": "inicio_b",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "de62998b-1802-43c2-a688-139403419986",
+      "name": "01 | Preparar Duas Semanas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const crypto = require('crypto');\nconst installationId=Number($env.APROVA_CHAT_INSTALLATION_ID||0);\nif(!Number.isSafeInteger(installationId)||installationId<=0||!$env.N8N_SEGREDO_ACOES)throw new Error('Consulta não configurada.');\nconst entrada=$input.first().json;\nconst padrao=new Date();padrao.setUTCHours(0,0,0,0);padrao.setUTCDate(padrao.getUTCDate()-(padrao.getUTCDay()+6)%7-7);\nfunction data(nome,deslocamento){\n const valor=entrada[nome]??'';\n if(typeof valor!=='string')throw new Error('Data inválida.');\n let d;if(!valor.trim()){d=new Date(padrao);d.setUTCDate(d.getUTCDate()+deslocamento);}\n else{if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(valor.trim()))throw new Error('Data inválida.');d=new Date(valor.trim()+'T00:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==valor.trim())throw new Error('Data inválida.');}\n return d;\n}\nconst a=data('inicio_a',0),b=data('inicio_b',-7);\nif(a.getTime()===b.getTime())throw new Error('Informe duas janelas diferentes.');\nconst base=($env.APROVA_API_URL||'http://host.docker.internal:8080').replace(/\\/+$/,'');\nreturn [a,b].map((d,indice)=>{\n const inicio=d.toISOString().slice(0,10),fim=new Date(d);fim.setUTCDate(fim.getUTCDate()+7);\n const query='installation_id='+installationId+'&inicio='+inicio;\n const timestamp=Math.floor(Date.now()/1000).toString();\n const assinatura='sha256='+crypto.createHmac('sha256',$env.N8N_SEGREDO_ACOES).update(timestamp+'.'+query).digest('hex');\n return {json:{indice,installation_id:installationId,inicio,fim:fim.toISOString().slice(0,10),requisicao:{url:base+'/reports/weekly?'+query,headers:{'X-Aprova-Timestamp':timestamp,'X-Aprova-Assinatura':assinatura}}}};\n});"
+      }
+    },
+    {
+      "id": "98a33701-b323-43b1-b5a6-909642e144d3",
+      "name": "02 | Consultar Semanas",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        500,
+        300
+      ],
+      "parameters": {
+        "url": "={{ $json.requisicao.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Aprova-Timestamp",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Timestamp'] }}"
+            },
+            {
+              "name": "X-Aprova-Assinatura",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Assinatura'] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "GET"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d9eff398-8e35-4882-801c-9e445e92563f",
+      "name": "03 | Validar Cada Semana",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        750,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const consulta = $('01 | Preparar Duas Semanas').item.json;\n\nconst indisponivel = () => ({\n  json: {\n    status: 'indisponivel',\n    mensagem: 'Não foi possível obter um relatório válido da API.',\n    periodo_solicitado: {\n      inicio: consulta.inicio,\n      fim_exclusivo: consulta.fim,\n      fuso: 'UTC',\n    },\n    dados: null,\n  },\n});\n\nconst r = $json.body ?? $json.data;\n\nif (\n  $json.statusCode !== 200 ||\n  !r ||\n  typeof r !== 'object' ||\n  Array.isArray(r)\n) {\n  return indisponivel();\n}\n\nconst campos = [\n  'total_execucoes',\n  'concluidas',\n  'rejeitadas',\n  'falhas',\n  'em_andamento',\n  'exigiram_aprovacao_humana',\n  'risco_medio',\n  'revertidas',\n];\n\nif (\n  r.installation_id !== consulta.installation_id ||\n  r.inicio !== consulta.inicio + 'T00:00:00Z' ||\n  r.fim !== consulta.fim + 'T00:00:00Z' ||\n  campos.some(c => !Number.isSafeInteger(r[c]) || r[c] < 0)\n) {\n  return indisponivel();\n}\n\nconst finalizadas = r.concluidas + r.rejeitadas + r.falhas;\n\nif (\n  finalizadas + r.em_andamento !== r.total_execucoes ||\n  r.exigiram_aprovacao_humana > r.total_execucoes ||\n  r.risco_medio > r.total_execucoes\n) {\n  return indisponivel();\n}\n\nconst taxaValida = finalizadas === 0\n  ? r.taxa_sucesso === null\n  : typeof r.taxa_sucesso === 'number' &&\n    Number.isFinite(r.taxa_sucesso) &&\n    Math.abs(r.taxa_sucesso - r.concluidas / finalizadas) <= 0.000001;\n\nif (!taxaValida) {\n  return indisponivel();\n}\n\nreturn {\n  json: {\n    status: 'disponivel',\n    installation_id: r.installation_id,\n    periodo: {\n      inicio: r.inicio,\n      fim_exclusivo: r.fim,\n      fuso: 'UTC',\n    },\n    dados: {\n      ...Object.fromEntries(campos.map(c => [c, r[c]])),\n      taxa_sucesso: r.taxa_sucesso,\n    },\n  },\n};"
+      }
+    },
+    {
+      "id": "b09d26ec-b4d9-4fc1-83c4-7ac6920739e2",
+      "name": "04 | Comparar Semanas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const relatorios=$input.all().map(i=>i.json);\nif(relatorios.length!==2||relatorios.some(r=>r.status!=='disponivel'))return [{json:{status:'indisponivel',mensagem:'Não foi possível confirmar as duas semanas; comparação indisponível.',dados:null}}];\nconst [a,b]=relatorios;\nif(a.installation_id!==b.installation_id||a.periodo.inicio===b.periodo.inicio)return [{json:{status:'indisponivel',dados:null}}];\nconst campos=['total_execucoes','concluidas','rejeitadas','falhas','em_andamento','exigiram_aprovacao_humana','risco_medio','revertidas'];\nreturn [{json:{status:'disponivel',installation_id:a.installation_id,relatorios,\n diferenca_a_menos_b:Object.fromEntries(campos.map(c=>[c,a.dados[c]-b.dados[c]])),\n diferenca_taxa_pontos_percentuais:a.dados.taxa_sucesso===null||b.dados.taxa_sucesso===null?null:100*(a.dados.taxa_sucesso-b.dados.taxa_sucesso),\n observacao:'A diferença é a primeira janela menos a segunda. Taxa nula não é zero. Janelas têm sete dias UTC; semana em curso é parcial. Métricas são da instalação, sem filtro por repositório.'}}];"
+      }
+    }
+  ],
+  "connections": {
+    "Quando Comparar Semanas": {
+      "main": [
+        [
+          {
+            "node": "01 | Preparar Duas Semanas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 | Preparar Duas Semanas": {
+      "main": [
+        [
+          {
+            "node": "02 | Consultar Semanas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Consultar Semanas": {
+      "main": [
+        [
+          {
+            "node": "03 | Validar Cada Semana",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03 | Validar Cada Semana": {
+      "main": [
+        [
+          {
+            "node": "04 | Comparar Semanas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

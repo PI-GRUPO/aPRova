@@ -16,6 +16,8 @@ Guia de execução e configuração. Estado local e pendências atualizados em
 | `digest-semanal.json` | Relatório da última semana completa, segunda às 09h de São Paulo. |
 | `slack-consulta-metricas.json` | DM e menção no canal autorizado; somente consultas. |
 | `consulta-relatorio-semanal.json` | Ferramenta de GET assinado e validação de métricas. |
+| `consulta-analises.json` | Listagem/detalhe de análises com GET assinado, escopo e paginação. |
+| `comparacao-relatorios-semanais.json` | Duas leituras do agregado periódico e diferenças calculadas. |
 | `feedback-motivo-aprovacao.json` | Motivo de aprovação ALTO, contexto assinado e envio bloqueado até endpoint/vínculo reais. |
 | `onboarding-repositorio.json` | Consulta de proteção por repositório, criação/reutilização de lista Trello e resumo Slack. |
 | `sla-aprovacao.json` | Acompanhamento persistente de aprovação, dois limites configuráveis e escalonamento Slack. |
@@ -73,6 +75,8 @@ pelo Compose a partir do `.env`. Não inserir valores reais nos nós,
 | `APROVA_CHAT_INSTALLATION_ID` | Instalação para consulta semanal e Digest da instância. |
 | `APROVA_SLACK_TEAM_ID`, `APROVA_SLACK_APP_ID`, `APROVA_SLACK_CANAL_CONSULTAS_ID` | Workspace, App e canal autorizados. |
 | `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` | Subworkflow usado pelo assistente. |
+| `APROVA_CONSULTA_ANALISES_WORKFLOW_ID` | ID da importação de `consulta-analises.json`. |
+| `APROVA_COMPARACAO_SEMANAL_WORKFLOW_ID` | ID da importação de `comparacao-relatorios-semanais.json`. |
 | `APROVA_SLACK_WORKFLOW_ID`, `APROVA_OSV_WORKFLOW_ID` | Referências portáteis das chamadas Central/OSV nos exports. |
 
 Na instalação local, credenciais Slack/Gemini/Trello estão cadastradas;
@@ -708,3 +712,109 @@ O número 15 sozinho não identifica qual alteração foi aplicada. Conferir
 `schema_migrations`, a coluna `remote_action_attempts.justification` e as
 colunas do gate; preservar os dados e preparar uma migração específica ou
 usar um banco de testes novo. Esta integração não modifica o banco local.
+
+### Validação real do assistente — Fase 6D
+
+Concluída no canal autorizado: pergunta humana assinada, modelo e ferramenta
+semanal reais, dados da API e uma resposta Slack confirmada. Zero execuções
+na última semana completa e taxa nula foram preservados; outra consulta
+controlada confirmou dados não vazios da semana em curso. A repetição do
+mesmo evento não chamou o modelo nem enviou outra resposta. Erro local
+controlado confirmou um único aviso seguro no Slack. Passaram 30 testes em
+três arquivos. O workflow manual foi restaurado ao modo isolado/inativo;
+assistente, consulta e exports funcionais foram preservados. DM permanece
+sem validação real específica. A 6C continua com seu caso adiado e a 6E
+aguarda política da equipe; nenhum envio operacional foi habilitado.
+
+### Ampliação de consultas após a 6D
+
+Assistente publicado com 21 nós e seis ferramentas somente leitura: relatório
+semanal, comparação de duas semanas, listagem de execuções, detalhe por UUID,
+saúde e prontidão. Os dois subworkflows novos foram criados no projeto pessoal
+existente. As três definições afetadas foram exportadas após validação real.
+
+Importe as duas consultas novas e configure suas variáveis de ID no ambiente,
+recarregando o n8n antes de publicar o assistente importado. Instalação continua
+fixada por `APROVA_CHAT_INSTALLATION_ID`. API precisa conter as novas rotas;
+use o mesmo `N8N_SEGREDO_ACOES` nos dois serviços. As consultas não usam
+credenciais HTTP: o HMAC é calculado no nó Code com `crypto` permitido.
+Associe as credenciais já existentes ao modelo e aos envios Slack do assistente.
+
+Exemplos: “quais análises estão em andamento em proprietário/repositório?”,
+“quais aguardam aprovação?”, “qual o estado da análise UUID?” e “compare
+as últimas duas semanas completas”. Para PR com várias análises, preserve ID
+junto ao SHA e esclareça a escolha. As métricas semanais não são filtradas por
+repositório; o detalhe não retorna código, logs nem motivo de falha. A lista
+não prova worker ativo; a ferramenta marca `atividade_worker=nao_consultada`.
+
+Uma comparação executa duas leituras validadas numa única chamada, evitando
+depender de encadeamento pelo modelo. O tratamento de resposta também impede
+publicar como dado um texto iniciado por `Calling ... with input:` de chamada
+malformada. Eventos controlados com modelo/API/Slack reais validaram listagem,
+detalhe, ressalva sobre worker e comparação de semana parcial com semana vazia.
+Passaram 46 testes de consultas/resiliência em cinco arquivos, quatro pacotes
+Go e integração PostgreSQL descartável. Contratos e HMAC das rotas estão em
+[eventos-n8n.md](../../docs/eventos-n8n.md#consultas-de-análises-e-comparação-semanal--ampliação-após-a-6d).
+O caso adiado da 6C, Digest e SLA permanecem nas condições anteriores.
+
+### Apresentação das respostas do assistente
+
+Respostas usam texto simples, sem `**`; o nó final também remove essa marcação.
+Datas são exibidas como `DD/MM/AAAA`; instantes ISO são convertidos para
+`DD/MM/AAAA às HHhMM (Brasília)` por `Intl` com `America/Sao_Paulo`, sem segundos
+ou frações. Links, IDs e SHA são preservados. Períodos semanais continuam em UTC,
+com fim não incluído e datas legíveis; a apresentação não altera as consultas.
+Somente o assistente foi publicado/exportado nessa revisão. Passaram 48 testes
+de consultas/resiliência em cinco arquivos.
+
+### Correção de chamadas em linguagem natural
+
+Após falhas humanas `MALFORMED_FUNCTION_CALL` antes do acesso à API, o prompt
+removeu o exemplo textual de chamada interna e a memória passou ao namespace
+`consultas-reais-v2`. Essa mudança reinicia o contexto curto anterior, mantendo
+isolamento e cinco interações. A proteção que rejeita texto de chamada como
+resposta foi preservada. Não foram alterados o modelo nem as ferramentas.
+
+A pergunta “tem alguma PR esperando alguem aprovar?” foi validada em teste
+manual e no canal por evento assinado/controlado, com ferramenta/API reais e
+uma publicação Slack confirmada. Também foi validado acompanhamento no teste
+manual sem Slack; seu workflow fica inativo no projeto pessoal. O assistente
+foi publicado/exportado e os 48 testes de consultas/resiliência passaram.
+Listar análises não confirma estado aberto/fechado do PR no GitHub.
+
+### Links GitHub e seleção atual do modelo
+
+A consulta de análises gera `url_repositorio` e `url_pr` depois de validar os
+dados, com domínio fixo GitHub e segmentos codificados; não repassa uma URL
+arbitrária vinda da resposta. O assistente inclui URLs completas, reconhecidas
+como links pelo Slack, sem usar sintaxe Markdown de links.
+
+O usuário escolheu `models/gemini-3.5-flash` no nó do modelo. O rascunho foi
+publicado e o export atualizado; credenciais foram preservadas. Um evento
+assinado/controlado com modelo/API/Slack reais confirmou análise do PR 2 e
+URLs de PR/repositório. Texto de chamada malformada, inclusive variante sem
+“with input”, gera aviso seguro; não foi acrescentado retry automático.
+Passaram 50 testes de consultas/resiliência em cinco arquivos.
+
+### Recuperação de chamada malformada recorrente
+
+O assistente passou a 23 nós. `05R` detecta texto de chamada inválida e
+encaminha uma única vez ao agente `05S`, que recebe somente a pergunta original
+autenticada, sem histórico. Ele compartilha o modelo escolhido e as seis
+ferramentas de leitura; não interpreta a chamada malformada nem recebe
+ferramentas de ação. A recuperação não possui memória, loop ou retry nativo.
+Respostas normais seguem direto para `06`; ambos os caminhos preservam um
+único envio. Cota, rede e erros comuns não disparam essa nova tentativa.
+
+O agente principal mantém sua memória isolada. Se uma pergunta depender do
+histórico e ele falhar, a recuperação pode pedir esclarecimento. Comparações
+entre semana atual e anterior usam datas explícitas UTC; a atual é parcial.
+Teste manual inativo no projeto pessoal confirmou recuperação com modelo/API
+reais após erro inicial controlado. Passaram 52 testes em cinco arquivos.
+O teste anterior com o novo modelo não eliminou a recorrência do provedor;
+a mudança atual acrescenta recuperação limitada e mantém o aviso em falha.
+
+No reteste integrado da mesma pergunta, o agente principal consultou as duas
+semanas corretas e enviou uma resposta Slack confirmada, sem duplicata. Esse
+reteste não acionou a recuperação; o teste manual forçou o primeiro erro e
+validou o segundo agente com modelo/API reais. Não confundir as evidências.

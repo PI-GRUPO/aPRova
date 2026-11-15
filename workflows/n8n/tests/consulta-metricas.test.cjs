@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
-const chat = require('../slack-consulta-metricas.json');
+const chat = require(process.env.APROVA_TEST_CHAT || '../slack-consulta-metricas.json');
 const consulta = require('../consulta-relatorio-semanal.json');
 const no = (workflow, prefixo) => workflow.nodes.find(n => n.name.startsWith(prefixo));
 const codigo = (workflow, prefixo) => no(workflow, prefixo).parameters.jsCode;
@@ -30,7 +30,7 @@ const validarRelatorio = resposta => new Function('$json', '$', codigo(consulta,
 ).json;
 
 test('consultas: exports portáteis não têm simulação, credenciais, dados fixados ou referências locais', () => {
-  assert.equal(chat.nodes.length, 18);
+  assert.equal(chat.nodes.length, 23);
   assert.equal(consulta.nodes.length, 6);
   for (const workflow of [chat, consulta]) {
     assert.equal(workflow.active, false);
@@ -81,7 +81,7 @@ test('Slack: memória separa DM, canal e usuários; deduplicação preserva a id
   assert.equal(preparar()[0].json.dedupe_key, canal.dedupe_key);
   assert.equal(no(chat, '05 |').parameters.operation, 'removeItemsSeenInPreviousExecutions');
   assert.equal(no(chat, '05 |').parameters.options.historySize, 10000);
-  assert.match(no(chat, 'Simple Memory').parameters.sessionKey, /consultas-reais-v1:/);
+  assert.match(no(chat, 'Simple Memory').parameters.sessionKey, /consultas-reais-v2:/);
 });
 
 test('Slack: bots, mensagens vazias e eventos inválidos não acionam a IA', () => {
@@ -124,9 +124,9 @@ test('Slack: resposta usa destino autenticado, escapa menções e não usa threa
   for (const prefixo of ['08A |', '08B |']) assert.equal(no(chat, prefixo).parameters.otherOptions.thread_ts, undefined);
 });
 
-test('agente: expõe só três consultas e nenhum destino HTTP controlado pelo modelo', () => {
+test('agente: expõe seis consultas somente leitura e nenhum destino HTTP controlado pelo modelo', () => {
   assert.deepEqual(chat.nodes.filter(n => chat.connections[n.name]?.ai_tool).map(n => n.name).sort(),
-    ['consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
+    ['comparar_relatorios_semanais', 'consultar_detalhe_execucao', 'consultar_execucoes', 'consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
   for (const [nome, caminho] of [['consultar_saude_api', '/health'], ['consultar_prontidao_api', '/ready']]) {
     const p = no(chat, nome).parameters;
     assert.equal(p.method, 'GET'); assert.ok(p.url.includes(caminho));

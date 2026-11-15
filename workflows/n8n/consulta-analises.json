@@ -1,0 +1,161 @@
+{
+  "name": "aPRova | Consulta | Análises",
+  "description": "Consulta somente leitura de análises por instalação, repositório, PR e estado, ou por ID. GET autenticado por HMAC, paginação limitada e saída validada, sem logs ou operações de decisão.",
+  "nodes": [
+    {
+      "id": "8b5541de-416f-4777-8b88-43d4384d80d1",
+      "name": "Quando Chamado pelo Assistente",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "operacao",
+              "type": "string"
+            },
+            {
+              "name": "repositorio",
+              "type": "string"
+            },
+            {
+              "name": "estado",
+              "type": "string"
+            },
+            {
+              "name": "numero_pr",
+              "type": "string"
+            },
+            {
+              "name": "pagina",
+              "type": "string"
+            },
+            {
+              "name": "limite",
+              "type": "string"
+            },
+            {
+              "name": "id",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3326048e-6b00-4a07-ba70-8f11bbe505ed",
+      "name": "01 | Validar e Assinar Consulta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\nconst installationId = Number($env.APROVA_CHAT_INSTALLATION_ID || 0);\nif (!Number.isSafeInteger(installationId) || installationId <= 0) throw new Error('Instalação de consulta não configurada.');\nconst operacao = $json.operacao;\nif (!['listar', 'detalhar'].includes(operacao)) throw new Error('Operação de leitura inválida.');\nconst texto = (nome, padrao = '') => {\n  const v = $json[nome] ?? padrao;\n  if (typeof v !== 'string') throw new Error('Filtro inválido.');\n  return v.trim();\n};\nconst repo = texto('repositorio');\nif (repo.length > 200 || (repo && !/^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(repo))) throw new Error('Informe proprietário/repositório.');\nconst estados = ['em_andamento','todos','pendente','mapeando_contexto','gerando','testando_sandbox','avaliando_risco','aguardando_aprovacao','aplicando','concluido','rejeitado','falhou'];\nconst inteiro = (nome, padrao, min, max) => {\n  const v = texto(nome, String(padrao)) || String(padrao);\n  if (!/^\\d+$/.test(v) || !Number.isSafeInteger(Number(v)) || Number(v) < min || Number(v) > max) throw new Error('Filtro numérico inválido.');\n  return Number(v);\n};\nconst id = operacao === 'detalhar' ? texto('id') : '';\nif (operacao === 'detalhar' && !/^[a-f\\d]{8}-[a-f\\d]{4}-[a-f\\d]{4}-[a-f\\d]{4}-[a-f\\d]{12}$/i.test(id)) throw new Error('Informe o ID real da análise.');\nconst estado = operacao === 'listar' ? (texto('estado') || 'em_andamento') : '';\nif (estado && !estados.includes(estado)) throw new Error('Estado inválido.');\nconst pagina = operacao === 'listar' ? inteiro('pagina',1,1,201) : 1;\nconst limite = operacao === 'listar' ? inteiro('limite',10,1,50) : 1;\nconst numeroPR = operacao === 'listar' ? inteiro('numero_pr',0,0,2147483647) : 0;\nconst caminho = '/api/analises' + (id ? '/' + id : '');\nconst partes = ['installation_id=' + installationId];\nif (repo) partes.push('repositorio=' + encodeURIComponent(repo));\nif (operacao === 'listar') {\n  partes.push('estado=' + estado, 'pagina=' + pagina, 'limite=' + limite);\n  if (numeroPR) partes.push('numero_pr=' + numeroPR);\n}\nconst query = partes.join('&');\nconst segredo = $env.N8N_SEGREDO_ACOES;\nif (!segredo) throw new Error('Autenticação da consulta não configurada.');\nconst timestamp = Math.floor(Date.now()/1000).toString();\nconst assinatura = 'sha256=' + crypto.createHmac('sha256',segredo).update(timestamp + '.GET\\n' + caminho + '\\n' + query).digest('hex');\nconst base = ($env.APROVA_API_URL || 'http://host.docker.internal:8080').replace(/\\/+$/,'');\nreturn {json:{\n  operacao, installation_id:installationId, repositorio:repo, estado, pagina, limite, numero_pr:numeroPR, id,\n  requisicao:{url:base+caminho+'?'+query, headers:{'X-Aprova-Timestamp':timestamp,'X-Aprova-Assinatura':assinatura}}\n}};"
+      }
+    },
+    {
+      "id": "27128803-e0a2-4f4b-9ad3-6536e58d671d",
+      "name": "02 | Consultar Análises",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "url": "={{ $json.requisicao.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Aprova-Timestamp",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Timestamp'] }}"
+            },
+            {
+              "name": "X-Aprova-Assinatura",
+              "value": "={{ $json.requisicao.headers['X-Aprova-Assinatura'] }}"
+            }
+          ]
+        },
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 15000
+        },
+        "method": "GET"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "539a5a28-62d7-4e3d-851f-3fc3590d2f6b",
+      "name": "03 | Validar e Retornar Análises",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const q = $('01 | Validar e Assinar Consulta').item.json;\nconst falha = (status = 'indisponivel') => ({json:{status,mensagem:status === 'nao_encontrada' ? 'Análise não encontrada no escopo autorizado.' : 'Não foi possível confirmar os dados das análises.',dados:null}});\nif ($json.statusCode === 404 && q.operacao === 'detalhar') return falha('nao_encontrada');\nconst r = $json.body;\nif ($json.statusCode !== 200 || !r || typeof r !== 'object' || Array.isArray(r) ||\n    r.installation_id !== q.installation_id || !Number.isFinite(Date.parse(r.consultado_em))) return falha();\nconst estados = ['pendente','mapeando_contexto','gerando','testando_sandbox','avaliando_risco','aguardando_aprovacao','aplicando','concluido','rejeitado','falhou'];\nconst terminal = e => ['concluido','rejeitado','falhou'].includes(e);\nconst valido = a => a && typeof a === 'object' &&\n  typeof a.id === 'string' && /^[a-f\\d]{8}(-[a-f\\d]{4}){3}-[a-f\\d]{12}$/i.test(a.id) &&\n  typeof a.repositorio === 'string' && a.repositorio.length <= 200 && /^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$/.test(a.repositorio) &&\n  a.repositorio.split('/').every(parte => parte !== '.' && parte !== '..') &&\n  (!q.repositorio || a.repositorio.toLowerCase() === q.repositorio.toLowerCase()) &&\n  Number.isSafeInteger(a.numero_pr) && a.numero_pr > 0 &&\n  typeof a.sha_head === 'string' && /^([a-f\\d]{40}|[a-f\\d]{64})$/i.test(a.sha_head) &&\n  estados.includes(a.estado) &&\n  ['recebido_em','criado_em','atualizado_em'].every(c => typeof a[c] === 'string' && Number.isFinite(Date.parse(a[c])));\nconst seguro = a => {\n  const urlRepositorio = 'https://github.com/' + a.repositorio.split('/').map(encodeURIComponent).join('/');\n  return {\n    ...Object.fromEntries(['id','repositorio','numero_pr','sha_head','estado','recebido_em','criado_em','atualizado_em'].map(c=>[c,a[c]])),\n    url_repositorio: urlRepositorio,\n    url_pr: urlRepositorio + '/pull/' + a.numero_pr,\n  };\n};\nif (q.operacao === 'detalhar') {\n  if (!valido(r.analise) || r.analise.id.toLowerCase() !== q.id.toLowerCase()) return falha();\n  return {json:{status:'disponivel',consultado_em:r.consultado_em,installation_id:r.installation_id,atividade_worker:'nao_consultada',dados:seguro(r.analise)}};\n}\nif (r.estado !== q.estado || r.repositorio !== q.repositorio || r.numero_pr !== q.numero_pr ||\n  r.pagina !== q.pagina || r.limite !== q.limite || typeof r.tem_mais !== 'boolean' ||\n  !Array.isArray(r.itens) || r.itens.length > q.limite ||\n  new Set(r.itens.map(a=>a?.id)).size !== r.itens.length ||\n  (r.tem_mais && r.itens.length !== q.limite) ||\n  r.itens.some(a=>!valido(a) || (q.numero_pr && a.numero_pr !== q.numero_pr) ||\n    (q.estado === 'em_andamento' ? terminal(a.estado) : q.estado !== 'todos' && a.estado !== q.estado))) return falha();\nreturn {json:{status:'disponivel',installation_id:r.installation_id,consultado_em:r.consultado_em,\n  filtros:{repositorio:q.repositorio,estado:q.estado,numero_pr:q.numero_pr},\n  pagina:r.pagina,limite:r.limite,tem_mais:r.tem_mais,proxima_pagina:r.tem_mais?r.pagina+1:null,\n  quantidade_nesta_pagina:r.itens.length,atividade_worker:'nao_consultada',dados:r.itens.map(seguro),\n  observacao:'Retrato atual, sem janela semanal. Em andamento inclui espera por aprovação; não garante worker ativo. Página não representa contagem global.'}};\n"
+      }
+    }
+  ],
+  "connections": {
+    "Quando Chamado pelo Assistente": {
+      "main": [
+        [
+          {
+            "node": "01 | Validar e Assinar Consulta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 | Validar e Assinar Consulta": {
+      "main": [
+        [
+          {
+            "node": "02 | Consultar Análises",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 | Consultar Análises": {
+      "main": [
+        [
+          {
+            "node": "03 | Validar e Retornar Análises",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

@@ -634,3 +634,64 @@ Signing Secret ficam no ambiente. Exports são inativos, sem credenciais
 pessoais ou IDs locais de workflow. Esta padronização não valida fluxos com
 serviços externos nem implementa persistência de feedback ou executor de
 reexecução. Gate, recibos e publicação reais foram incorporados da `dev`.
+
+### Validação integrada do assistente — Fase 6D
+
+Pergunta humana autenticada no canal autorizado percorreu agente → consulta
+semanal → API → resposta Slack, com período UTC, dados reais vazios e taxa
+nula preservados. Um evento controlado adicional confirmou consulta com
+dados não vazios da semana em curso. Repetição foi descartada antes do modelo
+e do envio. Erro local controlado do agente produziu um único aviso seguro
+real no Slack; não houve falha provocada no provedor. Passaram 30 testes em
+três arquivos. Workflow manual restaurado ao modo isolado/inativo; versões
+publicadas e exports preservados. DM não foi validada nessa integração.
+
+### Consultas de análises e comparação semanal — ampliação após a 6D
+
+Rotas novas de serviço, somente leitura:
+
+| Rota | Contrato |
+| --- | --- |
+| `GET /api/analises` | `installation_id` obrigatório; `repositorio` opcional no formato proprietário/repositório; `estado` padrão `em_andamento`, ou `todos`/estado exato; `numero_pr` opcional positivo; `pagina` 1–201; `limite` 1–50, padrão 20. |
+| `GET /api/analises/{id}` | UUID real e `installation_id` obrigatório; `repositorio` opcional restringe o escopo. 404 não distingue ID inexistente de ID de outra instalação/repositório. |
+
+Ambas usam `X-Aprova-Timestamp` e `X-Aprova-Assinatura`, janela de cinco
+minutos e `N8N_SEGREDO_ACOES`. Nessas rotas o conteúdo assinado é
+`<timestamp>.GET\n<caminho exato>\n<query bruta exata>`; `\n` representa LF.
+Assim, uma assinatura não pode ser reaproveitada em outro método, caminho,
+ID ou conjunto de filtros. O protocolo de `/reports/weekly` não mudou.
+Parâmetros desconhecidos/repetidos são recusados. Não há POST/PUT/PATCH/DELETE
+nas rotas novas. Sem assinatura válida: 401; parâmetros inválidos: 400;
+fonte ausente: 503; falha da fonte: 500. Respostas autenticadas usam `no-store`.
+
+A listagem retorna `installation_id`, `consultado_em`, filtros, `pagina`,
+`limite`, `tem_mais` e `itens`. Cada item/detalhe contém somente `id`,
+`repositorio`, `numero_pr`, `sha_head`, `estado`, `recebido_em`, `criado_em`
+e `atualizado_em`. Nenhum log, justificativa, lease, identidade de worker ou
+credencial é exposto. Datas são RFC3339 com fuso. A ordenação é
+`created_at DESC, id DESC`; consultas paginadas são retratos mutáveis.
+`em_andamento` exclui concluído/rejeitado/falhou e inclui espera por aprovação,
+sem restringir recebimento à semana. Não informa se há worker ativo.
+
+No n8n, `Consulta | Análises` valida entrada, fixa instalação pelo ambiente,
+assina GET, consulta e valida a resposta. Retorna `disponivel`,
+`nao_encontrada` (detalhe 404) ou `indisponivel`, sem converter erro em lista
+vazia. `Consulta | Comparação Semanal` consulta duas janelas pelo mesmo
+`/reports/weekly` do relatório periódico e calcula primeira menos segunda;
+diferença de taxa é em pontos percentuais, ou nula se alguma taxa for nula.
+Falha de qualquer janela impede concluir comparação. O modelo escolhe a
+ferramenta e formata os resultados; não escolhe URL, método ou instalação.
+
+Autorização mantém o escopo de serviço Slack já configurado para uma
+instalação/canal confiável. Essas rotas HMAC não são uma API de sessão do
+navegador nem substituem autorização individual para múltiplas equipes.
+Validação integrada com eventos assinados/controlados confirmou modelo,
+API e uma resposta Slack por evento para listagem, detalhe e comparação;
+a comparação incluiu uma semana parcial, sinalizada como tal. A atividade
+do worker permaneceu explicitamente não consultada no reteste.
+
+A projeção do subworkflow `Consulta | Análises` também inclui `url_repositorio`
+e `url_pr`, derivados dos dados validados no domínio fixo GitHub. Esses dois
+campos são de apresentação no n8n, não novos campos dos DTOs HTTP do núcleo.
+URLs completas nas respostas do assistente dão acesso ao repositório/PR; não
+provam o estado aberto/fechado atual do PR.

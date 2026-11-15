@@ -45,6 +45,7 @@ type Opcoes struct {
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
 	Relatorios          FonteDeRelatorios
+	ConsultasAnalises   FonteDeAnalises
 	Recibos             VerificadorDeRecibos
 	SlugDoApp           string
 	Agora               func() time.Time
@@ -58,6 +59,7 @@ type Servidor struct {
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
 	relatorios          FonteDeRelatorios
+	consultasAnalises   FonteDeAnalises
 	recibos             VerificadorDeRecibos
 	slugDoApp           string
 	agora               func() time.Time
@@ -77,6 +79,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
 		relatorios:          opcoes.Relatorios,
+		consultasAnalises:   opcoes.ConsultasAnalises,
 		recibos:             opcoes.Recibos,
 		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
@@ -97,6 +100,8 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Post("/webhooks/github", s.manipularWebhookGitHub)
 	roteador.Post("/acoes-remotas", s.manipularAcaoRemota)
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
+	roteador.Get("/api/analises", s.manipularListaAnalises)
+	roteador.Get("/api/analises/{id}", s.manipularConsultaAnalise)
 	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
 	roteador.Get("/receipts/{id}", s.manipularRecibo)
 	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)

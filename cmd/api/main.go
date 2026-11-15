@@ -76,6 +76,7 @@ func executar() error {
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
+			ConsultasAnalises:   repositorio,
 			Recibos:             receipt.NovoVerificador(chaveiroDosRecibos(configuracao), repositorio),
 			SlugDoApp:           configuracao.GitHubAppSlug,
 		}).Rotas(),
