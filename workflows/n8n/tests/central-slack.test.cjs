@@ -159,3 +159,56 @@ for (const [nome, prefixo] of [['aguardando_aprovacao', '03A |'], ['falha_recupe
     else assert.ok(texto.includes(original.dados.autor_pr));
   });
 }
+
+function alertaComRecibo(url) {
+  const original = JSON.parse(fs.readFileSync(path.join(diretorio, '..', 'exemplos', 'aguardando_aprovacao.json')));
+  if (url === undefined) delete original.dados.url_recibo;
+  else original.dados.url_recibo = url;
+  const evento = new Function('$json', '$execution', codigo(entrada, '04 |'))({
+    original, meta: { origem_verificada: true },
+  }, { id: 'teste' }).json;
+  return { evento, resultado: rodar('03A |', evento).json };
+}
+
+test('alerta usa a URL pública do recibo emitido pelo worker e preserva decisões e risco', () => {
+  const id = '8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b';
+  for (const base of ['https://aprova.example.com', 'https://aprova.example.com/api', 'http://localhost:8080']) {
+    for (const sufixo of ['', '/verify', '/verify/']) {
+      const url = `${base}/receipts/${id}`;
+      const { evento, resultado } = alertaComRecibo(url + sufixo);
+      const grupos = resultado.slack_payload.blocks.filter(b => b.type === 'actions');
+      assert.deepEqual(grupos[0].elements.map(b => b.action_id), ['aprovar', 'solicitar_alteracao']);
+      assert.deepEqual(JSON.parse(grupos[0].elements[0].value), {
+        installation_id: evento.meta.tenant_id, repositorio: evento.repositorio.full_name,
+        numero_pr: evento.pr.numero, id_evento: evento.meta.id_evento,
+        task_run_id: evento.meta.execution_id,
+        osv_resumo: 'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.',
+      });
+      assert.deepEqual(grupos[1].elements.map(b => [b.action_id, b.url]), [
+        ['abrir_pr', `https://github.com/${evento.repositorio.full_name}/pull/${evento.pr.numero}`],
+        ['abrir_recibo', url], ['verificar_recibo', url + '/verify'],
+      ]);
+      assert.deepEqual(resultado.risco, evento.risco);
+      assert.equal(resultado.slack_payload.unfurl_links, false);
+      assert.ok(resultado.slack_payload.text.includes(url + '/verify'));
+      assert.doesNotMatch(resultado.slack_payload.text, /recibo (válido|verificado)/i);
+    }
+  }
+});
+
+test('recibo ausente ou incompatível não gera link de verificação nem bloqueia o alerta', () => {
+  const id = '8e0a2c4d-6f1b-4d3e-a5c7-9b0d1e2f3a4b';
+  for (const url of [undefined, '', '/receipts/' + id, 'javascript:alert(1)',
+    `https://usuario:senha@aprova.example.com/receipts/${id}/verify`,
+    `https://aprova.example.com/receipts/${id}/verify/verify`,
+    `https://aprova.example.com/receipts/${id}/verify?token=segredo`,
+    `https://aprova.example.com/receipts/${id}#trecho`,
+    'https://aprova.example.com/receipts/invalido/verify']) {
+    const { resultado } = alertaComRecibo(url);
+    const grupos = resultado.slack_payload.blocks.filter(b => b.type === 'actions');
+    assert.equal(grupos[0].elements.length, 2);
+    assert.deepEqual(grupos[1].elements.map(b => b.action_id), ['abrir_pr']);
+    assert.match(resultado.slack_payload.text, /Recibo indisponível/);
+    assert.doesNotMatch(resultado.slack_payload.text, /token=|usuario:senha|javascript:/);
+  }
+});

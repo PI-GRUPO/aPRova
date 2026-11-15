@@ -72,8 +72,12 @@ test('regra crítica: únicos destinos HTTP são OSV e Incoming Webhook do Slack
   assert.deepEqual(http.map(n => n.parameters.url), [
     'https://api.osv.dev/v1/query', '={{ $env.SLACK_INCOMING_WEBHOOK_URL }}',
   ]);
-  assert.ok(workflow.nodes.every(n => ['executeWorkflowTrigger', 'if', 'splitOut', 'httpRequest', 'code', 'dataTable']
+  assert.ok(workflow.nodes.every(n => ['executeWorkflowTrigger', 'executeWorkflow', 'if', 'splitOut', 'httpRequest', 'code', 'dataTable']
     .some(tipo => n.type === 'n8n-nodes-base.' + tipo)));
+  const chamadas = workflow.nodes.filter(n => n.type === 'n8n-nodes-base.executeWorkflow');
+  assert.equal(chamadas.length, 1);
+  assert.equal(chamadas[0].parameters.workflowId.value, '={{ $env.APROVA_SLACK_WORKFLOW_ID }}');
+  assert.equal(chamadas[0].parameters.options.waitForSubWorkflow, false);
   for (const n of workflow.nodes.filter(n => n.type === 'n8n-nodes-base.dataTable')) {
     assert.equal(n.parameters.dataTableId.value, 'aprova_osv_por_analise');
   }

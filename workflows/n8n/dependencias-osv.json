@@ -270,6 +270,44 @@
         1312,
         -96
       ]
+    },
+    {
+      "id": "99197047-f780-4bd2-b761-1af4e2145493",
+      "name": "06E | Encaminhar contexto OSV posterior",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "if($env.APROVA_SLACK_CORRELACAO_HABILITADA!=='true')return [];\nreturn $input.all().filter(i=>i.json.evento?.tipo==='dependencia_nova'&&i.json.modo_osv!=='contexto_aprovacao').map(i=>{\n const e=i.json;\n if(e.meta?.origem_verificada!==true||e.meta?.validacao?.valido!==true||!e.contexto_osv_snapshot)\n  throw new Error('Contexto OSV sem origem autenticada.');\n const {slack_payload,...evento}=e;\n return {json:{...evento,entrega_osv:{versao:1,fonte:'workflow_osv'}}};\n});"
+      }
+    },
+    {
+      "id": "8e516d71-054a-4549-8b68-27fb6a2ffb50",
+      "name": "06F | Atualizar contexto na Central",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1950,
+        100
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.APROVA_SLACK_WORKFLOW_ID }}"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": false
     }
   ],
   "connections": {
@@ -371,6 +409,28 @@
         [
           {
             "node": "07 | Enviar Alerta Enriquecido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06C | Retornar Contexto OSV": {
+      "main": [
+        [
+          {
+            "node": "06E | Encaminhar contexto OSV posterior",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06E | Encaminhar contexto OSV posterior": {
+      "main": [
+        [
+          {
+            "node": "06F | Atualizar contexto na Central",
             "type": "main",
             "index": 0
           }

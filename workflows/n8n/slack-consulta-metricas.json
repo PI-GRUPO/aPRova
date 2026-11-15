@@ -18,7 +18,10 @@
         80
       ],
       "id": "fe9c6e7b-d356-4c28-a99a-1cd4f08ec468",
-      "name": "AI Agent"
+      "name": "AI Agent",
+      "onError": "continueRegularOutput",
+      "retryOnFail": false,
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -313,7 +316,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const origem = $('04 | Preparar Consulta do Slack').first().json;\nconst texto = $json.output;\nif (typeof texto !== 'string' || !texto.trim()) throw new Error('O agente não retornou uma resposta textual.');\nif (!origem.slack?.channel || !['dm', 'canal'].includes(origem.slack.tipo_conversa)) {\n  throw new Error('Destino Slack indisponível.');\n}\nconst resposta = texto.trim().slice(0, 3500).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nreturn [{ json: { slack: origem.slack, resposta } }];"
+        "jsCode": "const origem=$('04 | Preparar Consulta do Slack').first().json;\nconst s=origem?.slack;\nif(!s||!['dm','canal'].includes(s.tipo_conversa)||\n typeof s.channel!=='string'||!(s.tipo_conversa==='dm'?/^D[A-Z0-9]+$/:/^[CG][A-Z0-9]+$/).test(s.channel)||\n typeof s.team_id!=='string'||!/^T[A-Z0-9]+$/.test(s.team_id)||\n typeof s.app_id!=='string'||!/^A[A-Z0-9]+$/.test(s.app_id)||\n typeof s.user!=='string'||!/^[UW][A-Z0-9]+$/.test(s.user))\n throw new Error('Destino Slack autenticado indisponível.');\nconst falhou=$json.error!==undefined&&$json.error!==null;\nconst valido=!falhou&&typeof $json.output==='string'&&!!$json.output.trim();\nconst texto=valido?$json.output.trim().slice(0,3500):\"Não foi possível responder à consulta agora. Tente novamente mais tarde. Nenhuma métrica foi confirmada nesta resposta.\";\nconst resposta=texto.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nreturn [{json:{slack:s,resposta,consulta:{status:valido?'resposta_preparada':'indisponivel'}}}];"
       },
       "id": "0899d1e0-496d-4450-a138-b5bac8e59ff0",
       "name": "06 | Preparar Resposta ao Slack",
@@ -563,7 +566,8 @@
             "type": "main",
             "index": 0
           }
-        ]
+        ],
+        []
       ]
     },
     "06 | Preparar Resposta ao Slack": {

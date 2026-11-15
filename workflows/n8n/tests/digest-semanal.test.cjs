@@ -26,7 +26,7 @@ test('Digest: export inativo tem somente o caminho real e nenhuma credencial ou 
     if (i < names.length - 1) assert.equal(workflow.connections[n.name].main[0][0].node, names[i + 1]);
   });
   assert.equal(workflow.nodes[0].parameters.rule.interval[0].expression, '0 9 * * 1');
-  assert.equal(workflow.nodes[5].retryOnFail, undefined);
+  assert.equal(workflow.nodes[5].retryOnFail, false);
 });
 
 test('Digest: configuração vazia bloqueia consulta e semana anterior funciona na virada do ano', () => {
@@ -86,6 +86,9 @@ test('Digest: confirmação aceita body/data com ok e recusa falha sem anunciar 
   ).json;
   for (const campo of ['body', 'data']) assert.equal(executar({ statusCode: 200, [campo]: 'ok' }).status, 'enviado');
   for (const entrada of [{ statusCode: 200, data: 'erro' }, { statusCode: 500, data: 'ok' }, { error: 'timeout' }]) {
-    assert.throws(() => executar(entrada), /Slack não confirmou/);
+    const r = executar(entrada);
+    assert.equal(r.estado_envio, 'incerto');
+    assert.equal(r.exige_conferencia_manual, true);
+    assert.equal(r.reenviar_automaticamente, false);
   }
 });

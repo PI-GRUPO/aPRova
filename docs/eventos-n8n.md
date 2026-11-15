@@ -49,12 +49,46 @@ na execução. Consulta semanal e Digest da instância leem a instalação por
 no container, sem ID fixo nos parâmetros. O Digest continua desativado até
 validar o relatório real e o disparo agendado.
 
+Na Fase 5, o assistente passou a responder com aviso seguro quando o agente
+retorna erro ou saída vazia, mantendo o destino autenticado e as ferramentas
+de leitura. O Digest classifica confirmação, falha e resultado incerto, sem
+retry automático, e permanece desativado. Seu controle persistente de disparos
+aguarda as operações do núcleo previstas na Etapa S; elas não existem nas
+rotas atuais. Essa fase está parcialmente implementada, conforme o checklist.
+
 App ID, chave privada válida, webhook secret e slug GitHub já estão no
-`.env` do núcleo. Falta validar instalação/permissões reais, configurar
-`SLACK_GITHUB_VINCULOS` e validar API/worker. No teste do onboarding,
-`/health` e `/ready` responderam 200 a partir do n8n; isso não comprova
-os endpoints de negócio ou a emissão automática de eventos.
-Configuração disponível não comprova integração real.
+`.env` do núcleo. Na Fase 6, autenticação da instalação e leitura do
+repositório/PR de teste foram confirmadas. No alvo correto,
+`PI-GRUPO/aPRova-TESTES`, consultas de papéis retornam 200; a proteção continua
+em 403 por exigir `administration=read`. O 403 anterior de colaboradores era
+do fork fora do escopo da instalação. `SLACK_GITHUB_VINCULOS` continua vazio.
+Em 2026-11-15, saúde, prontidão, chaves e relatório semanal assinado responderam
+200 a partir do n8n. Uma consulta real `relatorio_periodico` assinada no
+ambiente local passou por Core → API até o resultado final; não é uma análise
+do worker nem comprova emissão automática dos eventos de negócio. Essa
+emissão foi validada separadamente na 6A: análise real do PR 1 do repositório
+de testes indicado pelo usuário, 10 testes Go aprovados e risco BAIXO,
+Check/comentário publicados e `analise_concluida` autenticado no Core.
+Documento e `/verify` do recibo foram conferidos na API; sua releitura no
+n8n, com validadores da Central, confirmou `valido`. A entrada GitHub na API
+foi controlada/manual e assinada; não comprova entrega automática pelo GitHub.
+O Core encaminhou ao Trello, que encerrou sem card vinculado e sem escrita
+ou réplica Slack nesse cenário BAIXO. A 6B usou o PR 3 do mesmo repositório,
+com dependência nova real: 10 testes passaram, gate ALTO, os três eventos
+autenticados chegaram ao Core, OSV respondeu 200 e persistiu consulta
+concluída sem avisos conhecidos. A Central verificou o recibo válido e o
+Slack confirmou o alerta automático de aprovação.
+
+Com a correlação global desligada, o encaminhamento final do contexto OSV
+foi ensaiado por relay manual do resultado real capturado, em tabelas de
+teste. A mesma mensagem Slack foi editada e persistida; reprocessamento não
+publicou nem editou novamente. Isso valida o caminho controlado da 6B, sem
+afirmar ativação automática do callback em produção. O workflow manual foi
+restaurado ao modo isolado e inativo, sem rede/credenciais.
+O PR 2 criado pelo App revelou rejeição de `AutorPR` com sufixo `[bot]` no
+emissor; o PR 3 usa autoria humana autenticada. A limitação para autores bot
+continua pendente no núcleo, sem enfraquecer identidades de decisões.
+A identidade do Check está configurada; proteção de branch não confirmada.
 
 O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
 Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem
@@ -62,7 +96,10 @@ vínculo único do revisor Slack/GitHub, encerra sem pergunta. Os cliques passam
 pela autenticação da Central. O envio à API está desabilitado: faltam endpoint
 específico e integração do feedback com a calibração. O SLA passou a receber
 espera e decisão na instância em 2026-11-14; seus envios aguardam configuração
-de políticas. Atualização da mensagem original continua pendente.
+de políticas. A Central já implementa atualização da mensagem original por
+`aprovacao_registrada` quando a correlação está habilitada. A flag global
+permanece desabilitada; a validação com Slack real utilizou uma decisão
+fictícia na mensagem de teste, sem ação em PR real.
 
 Os exports incluem feedback, suas ligações no Core/Central e leitura da
 variável no Digest. As chamadas ao feedback usam
@@ -218,6 +255,15 @@ desmonte essa URL por conta própria precisa passar a usar
 `/receipts/<id>/verify`. Como verificar um recibo sem depender do núcleo está em
 [verificacao-recibo.md](verificacao-recibo.md).
 
+Na Central Slack, a Fase 3 consulta documento e verificação automaticamente
+pela base `APROVA_API_URL`, usando apenas o UUID extraído da URL pública.
+Confere a identidade nos bytes de `payload_base64` contra tenant, análise,
+repositório, PR, SHA e risco do evento autenticado, além de hash e chave.
+O resultado aparece como válido, inválido ou indisponível sem mudar o risco
+ou autorizar ações. Os links públicos permanecem com a base do evento.
+Configuração, evidências e a pendência de validar um recibo válido na API
+atual estão em [central-slack-implementacao.md](central-slack-implementacao.md).
+
 ### `aguardando_aprovacao`
 
 Emitido quando o risco é alto e o PR fica bloqueado até uma decisão humana. Tem
@@ -234,6 +280,18 @@ fornece em `aguardando_aprovacao`, permitindo consulta antes do alerta mesmo
 sem evento anterior. Essa lista não é obrigatória no contrato v1; esta
 integração não alterou o emissor Go. Sem contexto disponível, o alerta deve
 informar a indisponibilidade, nunca afirmar que não há vulnerabilidades.
+
+Na Fase 4, o subworkflow OSV também encaminha à Central o resultado já
+persistido de `dependencia_nova`, quando a correlação está habilitada.
+É uma entrega interna entre subworkflows, preservando o evento normalizado;
+não acrescenta tipo ao contrato assinado do worker. Consultas síncronas de
+contexto não fazem esse retorno. A Central valida identidade/validade do
+snapshot e atualiza somente o alerta da mesma análise, preservando risco,
+recibos e decisões. O desenvolvimento está publicado. Após os testes com
+contexto fictício, a 6B confirmou worker → Core → OSV reais e contexto
+persistido; um relay manual desse resultado validou a edição da mesma
+mensagem e a supressão de repetição nas tabelas de teste. A correlação global
+permanece desligada; ativação de produção e decisões humanas são separadas.
 
 ### `aprovacao_registrada`
 
@@ -268,7 +326,8 @@ O export funcional `sla-aprovacao.json` e as duas conexões do Core estão
 disponíveis, inativos e sem credenciais/IDs locais. O workflow manual de
 testes não foi exportado. Configuração, testes e pendências estão na
 [documentação do SLA](central-slack-implementacao.md#sla--aprovação-pendente).
-Atualizar a mensagem original continua pendente.
+A atualização por decisão fica na Central, condicionada à correlação
+habilitada. Os lembretes e escalonamentos do SLA não editam o alerta original.
 
 ### `dependencia_nova`
 
