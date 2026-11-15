@@ -419,8 +419,14 @@ as próprias branches:
 
 | Variante | Rodada | Modelo |
 | --- | --- | --- |
-| 2a | `2026-11-14-2a` | `claude-sonnet-5` |
-| 2b | `2026-11-14-2b` | `claude-haiku-4-5-20251001` (`claude-haiku-4-5`) |
+| 2b | `2026-11-15-2b` | `claude-haiku-4-5-20251001` (`claude-haiku-4-5`) |
+| 2a | `2026-11-15-2a` | `claude-sonnet-5` |
+
+**Ordem: a 2b roda primeiro, e a 2a depois**, por causa do limite semanal do
+plano. A 2a só começa depois de conferido o uso consumido pela 2b. Esta
+ordem e os nomes das rodadas foram emendados em 2026-11-15, antes de rodar
+qualquer variante. O desenho original (`f3bf75a`) nomeava as rodadas
+`2026-11-14-2a` e `2026-11-14-2b` e não fixava a ordem. Nada mais mudou.
 
 Em cada tarefa, o `modelUsage` precisa mostrar o modelo da variante como
 principal, e isso é conferido na tabela de modelos.
@@ -428,8 +434,8 @@ principal, e isso é conferido na tabela de modelos.
 Os comandos são:
 
 ```
-go run ./cmd/benchmark rodar --sem-execucao 2026-11-14-2a <21 ids do grupo A>
-go run ./cmd/benchmark rodar --sem-execucao --modelo claude-haiku-4-5-20251001 2026-11-14-2b <21 ids do grupo A>
+go run ./cmd/benchmark rodar --sem-execucao --modelo claude-haiku-4-5-20251001 2026-11-15-2b <21 ids do grupo A>
+go run ./cmd/benchmark rodar --sem-execucao 2026-11-15-2a <21 ids do grupo A>
 ```
 
 Antes de rodar, duas chamadas mínimas ao CLI, fora da rodada e sem
@@ -445,7 +451,7 @@ ferramentas, confirmaram o seguinte:
 As métricas são as mesmas da seção de métricas, para cada variante,
 geradas com `go run ./cmd/benchmark tabelas bench/resultados/<rodada>`. A
 comparação sai de
-`go run ./cmd/benchmark comparar bench/resultados/2026-11-14 bench/resultados/2026-11-14-2a bench/resultados/2026-11-14-2b`.
+`go run ./cmd/benchmark comparar bench/resultados/2026-11-14 bench/resultados/2026-11-15-2a bench/resultados/2026-11-15-2b`.
 Uma tabela compara o grupo A da rodada 1 com o da 2a e o da 2b, linha a
 linha, sempre em "N de M":
 
