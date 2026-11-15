@@ -134,6 +134,23 @@ type SandboxResult struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
+type SarifDisabledRepository struct {
+	TenantID   int64     `json:"tenant_id"`
+	Repository string    `json:"repository"`
+	Reason     string    `json:"reason"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type SarifUpload struct {
+	TenantID  int64     `json:"tenant_id"`
+	TaskRunID string    `json:"task_run_id"`
+	SarifID   *string   `json:"sarif_id"`
+	Status    string    `json:"status"`
+	Detail    string    `json:"detail"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type TaskRun struct {
 	ID               string     `json:"id"`
 	TenantID         int64      `json:"tenant_id"`

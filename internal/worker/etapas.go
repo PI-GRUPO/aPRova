@@ -253,6 +253,7 @@ func (c *conducao) concluirAvaliacao(gravado domain.GateDeRisco, recibo receipt.
 		if err := c.opcoes.Publicador.Publicar(c.ctx, publicacao); err != nil {
 			return c.tratarErroDoGitHub(err)
 		}
+		c.enviarSARIF(publicacao)
 	}
 	c.emitirAnaliseConcluida(gravado, recibo)
 	c.emitirDependenciaNova(gravado)
@@ -407,7 +408,15 @@ func (c *conducao) aplicar() (passo, error) {
 	if err := c.opcoes.Publicador.Publicar(c.ctx, publicacao); err != nil {
 		return c.tratarErroDoGitHub(err)
 	}
+	c.enviarSARIF(publicacao)
 	return seguir, c.transicionar(domain.EstadoConcluido, "resultado publicado")
+}
+
+func (c *conducao) enviarSARIF(publicacao Publicacao) {
+	if c.opcoes.SARIF == nil {
+		return
+	}
+	c.opcoes.SARIF.Enviar(publicacao)
 }
 
 // quemAprovou devolve o login de quem liberou um task_run de risco alto. O

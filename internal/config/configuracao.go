@@ -109,6 +109,7 @@ type Configuracao struct {
 	CalibracaoSimilaridadeMinima float64
 	CalibracaoMinimoDeDesfechos  int
 	CalibracaoTimeout            time.Duration
+	SARIFLigado                  bool
 	ChaveAPIGemini               string
 }
 
@@ -170,6 +171,7 @@ func Carregar() (Configuracao, error) {
 		VinculosSlackGitHub: leitura.vinculosSlackGitHub("SLACK_GITHUB_VINCULOS"),
 
 		CalibracaoLigada:             leitura.booleano("CALIBRACAO_LIGADA"),
+		SARIFLigado:                  leitura.booleano("SARIF_LIGADO"),
 		CalibracaoVizinhos:           leitura.inteiroEntre("CALIBRACAO_VIZINHOS", regraPadrao.Vizinhos, 1, maximoDeVizinhos),
 		CalibracaoSimilaridadeMinima: leitura.fracao("CALIBRACAO_SIMILARIDADE_MINIMA", regraPadrao.SimilaridadeMinima),
 		CalibracaoMinimoDeDesfechos:  leitura.inteiroPositivo("CALIBRACAO_MINIMO_DE_DESFECHOS", regraPadrao.MinimoDeDesfechos),

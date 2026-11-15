@@ -41,3 +41,32 @@ func TestWorkerPublicaNoPRComOPublicadorReal(t *testing.T) {
 		t.Fatalf("publicador = %v, erro = %v", publicador, err)
 	}
 }
+
+func TestWorkerNaoMontaOEnviadorDeSARIFComAVariavelDesligada(t *testing.T) {
+	enviador, err := montarEnviadorSARIF(config.Configuracao{}, &platform.Cliente{}, &repository.RepositorioPostgres{})
+
+	if err != nil || enviador != nil {
+		t.Fatalf("sem SARIF_LIGADO não há enviador: %v, erro = %v", enviador, err)
+	}
+	if opcoes := opcoesDoMotor(config.Configuracao{}, nil, nil, nil, nil, nil, nil, nil, enviador); opcoes.SARIF != nil {
+		t.Fatal("o motor precisa receber o envio como ausente, não como um enviador nulo")
+	}
+}
+
+func TestWorkerMontaOEnviadorDeSARIFComAVariavelLigada(t *testing.T) {
+	enviador, err := montarEnviadorSARIF(config.Configuracao{SARIFLigado: true}, &platform.Cliente{}, &repository.RepositorioPostgres{})
+
+	if err != nil || enviador == nil {
+		t.Fatalf("enviador = %v, erro = %v", enviador, err)
+	}
+	enviador.Encerrar()
+	if opcoes := opcoesDoMotor(config.Configuracao{}, nil, nil, nil, nil, nil, nil, nil, enviador); opcoes.SARIF == nil {
+		t.Fatal("com o envio ligado o motor recebe o enviador")
+	}
+}
+
+func TestVersaoDoBinarioNuncaEhVazia(t *testing.T) {
+	if versaoDoBinario() == "" {
+		t.Fatal("o SARIF declara a versão da ferramenta")
+	}
+}
