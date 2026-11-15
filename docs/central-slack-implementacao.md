@@ -42,8 +42,11 @@ manual em tabelas de teste. A ativação automática global continua separada.
 Na Fase 6, autenticação do GitHub App, identidade do bot Slack, consulta real
 de relatório e orquestração assinada ambiente local → Core → API foram
 conferidas. A identidade do Check foi configurada e carregada. A fase permanece
-parcial por vínculos ausentes, proteção de branch indisponível, ações humanas
-sem validação e política SLA indefinida. A subfase 6A foi concluída no
+parcial pelo cenário real de usuário sem escrita ainda sem validação,
+consulta administrativa de proteção limitada e política SLA indefinida.
+Os vínculos confirmados com `Azulpasta` e `julia-ed2` foram carregados.
+Aprovação permitida, repetição, recusa de autoaprovação e evento de decisão
+foram validados em caminho controlado. A subfase 6A foi concluída no
 repositório de testes confirmado pelo usuário, com análise real, Check,
 comentário, evento autenticado e recibo válido. Nesse repositório, as consultas
 de papéis responderam 200; o 403 anterior de colaborador era do fork.
@@ -121,8 +124,8 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 - [x] Autenticar GitHub App e confirmar leitura do repositório/PR de teste; autenticar bot Slack e conferir workspace.
 - [x] Configurar nome e App do Check a partir do código e da autenticação real; recriar somente n8n, preservando volume e flags desligadas, e conferir o carregamento.
 - [x] Validar relatório real por HMAC e orquestração assinada ambiente local → Core → API; conferir 401 para Core/ações sem assinatura.
-- [ ] Configurar vínculos humanos Slack/GitHub confirmados. Papéis consultados no repositório correto responderam 200; os vínculos continuam vazios e a proteção de branch retorna 403.
-- [ ] Validar ações remotas reais no escopo autorizado após resolver identidade/permissões; nenhuma review ou aprovação foi enviada.
+- [x] Configurar os vínculos confirmados pelo usuário com `Azulpasta` e `julia-ed2`, com backup privado e recarga da API/n8n. Nenhum vínculo foi inferido; detalhes de proteção pelo App continuam em 403.
+- [x] Validar ação permitida e repetição no escopo autorizado: uma review real atribuída a `Azulpasta` pelo App, API autorizada, repetição 409 sem segunda review e decisão do worker observada. Demais cenários reais permanecem no checklist da 6C.
 - [x] Validar worker → Core → integração existente com análise real: PR 1 de `PI-GRUPO/aPRova-TESTES`, risco BAIXO, Core autenticado e Trello encerrando sem card vinculado.
 - [ ] Configurar e validar SLA após definição dos prazos, canal e responsáveis; permanece desligado.
 - Não se aplica exportação funcional nesta execução: somente configuração local e workflows manuais de auditoria foram alterados; os exports funcionais existentes foram preservados.
@@ -157,6 +160,26 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 - O PR 2, criado inicialmente pelo App, revelou que `AutorPR` rejeita login com `[bot]`, bloqueando os eventos de análise/espera. Seu evento de dependência chegou ao OSV. O PR 3 foi criado com autoria humana realmente autenticada pelo Git local; a limitação do contrato para bots continua pendente no núcleo.
 - Nenhum merge, review humana, aprovação remota ou ativação global foi executado. Os dois PRs de teste permanecem rascunhos.
 
+#### Subfase 6C — parcial, vínculo confirmado e ação validada
+
+- [x] Revalidar papéis em `PI-GRUPO/aPRova-TESTES`: `Azulpasta` e `julia-ed2` retornaram 200/admin. O revisor do teste é diferente do autor do PR 3.
+- [x] Receber do usuário os vínculos Slack/GitHub de `Azulpasta` e `julia-ed2`, conferir os perfis humanos no conector Slack e carregar os dois pares em `SLACK_GITHUB_VINCULOS`, com backups privados. API e n8n recarregados, volume/worker/flags preservados; auditoria confirmou o vínculo carregado.
+- [x] Consultar metadados de `main`: `protected=false`, proteção desabilitada e nenhum Check obrigatório informado. Detalhes administrativos pelo App continuam em 403 por falta de `administration=read`; nenhuma regra ou permissão foi alterada.
+- [x] Auditar usuário Slack no n8n: o bot não tem `users:read`, portanto a consulta opcional registra `indisponivel/escopo_ausente`; o vínculo confirmado está configurado. A conta foi conferida pelo conector, sem conceder escopo adicional.
+- [x] Validar pedido HMAC sem vínculo: 403 e log `sem_vinculo`, antes da configuração, sem review.
+- [x] Executar aprovação permitida no PR 3 por teste manual n8n → API: log `aceita/autorizada`, identidade resolvida `Azulpasta` e uma review `APPROVED` do App no SHA esperado, com justificativa em português. Não foi clique humano no Slack.
+- [x] Repetir o mesmo `id_acao`: 409/`ação já processada`, com apenas uma review do teste no GitHub. O primeiro transporte manual foi classificado incerto; log/review foram conferidos antes da repetição, e a leitura do teste foi alinhada à autodetecção já usada no nó 13 funcional.
+- [x] Entregar à API local o webhook assinado da review real, por entrada controlada. O worker reconheceu a decisão, emitiu `aprovacao_registrada` autenticado ao Core, concluiu a análise e atualizou o Check para `success`; o PR continua aberto/rascunho, sem merge.
+- [x] Aplicar a decisão real por relay manual à mesma mensagem de teste da 6B, usando tabelas isoladas: mesmo canal/ts, decisão persistida/relida como confirmada, recibo e OSV preservados. Repetição `decisao_ja_aplicada`, sem nova edição/publicação.
+- [x] Observar o feedback automático: o vínculo confirmado permitiu publicar a pergunta de motivo no canal configurado para o revisor. Nenhum motivo foi registrado no núcleo; seu endpoint continua ausente.
+- [x] Passar testes Go de ações, API, configuração, platform e funcionais, além de 48 testes locais de decisão/OSV. Cenários sem escrita, autoaprovação e falhas passaram em ambiente isolado.
+- [x] Validar autoaprovação real após confirmação e carregamento do vínculo de `julia-ed2`: pedido controlado n8n → API para o próprio PR 3 retornou 403, com log `autor_do_proprio_pr`; a única review anterior permaneceu, sem nova publicação.
+- [ ] **Adiado por decisão do usuário:** validar sem permissão com identidade real apropriada. Retomar somente quando solicitado. A listagem do App respondeu 200/vazia e não identificou candidato sem escrita; os papéis individuais confirmados são admin. Não foi reduzida permissão nem criado vínculo fictício para fabricar o caso.
+- [x] Validar clique e formulário humanos reais: interações Slack autenticadas de `julia-ed2` chegaram à Central, modal aberto e enviado; API retornou 403 e log `autor_do_proprio_pr`, retorno real exibido no Slack e nenhuma review adicional. Esse caso complementa os pedidos controlados anteriores.
+- Correlação global, SLA e Digest continuam desligados. A Central de produção recebeu o evento e encerrou sem edição com a flag desligada; a edição comprovada foi na mensagem de teste associada. Não houve entrega automática GitHub → API comprovada.
+- Reexecução continua sem executor real. O workflow manual de atualização foi restaurado ao modo isolado/inativo, sem rede/credenciais. O teste manual de ação fica inativo, com seu POST desabilitado; a auditoria de 22 nós permanece inativa. Nenhum workflow funcional, credencial ou export foi alterado.
+- Preparação, vínculos/IDs locais e evidências ficam em `tmp/validacao-fase6c/`, ignorado pelo Git. A fase permanece parcial apenas pelo cenário real sem escrita, adiado pelo usuário; isso não impede as fases independentes 6D/6E quando solicitadas.
+
 ### Etapa S — Simplificação da persistência do n8n
 
 - [ ] Definir contratos e implementar suporte no núcleo (S1 do plano).
@@ -183,7 +206,7 @@ A base anterior passou em 123 testes locais. Com os testes de correlação
 e os 20 testes da Fase 2, passaram 157 testes em 13 arquivos; o Compose foi validado sem
 imprimir sua configuração expandida. `.env` e container confirmaram presença
 dos segredos de eventos/ações, configuração da API e instalação de consultas;
-vínculos Slack/GitHub continuam vazios, SLA desabilitado e políticas vazias.
+naquela auditoria os vínculos Slack/GitHub estavam vazios, SLA desabilitado e políticas vazias. O vínculo confirmado de `Azulpasta` foi carregado na 6C.
 Isso não valida permissões GitHub, migrations, disponibilidade atual da API
 ou dados reais de relatórios. A auditoria das rotas foi feita no código.
 
@@ -220,7 +243,7 @@ núcleo nem usar IA para decidir aprovações.
 | Digest — Resumo Semanal | **Desativado** | Consulta agendada e resumo no Slack. |
 | Slack — Consulta de Métricas | Publicado | DM contínua e resposta a menção no canal autorizado; somente leitura. |
 | Consulta — Relatório Semanal | Publicado | Ferramenta assinada de leitura do relatório. |
-| Feedback — Motivo da Aprovação | Publicado, bloqueado por configuração | Pergunta de motivo para aprovação ALTO; sem vínculo não pergunta; envio à API desabilitado. |
+| Feedback — Motivo da Aprovação | Publicado, pergunta validada para vínculo confirmado | Pergunta de motivo para aprovação ALTO; sem vínculo não pergunta; envio à API desabilitado. |
 | Onboarding de Repositório | Publicado, proteção ainda indisponível | Identifica branch, consulta proteção, cria/reutiliza lista Trello e resume no Slack. |
 | SLA — Aprovação Pendente | Publicado, envios aguardam política | Timer persistente com dois limites e escalonamento ao responsável configurado. |
 
@@ -931,9 +954,10 @@ Central V01–V07 → preparação do alerta → Incoming Webhook. Documento e
 confirmou `ok`. O risco e as ações vieram do núcleo. Isso conclui a validação
 integrada da Fase 3, sem habilitar a correlação global ou executar decisões.
 
-Falta configurar vínculos na API, conferir/aplicar migrations e validar em
-PR real: autorizado, sem permissão, autoaprovação, repetição, erro e proteção
-de branch. Reexecução ainda usa `ReenfileiradorIndisponivel`, sem executor
+O vínculo confirmado já está carregado e a migration 21 foi conferida na
+preparação local. Ação permitida e repetição foram validadas em PR real;
+falta usuário real sem permissão,
+além dos detalhes de proteção. Reexecução ainda usa `ReenfileiradorIndisponivel`, sem executor
 real. A Fase 2 atualiza o alerta correlacionado ao receber a decisão do
 núcleo, desde que a correlação esteja habilitada. O retorno do formulário
 não faz essa atualização.
@@ -1124,6 +1148,9 @@ Expiração padrão 168h, configurável entre 1 e 720h.
 No nó `02`, os vínculos vêm exclusivamente de `SLACK_GITHUB_VINCULOS`,
 `api_feedback_habilitada=false`, `caminho_api_feedback=''`. Sem vínculo
 único, termina em `configuracao_pendente` sem pergunta.
+Na 6C, a decisão real do teste acionou a pergunta no canal configurado para
+`Azulpasta`, com publicação confirmada. Isso valida o disparo da pergunta,
+sem registrar motivo no núcleo ou validar resposta humana/API de feedback.
 O código lê `SLACK_GITHUB_VINCULOS`; o Compose atual repassa essa
 variável ao n8n, mas é necessário preenchê-la e recriar o container para
 carregá-la. Configurar apenas o processo da API não atualiza o n8n.
@@ -1213,9 +1240,10 @@ O bot Slack autenticou por `auth.test`, e seu workspace correspondeu ao
 configurado. O endpoint não retornou `app_id`; essa identidade continua
 baseada na configuração existente e nos filtros dos eventos. Nenhum vínculo
 humano foi inferido da conta conectada ao Codex ou de nomes parecidos.
-`SLACK_GITHUB_VINCULOS` permanece vazio, aguardando ID Slack e login GitHub
-confirmados. Mesmo com papéis verificáveis no alvo correto, ações humanas
-reais continuam sem validação e aguardam o vínculo confirmado.
+`SLACK_GITHUB_VINCULOS` contém os pares de `Azulpasta` e `julia-ed2`
+confirmados pelo usuário, carregados na API e no n8n com backups privados. A 6C validou uma
+aprovação real, repetição e recusa de autoaprovação por teste controlado.
+A interação humana de autoaprovação foi validada; permanece pendente usuário real sem escrita.
 
 Foi possível configurar `APROVA_GITHUB_CHECK_NOME` com o nome fixo do código
 e `APROVA_GITHUB_CHECK_APP_ID` com o App que autenticou. O `.env` teve cópia
@@ -1283,8 +1311,9 @@ padrão no nó `T13`; ele não foi publicado nem sincronizado nesta fase.
 - Instalação, escrita de Check/comentário e consulta de papéis conferidas em
   `PI-GRUPO/aPRova-TESTES`. Resolver a consulta de proteção e validar as ações
   humanas após configurar vínculos confirmados; nenhuma ação foi enviada.
-- Configurar vínculos Slack/GitHub para ações e feedback, sem aceitar identidade
-  declarada pela IA como autoridade.
+- Ampliar vínculos Slack/GitHub somente após confirmação humana; o par de
+  `Azulpasta` e o de `julia-ed2` já estão configurados para ações e feedback. Identidade declarada
+  pela IA não é autoridade.
 - Conferir URLs HTTPS do Slack/GitHub ao mudar túnel; produção exige domínio
   estável e rede/configuração próprias.
 - Gate BAIXO, sandbox Go, recibo e publicação reais validados na 6A. Faltam
@@ -1303,8 +1332,11 @@ padrão no nó `T13`; ele não foi publicado nem sincronizado nesta fase.
   de criptografia, retenção e recuperação de falhas para produção.
 
 A preparação local e a 6A validaram saúde, análise BAIXO, recibo, publicação
-no GitHub e evento autenticado worker → Core. Aprovações e os demais cenários
-integrados continuam pendentes; a proteção permanece indisponível. O
+no GitHub e evento autenticado worker → Core. A 6C validou aprovação e
+repetição reais em caminho controlado, com decisão do worker e edição da
+mensagem de teste. Demais cenários reais e detalhes administrativos de proteção
+permanecem indisponíveis pelo App, e os metadados da 6C informam proteção
+desabilitada na branch de teste. O
 onboarding criou uma lista no quadro de teste e enviou resumos ao canal
 usado nos testes do projeto. Esses testes não substituem a emissão real pelo
 backend nem a confirmação de proteção autenticada ainda pendentes.

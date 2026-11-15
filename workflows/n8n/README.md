@@ -83,11 +83,45 @@ repositório/PR de teste foram confirmadas. Na 6A, a instalação e sua lista de
 repositórios confirmaram acesso a `PI-GRUPO/aPRova-TESTES`: Check/comentário
 foram publicados e consultas de papéis responderam 200. O 403 anterior de
 colaborador era do fork fora do escopo da instalação; a consulta de proteção
-do alvo correto continua em 403. Vínculos humanos seguem ausentes e ações
-remotas continuam sem validação.
+do alvo correto continua em 403. O vínculo confirmado de `Azulpasta` foi carregado
+na 6C, com aprovação/repetição reais validadas por teste controlado.
 
-`SLACK_GITHUB_VINCULOS` ainda precisa ser preenchido no `.env` local. O Compose
-repassa essa variável ao n8n; o feedback usa exclusivamente a mesma fonte da API. Não presumir que ambiente da API é ambiente do n8n.
+`SLACK_GITHUB_VINCULOS` contém os pares de `Azulpasta` e `julia-ed2`
+confirmados pelo usuário, carregados na API e no n8n na 6C. O Compose repassa essa variável;
+o feedback usa a mesma fonte. Novos vínculos exigem confirmação humana.
+Não presumir que ambiente da API é ambiente do n8n.
+
+Na 6C, contas foram conferidas pelos conectores, e o par confirmado pelo
+usuário foi carregado com backup privado e recarga apenas da API/n8n,
+preservando worker e volumes. Papéis no alvo retornaram 200/admin. O pedido
+sem vínculo foi recusado com 403; o teste manual de aprovação do PR 3 por
+`Azulpasta` foi autorizado, com uma review real no SHA esperado. Repetição do
+mesmo `id_acao` retornou 409 e não publicou outra review. Após confirmação
+do vínculo do autor, a tentativa de `julia-ed2` aprovar o próprio PR retornou
+403 e log `autor_do_proprio_pr`, sem nova review. O teste foi controlado
+n8n → API. Depois, clique e formulário humanos foram validados na Central,
+com assinatura Slack verificada, API 403 por `autor_do_proprio_pr`, retorno
+exibido ao usuário e nenhuma review adicional.
+
+A entrada de review na API foi controlada/assinada, baseada no objeto real
+do GitHub. Worker → Core emitiu decisão autenticada e concluiu a análise;
+Check `success`, PR aberto/rascunho e sem merge. Relay manual da decisão
+fechou a mesma mensagem de teste da 6B, com persistência confirmada e sem
+repetir edição/publicação. OSV e recibo foram preservados. O feedback publicou
+a pergunta automaticamente no canal configurado, sem registrar motivo no núcleo.
+
+A auditoria de 22 nós permanece inativa. O bot não tem `users:read`, portanto
+a consulta opcional de perfil informa indisponibilidade; o vínculo carregado
+é confirmado separadamente. Metadados de `main` indicam `protected=false`,
+sem Check obrigatório, enquanto detalhes administrativos pelo App seguem
+em 403. Nenhuma regra/permissão foi alterada. A correlação global, SLA e
+Digest continuam desligados.
+
+O workflow de teste de atualização foi restaurado ao modo isolado, e o novo
+teste de ação fica inativo com POST desabilitado, no projeto pessoal da
+instância. Passaram 48 testes locais de decisão/OSV e os cinco pacotes Go
+registrados no checklist. A 6C permanece parcial por usuário real sem escrita; reexecução continua ausente.
+Nenhum workflow funcional precisou de nova exportação.
 
 Ao alterar variáveis, recrie somente o serviço:
 
@@ -149,7 +183,7 @@ remotas receberam 401. O bot Slack autenticou e o workspace correspondeu.
 
 `APROVA_GITHUB_CHECK_NOME` e `APROVA_GITHUB_CHECK_APP_ID` foram preenchidos
 no `.env` local com evidência do código/App e carregados recriando somente
-o n8n, com volume preservado. A proteção da branch continua sem confirmação:
+o n8n, com volume preservado. A leitura administrativa da proteção continua limitada:
 o App recebeu 403 e a API informou requisito `administration=read` ausente
 nos grants retornados. Consultas de colaboradores no repositório correto
 responderam 200; nenhum vínculo humano foi inferido desses papéis.
@@ -179,7 +213,7 @@ isolado, inativo e sem rede/credenciais. Passaram 113 testes em seis arquivos.
 Autores de PR com sufixo `[bot]` ainda são rejeitados pelo contrato de eventos;
 o cenário completo usou autoria humana autenticada, sem alterar identidade.
 
-Faltam vínculos Slack/GitHub confirmados, proteção, ações humanas, política
+Faltam vínculos adicionais confirmados, proteção, interação humana, política
 SLA e os demais cenários integrados. Digest, SLA e correlação continuam
 desligados; a Fase 6 permanece parcial. Nenhum workflow funcional precisou
 de alteração/exportação. As duas auditorias manuais ficam inativas somente

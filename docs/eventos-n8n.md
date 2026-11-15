@@ -61,7 +61,8 @@ App ID, chave privada válida, webhook secret e slug GitHub já estão no
 repositório/PR de teste foram confirmadas. No alvo correto,
 `PI-GRUPO/aPRova-TESTES`, consultas de papéis retornam 200; a proteção continua
 em 403 por exigir `administration=read`. O 403 anterior de colaboradores era
-do fork fora do escopo da instalação. `SLACK_GITHUB_VINCULOS` continua vazio.
+do fork fora do escopo da instalação. Na 6C, `SLACK_GITHUB_VINCULOS` recebeu
+os pares de `Azulpasta` e `julia-ed2` confirmados pelo usuário.
 Em 2026-11-15, saúde, prontidão, chaves e relatório semanal assinado responderam
 200 a partir do n8n. Uma consulta real `relatorio_periodico` assinada no
 ambiente local passou por Core → API até o resultado final; não é uma análise
@@ -88,7 +89,36 @@ restaurado ao modo isolado e inativo, sem rede/credenciais.
 O PR 2 criado pelo App revelou rejeição de `AutorPR` com sufixo `[bot]` no
 emissor; o PR 3 usa autoria humana autenticada. A limitação para autores bot
 continua pendente no núcleo, sem enfraquecer identidades de decisões.
-A identidade do Check está configurada; proteção de branch não confirmada.
+A identidade do Check está configurada; a leitura administrativa pelo App
+continua limitada, conforme diagnóstico da 6C abaixo.
+
+Na 6C, o App continuou consultando papéis com 200/admin no alvo correto. Os
+metadados públicos de `main` informaram `protected=false`, proteção
+desabilitada e nenhum Check obrigatório; a consulta administrativa pelo App
+permanece em 403. O usuário confirmou os pares Slack/GitHub de `Azulpasta`
+e `julia-ed2`, conferidos pelo conector e carregados na API/n8n. Sem vínculo, a API recusou
+um pedido HMAC com 403; com o par confirmado, autorizou uma aprovação de
+PR 3 por teste controlado n8n → API. Uma review real foi observada no SHA
+esperado, e repetição do mesmo `id_acao` retornou 409 sem segunda review.
+A tentativa do autor `julia-ed2` de aprovar o próprio PR retornou 403 e
+log `autor_do_proprio_pr`, sem publicar review. Ambos foram testes
+controlados n8n → API. Depois, o usuário validou o clique e o formulário
+humanos no Slack: assinatura verificada na Central, API 403 por
+`autor_do_proprio_pr`, retorno exibido e nenhuma nova review.
+
+O webhook da review real foi entregue de forma controlada/assinada à API;
+o worker emitiu `aprovacao_registrada` autenticado ao Core e concluiu a análise,
+com Check `success` e sem merge. A decisão real foi aplicada à mesma mensagem
+de teste da 6B por relay manual, preservando recibo/OSV; repetição não editou
+ou publicou novamente. A correlação global continua desligada. O feedback
+publicou automaticamente a pergunta para o revisor no canal configurado;
+a persistência de motivo no núcleo continua sem endpoint.
+
+O bot Slack não tem `users:read`; a auditoria trata essa consulta opcional
+como indisponível, com vínculo configurado confirmado separadamente.
+Nenhuma permissão ou proteção foi alterada. Permanece pendente
+usuário real sem escrita; o teste não comprovou
+entrega automática de webhook pelo GitHub.
 
 O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
 Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem
