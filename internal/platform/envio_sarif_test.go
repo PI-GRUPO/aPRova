@@ -35,7 +35,7 @@ func TestEnviarSARIFMandaODocumentoEmGzipEBase64ComCommitERef(t *testing.T) {
 	documento := []byte(`{"version":"2.1.0","runs":[]}`)
 
 	id, err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarSARIF(t.Context(), 7001, "Azulpasta", "aprova-bench-go",
-		EnvioSARIF{CommitSHA: shaDeTesteDoSARIF, Ref: "refs/pull/12/head", Documento: documento})
+		EnvioSARIF{CommitSHA: shaDeTesteDoSARIF, Ref: "refs/pull/12/head", Ferramenta: "Ferramenta de teste", Documento: documento})
 
 	if err != nil || id != "47177e22-5596-11eb-80a1-c1e54ef945c6" {
 		t.Fatalf("id = %q, erro = %v", id, err)
@@ -46,8 +46,8 @@ func TestEnviarSARIFMandaODocumentoEmGzipEBase64ComCommitERef(t *testing.T) {
 	if recebida.corpo["commit_sha"] != shaDeTesteDoSARIF || recebida.corpo["ref"] != "refs/pull/12/head" {
 		t.Errorf("commit e ref errados: %v e %v", recebida.corpo["commit_sha"], recebida.corpo["ref"])
 	}
-	if recebida.corpo["tool_name"] != "aPRova" {
-		t.Errorf("tool_name = %v, esperado aPRova", recebida.corpo["tool_name"])
+	if recebida.corpo["tool_name"] != "Ferramenta de teste" {
+		t.Errorf("tool_name = %v, esperado o nome informado no envio", recebida.corpo["tool_name"])
 	}
 	emBase64, _ := recebida.corpo["sarif"].(string)
 	if obtido := descompactar(t, emBase64); !bytes.Equal(obtido, documento) {

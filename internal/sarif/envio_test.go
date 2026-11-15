@@ -32,6 +32,7 @@ type envioRecebido struct {
 	CommitSHA string `json:"commit_sha"`
 	Ref       string `json:"ref"`
 	SARIF     string `json:"sarif"`
+	ToolName  string `json:"tool_name"`
 }
 
 type githubFalso struct {
@@ -276,6 +277,9 @@ func TestEnvioMandaOSARIFDoGateGravadoComOCommitEORefDoPR(t *testing.T) {
 	recebido := github.envio(0)
 	if recebido.CommitSHA != shaDeTeste || recebido.Ref != "refs/pull/12/head" {
 		t.Errorf("commit e ref = %q e %q", recebido.CommitSHA, recebido.Ref)
+	}
+	if recebido.ToolName != "aPRova SARIF" {
+		t.Errorf("tool_name = %q, esperado o mesmo nome declarado no SARIF", recebido.ToolName)
 	}
 
 	serializado := documentoEnviado(t, recebido)

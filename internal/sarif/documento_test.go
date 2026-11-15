@@ -13,6 +13,7 @@ import (
 
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/publicacao"
 )
 
 const (
@@ -269,8 +270,16 @@ func TestFerramentaDeclaraNomeVersaoERepositorio(t *testing.T) {
 	lido, _ := montar(t, entradaComTodosOsMotivos())
 	driver := lido.Runs[0].Tool.Driver
 
-	if driver.Name != "aPRova" || driver.Version != "teste" || driver.InformationURI != "https://github.com/PI-GRUPO/aPRova" {
+	if driver.Name != "aPRova SARIF" || driver.Version != "teste" || driver.InformationURI != "https://github.com/PI-GRUPO/aPRova" {
 		t.Errorf("driver = %q %q %q", driver.Name, driver.Version, driver.InformationURI)
+	}
+}
+
+func TestNomeDaFerramentaNuncaEhONomeDoCheckRunObrigatorio(t *testing.T) {
+	lido, _ := montar(t, entradaDoPR1())
+
+	if nome := lido.Runs[0].Tool.Driver.Name; nome == publicacao.NomeDoCheckRun {
+		t.Fatalf("o code scanning cria um check com o nome da ferramenta; %q colide com o Check Run obrigatório", nome)
 	}
 }
 
