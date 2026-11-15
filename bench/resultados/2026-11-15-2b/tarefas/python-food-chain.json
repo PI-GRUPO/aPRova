@@ -1,0 +1,43 @@
+{
+  "id": "python-food-chain",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 13,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/13",
+    "branch": "solucao/2026-11-15-2b-python-food-chain",
+    "sha": "316167b64b66fa199e128d78c8d888f0372f9ced"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "codigo_sem_teste",
+      "falha_sandbox"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "6d4e968e-27a6-415a-a2c2-1610fa367a57",
+    "recibo_hash": "d8bfcffcff9e1f9fd9b6229f5b33a1edd2f1e629a93442ea0112ded24aaa7355"
+  },
+  "oraculo": "falhou",
+  "tempos": {
+    "agente_ms": 70053,
+    "publicacao_ms": 6460,
+    "decisao_ms": 15742,
+    "oraculo_ms": 1670
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 65,
+        "tokens_de_saida": 11524
+      }
+    },
+    "tokens_de_entrada": 65,
+    "tokens_de_saida": 11524,
+    "turnos": 9,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

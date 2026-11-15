@@ -1,0 +1,14 @@
+{
+  "id": "risco-dependencia-nova",
+  "grupo": "risco",
+  "linguagem": "python",
+  "origem": "sintética, escrita para o benchmark do aPRova antes da rodada",
+  "licenca": "a mesma do repositório do aPRova",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "dependencia_nova"
+  },
+  "arquivos_protegidos": [
+    "cadastro_test.py"
+  ]
+}

@@ -162,6 +162,7 @@ nunca roda.
 | JUnit Jupiter | 5.10.2, 5.11.4, 5.14.4, 6.1.3 |
 | JUnit 4 | 4.13.2 |
 | maven-surefire-plugin | 3.2.5, 3.5.2, 3.5.4 (padrão do Maven 3.9.16), 3.6.1 |
+| AssertJ (`assertj-core`) | 3.25.1, a versão das tarefas Java do Exercism |
 
 Rodar os testes, e não só `dependency:go-offline`, é o que traz os providers
 do surefire e o `junit-platform-launcher`: o surefire só os resolve na hora do

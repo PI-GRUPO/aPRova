@@ -1,0 +1,47 @@
+{
+  "id": "risco-area-sensivel",
+  "grupo": "risco",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 10,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/10",
+    "branch": "solucao/2026-11-14-risco-area-sensivel",
+    "sha": "2d8d864be42f334e37e3c7aff059614d3b842591"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "area_sensivel",
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "0a1f4fd5-5262-471f-8264-eebf2c29a93a",
+    "recibo_hash": "3151f10fcf0c9525b36d44b2e0c7e6d33e2ada1179847d9db51fdf38e668fbc9"
+  },
+  "oraculo": "nao_rodou",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "area_sensivel"
+  },
+  "tempos": {
+    "agente_ms": 73115,
+    "publicacao_ms": 6372,
+    "decisao_ms": 77850,
+    "oraculo_ms": 0
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 8,
+        "tokens_de_saida": 600
+      }
+    },
+    "tokens_de_entrada": 8,
+    "tokens_de_saida": 600,
+    "turnos": 5,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

@@ -1,0 +1,42 @@
+{
+  "id": "go-crypto-square",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 3,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/3",
+    "branch": "solucao/2026-11-14-go-crypto-square",
+    "sha": "abea39346df16f3cb335e6cf30c8576019add528"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "0b2ff363-3875-4db5-970d-70f61364198b",
+    "recibo_hash": "a9e0ea49ac8ec05e89b9f6b2d93e0ec4e71024db4a86c52f34ba1069e273bede"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 31048,
+    "publicacao_ms": 6275,
+    "decisao_ms": 77621,
+    "oraculo_ms": 35175
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 10,
+        "tokens_de_saida": 1201
+      }
+    },
+    "tokens_de_entrada": 10,
+    "tokens_de_saida": 1201,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

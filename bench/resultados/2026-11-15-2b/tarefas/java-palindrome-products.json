@@ -1,0 +1,42 @@
+{
+  "id": "java-palindrome-products",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 10,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/10",
+    "branch": "solucao/2026-11-15-2b-java-palindrome-products",
+    "sha": "f023f14e9dfaa813a89279ccd8b9f90abe6a9f73"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "87a278fd-f95b-4e30-93ac-78cdbbcc0c3d",
+    "recibo_hash": "b093ebf45c6f27dfddef8877acaa9e34dbda90cb2a1f32c48f6a6487ec6f958f"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 41448,
+    "publicacao_ms": 6729,
+    "decisao_ms": 31160,
+    "oraculo_ms": 13377
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 65,
+        "tokens_de_saida": 5476
+      }
+    },
+    "tokens_de_entrada": 65,
+    "tokens_de_saida": 5476,
+    "turnos": 11,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

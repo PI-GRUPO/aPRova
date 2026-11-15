@@ -1,0 +1,42 @@
+{
+  "id": "go-palindrome-products",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 16,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/16",
+    "branch": "solucao/2026-11-15-2b-go-palindrome-products",
+    "sha": "98d7a0ceb2cf5eab8872878d454d65c4f5263929"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "aplicando",
+    "recibo_id": "86cdf9a4-4c6e-4164-9223-b046ea1e8f61",
+    "recibo_hash": "5670636980857ba42d8d458a748ed30116dca6c0ca5d38163de606694fc286e6"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 49162,
+    "publicacao_ms": 6593,
+    "decisao_ms": 31114,
+    "oraculo_ms": 24404
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 65,
+        "tokens_de_saida": 7038
+      }
+    },
+    "tokens_de_entrada": 65,
+    "tokens_de_saida": 7038,
+    "turnos": 9,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

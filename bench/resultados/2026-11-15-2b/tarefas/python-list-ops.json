@@ -1,0 +1,40 @@
+{
+  "id": "python-list-ops",
+  "grupo": "correcao",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 15,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/15",
+    "branch": "solucao/2026-11-15-2b-python-list-ops",
+    "sha": "b49cc9871a157c8f040a20ff5c84df2921ff3b2f"
+  },
+  "decisao": {
+    "nivel": "baixo",
+    "motivos": null,
+    "estado_do_task_run": "concluido",
+    "recibo_id": "ebb9cbc3-ad40-49e8-af6f-89ad7bdd8ca2",
+    "recibo_hash": "79dafc947fd896d14b8610619f5fb78e526bafe976814e02faf81c6fcf732c6e"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 83410,
+    "publicacao_ms": 7787,
+    "decisao_ms": 15746,
+    "oraculo_ms": 2557
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 137,
+        "tokens_de_saida": 12460
+      }
+    },
+    "tokens_de_entrada": 137,
+    "tokens_de_saida": 12460,
+    "turnos": 18,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

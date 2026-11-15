@@ -1,0 +1,43 @@
+{
+  "id": "go-transpose",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 18,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/18",
+    "branch": "solucao/2026-11-15-2b-go-transpose",
+    "sha": "7d9d692cab1d5c110b7d878cb54252dcbfda8d89"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "codigo_sem_teste",
+      "falha_sandbox"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "42a572cc-5919-4d0c-9a27-e254ee771b5d",
+    "recibo_hash": "dba0945c986c0acc171619c9f3828fa2ff66f88be35c020bd24f8494663ce32c"
+  },
+  "oraculo": "falhou",
+  "tempos": {
+    "agente_ms": 40119,
+    "publicacao_ms": 7371,
+    "decisao_ms": 31339,
+    "oraculo_ms": 24219
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 49,
+        "tokens_de_saida": 5964
+      }
+    },
+    "tokens_de_entrada": 49,
+    "tokens_de_saida": 5964,
+    "turnos": 8,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

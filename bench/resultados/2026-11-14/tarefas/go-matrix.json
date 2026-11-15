@@ -1,0 +1,42 @@
+{
+  "id": "go-matrix",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 5,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/5",
+    "branch": "solucao/2026-11-14-go-matrix",
+    "sha": "421d0e86046160af04de31268f02afed0e392063"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "63e0d627-cff7-45df-8671-ddfff9d0ed1e",
+    "recibo_hash": "1f326a34de9576382c2540c7fef133676e000027fbb3b9f53759085a1ca7b985"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 35209,
+    "publicacao_ms": 6141,
+    "decisao_ms": 46589,
+    "oraculo_ms": 47906
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 10,
+        "tokens_de_saida": 1838
+      }
+    },
+    "tokens_de_entrada": 10,
+    "tokens_de_saida": 1838,
+    "turnos": 6,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

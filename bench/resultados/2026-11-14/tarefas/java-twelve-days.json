@@ -1,0 +1,42 @@
+{
+  "id": "java-twelve-days",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 7,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/7",
+    "branch": "solucao/2026-11-14-java-twelve-days",
+    "sha": "a659d1971236184fd271caab53881d1c91b5a2d6"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "16e0a5a3-9461-483b-be53-88e9ec0061d0",
+    "recibo_hash": "946066e96fe786b77b94e3e8facb95e963a4c08007963d04484fcd4e1237b224"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 29927,
+    "publicacao_ms": 6540,
+    "decisao_ms": 62191,
+    "oraculo_ms": 19164
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 10,
+        "tokens_de_saida": 1253
+      }
+    },
+    "tokens_de_entrada": 10,
+    "tokens_de_saida": 1253,
+    "turnos": 6,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

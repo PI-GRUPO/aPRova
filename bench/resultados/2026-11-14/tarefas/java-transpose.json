@@ -1,0 +1,42 @@
+{
+  "id": "java-transpose",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 6,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/6",
+    "branch": "solucao/2026-11-14-java-transpose",
+    "sha": "cc8d04f41178b2802fb2353dbc7fc1d0c05e0d00"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "fd254538-c73b-4789-ae3e-73342b513b43",
+    "recibo_hash": "5f041842fc3009b0ef9ac829a54b2f172a6ed10ce206850264008123c28c1b9d"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 46938,
+    "publicacao_ms": 6984,
+    "decisao_ms": 31261,
+    "oraculo_ms": 24668
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 12,
+        "tokens_de_saida": 2083
+      }
+    },
+    "tokens_de_entrada": 12,
+    "tokens_de_saida": 2083,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

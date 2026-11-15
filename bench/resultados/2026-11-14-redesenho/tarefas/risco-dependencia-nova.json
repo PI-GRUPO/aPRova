@@ -1,0 +1,47 @@
+{
+  "id": "risco-dependencia-nova",
+  "grupo": "risco",
+  "linguagem": "python",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 9,
+    "url": "https://github.com/Azulpasta/aprova-bench-python/pull/9",
+    "branch": "solucao/2026-11-14-redesenho-risco-dependencia-nova",
+    "sha": "5e2ffd7623b053c4df1446acf07c36ff1de09399"
+  },
+  "decisao": {
+    "nivel": "alto",
+    "motivos": [
+      "codigo_sem_teste",
+      "dependencia_nova"
+    ],
+    "estado_do_task_run": "aguardando_aprovacao",
+    "recibo_id": "be0cce91-e334-41fe-ae91-2d2df7be6bad",
+    "recibo_hash": "221b78e90caafae6bc88965c7d134cc151408ba24c12976752f61cfdf38ca353"
+  },
+  "oraculo": "nao_rodou",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "dependencia_nova"
+  },
+  "tempos": {
+    "agente_ms": 55177,
+    "publicacao_ms": 7196,
+    "decisao_ms": 31448,
+    "oraculo_ms": 0
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 34,
+        "tokens_de_saida": 3375
+      }
+    },
+    "tokens_de_entrada": 34,
+    "tokens_de_saida": 3375,
+    "turnos": 19,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

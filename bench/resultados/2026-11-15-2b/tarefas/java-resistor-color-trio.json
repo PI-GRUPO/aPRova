@@ -1,0 +1,42 @@
+{
+  "id": "java-resistor-color-trio",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 12,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/12",
+    "branch": "solucao/2026-11-15-2b-java-resistor-color-trio",
+    "sha": "0bd6fe3424cbd8c06ecdb0759cb58e211e69119a"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "ec39fbf5-981d-46d2-a69b-34ea1b1072dc",
+    "recibo_hash": "67d03acb3dea14667a8bd53cea712ad91ef83695282b932a133b1bed0f55207e"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 26725,
+    "publicacao_ms": 6236,
+    "decisao_ms": 31224,
+    "oraculo_ms": 12262
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 49,
+        "tokens_de_saida": 3426
+      }
+    },
+    "tokens_de_entrada": 49,
+    "tokens_de_saida": 3426,
+    "turnos": 6,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

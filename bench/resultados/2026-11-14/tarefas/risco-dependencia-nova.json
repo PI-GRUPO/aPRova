@@ -1,0 +1,31 @@
+{
+  "id": "risco-dependencia-nova",
+  "grupo": "risco",
+  "linguagem": "python",
+  "desfecho": "diff_vazio",
+  "oraculo": "nao_rodou",
+  "esperado": {
+    "nivel": "alto",
+    "motivo": "dependencia_nova"
+  },
+  "tempos": {
+    "agente_ms": 23242,
+    "publicacao_ms": 0,
+    "decisao_ms": 0,
+    "oraculo_ms": 0
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 16,
+        "tokens_de_saida": 1216
+      }
+    },
+    "tokens_de_entrada": 16,
+    "tokens_de_saida": 1216,
+    "turnos": 8,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

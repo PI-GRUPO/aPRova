@@ -1,0 +1,42 @@
+{
+  "id": "java-satellite",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 13,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/13",
+    "branch": "solucao/2026-11-15-2b-java-satellite",
+    "sha": "02ae9ccc25a61a73a490056b73436d7a16468d85"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "22391b2d-be8b-401d-b3eb-842a74231e55",
+    "recibo_hash": "5875722b96a27e7820dbe03e8bdc4e57a60fd1b28a75f499faf009e39fb2c01d"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 53364,
+    "publicacao_ms": 7086,
+    "decisao_ms": 31087,
+    "oraculo_ms": 12259
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 105,
+        "tokens_de_saida": 6407
+      }
+    },
+    "tokens_de_entrada": 105,
+    "tokens_de_saida": 6407,
+    "turnos": 13,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

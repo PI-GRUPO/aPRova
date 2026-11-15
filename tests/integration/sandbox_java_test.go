@@ -68,6 +68,10 @@ func TestSandboxJavaJUnit4PeloSurefireMaisNovo(t *testing.T) {
 	exigirSemFalhaComContagem(t, executarCasoJava(t, "junit4", prazoDeUmCasoComum), 2)
 }
 
+func TestSandboxJavaComAssertJComoNasTarefasDoExercism(t *testing.T) {
+	exigirSemFalhaComContagem(t, executarCasoJava(t, "assertj", prazoDeUmCasoComum), 2)
+}
+
 func TestSandboxJavaSemTestesNaoReprova(t *testing.T) {
 	exigirSemFalhaComContagem(t, executarCasoJava(t, "sem_testes", prazoDeUmCasoComum), 0)
 }

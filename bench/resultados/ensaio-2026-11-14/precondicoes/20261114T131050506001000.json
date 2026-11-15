@@ -1,0 +1,30 @@
+{
+  "quando": "2026-11-14T13:10:50-03:00",
+  "sondagem": {
+    "diretorio": "/Users/Shared/aprova-bench/trabalho/ensaio-2026-11-14/precondicao-60a99e9b036433de",
+    "tentativas": [
+      {
+        "nome": "escrita",
+        "barrada": true
+      },
+      {
+        "nome": "terminal",
+        "barrada": true
+      },
+      {
+        "nome": "redirecionado",
+        "barrada": true
+      },
+      {
+        "nome": "codigo",
+        "barrada": true
+      },
+      {
+        "nome": "leitura",
+        "barrada": true
+      }
+    ]
+  },
+  "erro_da_sondagem": "isolamento: sondagem inconclusiva, os controles dentro da tarefa não funcionaram",
+  "variaveis_do_env_conferidas": 19
+}

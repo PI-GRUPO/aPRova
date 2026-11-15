@@ -1,0 +1,22 @@
+{
+  "commit_do_polyglot": "7e0611e77b54",
+  "iniciada_em": "2026-11-14T13:13:12-03:00",
+  "modelo": "claude-sonnet-5",
+  "repositorios": {
+    "go": "Azulpasta/aprova-bench-go",
+    "java": "Azulpasta/aprova-bench-java",
+    "python": "Azulpasta/aprova-bench-python"
+  },
+  "semente_da_suite": 20261114,
+  "tarefas": [
+    "go-matrix",
+    "risco-configuracao-ci"
+  ],
+  "versoes": {
+    "claude": "2.1.235 (Claude Code)",
+    "go": "go version go1.26.11 darwin/arm64",
+    "maven": "Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)",
+    "pytest": "pytest 9.2.0",
+    "python": "Python 3.14.5"
+  }
+}

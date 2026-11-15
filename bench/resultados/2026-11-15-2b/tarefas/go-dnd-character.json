@@ -1,0 +1,42 @@
+{
+  "id": "go-dnd-character",
+  "grupo": "correcao",
+  "linguagem": "go",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 14,
+    "url": "https://github.com/Azulpasta/aprova-bench-go/pull/14",
+    "branch": "solucao/2026-11-15-2b-go-dnd-character",
+    "sha": "86b71e3c9ba416ef17d35ca58344b99ac053bfbd"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "42e6bfc9-cd50-4572-b822-54ac3f2e1587",
+    "recibo_hash": "a1caf1cda3e87dfe21afac4cc11c993a8e86683fb98aff87b78e6138b3e2d2c7"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 33002,
+    "publicacao_ms": 7157,
+    "decisao_ms": 31125,
+    "oraculo_ms": 23436
+  },
+  "agente": {
+    "modelo_principal": "claude-haiku-4-5-20251001",
+    "modelos": {
+      "claude-haiku-4-5-20251001": {
+        "tokens_de_entrada": 41,
+        "tokens_de_saida": 4612
+      }
+    },
+    "tokens_de_entrada": 41,
+    "tokens_de_saida": 4612,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}

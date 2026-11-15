@@ -1,0 +1,42 @@
+{
+  "id": "java-poker",
+  "grupo": "correcao",
+  "linguagem": "java",
+  "desfecho": "decidido",
+  "pr": {
+    "numero": 3,
+    "url": "https://github.com/Azulpasta/aprova-bench-java/pull/3",
+    "branch": "solucao/2026-11-14-java-poker",
+    "sha": "a15676a4b620628c85fe6b7fbb32aeb0338dde11"
+  },
+  "decisao": {
+    "nivel": "medio",
+    "motivos": [
+      "codigo_sem_teste"
+    ],
+    "estado_do_task_run": "concluido",
+    "recibo_id": "251c8632-4b4f-41ca-9e0c-06fd21fc1d4d",
+    "recibo_hash": "e1fc2a2e5b6b460e3756be17d82a7785620b5b0811ff2adc1ffb59999ccddc95"
+  },
+  "oraculo": "passou",
+  "tempos": {
+    "agente_ms": 35055,
+    "publicacao_ms": 6845,
+    "decisao_ms": 31257,
+    "oraculo_ms": 17725
+  },
+  "agente": {
+    "modelo_principal": "claude-sonnet-5",
+    "modelos": {
+      "claude-sonnet-5": {
+        "tokens_de_entrada": 12,
+        "tokens_de_saida": 2467
+      }
+    },
+    "tokens_de_entrada": 12,
+    "tokens_de_saida": 2467,
+    "turnos": 7,
+    "desfecho": "concluida"
+  },
+  "execucoes_do_agente": 1
+}
