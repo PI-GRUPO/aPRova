@@ -38,8 +38,8 @@ type paginaAnalises struct {
 	Estado         string          `json:"estado"`
 	Repositorio    string          `json:"repositorio"`
 	NumeroPR       int32           `json:"numero_pr"`
-	Pagina         int             `json:"pagina"`
-	Limite         int             `json:"limite"`
+	Pagina         int32           `json:"pagina"`
+	Limite         int32           `json:"limite"`
 	TemMais        bool            `json:"tem_mais"`
 	Itens          []resumoAnalise `json:"itens"`
 }
@@ -71,15 +71,15 @@ func escopoConsultaAnalises(q url.Values) (int64, string, error) {
 	return tenant, repo, nil
 }
 
-func inteiroConsulta(q url.Values, nome string, padrao, minimo, maximo int) (int, error) {
+func inteiroConsulta(q url.Values, nome string, padrao, minimo, maximo int32) (int32, error) {
 	if q.Get(nome) == "" {
 		return padrao, nil
 	}
-	valor, err := strconv.Atoi(q.Get(nome))
-	if err != nil || valor < minimo || valor > maximo {
+	valor, err := strconv.ParseInt(q.Get(nome), 10, 32)
+	if err != nil || valor < int64(minimo) || valor > int64(maximo) {
 		return 0, domain.ErrDadosInvalidos
 	}
-	return valor, nil
+	return int32(valor), nil
 }
 
 func parametrosUnicos(q url.Values, permitidos ...string) bool {
@@ -98,24 +98,44 @@ func parametrosUnicos(q url.Values, permitidos ...string) bool {
 	return true
 }
 
-func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request) {
-	if !s.autenticarConsultaAnalises(w, r) {
-		return
-	}
-	q := r.URL.Query()
+func filtroListaAnalises(q url.Values) (domain.FiltroAnalises, int32, error) {
 	tenant, repo, err := escopoConsultaAnalises(q)
-	pagina, e1 := inteiroConsulta(q, "pagina", 1, 1, 201)
-	limite, e2 := inteiroConsulta(q, "limite", 20, 1, 50)
-	pr, e3 := inteiroConsulta(q, "numero_pr", 0, 1, 2147483647)
+	if err != nil {
+		return domain.FiltroAnalises{}, 0, err
+	}
+	pagina, err := inteiroConsulta(q, "pagina", 1, 1, 201)
+	if err != nil {
+		return domain.FiltroAnalises{}, 0, err
+	}
+	limite, err := inteiroConsulta(q, "limite", 20, 1, 50)
+	if err != nil {
+		return domain.FiltroAnalises{}, 0, err
+	}
+	pr, err := inteiroConsulta(q, "numero_pr", 0, 1, 2147483647)
+	if err != nil {
+		return domain.FiltroAnalises{}, 0, err
+	}
 	estado := q.Get("estado")
 	if estado == "" {
 		estado = "em_andamento"
 	}
-	filtro := domain.FiltroAnalises{TenantID: tenant, Repositorio: repo, Estado: estado, NumeroPR: int32(pr), Limite: int32(limite + 1), Deslocamento: int32((pagina - 1) * limite)}
-	if err != nil || e1 != nil || e2 != nil || e3 != nil || !parametrosUnicos(q, "installation_id", "repositorio", "estado", "numero_pr", "pagina", "limite") || !estadoConsultaValido(estado) {
+	if !parametrosUnicos(q, "installation_id", "repositorio", "estado", "numero_pr", "pagina", "limite") || !estadoConsultaValido(estado) {
+		return domain.FiltroAnalises{}, 0, domain.ErrDadosInvalidos
+	}
+	// Os limites validados permitem até 51 itens e deslocamento máximo de 10000.
+	return domain.FiltroAnalises{TenantID: tenant, Repositorio: repo, Estado: estado, NumeroPR: pr, Limite: limite + 1, Deslocamento: (pagina - 1) * limite}, pagina, nil
+}
+
+func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request) {
+	if !s.autenticarConsultaAnalises(w, r) {
+		return
+	}
+	filtro, pagina, err := filtroListaAnalises(r.URL.Query())
+	if err != nil {
 		responderJSON(w, http.StatusBadRequest, respostaSimples{Status: "parâmetros de consulta inválidos"})
 		return
 	}
+	limite := filtro.Limite - 1
 	if s.consultasAnalises == nil {
 		responderJSON(w, http.StatusServiceUnavailable, respostaSimples{Status: "consulta indisponível"})
 		return
@@ -126,7 +146,7 @@ func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request
 		responderJSON(w, http.StatusInternalServerError, respostaSimples{Status: "falha ao consultar análises"})
 		return
 	}
-	temMais := len(itens) > limite
+	temMais := len(itens) > int(limite)
 	if temMais {
 		itens = itens[:limite]
 	}
@@ -134,7 +154,7 @@ func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request
 	for _, item := range itens {
 		resumos = append(resumos, resumoDaAnalise(item))
 	}
-	responderJSON(w, http.StatusOK, paginaAnalises{tenant, s.agora().UTC(), estado, repo, int32(pr), pagina, limite, temMais, resumos})
+	responderJSON(w, http.StatusOK, paginaAnalises{filtro.TenantID, s.agora().UTC(), filtro.Estado, filtro.Repositorio, filtro.NumeroPR, pagina, limite, temMais, resumos})
 }
 
 func estadoConsultaValido(estado string) bool {

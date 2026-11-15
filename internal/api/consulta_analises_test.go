@@ -43,7 +43,7 @@ func (f *fonteAnalisesFalsa) ConsultarAnalise(_ context.Context, t int64, r, id 
 func pedirAnalises(t *testing.T, fonte FonteDeAnalises, metodo, caminho, assinarComo string) *httptest.ResponseRecorder {
 	t.Helper()
 	s := NovoServidor(Opcoes{SegredoAcoesRemotas: []byte(segredoDasAcoesDeTeste), ConsultasAnalises: fonte, Agora: func() time.Time { return agoraDeTeste }})
-	r := httptest.NewRequest(metodo, caminho, nil)
+	r := httptest.NewRequestWithContext(t.Context(), metodo, caminho, nil)
 	if assinarComo != "" {
 		ts := strconv.FormatInt(agoraDeTeste.Unix(), 10)
 		r.Header.Set("X-Aprova-Timestamp", ts)
@@ -99,7 +99,7 @@ func TestConsultaAnalisesVazioNaoSeConfundeComFalha(t *testing.T) {
 	}
 }
 func TestConsultaAnalisesRejeitaParametrosSemConsultarFonte(t *testing.T) {
-	for _, q := range []string{"installation_id=0", "installation_id=42&limite=51", "installation_id=42&pagina=202", "installation_id=42&estado=executar", "installation_id=42&numero_pr=-1", "installation_id=42&repositorio=https://outro", "installation_id=42&installation_id=7", "installation_id=42&url=http://outro"} {
+	for _, q := range []string{"installation_id=0", "installation_id=42&limite=51", "installation_id=42&pagina=202", "installation_id=42&estado=executar", "installation_id=42&numero_pr=-1", "installation_id=42&numero_pr=2147483648", "installation_id=42&numero_pr=9223372036854775808", "installation_id=42&limite=2147483648", "installation_id=42&pagina=2147483648", "installation_id=42&repositorio=https://outro", "installation_id=42&installation_id=7", "installation_id=42&url=http://outro"} {
 		f := &fonteAnalisesFalsa{}
 		w := pedirAnalises(t, f, "GET", "/api/analises?"+q, "GET\n/api/analises\n"+q)
 		if w.Code != 400 || f.chamadas != 0 {
@@ -134,5 +134,18 @@ func TestConsultaAnalisesNaoAceitaMetodosDeEscrita(t *testing.T) {
 				t.Fatalf("método %s aceito", method)
 			}
 		}
+	}
+}
+
+func TestConsultaAnalisesLimitesNumericos(t *testing.T) {
+	f := &fonteAnalisesFalsa{}
+	query := "installation_id=42&numero_pr=2147483647&pagina=201&limite=50"
+	w := pedirAnalises(t, f, "GET", "/api/analises?"+query, "GET\n/api/analises\n"+query)
+	var p paginaAnalises
+	if err := json.Unmarshal(w.Body.Bytes(), &p); err != nil {
+		t.Fatal(err)
+	}
+	if w.Code != http.StatusOK || f.filtro.NumeroPR != 2147483647 || f.filtro.Limite != 51 || f.filtro.Deslocamento != 10000 || p.NumeroPR != 2147483647 || p.Pagina != 201 || p.Limite != 50 {
+		t.Fatalf("limites numéricos incorretos: %d %+v %+v", w.Code, p, f.filtro)
 	}
 }
