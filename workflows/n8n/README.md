@@ -1,7 +1,7 @@
 # Workflows do n8n
 
 Guia de execução e configuração. Estado local e pendências atualizados em
-**2026-11-14**; detalhes dos nós e contratos em
+**2026-11-15**; detalhes dos nós e contratos em
 [Central do Slack](../../docs/central-slack-implementacao.md) e
 [eventos do núcleo](../../docs/eventos-n8n.md).
 
@@ -78,8 +78,13 @@ pelo Compose a partir do `.env`. Não inserir valores reais nos nós,
 Na instalação local, credenciais Slack/Gemini/Trello estão cadastradas;
 segredos e IDs Slack estão carregados; instalação positiva já está no
 `.env` e no container. App ID, chave privada válida, webhook secret e slug
-GitHub estão no `.env` do núcleo. Falta validar autenticação/permissões no
-GitHub real; não é mais pendência obter essas credenciais ou o installation ID.
+GitHub estão no `.env` do núcleo. Na Fase 6, autenticação do App e leitura do
+repositório/PR de teste foram confirmadas. Na 6A, a instalação e sua lista de
+repositórios confirmaram acesso a `PI-GRUPO/aPRova-TESTES`: Check/comentário
+foram publicados e consultas de papéis responderam 200. O 403 anterior de
+colaborador era do fork fora do escopo da instalação; a consulta de proteção
+do alvo correto continua em 403. Vínculos humanos seguem ausentes e ações
+remotas continuam sem validação.
 
 `SLACK_GITHUB_VINCULOS` ainda precisa ser preenchido no `.env` local. O Compose
 repassa essa variável ao n8n; o feedback usa exclusivamente a mesma fonte da API. Não presumir que ambiente da API é ambiente do n8n.
@@ -121,7 +126,9 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
 6. Preencha quadro/listas `APROVA_TRELLO_*` e canal de onboarding.
    Associe Trello ao onboarding `10`/`13` e Slack ao `17`.
    Só habilite as flags de onboarding após conferir destinos e credenciais.
-   Nome/App ID do Check continuam pendentes; não usar dados fictícios.
+   Confirme o nome/App ID do Check dessa instalação. No ambiente local, foram
+   configurados na Fase 6 com o nome `aPRova` do código e o App autenticado;
+   os exports não incluem o ID real.
 7. Recrie o n8n para carregar variáveis e configure as URLs públicas.
    Valide antes de publicar; subworkflows devem estar disponíveis antes do Core.
    No SLA, associe `slackApi` ao nó `T13`. Mantenha
@@ -129,6 +136,40 @@ partir do n8n. Isso não valida os endpoints de negócio ou o worker.
    canal e responsáveis. A importação não autoriza enviar avisos reais.
 
 ## Slack e consultas
+
+### Validação da instalação local — Fase 6
+
+Em 2026-11-15, API e worker locais estavam em execução. Auditoria a partir
+do n8n confirmou saúde/prontidão, PostgreSQL/Redis disponíveis, chave pública
+e relatório semanal assinado. A semana consultada estava vazia, com taxa nula;
+isso não comprova uma análise completa do worker. Uma consulta assinada do
+ambiente local atravessou Core → API: foram conferidos o 202 de entrada e
+o resultado final com API 200. Entradas sem assinatura no Core e em ações
+remotas receberam 401. O bot Slack autenticou e o workspace correspondeu.
+
+`APROVA_GITHUB_CHECK_NOME` e `APROVA_GITHUB_CHECK_APP_ID` foram preenchidos
+no `.env` local com evidência do código/App e carregados recriando somente
+o n8n, com volume preservado. A proteção da branch continua sem confirmação:
+o App recebeu 403 e a API informou requisito `administration=read` ausente
+nos grants retornados. Consultas de colaboradores no repositório correto
+responderam 200; nenhum vínculo humano foi inferido desses papéis.
+
+A 6A concluiu análise real do PR 1 de `PI-GRUPO/aPRova-TESTES`: sandbox em
+`go/`, 10 testes passaram, risco BAIXO, Check `success` e comentário do bot.
+O evento automático `analise_concluida` chegou autenticado ao Core e seguiu
+ao Trello, que encerrou em `sem_card_vinculado`, sem escrita ou réplica Slack.
+Documento e `/verify` do recibo responderam 200; hash dos bytes, identidade
+e cinco verificações `ok` foram conferidos. Uma auditoria manual somente de
+leitura no n8n reutilizou V03/V04/V06/V07 e classificou o recibo como `valido`.
+A preparação usa o evento real capturado, sem alterar seu risco ou executar
+o alerta da Central. A entrada GitHub foi manual/assinada; sua entrega
+automática pelo GitHub ainda não foi comprovada.
+
+Faltam vínculos Slack/GitHub confirmados, proteção, ações humanas, política
+SLA e os demais cenários integrados. Digest, SLA e correlação continuam
+desligados; a Fase 6 permanece parcial. Nenhum workflow funcional precisou
+de alteração/exportação. As duas auditorias manuais ficam inativas somente
+na instância, no projeto pessoal. Detalhes e limites estão no checklist.
 
 ### Correlação dos alertas da Central
 
@@ -224,8 +265,10 @@ inválido e indisponível, sem alterar risco, autorização ou botões de decis�
 Ausência, incompatibilidade ou falha de consulta permitem preparar o alerta
 com estado indisponível. Não há novas tabelas ou variáveis; isso independe
 da flag de correlação. A Fase 2 preserva o bloco do recibo no snapshot original.
-A API real foi alcançada, mas o recibo histórico retornou 404; a validação
-integrada de um recibo válido ainda está pendente.
+O recibo histórico retornou 404. A 6A produziu um recibo válido e confirmou
+sua releitura real pelo n8n com os validadores da Central; o PR era BAIXO e
+não passou pelo alerta de aprovação. Falta esse percurso automático com
+`aguardando_aprovacao` e apresentação do recibo válido no Slack.
 
 O envio assinado a `/acoes-remotas` não
 segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
@@ -334,9 +377,10 @@ Conferir/aplicar as 21 migrations antes dos testes integrados; a 21 preserva
 a justificativa remota, e a 15 pertence aos motivos do gate.
 A reexecução ainda não tem executor. O worker já emite análise, espera de
 aprovação, decisão, dependências identificadas e falha recuperável.
-Gate/calibração, recibos e publicação reais vieram da `dev`; falta o evento
-automático de instalação e a validação externa do conjunto.
-SLA com dois limites configuráveis ainda não tem workflow.
+Gate/calibração, recibos e publicação vieram da `dev`; a 6A validou gate
+BAIXO, recibo e publicação reais. Faltam o evento automático de instalação e
+os demais cenários integrados. O SLA com dois limites está publicado, com
+envios desligados até configurar e validar políticas.
 
 ## Onboarding de Repositório
 

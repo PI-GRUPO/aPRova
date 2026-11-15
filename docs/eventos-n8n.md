@@ -57,11 +57,25 @@ aguarda as operações do núcleo previstas na Etapa S; elas não existem nas
 rotas atuais. Essa fase está parcialmente implementada, conforme o checklist.
 
 App ID, chave privada válida, webhook secret e slug GitHub já estão no
-`.env` do núcleo. Falta validar instalação/permissões reais, configurar
-`SLACK_GITHUB_VINCULOS` e validar API/worker. No teste do onboarding,
-`/health` e `/ready` responderam 200 a partir do n8n; isso não comprova
-os endpoints de negócio ou a emissão automática de eventos.
-Configuração disponível não comprova integração real.
+`.env` do núcleo. Na Fase 6, autenticação da instalação e leitura do
+repositório/PR de teste foram confirmadas. No alvo correto,
+`PI-GRUPO/aPRova-TESTES`, consultas de papéis retornam 200; a proteção continua
+em 403 por exigir `administration=read`. O 403 anterior de colaboradores era
+do fork fora do escopo da instalação. `SLACK_GITHUB_VINCULOS` continua vazio.
+Em 2026-11-15, saúde, prontidão, chaves e relatório semanal assinado responderam
+200 a partir do n8n. Uma consulta real `relatorio_periodico` assinada no
+ambiente local passou por Core → API até o resultado final; não é uma análise
+do worker nem comprova emissão automática dos eventos de negócio. Essa
+emissão foi validada separadamente na 6A: análise real do PR 1 do repositório
+de testes indicado pelo usuário, 10 testes Go aprovados e risco BAIXO,
+Check/comentário publicados e `analise_concluida` autenticado no Core.
+Documento e `/verify` do recibo foram conferidos na API; sua releitura no
+n8n, com validadores da Central, confirmou `valido`. A entrada GitHub na API
+foi controlada/manual e assinada; não comprova entrega automática pelo GitHub.
+O Core encaminhou ao Trello, que encerrou sem card vinculado e sem escrita
+ou réplica Slack. Não houve `aguardando_aprovacao` nem `dependencia_nova`;
+continuam pendentes o alerta automático de recibo válido e a origem OSV real.
+A identidade do Check está configurada; proteção de branch não confirmada.
 
 O Core encaminha `aprovacao_registrada` ao novo workflow de feedback.
 Ele pergunta somente para decisão `aprovada` de risco original ALTO; sem

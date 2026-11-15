@@ -1,6 +1,6 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-14**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-15**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
@@ -20,8 +20,8 @@ autorizado: atualizar documentação não autoriza exportar workflows.
 O [plano local de atualização](plano-atualizacao-workflows.md) define as
 fases, dependências e critérios de aceite. Ao executar uma fase solicitada
 desse plano, sua exportação validada faz parte do escopo; tarefas apenas
-documentais não autorizam sincronizações por si só. Este documento, o plano
-e `AGENTS.md` são contexto local e devem permanecer fora dos próximos commits.
+documentais não autorizam sincronizações por si só. Este documento permanece
+versionado; o plano local e `AGENTS.md` devem permanecer fora dos commits.
 
 ## Checklist do plano de atualizacao
 
@@ -30,12 +30,21 @@ A Central e a nova ligação do Core foram publicadas e exportadas; publicação
 e atualização da mesma mensagem foram validadas com Slack real e fixtures,
 sem ações em PRs. A correlação continua desabilitada globalmente; sua ativação
 operacional depende de decisão e carregamento da configuração. A Fase 3 está
-implementada, publicada e exportada, com testes isolados completos e consulta
-real com retorno 404 tratada. Sua validação integrada de recibo válido permanece
-pendente; a fase ainda não está encerrada em todos os critérios do checklist.
+implementada, publicada e exportada, com testes isolados completos. A Fase 6A
+confirmou recibo válido da análise real e sua releitura pelo n8n, reutilizando
+os validadores da Central. Falta o percurso automático de um alerta de
+aprovação com esse resultado; a Fase 3 permanece parcial nesse critério.
 Na Fase 4, a atualização posterior por OSV também está implementada, publicada
 e exportada. Passou nos testes locais, na instância e em envio/edição no Slack
 real com contexto OSV fictício. Falta validar a origem OSV/worker real.
+Na Fase 6, autenticação do GitHub App, identidade do bot Slack, consulta real
+de relatório e orquestração assinada ambiente local → Core → API foram
+conferidas. A identidade do Check foi configurada e carregada. A fase permanece
+parcial por vínculos ausentes, proteção de branch indisponível, ações humanas
+sem validação e política SLA indefinida. A subfase 6A foi concluída no
+repositório de testes confirmado pelo usuário, com análise real, Check,
+comentário, evento autenticado e recibo válido. Nesse repositório, as consultas
+de papéis responderam 200; o 403 anterior de colaborador era do fork.
 
 O plano agora inclui a **Etapa S — Simplificação da persistência do n8n**:
 transferir estado e controle dos avisos para o núcleo, reduzir a associação
@@ -79,7 +88,7 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 - [x] Implementado no n8n, sem novas tabelas, credenciais ou variáveis.
 - [x] Testado de forma isolada: válido, inválido, indisponível e correlação, inclusive múltiplos itens.
 - [x] Publicado na instância, sem ativar a correlação global.
-- [ ] Validado com integração real de recibo válido: API acessível, mas o recibo histórico retornou 404; indisponibilidade tratada e validada.
+- [ ] Validar o percurso automático de recibo válido até o alerta de aprovação. A 6A confirmou documento e `/verify` reais no n8n, mas o PR de risco BAIXO não passa pela Central.
 - [x] Exportado e revisado no repositório: somente Central nesta fase, portátil e inativa.
 - [x] Documentação atualizada com configuração, evidências e pendências.
 
@@ -106,13 +115,29 @@ se aplicar à fase, justifique essa condição em vez de marcar execução.
 
 ### Fase 6 — Configuração e validação integrada
 
-- [x] Conferir pré-requisitos locais de API, worker e migrations: banco na versão 21, processos iniciados e saúde validada a partir do n8n em 2026-11-14.
-- [ ] Conferir identidades Slack/GitHub, instalação e permissões reais.
-- [ ] Validar ações remotas no escopo autorizado.
-- [ ] Validar worker → Core → integrações existentes.
-- [ ] Configurar e validar SLA com política e destinos definidos pela equipe.
-- [ ] Exportar e revisar eventuais workflows alterados nesta fase.
-- [ ] Documentar evidências reais e bloqueios de configuração/backend.
+- [x] Revalidar API/worker em execução e saúde real a partir do n8n em 2026-11-15. Evidência da migration 21 de 2026-11-14 preservada; nenhuma migration reaplicada nesta fase.
+- [x] Autenticar GitHub App e confirmar leitura do repositório/PR de teste; autenticar bot Slack e conferir workspace.
+- [x] Configurar nome e App do Check a partir do código e da autenticação real; recriar somente n8n, preservando volume e flags desligadas, e conferir o carregamento.
+- [x] Validar relatório real por HMAC e orquestração assinada ambiente local → Core → API; conferir 401 para Core/ações sem assinatura.
+- [ ] Configurar vínculos humanos Slack/GitHub confirmados. Papéis consultados no repositório correto responderam 200; os vínculos continuam vazios e a proteção de branch retorna 403.
+- [ ] Validar ações remotas reais no escopo autorizado após resolver identidade/permissões; nenhuma review ou aprovação foi enviada.
+- [x] Validar worker → Core → integração existente com análise real: PR 1 de `PI-GRUPO/aPRova-TESTES`, risco BAIXO, Core autenticado e Trello encerrando sem card vinculado.
+- [ ] Configurar e validar SLA após definição dos prazos, canal e responsáveis; permanece desligado.
+- Não se aplica exportação funcional nesta execução: somente configuração local e workflows manuais de auditoria foram alterados; os exports funcionais existentes foram preservados.
+- [x] Documentar evidências reais, limites e bloqueios; a Fase 6 permanece parcial.
+
+#### Subfase 6A — concluída no cenário disponível
+
+- [x] Confirmar `PI-GRUPO/aPRova-TESTES`, PR 1 aberto, head e acesso efetivo da instalação ao repositório.
+- [x] Configurar o sandbox local no subdiretório `go/` e executar uma análise real pela API: 10 testes passaram, nenhum falhou; risco BAIXO decidido pelo núcleo.
+- [x] Conferir Check `aPRova` concluído com `success` e comentário do bot no mesmo PR/SHA.
+- [x] Rastrear evento `analise_concluida` autenticado no Core e sua execução integrada no Trello, encerrada em `sem_card_vinculado`, sem escrita.
+- [x] Ler documento e `/verify` reais, recalcular SHA-256 dos bytes e conferir instalação, análise, repositório, PR, SHA, risco e chave; cinco verificações `ok`.
+- [x] Reconsultar o recibo pelo n8n com os validadores da Central: classificação `valido`, com correlação confirmada.
+- Slack de aprovação não se aplica ao resultado BAIXO. A réplica Trello → Slack também não disparou, pois não havia card vinculado. Nenhum envio foi forçado para encerrar a subfase.
+- Entrada na API foi um webhook GitHub assinado enviado de forma controlada; o evento worker → Core foi automático. A entrega automática pelo GitHub continua sem comprovação.
+- Auditoria do recibo permanece manual, inativa e somente na instância; não substitui o percurso automático `aguardando_aprovacao` → Central → Slack da Fase 3.
+- Não houve merge, review humana, aprovação remota, ativação de correlação/SLA/Digest nem mudança nos workflows funcionais.
 
 ### Etapa S — Simplificação da persistência do n8n
 
@@ -190,25 +215,27 @@ funcionalmente nessa etapa.
 Publicação local não comprova funcionamento integral com GitHub real ou
 produção. Na validação do onboarding, `/health` e `/ready` responderam 200
 a partir do n8n, superando a indisponibilidade registrada anteriormente.
-Isso não valida os endpoints de negócio, o worker ou as métricas reais.
-Indisponibilidade não deve ser apresentada como métricas zeradas.
+Na Fase 6, o relatório real e sua orquestração pelo Core também foram
+validados, com semana vazia. O percurso completo de análise do worker
+continua pendente. Indisponibilidade não deve ser apresentada como zero.
 
 ### Credenciais e ambiente
 
 | Configuração | Situação conferida e função |
 | --- | --- |
-| `GITHUB_APP_ID` e `GITHUB_PRIVATE_KEY_BASE64` | Presentes no `.env`; ID positivo e chave decodificada/validada localmente. Falta testar autenticação efetiva no GitHub. |
+| `GITHUB_APP_ID` e `GITHUB_PRIVATE_KEY_BASE64` | Autenticação real conferida em 2026-11-15: token de instalação HTTP 201 e leitura de repositório/PR HTTP 200. Permissões de colaboradores e proteção continuam indisponíveis. |
 | `GITHUB_WEBHOOK_SECRET`, `GITHUB_APP_SLUG` | Presentes no `.env`; conferir correspondência com App/webhooks reais. |
-| `APROVA_CHAT_INSTALLATION_ID` | ID informado pelo usuário, positivo no `.env` e carregado no container. Consulta semanal e Digest da instância usam a variável. Falta validar associação/permissões reais no GitHub. |
+| `APROVA_CHAT_INSTALLATION_ID` | Positivo e carregado; a instalação autenticada lê o repositório/PR de teste. Relatório real para essa instalação respondeu 200. Isso não confirma os papéis dos revisores. |
 | `slackApi`, `googlePalmApi`, `trelloOAuth1Api` | Credenciais cadastradas no n8n; seus valores/referências pessoais ficam fora dos exports. |
 | `SLACK_SIGNING_SECRET`, `SLACK_INCOMING_WEBHOOK_URL` | Carregados no n8n; autenticação de entradas e envio ao canal de notificações. |
 | `N8N_SEGREDO_EVENTOS`, `N8N_SEGREDO_ACOES` | Carregados no n8n; devem coincidir com o núcleo em cada direção. |
-| `APROVA_SLACK_TEAM_ID`, `APROVA_SLACK_APP_ID`, `APROVA_SLACK_CANAL_CONSULTAS_ID` | Carregados; restringem assistente e contexto do feedback. |
+| `APROVA_SLACK_TEAM_ID`, `APROVA_SLACK_APP_ID`, `APROVA_SLACK_CANAL_CONSULTAS_ID` | Carregados; restringem assistente e feedback. `auth.test` confirmou bot e workspace em 2026-11-15; essa resposta não forneceu `app_id` para conferência independente. |
 | `APROVA_CONSULTA_SEMANAL_WORKFLOW_ID` | Configurado para a ferramenta do assistente. |
-| `APROVA_API_URL` | Configurada; `/health` e `/ready` responderam 200 no teste do onboarding. Endpoints de negócio ainda exigem validação própria. |
-| `N8N_WEBHOOK_URL` | Preenchida no `.env` do núcleo; conferir URL e carregar no worker ao iniciá-lo. |
+| `APROVA_API_URL` | `/health`, `/ready`, `/receipts/keys` e relatório semanal assinado responderam 200 a partir do n8n em 2026-11-15. |
+| `N8N_WEBHOOK_URL` | URL local alcançada por consulta assinada usando a configuração do núcleo; Core aceitou 202 e concluiu o relatório com API 200. Ainda falta comprovar emissão do worker em análise real. |
 | `SLACK_GITHUB_VINCULOS` | **Não configurado** no `.env` e ausente no ambiente do n8n. Necessário na API para ações; feedback exige configuração adicional abaixo. |
 | `APROVA_URL_PUBLICA` | Configuração local ainda precisa ser conferida; os endpoints `/receipts/{id}`, `/receipts/{id}/verify` e `/receipts/keys` existem no código integrado. |
+| `APROVA_GITHUB_CHECK_NOME`, `APROVA_GITHUB_CHECK_APP_ID` | Nome fixo `aPRova` e App autenticado configurados no `.env` e carregados no n8n em 2026-11-15. Não confundir App ID com installation ID; proteção não foi confirmada. |
 
 O `.env` é ignorado pelo Git; `.env.example` contém somente exemplos.
 O Compose repassa a instalação para `n8n-aprova`. Os workflows usam
@@ -281,9 +308,10 @@ O tenant autenticado define a instalação do evento, sem substituição pelo
 ID global de consultas. `relatorio_periodico` é pedido da automação,
 não um sétimo evento emitido pelo worker, e não publica Digest.
 
-Falta validar worker → Core com dados reais; implementar emissão de
-`instalacao` (a de `dependencia_nova` já existe); configurar e validar os
-avisos reais do SLA. A atualização do alerta original já está implementada
+Worker → Core foi validado com `analise_concluida` real na 6A. Faltam os
+demais cenários integrados, a emissão de `instalacao` (a de
+`dependencia_nova` já existe) e configurar/validar os avisos reais do SLA.
+A atualização do alerta original já está implementada
 na Central, condicionada à correlação habilitada; falta validar esse caminho
 com uma decisão real emitida pelo worker, sem fixtures.
 
@@ -853,12 +881,17 @@ HTTP 200, API indisponível, referência ausente, timeout, isolamento de tenant
 e dois itens de análises diferentes. O workflow manual foi restaurado ao modo
 isolado, sem nós HTTP, e permanece inativo e fora dos exports.
 
-A consulta real à API pelo n8n retornou 404 para o recibo histórico citado em
-`verificacao-recibo.md`. Uma execução com expectativa de válido falhou nesse
-pressuposto; a execução seguinte confirmou o estado indisponível, uma única
-consulta e risco/ações preservados. Não houve envio Slack nem ação em PR nesta
-fase. Falta um recibo existente da análise correspondente para confirmar o
-percurso real de válido; essa pendência mantém a validação integrada aberta.
+A consulta do recibo histórico retornou 404 e confirmou indisponibilidade,
+sem alterar risco/ações. Na Fase 6A, uma nova análise local produziu um recibo
+existente: documento e `/verify` responderam 200, com identidade e SHA-256 dos
+bytes conferidos e as cinco verificações `ok`. O workflow manual inativo
+`aPRova | Testes | Recibo real Fase 6A` releu a API a partir do n8n e retornou
+`valido`, reutilizando sem alteração V03, V04, V06 e V07 da Central. Sua
+preparação usa o evento real capturado do Core e aceita `analise_concluida`
+somente nesse ensaio, preservando o risco BAIXO. Não houve nova autenticação
+do evento nesse replay nem alteração da entrada funcional da Central.
+Falta validar o percurso automático de alerta `aguardando_aprovacao` com
+recibo válido e sua apresentação no Slack; o PR da 6A não gerou esse evento.
 
 Falta configurar vínculos na API, conferir/aplicar migrations e validar em
 PR real: autorizado, sem permissão, autoaprovação, repetição, erro e proteção
@@ -1106,6 +1139,92 @@ O worker emite análise, espera de aprovação, decisão, dependências novas
 identificadas e falha recuperável. Gate, recibo, publicação e calibração
 opcional estão implementados; testes locais não comprovam integração externa.
 
+## Configuração e validação integrada — Fase 6
+
+Em 2026-11-15 foram confirmados os processos locais da API e do worker, a
+imagem do sandbox Go configurado e o acesso real do n8n à API. `/health`
+respondeu 200; `/ready` confirmou PostgreSQL e Redis `ok`; `/receipts/keys`
+publicou uma chave. O relatório semanal assinado foi validado para a última
+semana UTC completa consultada, sem execuções na janela e taxa nula. Esses
+zeros são dados reais daquela consulta, não substitutos de indisponibilidade
+nem prova de uma análise completa do worker.
+
+Uma consulta `relatorio_periodico` foi assinada usando a configuração local
+do núcleo e enviada à URL do Core. Além do 202 de entrada, foi conferida a
+execução correspondente até `12 | Normalizar Relatório Semanal`, com origem
+autenticada, API 200 e relatório disponível. Esse é um teste real de transporte
+e consulta, não um evento emitido automaticamente pelo worker. Core sem
+assinatura e `POST /acoes-remotas` sem assinatura retornaram 401.
+
+O GitHub App obteve token de instalação com HTTP 201 e leu repositório e PR
+de teste com HTTP 200. Os grants retornados foram `checks:write`,
+`contents:read`, `metadata:read`, `pull_requests:write` e
+`security_events:write`. A 6A confirmou escrita real do Check e comentário em
+`PI-GRUPO/aPRova-TESTES`. A lista de repositórios acessíveis e a consulta da
+instalação do alvo confirmaram o acesso, além da leitura pública do PR.
+As consultas de papel de `julia-ed2` e `Azulpasta` nesse repositório responderam
+200 com `admin`; não representam vínculo Slack/GitHub nem autorização de
+autoaprovação. O 403 anterior de colaborador foi observado no fork
+`Azulpasta/aPRova-TESTES`, fora do escopo da instalação usada. A consulta de
+proteção da branch do alvo correto continua em 403 e informa
+`administration=read`, ausente no token. Isso não prova ausência de proteção
+nem confirma a autenticação dos nós GitHub do onboarding.
+
+O bot Slack autenticou por `auth.test`, e seu workspace correspondeu ao
+configurado. O endpoint não retornou `app_id`; essa identidade continua
+baseada na configuração existente e nos filtros dos eventos. Nenhum vínculo
+humano foi inferido da conta conectada ao Codex ou de nomes parecidos.
+`SLACK_GITHUB_VINCULOS` permanece vazio, aguardando ID Slack e login GitHub
+confirmados. Mesmo com papéis verificáveis no alvo correto, ações humanas
+reais continuam sem validação e aguardam o vínculo confirmado.
+
+Foi possível configurar `APROVA_GITHUB_CHECK_NOME` com o nome fixo do código
+e `APROVA_GITHUB_CHECK_APP_ID` com o App que autenticou. O `.env` teve cópia
+privada antes da alteração. Somente o container do n8n foi recriado, preservando
+seu volume; nova auditoria confirmou as duas variáveis carregadas e API/Slack
+acessíveis. Digest continua inativo; SLA e correlação continuam `false`.
+Não houve alteração de regras de branch, concessão de permissões no GitHub
+nessa configuração inicial. Na 6A, somente o worker foi reiniciado para
+carregar o diretório Go correto; a API foi preservada.
+
+Os contratos ausentes foram reconferidos no código: não existem endpoints de
+feedback posterior, estado atual de aprovação ou reserva/confirmação dos
+avisos; o executor de reexecução continua `ReenfileiradorIndisponivel` e não
+há emissão automática de `instalacao` pelo webhook. Essas implementações
+continuam em escopo próprio do núcleo. O SLA aguarda prazos, canal e
+responsáveis definidos pela equipe; nenhuma política foi criada por suposição.
+
+O alvo foi corrigido conforme indicação do usuário para o
+[PR 1 de PI-GRUPO/aPRova-TESTES](https://github.com/PI-GRUPO/aPRova-TESTES/pull/1),
+head `704cd2b8a27a44862e232470fd8c85d6a4cc2bca`. A primeira tentativa no fork
+terminou em falha ao criar o Check, com 403 antes de sandbox/recibo/evento;
+seu resultado foi investigado antes de novo envio. No alvo correto, a entrada
+controlada `pull_request/synchronize` assinada foi aceita uma única vez e o
+worker concluiu a análise: 10 testes passaram, risco BAIXO, Check `success`
+e comentário do bot. O mesmo tenant/análise/PR/SHA e hash foram conferidos
+no evento automático autenticado do Core, no recibo e no Check.
+O Core encaminhou ao Trello, cuja busca retornou 200 e nenhum card vinculado;
+encerrou em `sem_card_vinculado` sem escrita ou réplica Slack. A Central não
+foi chamada, pois não houve espera por aprovação. A 6A comprova o worker
+local e o recibo válido; não comprova webhook automático do GitHub, alerta
+ALTO, dependência nova, decisão humana ou proteção de branch.
+
+Passaram os **228 testes de workflows em 16 arquivos** e os testes Go de
+configuração, platform, API, ações remotas, eventos, scripts de consulta e
+testes funcionais de ações. Estes últimos usam servidores locais/fakes e não
+substituem a validação de permissões externas. O bloqueio inicial de sockets
+do sandbox foi resolvido executando os testes com a permissão necessária;
+nenhuma falha funcional permaneceu nessa seleção.
+
+Os workflows manuais `aPRova | Testes | Auditoria Integrada Fase 6` e
+`aPRova | Testes | Recibo real Fase 6A` permanecem inativos na instância,
+no projeto pessoal. Fazem consultas de leitura; o primeiro também testa
+recusa sem assinatura. Não foram exportados. As evidências e o plano do worker
+ficam em `tmp/validacao-fase6/`, ignorado pelo Git; dados de tokens/chaves não
+foram registrados nos resultados. Workflows funcionais, credenciais e versões
+publicadas foram preservados. O SLA já tinha um rascunho que omite parâmetros
+padrão no nó `T13`; ele não foi publicado nem sincronizado nesta fase.
+
 ## Pendências compartilhadas e implantação
 
 - API/worker locais iniciados em 2026-11-14 com ambiente atualizado. O banco
@@ -1113,7 +1232,8 @@ opcional estão implementados; testes locais não comprovam integração externa
   três registros de ações remotas preservados. Ensaio em cópia e comparação
   com instalação limpa confirmaram esquema idêntico; `migrate up` retorna
   `no change`. `/health` e `/ready` responderam 200, inclusive a partir do
-  container do n8n. Falta validar worker → Core no repositório de teste.
+  container do n8n. A 6A validou worker → Core no repositório de teste correto,
+  com análise real, recibo válido e publicação do resultado no GitHub.
 - `.env` usa as variáveis atuais de recibos. Como não havia chave configurada
   nem recibos no banco, foi gerado um par Ed25519 local e sua chave pública
   foi conferida em `/receipts/keys`. A imagem `aprova-sandbox-go:local` foi
@@ -1121,14 +1241,16 @@ opcional estão implementados; testes locais não comprovam integração externa
   `http://localhost:8080`; acesso externo ainda exige endereço confirmado.
   Backups privados, evidências e comandos dos processos ficam no
   [relatório local](../tmp/atualizacao-local-20261114/RELATORIO.md).
-- Confirmar instalação, permissões e credenciais no GitHub real. As credenciais
-  já estão disponíveis; falta validação integrada.
+- Instalação, escrita de Check/comentário e consulta de papéis conferidas em
+  `PI-GRUPO/aPRova-TESTES`. Resolver a consulta de proteção e validar as ações
+  humanas após configurar vínculos confirmados; nenhuma ação foi enviada.
 - Configurar vínculos Slack/GitHub para ações e feedback, sem aceitar identidade
   declarada pela IA como autoridade.
 - Conferir URLs HTTPS do Slack/GitHub ao mudar túnel; produção exige domínio
   estável e rede/configuração próprias.
-- Validar gate/calibração, recibos e publicação reais com as integrações;
-  implementar o evento de instalação, respeitando a separação núcleo/periferia.
+- Gate BAIXO, sandbox Go, recibo e publicação reais validados na 6A. Faltam
+  cenários de risco ALTO/decisão, origem OSV, calibração quando habilitada e
+  evento de instalação, respeitando a separação núcleo/periferia.
 - Configurar prazos, canal e responsáveis do SLA publicado; validar envios
   reais e futura revalidação de estado, recuperação e retenção.
 - Configurar credenciais/chamadas após importar os exports; preservar
@@ -1136,9 +1258,10 @@ opcional estão implementados; testes locais não comprovam integração externa
 - Definir implantação da API/worker, versões de imagens, backups do n8n/chave
   de criptografia, retenção e recuperação de falhas para produção.
 
-A preparação local iniciou API/worker e validou a saúde das dependências;
-aprovações, métricas reais e o fluxo completo continuam sem validação nesta
-etapa. O onboarding criou uma lista no quadro de teste e enviou resumos ao canal
+A preparação local e a 6A validaram saúde, análise BAIXO, recibo, publicação
+no GitHub e evento autenticado worker → Core. Aprovações e os demais cenários
+integrados continuam pendentes; a proteção permanece indisponível. O
+onboarding criou uma lista no quadro de teste e enviou resumos ao canal
 usado nos testes do projeto. Esses testes não substituem a emissão real pelo
 backend nem a confirmação de proteção autenticada ainda pendentes.
 
@@ -1157,6 +1280,7 @@ substitui as instruções anteriores de editar IDs nos nós e de manter vínculo
 locais no feedback. As evidências funcionais acima são históricas; preencher
 variáveis não valida GitHub, Slack, Trello ou Gemini. Nesta etapa só foram
 executados testes isolados e inspeção estrutural, sem disparos externos.
-Permanecem pendentes identidades Slack/GitHub, validação de permissões reais,
-endpoint de feedback, executor de reexecução e validação integrada do Check,
-gate, calibração, recibos e publicação incorporados da `dev`.
+As pendências daquela revisão foram atualizadas nas fases 3–6 acima. A 6A
+já validou Check, gate BAIXO, recibo e publicação reais. Continuam pendentes
+vínculos Slack/GitHub, ações humanas, proteção, feedback, reexecução e os
+demais cenários integrados, incluindo calibração quando habilitada.
