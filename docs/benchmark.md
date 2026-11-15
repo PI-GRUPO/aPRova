@@ -433,13 +433,21 @@ as próprias branches:
 | Variante | Rodada | Modelo |
 | --- | --- | --- |
 | 2b | `2026-11-15-2b` | `claude-haiku-4-5-20251001` (`claude-haiku-4-5`) |
-| 2a | `2026-11-15-2a` | `claude-sonnet-5` |
+| 2a | `2026-11-15-2a` | `claude-sonnet-5` (não executada) |
 
 **Ordem: a 2b roda primeiro, e a 2a depois**, por causa do limite semanal do
 plano. A 2a só começa depois de conferido o uso consumido pela 2b. Esta
 ordem e os nomes das rodadas foram emendados em 2026-11-15, antes de rodar
 qualquer variante. O desenho original (`f3bf75a`) nomeava as rodadas
 `2026-11-14-2a` e `2026-11-14-2b` e não fixava a ordem. Nada mais mudou.
+
+**A variante 2a não foi executada.** A 2a (`claude-sonnet-5` sem execução
+de testes) estava no desenho, mas não rodou por limite de uso do plano. A
+decisão foi tomada antes de qualquer execução dela, depois de conferido o
+uso consumido pela 2b. Não existe resultado parcial da 2a, nem diretório
+`bench/resultados/2026-11-15-2a`. A comparação final fica entre a rodada 1
+e a 2b. A rodada 2 não separa o efeito do modelo do efeito de tirar a
+execução dos testes: a 2b muda as duas coisas em relação à rodada 1.
 
 Em cada tarefa, o `modelUsage` precisa mostrar o modelo da variante como
 principal, e isso é conferido na tabela de modelos.
@@ -450,6 +458,8 @@ Os comandos são:
 go run ./cmd/benchmark rodar --sem-execucao --modelo claude-haiku-4-5-20251001 2026-11-15-2b <21 ids do grupo A>
 go run ./cmd/benchmark rodar --sem-execucao 2026-11-15-2a <21 ids do grupo A>
 ```
+
+O segundo comando, o da 2a, não foi executado.
 
 Antes de rodar, duas chamadas mínimas ao CLI, fora da rodada e sem
 ferramentas, confirmaram o seguinte:
@@ -466,7 +476,10 @@ geradas com `go run ./cmd/benchmark tabelas bench/resultados/<rodada>`. A
 comparação sai de
 `go run ./cmd/benchmark comparar bench/resultados/2026-11-14 bench/resultados/2026-11-15-2a bench/resultados/2026-11-15-2b`.
 Uma tabela compara o grupo A da rodada 1 com o da 2a e o da 2b, linha a
-linha, sempre em "N de M":
+linha, sempre em "N de M". Como a 2a não foi executada, a comparação final
+saiu de
+`go run ./cmd/benchmark comparar bench/resultados/2026-11-14 bench/resultados/2026-11-15-2b`.
+As linhas da tabela são:
 
 - comparáveis;
 - oráculo passou;
@@ -633,3 +646,83 @@ Modelo principal: claude-haiku-4-5-20251001 em 21 de 21 tarefas.
   ressalva sobre os tokens de entrada sem cache vale aqui também.
 - **Modelo principal:** `claude-haiku-4-5-20251001` em 21 de 21 tarefas,
   sem outro modelo no `modelUsage`.
+
+## Resumo final para o artigo
+
+**Desenho.** Um agente de código headless (Claude Code) resolveu tarefas, e
+cada solução virou um PR real num repositório público com o aPRova como
+Check Run obrigatório. O gabarito vem de fora do aPRova: os testes originais
+de cada exercício, rodados por um oráculo separado, sem rede.
+
+- **Suíte:** 27 tarefas, 21 do polyglot do Aider (7 Go, 7 Python, 7 Java,
+  sorteadas com semente fixa) e 6 tarefas sintéticas de risco.
+- **Oráculo:** validado antes contra o próprio gabarito, com 20 de 21
+  confirmações. O `java-ledger` não discrimina, porque o stub já passa.
+- **Isolamento:** sandbox do Claude Code ligado, permissões fechadas e cinco
+  tentativas de fuga barradas antes de cada rodada.
+- **Conferência:** o diff de cada tarefa foi conferido antes do push.
+
+**Rodada 1** (`claude-sonnet-5`, podendo rodar os testes; 2026-11-14):
+
+- **Grupo A:** o oráculo passou em 21 de 21. Não houve solução quebrada, e
+  esta rodada não discrimina a tese: 0 de 21 quebradas sem a camada e 0 de
+  21 com a camada. As 21 foram liberadas, todas em médio só por
+  `codigo_sem_teste`.
+- **Grupo B:** 5 de 6 tarefas conferiram nível e motivo. A sexta,
+  `risco-dependencia-nova`, tinha uma falha de desenho: a biblioteca não
+  estava disponível sem rede. Depois do redesenho, uma execução nova deu
+  alto com `dependencia_nova`, como esperado. As duas execuções ficam
+  registradas.
+
+**Rodada 2b** (`claude-haiku-4-5-20251001`, sem ferramenta de execução;
+2026-11-15):
+
+- **Oráculo:** passou em 17 de 21 e falhou em 4 de 21.
+- **Quebradas:** as 4 foram contidas, bloqueadas em alto por
+  `falha_sandbox`. Duas não compilaram e duas tiveram testes falhando.
+- **Corretas:** 0 de 21 foram bloqueadas sem necessidade, e as 17 corretas
+  foram liberadas sem intervenção humana.
+
+**O que os dados sustentam, neste estudo-piloto:**
+
+- toda solução quebrada que apareceu foi bloqueada: 4 de 4, todas na 2b;
+- nenhuma solução correta foi bloqueada, nas duas rodadas: 0 de 38 (21 na
+  rodada 1 e 17 na 2b);
+- a decisão do aPRova levou em média 46,7 s na rodada 1 e 26,0 s na 2b,
+  medida do push até o recibo.
+
+**O que os dados não sustentam:**
+
+- **Generalização.** São 4 soluções quebradas no total, uma rodada por
+  variante e um só agente da família Claude.
+- **O efeito do modelo separado do efeito de tirar a execução dos testes.**
+  A 2a, que isolaria isso, não rodou por limite de uso.
+- **Porcentagens ou comparação com outros benchmarks.** Não são feitas.
+
+**Limitações da regra `codigo_sem_teste`:**
+
+- **Infla o nível.** Elevou a médio todas as soluções corretas da rodada 1
+  e 14 de 21 da 2b, porque a regra não vê os testes que já existem na base.
+- **Tem um ponto cego.** Três soluções da 2b saíram em baixo porque o agente
+  criou scripts com nome de teste que nunca rodaram. A correção está em
+  "Trabalho futuro".
+
+Nenhuma das duas mudou uma decisão de bloquear ou liberar nestas rodadas.
+
+**Ameaças à validade:**
+
+- o agente é da mesma família de modelos que ajudou a construir o aPRova;
+- o prompt efetivo inclui contexto que o Claude Code anexa;
+- a versão do CLI mudou durante o ensaio (as rodadas 1 e 2b rodaram na
+  2.1.325);
+- os tokens de entrada estão subestimados, porque o cache não é somado;
+- a infraestrutura é local, na máquina do desenvolvedor.
+
+**Reprodutibilidade:**
+
+- os registros brutos de cada rodada estão em `bench/resultados/`;
+- a suíte e os critérios estão em `bench/suite/`;
+- as tabelas saem de `go run ./cmd/benchmark tabelas <rodada>` e
+  `comparar <rodadas>`;
+- cada decisão tem o recibo assinado do aPRova, com id e hash nos
+  resultados.
