@@ -1,0 +1,78 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_configuracoes_visual",
+  "title": {
+    "type": "plain_text",
+    "text": "Conexão da equipe",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Fechar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "DEMONSTRAÇÃO · Integração opcional"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*GitHub*\nOrganização equipe"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Slack*\nWorkspace de demonstração"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Repositórios vinculados*\n`equipe/portal`\n`equipe/api`"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Notificações da equipe*\nCanal #aprova\n\n*Conversas individuais*\nAba Mensagens do app"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Administradores gerenciam os vínculos. O acesso aos dados e às decisões depende de autorização."
+        }
+      ]
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Gerenciar integração",
+            "emoji": true
+          },
+          "action_id": "aprova_config_gerenciar",
+          "value": "demo",
+          "url": "https://aprova.example.com/integracoes/slack"
+        }
+      ]
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}"
+}

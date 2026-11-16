@@ -1,0 +1,153 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_detalhes",
+  "title": {
+    "type": "plain_text",
+    "text": "Detalhes da análise",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Fechar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "DEMONSTRAÇÃO · Valores e identificadores fictícios"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*#3 · Atualiza dependências de autenticação*\n`equipe/portal`"
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Risco*\nAlto"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Estado*\nAguardando aprovação"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Por que exige uma decisão?*\nUma nova dependência foi adicionada ao projeto. Essa condição mantém o risco alto mesmo com os testes passando."
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Testes do sandbox*\n10 de 10 passaram"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Dependências / OSV*\nConsulta concluída: sem avisos conhecidos"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "O resultado do OSV não garante ausência de vulnerabilidades e não reduz o risco determinado pelo núcleo."
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Análise*\n`exemplo-03`"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Commit*\n`a1b2c3d`"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Recibo*\nAssinatura verificada neste exemplo. O recibo corresponde à análise e ao commit exibidos."
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Ver recibo",
+            "emoji": true
+          },
+          "action_id": "aprova_home_recibo",
+          "value": "exemplo-3"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Aprovar",
+            "emoji": true
+          },
+          "action_id": "aprova_home_aprovar",
+          "value": "exemplo-3"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Solicitar revisão",
+            "emoji": true
+          },
+          "action_id": "aprova_home_revisar",
+          "value": "exemplo-3"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "A decisão é validada pelo aPRova. Aprovar não executa merge."
+        }
+      ]
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}"
+}

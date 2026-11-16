@@ -1,0 +1,190 @@
+{
+  "type": "home",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "aPRova",
+        "emoji": true
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "*Workspace de demonstração* · GitHub conectado · Dados ilustrativos"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Converse com o aPRova",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Pergunte sobre as análises dos seus repositórios, acompanhe pendências e compare os resultados da equipe — em linguagem natural."
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Conversar com o bot",
+            "emoji": true
+          },
+          "action_id": "aprova_home_conversar",
+          "value": "demo",
+          "style": "primary",
+          "url": "https://slack.com/app_redirect?app=A00000000&team=T00000000"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Ideias de perguntas",
+            "emoji": true
+          },
+          "action_id": "aprova_home_perguntas",
+          "value": "demo"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Experimente: “Tem algum PR aguardando aprovação?” ou “Compare esta semana com a anterior.”"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Acompanhamento",
+        "emoji": true
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "static_select",
+          "action_id": "aprova_home_repositorio",
+          "placeholder": {
+            "type": "plain_text",
+            "text": "Repositório",
+            "emoji": true
+          },
+          "initial_option": {
+            "text": {
+              "type": "plain_text",
+              "text": "Todos os repositórios",
+              "emoji": true
+            },
+            "value": "todos"
+          },
+          "options": [
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "Todos os repositórios",
+                "emoji": true
+              },
+              "value": "todos"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "equipe/portal",
+                "emoji": true
+              },
+              "value": "equipe/portal"
+            },
+            {
+              "text": {
+                "type": "plain_text",
+                "text": "equipe/api",
+                "emoji": true
+              },
+              "value": "equipe/api"
+            }
+          ]
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Atualizar",
+            "emoji": true
+          },
+          "action_id": "aprova_home_atualizar",
+          "value": "demo"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*As primeiras análises aparecerão aqui*\nA integração está vinculada. Quando houver uma análise nos repositórios selecionados, você poderá acompanhar o resultado nesta página."
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Abrir dashboard",
+            "emoji": true
+          },
+          "action_id": "aprova_home_dashboard",
+          "value": "demo",
+          "url": "https://aprova.example.com"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Configurações",
+            "emoji": true
+          },
+          "action_id": "aprova_home_configuracoes",
+          "value": "demo"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Prévia visual · Nenhuma análise ou decisão é executada nesta demonstração."
+        }
+      ]
+    }
+  ]
+}

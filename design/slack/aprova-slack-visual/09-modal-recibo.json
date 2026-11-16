@@ -1,0 +1,86 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_recibo_visual",
+  "title": {
+    "type": "plain_text",
+    "text": "Recibo da análise",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Fechar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "DEMONSTRAÇÃO · A assinatura não foi verificada nesta prévia"
+        }
+      ]
+    },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Evidência verificável",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "No produto integrado, este painel apresenta o resultado da verificação do recibo emitido pelo núcleo."
+      }
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Análise*\n`exemplo-03`"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Commit*\n`a1b2c3d`"
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Resultado ilustrativo:* assinatura válida e dados correspondentes à análise.\n*Repositório:* `equipe/portal`\n*Pull request:* #3"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "A verificação real deve conferir assinatura e correspondência entre instalação, análise, PR e commit."
+        }
+      ]
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Abrir recibo completo",
+            "emoji": true
+          },
+          "action_id": "aprova_recibo_documento",
+          "value": "demo",
+          "url": "https://aprova.example.com/recibos/exemplo-03"
+        }
+      ]
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}"
+}

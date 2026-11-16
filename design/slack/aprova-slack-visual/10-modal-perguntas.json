@@ -1,0 +1,75 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_perguntas_visual",
+  "title": {
+    "type": "plain_text",
+    "text": "Converse com o aPRova",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Fechar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Use a aba *Mensagens* para conversar. Você pode escrever com suas próprias palavras e continuar a conversa."
+      }
+    },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Perguntas para começar",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "• Tem algum PR aguardando aprovação?\n• Quais análises estão em andamento em equipe/portal?\n• Qual é o estado da análise [ID]?\n• Compare esta semana com a anterior.\n• A API do aPRova está disponível?"
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Conversar com o bot",
+            "emoji": true
+          },
+          "action_id": "aprova_home_conversar",
+          "value": "demo",
+          "style": "primary",
+          "url": "https://slack.com/app_redirect?app=A00000000&team=T00000000"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "As consultas acima correspondem às ferramentas de leitura encontradas no projeto. A conversa em DM ainda requer validação no ambiente."
+        }
+      ]
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*E os motivos do risco?*\nEles aparecem no painel da análise desta proposta. A explicação em linguagem natural ainda depende de expor esses dados ao assistente."
+      }
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}"
+}

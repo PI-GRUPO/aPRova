@@ -1515,3 +1515,13 @@ As pendências daquela revisão foram atualizadas nas fases 3–6 acima. A 6A
 já validou Check, gate BAIXO, recibo e publicação reais. Continuam pendentes
 vínculos Slack/GitHub, ações humanas, proteção, feedback, reexecução e os
 demais cenários integrados, incluindo calibração quando habilitada.
+
+## Home Slack — piloto manual no backend (2026-11-16)
+
+A primeira etapa local oferece `go run ./cmd/slack-home` para publicar a
+Home de um usuário configurado no workspace atual, com `views.publish` e a
+fonte de leitura de análises já existente. Configuração, execução, testes e
+limites estão em [slack-home.md](slack-home.md). Não houve publicação real
+nesta entrega. Workflows e URLs de eventos/interações foram preservados.
+A Home contém somente leitura e navegação para conversa; decisões e modais
+visuais continuam pendentes de adaptação autorizada no núcleo.

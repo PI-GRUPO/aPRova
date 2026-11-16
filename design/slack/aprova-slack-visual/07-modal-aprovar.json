@@ -1,0 +1,66 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_aprovacao_visual",
+  "title": {
+    "type": "plain_text",
+    "text": "Aprovar análise",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Cancelar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*#3 · Atualiza dependências de autenticação*\n`equipe/portal` · Risco alto · Commit `a1b2c3d`"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Registre por que considera esta alteração aceitável. Sua identidade, permissão e relação com o PR serão verificadas antes da ação."
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "justificativa",
+      "label": {
+        "type": "plain_text",
+        "text": "Justificativa da aprovação",
+        "emoji": true
+      },
+      "element": {
+        "type": "plain_text_input",
+        "action_id": "texto",
+        "multiline": true,
+        "min_length": 10,
+        "max_length": 2000,
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Explique o que você revisou e por que aceita a alteração.",
+          "emoji": true
+        }
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Demonstração · Nenhuma aprovação será enviada. Aprovar não faz merge."
+        }
+      ]
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}",
+  "submit": {
+    "type": "plain_text",
+    "text": "Confirmar aprovação",
+    "emoji": true
+  }
+}

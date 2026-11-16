@@ -1,0 +1,27 @@
+{
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Olá! Sou o aPRova.*\nPergunte sobre análises, pendências e resultados dos repositórios vinculados à sua equipe."
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Você pode perguntar:*\n“Tem algum PR aguardando aprovação?”\n“Quais análises estão em andamento?”\n“Compare esta semana com a anterior.”"
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Demonstração · Respostas dependem das consultas disponíveis. A conversa não executa aprovações automaticamente."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "type": "home",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "aPRova",
+        "emoji": true
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "*Workspace de demonstração* · GitHub ainda não vinculado"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "Seu repositório, em conversa",
+        "emoji": true
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Acompanhe análises e tire dúvidas em linguagem natural, sem sair do Slack. Vincule uma instalação do GitHub para consultar os dados da sua equipe."
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Vincular GitHub",
+            "emoji": true
+          },
+          "action_id": "aprova_home_vincular",
+          "value": "demo",
+          "style": "primary",
+          "url": "https://aprova.example.com/integracoes/slack"
+        },
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Como funciona",
+            "emoji": true
+          },
+          "action_id": "aprova_home_ajuda",
+          "value": "demo"
+        }
+      ]
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Já pode conversar*\nAbra a aba Mensagens para conhecer o aPRova e receber orientação sobre a configuração. Informações dos repositórios ficam disponíveis depois do vínculo."
+      }
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "text": {
+            "type": "plain_text",
+            "text": "Conversar com o bot",
+            "emoji": true
+          },
+          "action_id": "aprova_home_conversar",
+          "value": "demo",
+          "url": "https://slack.com/app_redirect?app=A00000000&team=T00000000"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Prévia visual · Orientação sem vínculo é comportamento proposto, ainda depende de implementação."
+        }
+      ]
+    }
+  ]
+}

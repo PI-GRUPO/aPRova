@@ -1,0 +1,66 @@
+{
+  "type": "modal",
+  "callback_id": "aprova_revisao_visual",
+  "title": {
+    "type": "plain_text",
+    "text": "Solicitar revisão",
+    "emoji": true
+  },
+  "close": {
+    "type": "plain_text",
+    "text": "Cancelar",
+    "emoji": true
+  },
+  "blocks": [
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*#3 · Atualiza dependências de autenticação*\n`equipe/portal` · Risco alto · Commit `a1b2c3d`"
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "Descreva as alterações necessárias para que a pessoa responsável saiba o que revisar."
+      }
+    },
+    {
+      "type": "input",
+      "block_id": "justificativa",
+      "label": {
+        "type": "plain_text",
+        "text": "O que precisa ser revisado?",
+        "emoji": true
+      },
+      "element": {
+        "type": "plain_text_input",
+        "action_id": "texto",
+        "multiline": true,
+        "min_length": 10,
+        "max_length": 2000,
+        "placeholder": {
+          "type": "plain_text",
+          "text": "Indique a alteração esperada e o motivo.",
+          "emoji": true
+        }
+      }
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Demonstração · Nenhuma solicitação será enviada ao GitHub."
+        }
+      ]
+    }
+  ],
+  "private_metadata": "{\"modo\": \"demonstracao\", \"analise_id\": \"exemplo-03\"}",
+  "submit": {
+    "type": "plain_text",
+    "text": "Solicitar revisão",
+    "emoji": true
+  }
+}
