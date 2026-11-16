@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Casca } from "@/componentes/Casca";
 import { Conta, Entrar } from "@/paginas/Acesso";
+import { AnaliseDemonstracao } from "@/paginas/AnaliseDemonstracao";
 import { Analises } from "@/paginas/Analises";
 import { Configuracao } from "@/paginas/Configuracao";
 import { DetalheAnalise } from "@/paginas/DetalheAnalise";
@@ -59,6 +60,7 @@ export function App() {
 							/>
 						))}
 						<Route path="/relatorio-semanal" element={<RelatorioSemanalPagina />} />
+						<Route path="/analises/demonstracao/:id?" element={<AnaliseDemonstracao />} />
 						<Route path="/analises/:id" element={<DetalheAnalise />} />
 						<Route path="/recibos/:id" element={<DetalheDoRecibo />} />
 						{Harness && (

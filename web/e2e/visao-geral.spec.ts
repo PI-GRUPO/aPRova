@@ -20,16 +20,16 @@ for (const largura of [1440, 390, 360]) {
 			if (largura === 1440) {
 				await page.getByRole("searchbox", { name: "Buscar na fila" }).fill("go.mod");
 				await expect(page.getByText("1 de 5 análises")).toBeVisible();
-				await page.getByRole("button", { name: "cobranca-api #214", exact: true }).filter({ visible: true }).click();
-				await expect(page.getByRole("dialog")).toContainText("Nenhuma ação será enviada ao núcleo");
-				await page.keyboard.press("Escape");
-				await expect(page.getByRole("dialog")).toHaveCount(0);
+				await page.getByRole("link", { name: "cobranca-api #214", exact: true }).filter({ visible: true }).click();
+				await expect(page.getByRole("heading", { name: "cobranca-api / PR #214", exact: true })).toBeVisible();
+				await expect(page.getByText("Demonstração · dados simulados, sem operações reais.")).toBeVisible();
+				await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
 				await page.reload();
 				await expect(page.getByRole("searchbox", { name: "Buscar na fila" })).toHaveValue("go.mod");
 			} else {
-				await page.getByRole("button", { name: "aPRova-TESTES #1", exact: true }).filter({ visible: true }).click();
-				await expect(page.getByRole("dialog")).toContainText("Prévia com dados simulados");
-				await page.keyboard.press("Escape");
+				await page.getByRole("link", { name: "aPRova-TESTES #1", exact: true }).filter({ visible: true }).click();
+				await expect(page.getByRole("heading", { name: "aPRova-TESTES #1", exact: true })).toBeVisible();
+				await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
 			}
 			const celula = page.getByRole("button", { name: "8 de nov. · risco alto: 2 análise(s)", exact: true });
 			// A formatação do Intl pode variar entre versões do Chromium.

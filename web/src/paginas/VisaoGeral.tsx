@@ -7,30 +7,19 @@ import { consultarVisaoGeral, type ItemDaFila, type VisaoGeralDados } from "@/se
 import "@/estilos/visao-geral.css";
 
 function DetalheDaFila({ item }: { item: ItemDaFila }) {
+	const [q] = useSearchParams();
+	const retorno = new URLSearchParams();
+	for (const nome of ["fila", "repositorio"]) {
+		const valor = q.get(nome);
+		if (valor) retorno.set(nome, valor);
+	}
 	return (
-		<Modal
-			gatilho={
-				<button type="button" className="link-fila">
-					{item.repositorio} #{item.pr}
-				</button>
-			}
-			titulo={`${item.repositorio} / PR #${item.pr}`}
-			descricao="Prévia com dados simulados · aguardando aprovação"
-		>
-			<dl className="detalhes-fila">
-				<dt>Espera</dt>
-				<dd>{item.espera}</dd>
-				<dt>Branch</dt>
-				<dd className="mono">{item.branch}</dd>
-				<dt>Motivo do risco alto</dt>
-				<dd className="mono">{item.motivo}</dd>
-				<dt>Evidência</dt>
-				<dd>{item.evidencia}</dd>
-			</dl>
-			<p className="apoio">Esta análise é uma referência visual simulada. Nenhuma ação será enviada ao núcleo.</p>
-		</Modal>
+		<Link className="link-fila" to={`/analises/demonstracao/${item.id}?${new URLSearchParams({ retorno: retorno.toString() })}`}>
+			{item.repositorio} #{item.pr}
+		</Link>
 	);
 }
+
 function Distribuicao({ titulo, apoio, itens }: { titulo: string; apoio: string; itens: { nome: string; quantidade: number }[] }) {
 	const total = itens.reduce((s, i) => s + i.quantidade, 0);
 	return (

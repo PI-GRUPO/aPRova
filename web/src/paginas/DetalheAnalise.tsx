@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
@@ -7,6 +8,7 @@ import { Ativo } from "@/componentes/Ativo";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
 import { type Detalhe, detalharAnalise, erroDeAnalise, estados, urlGitHub } from "@/servicos/analises";
+import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
 import { buscarRecibo, type Verificacao, verificarRecibo } from "@/servicos/recibos";
 import { Protegida } from "./Acesso";
 import "@/estilos/analises.css";
@@ -66,29 +68,62 @@ function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string })
 					<p role="status">Carregando análise…</p>
 				</>
 			) : (
-				<Conteudo dados={dados} instalacao={instalacao} />
+				<ConteudoAnalise dados={dados} instalacao={instalacao} />
 			)}
 		</>
 	);
 }
-function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string }) {
+export function ConteudoAnalise({
+	dados: d,
+	instalacao,
+	usuarioSimulado,
+	complementoSimulado,
+	linhaDoTempoSimulada,
+}: {
+	dados: Detalhe;
+	instalacao: string;
+	usuarioSimulado?: string;
+	complementoSimulado?: ComplementoDemonstracao;
+	linhaDoTempoSimulada?: ReactNode;
+}) {
 	const { sessao } = useSessao();
 	const a = d.analise;
 	const g = d.gate;
+	const demonstracao = !!usuarioSimulado;
+	const usuario = usuarioSimulado ?? (sessao?.autenticado ? String(sessao.usuario.id) : "");
 	return (
 		<>
 			<div className="titulo-contexto">
 				<h1 className="caminho">
-					{a.repositorio} / PR #{a.numero_pr}
+					{demonstracao ? (
+						<>
+							<span className="titulo-demonstracao-desktop">
+								{a.repositorio} / PR #{a.numero_pr}
+							</span>
+							<span className="titulo-demonstracao-mobile">
+								{a.repositorio} #{a.numero_pr}
+							</span>
+						</>
+					) : (
+						<>
+							{a.repositorio} / PR #{a.numero_pr}
+						</>
+					)}
 				</h1>
-				<p className="apoio caminho">
+				{demonstracao && <p className="apoio">Demonstração · dados simulados, sem operações reais.</p>}
+				<p className="apoio caminho metadados-analise">
 					Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
 				</p>
 			</div>
-			<div className="controles">
+			<div className="controles estado-do-detalhe">
 				<Risco nivel={a.nivel} />
 				<Estado estado={a.estado} />
 			</div>
+			{demonstracao && (
+				<p className="apoio mono resumo-demonstracao-mobile">
+					Commit {a.sha_head.slice(0, 7)} · autor {a.autor}
+				</p>
+			)}
 			{!d.atual && (
 				<PainelDeEstado titulo="Esta análise foi substituída">
 					<p>Existe uma análise mais recente deste PR. A decisão e as evidências abaixo pertencem exclusivamente ao commit {a.sha_head}.</p>
@@ -114,10 +149,16 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 						))}
 					</dl>
 					<div className="controles">
-						<a className="botao" href={urlGitHub(d.url_pr)} target="_blank" rel="noreferrer">
-							Abrir PR
-						</a>
-						{d.url_check ? (
+						{demonstracao ? (
+							<Botao disabled>Abrir PR</Botao>
+						) : (
+							<a className="botao" href={urlGitHub(d.url_pr)} target="_blank" rel="noreferrer">
+								Abrir PR
+							</a>
+						)}
+						{demonstracao ? (
+							<Botao disabled>Abrir Check Run</Botao>
+						) : d.url_check ? (
 							<a className="botao" href={urlGitHub(d.url_check)} target="_blank" rel="noreferrer">
 								Abrir Check Run
 							</a>
@@ -132,11 +173,11 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 				>
 					{g ? (
 						<>
-							<p>{g.motivo}</p>
+							{!demonstracao && <p>{g.motivo}</p>}
 							{g.motivos.map((m) => (
 								<div className="motivo-analise" key={m.id}>
 									<code>{m.id}</code>
-									<p>{m.descricao}</p>
+									<p className={demonstracao ? "descricao-regra-demonstracao" : undefined}>{m.descricao}</p>
 									<ul>
 										{m.evidencias.map((e) => (
 											<li key={e}>{e}</li>
@@ -160,17 +201,31 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 				{g ? (
 					<>
 						<p>
-							{g.nivel_deterministico} → {g.nivel}
+							{demonstracao ? g.nivel_deterministico.replace(/^./, (l) => l.toUpperCase()) : g.nivel_deterministico} →{" "}
+							{demonstracao ? g.nivel.replace(/^./, (l) => l.toUpperCase()) : g.nivel}
 						</p>
 						<p>{g.calibracao_razao}</p>
-						<p className="apoio">Estado registrado: {g.calibracao_estado}</p>
+						{complementoSimulado ? (
+							<>
+								<p className="apoio">{complementoSimulado.contextoCalibracao}</p>
+								<p className="apoio">{complementoSimulado.ajudaCalibracao}</p>
+							</>
+						) : (
+							<p className="apoio">Estado registrado: {g.calibracao_estado}</p>
+						)}
 						<details>
 							<summary>Ver casos semelhantes</summary>
 							{g.vizinhos.length ? (
 								<ul>
 									{g.vizinhos.map((v) => (
 										<li key={v.task_run_id}>
-											<Link to={`/analises/${v.task_run_id}?installation_id=${instalacao}`}>
+											<Link
+												to={
+													demonstracao
+														? `/analises/demonstracao/${v.task_run_id}`
+														: `/analises/${v.task_run_id}?installation_id=${instalacao}`
+												}
+											>
 												{v.repositorio} #{v.numero_pr}
 											</Link>{" "}
 											· similaridade {(v.similaridade * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% · {v.desfecho}
@@ -187,30 +242,31 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 				)}
 			</PainelAnalise>
 			<PainelAnalise titulo="Linha do tempo da execução">
-				{d.etapas.length ? (
-					<ol className="timeline-analise">
-						{d.etapas.map((e) => (
-							<li key={e.id}>
-								<span className="marcador-etapa">
-									<Ativo nome={e.para === "concluido" ? "concluido" : e.para === "falhou" ? "falhou" : "clock"} />
-									{e.para === "concluido" ? "Concluída" : e.para === "falhou" ? "Falhou" : "Transição registrada"}
-								</span>
-								<Modal
-									titulo={estados[e.para] ?? e.para}
-									descricao={`De ${estados[e.de] ?? e.de} para ${estados[e.para] ?? e.para}, em ${dataUTC(e.criado_em)}.`}
-									gatilho={<Botao variante="discreto">{estados[e.para] ?? e.para}</Botao>}
-								>
-									<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
-								</Modal>
-								<time className="apoio" dateTime={e.criado_em}>
-									{dataUTC(e.criado_em)}
-								</time>
-							</li>
-						))}
-					</ol>
-				) : (
-					<p>Histórico de transições não disponível.</p>
-				)}
+				{linhaDoTempoSimulada ??
+					(d.etapas.length ? (
+						<ol className="timeline-analise">
+							{d.etapas.map((e) => (
+								<li key={e.id}>
+									<span className="marcador-etapa">
+										<Ativo nome={e.para === "concluido" ? "concluido" : e.para === "falhou" ? "falhou" : "clock"} />
+										{e.para === "concluido" ? "Concluída" : e.para === "falhou" ? "Falhou" : "Transição registrada"}
+									</span>
+									<Modal
+										titulo={estados[e.para] ?? e.para}
+										descricao={`De ${estados[e.de] ?? e.de} para ${estados[e.para] ?? e.para}, em ${dataUTC(e.criado_em)}.`}
+										gatilho={<Botao variante="discreto">{estados[e.para] ?? e.para}</Botao>}
+									>
+										<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
+									</Modal>
+									<time className="apoio" dateTime={e.criado_em}>
+										{dataUTC(e.criado_em)}
+									</time>
+								</li>
+							))}
+						</ol>
+					) : (
+						<p>Histórico de transições não disponível.</p>
+					))}
 			</PainelAnalise>
 			<PainelAnalise
 				titulo="Sandbox e saídas"
@@ -284,18 +340,19 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 					<p>Nenhuma decisão humana registrada para esta análise.</p>
 				)}
 				<AcoesSimuladas
-					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${sessao?.autenticado ? sessao.usuario.id : ""}`}
+					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${usuario}`}
 					contexto={{
 						instalacao,
 						id: a.id,
 						repo: a.repositorio,
 						pr: a.numero_pr,
 						sha: a.sha_head,
-						usuario: sessao?.autenticado ? String(sessao.usuario.id) : "",
+						usuario,
 						nivel: a.nivel,
 						estado: a.estado,
 						atual: d.atual,
-						proprioPR: !!sessao?.autenticado && sessao.usuario.login.toLowerCase() === a.autor.replace(/^@/, "").toLowerCase(),
+						proprioPR:
+							!demonstracao && !!sessao?.autenticado && sessao.usuario.login.toLowerCase() === a.autor.replace(/^@/, "").toLowerCase(),
 						falhaInfra: d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
 					}}
 				/>
@@ -305,7 +362,17 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 				titulo="Recibo assinado"
 				ajuda="A verificação confere hash, chave, assinatura, conteúdo e elo anterior; não verifica toda a cadeia."
 			>
-				{d.recibo_id ? <ReciboDaAnalise id={d.recibo_id} analiseID={a.id} /> : <p>Recibo ainda não emitido para esta análise.</p>}
+				{demonstracao ? (
+					<>
+						<p>Metadados simulados · sem envelope assinado ou verificação criptográfica.</p>
+						{d.recibo_id ? <code className="caminho">{d.recibo_id}</code> : <p>Recibo não incluído nesta referência.</p>}
+						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio })}`}>Consultar coleção de demonstração</Link>
+					</>
+				) : d.recibo_id ? (
+					<ReciboDaAnalise id={d.recibo_id} analiseID={a.id} />
+				) : (
+					<p>Recibo ainda não emitido para esta análise.</p>
+				)}
 			</PainelAnalise>
 		</>
 	);

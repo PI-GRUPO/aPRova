@@ -60,8 +60,9 @@ serviços existentes de sessão, análises e recibos mantêm consultas reais.
 
 Este lote cobre a visão geral; não conclui todo o dashboard. A série/contagem
 por dia ainda é uma fixture visual, e seu modal explica o recorte simulado;
-não apresenta UUIDs inventados como análises reais. Os detalhes e ações completos
-correspondentes ao mapa/fila seguem para os próximos lotes de front com mocks.
+não apresenta UUIDs inventados como análises reais. O ciclo seguinte conectou a [fila ao detalhe e à decisão de demonstração](dashboard-fila-detalhe.md).
+A coleção por célula do mapa permanece pendente; suas contagens não são
+apresentadas como uma lista de análises reais.
 A última referência de recibo simulada leva à área de recibos, sem forjar uma
 verificação criptográfica. Nenhuma aprovação, review ou configuração é enviada.
 

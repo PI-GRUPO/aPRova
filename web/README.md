@@ -12,6 +12,10 @@ Abra `http://127.0.0.1:5173`. A visão geral usa dados simulados separados em
 `src/mocks/visao-geral.ts`, pois o contrato de métricas de 30 dias ainda não existe.
 O serviço substituível fica em `src/servicos/visao-geral.ts`. A indicação de dados
 simulados faz parte da tela; falhas da API real nunca ativam mocks automaticamente.
+Os links da fila abrem `/analises/demonstracao/:id`, com fixtures de
+`src/mocks/analises-demonstracao.ts` e adapter próprio. Esse fluxo funciona
+sem sessão e sem consultar a API de análises ou recibos. A consulta real em
+`/analises/:id` preserva sua proteção por sessão e tratamento de erros.
 O relatório real da API continua em `/relatorio-semanal`, acessível pelo rodapé.
 Análises, recibos por UUID, chaves públicas e sessão continuam consumindo seus contratos existentes.
 O catálogo de repositórios também consulta a API quando há uma instalação autorizada.

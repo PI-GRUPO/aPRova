@@ -28,6 +28,8 @@ Os contratos reais existentes foram preservados; operações sem contrato usam
 adapters locais explícitos. O ciclo de [ações humanas simuladas](dashboard-acoes-simuladas.md)
 implementa os modais de decisão e reexecução sem enviar comandos ao núcleo.
 Autorização, execução e acompanhamento reais continuam dependentes dos contratos web.
+O ciclo [fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
+conecta os links da visão geral às referências locais, sem enviar IDs fictícios à API.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.
