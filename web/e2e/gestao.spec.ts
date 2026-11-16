@@ -7,6 +7,7 @@ const telas = [
 	["configuracao", "Configuração do gate"],
 	["sugestoes", "Sugestões de regras pela IA"],
 	["sla", "Limites de SLA"],
+	["recibos", "Recibos e auditoria"],
 ];
 test.beforeEach(async ({ page }) => {
 	await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: false } }));
@@ -19,7 +20,12 @@ for (const largura of [1440, 390, 360]) {
 			for (const [caminho, titulo] of telas) {
 				await page.goto(`/${caminho}`);
 				await expect(page.getByRole("heading", { name: titulo, exact: true })).toBeVisible();
-				await expect(page.getByText("Demonstração · dados e alterações simulados nesta sessão da página.")).toBeVisible();
+				if (caminho !== "recibos")
+					await expect(page.getByText("Demonstração · dados e alterações simulados nesta sessão da página.")).toBeVisible();
+				else
+					await expect(
+						page.getByText("Coleção e cadeia simuladas. Nenhum resultado acima comprova assinatura ou integridade real."),
+					).toBeVisible();
 				await page.evaluate(() => document.fonts.ready);
 				await page.screenshot({ path: `../.capturas-mcp/dashboard/local-${caminho}-${largura}-${tema}.png`, fullPage: true });
 				expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), caminho).toBeTruthy();
@@ -136,4 +142,67 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 	await expect(page).toHaveURL(/analises\?installation_id=42&repositorio=equipe%2Freal/);
 	expect(instalacoes.length).toBeGreaterThanOrEqual(2);
 	expect(instalacoes.every((i) => i === "42")).toBeTruthy();
+});
+
+for (const largura of [1440, 390, 360]) {
+	test(`vínculo Slack simulado preserva identidade GitHub em ${largura}px`, async ({ page }) => {
+		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
+		await page.unroute("**/api/sessao");
+		await page.route("**/api/sessao", (r) =>
+			r.fulfill({
+				json: {
+					autenticado: true,
+					login_disponivel: true,
+					usuario: { id: 7, login: "pessoa-fixture" },
+					instalacoes: [{ id: 42, conta: "equipe" }],
+					csrf_token: "a".repeat(43),
+					expira_em: new Date(Date.now() + 3600000).toISOString(),
+				},
+			}),
+		);
+		const escritas: string[] = [];
+		page.on("request", (r) => {
+			if (r.method() !== "GET") escritas.push(r.url());
+		});
+		await page.goto("/conta");
+		for (const tema of ["escuro", "claro"]) {
+			if (tema === "claro") await page.getByRole("button", { name: "Usar tema claro" }).click();
+			await page.evaluate(() => document.fonts.ready);
+			await page.screenshot({ path: `../.capturas-mcp/dashboard/local-conta-${largura}-${tema}.png`, fullPage: true });
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+		}
+		await page.getByRole("button", { name: "Conectar minha conta Slack" }).click();
+		await expect(page.getByRole("dialog")).toContainText("@pessoa-fixture");
+		await page.getByRole("button", { name: "Autorizar vínculo" }).click();
+		await expect(page.getByRole("status")).toContainText("Conectado somente nesta página");
+		await page.getByRole("button", { name: "Desvincular conta", exact: true }).click();
+		await page.getByRole("dialog").getByRole("button", { name: "Desvincular conta", exact: true }).click();
+		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeVisible();
+		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
+		expect(escritas).toEqual([]);
+	});
+}
+
+test("coleção exporta somente metadados simulados dos filtros e não forja verificação", async ({ page }) => {
+	await page.route("**/receipts/keys", (r) => r.fulfill({ json: { chaves: [] } }));
+	await page.goto("/recibos?repositorio=cobranca-api");
+	await expect(page.getByRole("table", { name: "Recibos por repositório · demonstração" }).locator("tbody tr")).toHaveCount(1);
+	await page.getByRole("button", { name: "Verificar cadeia", exact: true }).click();
+	await expect(page.getByRole("dialog")).toContainText("não comprova a cadeia real");
+	await expect(page.getByRole("dialog")).toContainText("Primeiro elo quebrado");
+	await page.keyboard.press("Escape");
+	await page.getByRole("button", { name: "Exportar JSON", exact: true }).click();
+	const baixado = page.waitForEvent("download");
+	await page.getByRole("button", { name: "Baixar demonstração" }).click();
+	const download = await baixado;
+	const stream = await download.createReadStream();
+	let conteudo = "";
+	for await (const parte of stream) conteudo += parte.toString();
+	const pacote = JSON.parse(conteudo);
+	expect(pacote.origem).toBe("mock");
+	expect(pacote.registros).toHaveLength(1);
+	expect(pacote.registros[0].repo).toBe("cobranca-api");
+	expect(pacote.registros[0].assinatura_base64).toBeUndefined();
+	expect(download.suggestedFilename()).toBe("recibos-demonstracao.json");
+	await expect(page.getByRole("cell", { name: "Não executada", exact: true })).toBeVisible();
 });

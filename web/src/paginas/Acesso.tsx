@@ -4,6 +4,7 @@ import { useSessao } from "@/app/sessao";
 import { useTema } from "@/app/tema";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
+import { VinculoSlack } from "@/componentes/VinculoSlack";
 import { mensagemDeErro } from "@/servicos/recibos";
 import "@/estilos/sessao.css";
 export function Protegida({ children }: { children: ReactNode }) {
@@ -104,7 +105,7 @@ export function Conta() {
 		<div className="pagina">
 			<div className="titulo-contexto">
 				<h1>Conta e integrações</h1>
-				<p className="apoio">Sua conta e instalações autorizadas.</p>
+				<p className="apoio">Conecte sua conta Slack ao GitHub</p>
 			</div>
 			<Protegida>
 				{sessao?.autenticado && (
@@ -130,13 +131,7 @@ export function Conta() {
 								)}
 							</div>
 						</section>
-						<section className="painel-sessao">
-							<h2>Conectar Slack</h2>
-							<div>
-								<p>A conexão pessoal com Slack ainda não está disponível.</p>
-								<Botao disabled>Conectar minha conta Slack</Botao>
-							</div>
-						</section>
+						<VinculoSlack key={sessao.usuario.id} login={sessao.usuario.login} />
 					</>
 				)}
 			</Protegida>

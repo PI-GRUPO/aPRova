@@ -23,6 +23,11 @@ e capturas. A primeira entrega de front e suas limitações estão registradas e
 [visão geral com mocks separados](dashboard-visao-geral.md). As demais telas
 continuam seguindo o inventário e exigem validação visual própria.
 
+Ciclos seguintes de front: [gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md).
+Os contratos reais existentes foram preservados; operações sem contrato usam
+adapters locais explícitos. As ações humanas de aprovação/reexecução ainda estão
+em preparação e não fazem parte destes ciclos concluídos.
+
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.
 O [índice desta pasta](README.md) reúne os documentos. Usar links relativos

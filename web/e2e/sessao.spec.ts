@@ -55,7 +55,7 @@ for (const largura of [1440, 390, 360])
 		}
 		await page.goto("/conta");
 		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeDisabled();
+		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeEnabled();
 		await page.screenshot({ path: `../.capturas-mcp/f3/local-conta-${largura}.png`, fullPage: true });
 	});
 test("troca de escopo descarta dados e URL adulterada não dispara relatório", async ({ page }) => {

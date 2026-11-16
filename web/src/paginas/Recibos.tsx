@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Ativo } from "@/componentes/Ativo";
+import { ColecaoRecibos } from "@/componentes/ColecaoRecibos";
 import { Botao, Campo, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import {
 	baixar,
@@ -127,8 +128,12 @@ export function Recibos() {
 	}, [tentativa]);
 	return (
 		<div className="pagina">
-			<h1>Recibos</h1>
-			<p className="apoio">Consulte um recibo pelo UUID. A listagem de recibos ainda não está disponível.</p>
+			<div className="titulo-contexto">
+				<h1>Recibos e auditoria</h1>
+				<p className="apoio">Trilha de decisões assinadas · coleção de demonstração e consulta pública real por UUID</p>
+			</div>
+			<ColecaoRecibos />
+			<h2>Consultar recibo real</h2>
 			<Localizar />
 			<Painel titulo="Chaves públicas">
 				{erro ? (

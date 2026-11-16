@@ -123,7 +123,7 @@ test("troca de UUID cancela consulta e limpa a verificação anterior", async ({
 	await page.getByRole("link", { name: "Consultar recibo anterior" }).click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toHaveCount(0);
 	await page.getByRole("link", { name: "Voltar para recibos" }).click();
-	await expect(page.getByRole("heading", { name: "Recibos", exact: true })).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Recibos e auditoria", exact: true })).toBeVisible();
 });
 test("verificação com identidade divergente é recusada", async ({ page }) => {
 	await simular(page, documento, { ...verificacao, id: anterior });

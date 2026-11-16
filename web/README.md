@@ -13,7 +13,15 @@ Abra `http://127.0.0.1:5173`. A visão geral usa dados simulados separados em
 O serviço substituível fica em `src/servicos/visao-geral.ts`. A indicação de dados
 simulados faz parte da tela; falhas da API real nunca ativam mocks automaticamente.
 O relatório real da API continua em `/relatorio-semanal`, acessível pelo rodapé.
-Análises, recibos e sessão continuam consumindo seus contratos existentes.
+Análises, recibos por UUID, chaves públicas e sessão continuam consumindo seus contratos existentes.
+O catálogo de repositórios também consulta a API quando há uma instalação autorizada.
+
+Regras, auditoria, configuração, sugestões e SLA usam `src/mocks/gestao.ts`,
+com adapter em `src/servicos/gestao.ts`. Alterações ficam apenas em memória;
+recarregar a página restaura os valores da demonstração. A coleção/cadeia de
+recibos usa `src/mocks/recibos.ts`; suas exportações não contêm assinaturas ou
+valor de prova. O vínculo Slack usa `src/mocks/conta.ts` e um adapter local,
+sem OAuth ou escrita na API. As telas identificam essas simulações.
 
 ```sh
 npm --prefix web run verificar

@@ -317,3 +317,28 @@
 		display: none;
 	}
 }
+.filtros-recibos > .seletor-gestao:first-child {
+	width: 280px;
+}
+.filtros-recibos > .seletor-gestao:nth-child(2) {
+	width: 220px;
+}
+.acoes-colecao {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	margin-left: auto;
+}
+.acoes-colecao > .botao {
+	min-width: 150px;
+}
+@media (max-width: 767px) {
+	.acoes-colecao {
+		margin-left: 0;
+		width: 100%;
+	}
+	.acoes-colecao > .botao {
+		min-width: 0;
+		flex: 1;
+	}
+}
