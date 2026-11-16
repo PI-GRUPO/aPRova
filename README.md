@@ -63,6 +63,11 @@ testes com `--network none`. A rede é fixa por etapa e não se configura;
 `SANDBOX_REDE_LOCAL` deixou de existir e, presente no `.env`, impede o worker
 de subir. Veja [docs/sandbox-em-duas-etapas.md](docs/sandbox-em-duas-etapas.md).
 
+A API e o worker são publicados como Container Apps a partir de
+`imagens/nucleo/Dockerfile` (`make imagem-api` e `make imagem-worker` constroem
+as imagens localmente); o passo a passo está em
+[docs/implantacao-azure.md](docs/implantacao-azure.md).
+
 Para disparar o job real na Azure contra um SHA e ver o status final:
 
 ```sh
