@@ -1,31 +1,21 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Casca } from "@/componentes/Casca";
-import { PainelDeEstado } from "@/componentes/Primitivos";
 import { Conta, Entrar } from "@/paginas/Acesso";
 import { Analises } from "@/paginas/Analises";
+import { Configuracao } from "@/paginas/Configuracao";
 import { DetalheAnalise } from "@/paginas/DetalheAnalise";
+import { Auditoria, Regras, Repositorios } from "@/paginas/LeiturasGestao";
 import { DetalheDoRecibo, Recibos } from "@/paginas/Recibos";
 import { RelatorioSemanalPagina } from "@/paginas/RelatorioSemanal";
+import { Sla } from "@/paginas/Sla";
+import { Sugestoes } from "@/paginas/Sugestoes";
 import { VisaoGeral } from "@/paginas/VisaoGeral";
 import { NaoEncontrada } from "./NaoEncontrada";
 import { secoes } from "./rotas";
 import { ProvedorDeSessao } from "./sessao";
 
 const Harness = __HARNESS__ ? lazy(() => import("../../e2e/Harness")) : null;
-function Indisponivel({ titulo, detalhe = false }: { titulo: string; detalhe?: boolean }) {
-	return (
-		<div className="pagina">
-			<h1>{titulo}</h1>
-			<PainelDeEstado titulo="Disponível em breve">
-				<p>
-					{detalhe ? "A consulta deste detalhe ainda não está disponível." : "Esta área ainda está em desenvolvimento."} Os dados serão
-					exibidos quando o acesso à sua conta estiver disponível.
-				</p>
-			</PainelDeEstado>
-		</div>
-	);
-}
 function Titulo() {
 	const { pathname } = useLocation();
 	useEffect(() => {
@@ -56,7 +46,14 @@ export function App() {
 									) : s.caminho === "/conta" ? (
 										<Conta />
 									) : (
-										<Indisponivel titulo={s.titulo} />
+										{
+											"/repositorios": <Repositorios />,
+											"/regras": <Regras />,
+											"/auditoria": <Auditoria />,
+											"/configuracao": <Configuracao />,
+											"/sugestoes": <Sugestoes />,
+											"/sla": <Sla />,
+										}[s.caminho]
 									)
 								}
 							/>

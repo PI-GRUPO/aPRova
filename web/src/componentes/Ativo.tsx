@@ -10,6 +10,7 @@ export type NomeDoAtivo =
 	| "scale"
 	| "history"
 	| "settings"
+	| "settings-primario"
 	| "lightbulb"
 	| "link"
 	| "clock"

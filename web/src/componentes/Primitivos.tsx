@@ -32,6 +32,7 @@ export function Modal({
 	children,
 	aberto,
 	aoMudar,
+	className = "",
 }: {
 	gatilho: ReactNode;
 	titulo: string;
@@ -39,13 +40,14 @@ export function Modal({
 	children: ReactNode;
 	aberto?: boolean;
 	aoMudar?: (aberto: boolean) => void;
+	className?: string;
 }) {
 	return (
 		<Dialog.Root open={aberto} onOpenChange={aoMudar}>
 			<Dialog.Trigger asChild>{gatilho}</Dialog.Trigger>
 			<Dialog.Portal>
 				<Dialog.Overlay className="modal-fundo" />
-				<Dialog.Content className="modal">
+				<Dialog.Content className={cn("modal", className)}>
 					<Dialog.Title>{titulo}</Dialog.Title>
 					<Dialog.Description>{descricao}</Dialog.Description>
 					{children}
