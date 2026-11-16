@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Casca } from "@/componentes/Casca";
 import { PainelDeEstado } from "@/componentes/Primitivos";
+import { DetalheDoRecibo, Recibos } from "@/paginas/Recibos";
 import { NaoEncontrada } from "./NaoEncontrada";
 import { secoes } from "./rotas";
 
@@ -34,10 +35,10 @@ export function App() {
 			<Routes>
 				<Route element={<Casca />}>
 					{secoes.map((s) => (
-						<Route key={s.caminho} path={s.caminho} element={<Indisponivel titulo={s.titulo} />} />
+						<Route key={s.caminho} path={s.caminho} element={s.caminho === "/recibos" ? <Recibos /> : <Indisponivel titulo={s.titulo} />} />
 					))}
 					<Route path="/analises/:id" element={<Indisponivel titulo="Detalhe da análise" detalhe />} />
-					<Route path="/recibos/:id" element={<Indisponivel titulo="Detalhe do recibo" detalhe />} />
+					<Route path="/recibos/:id" element={<DetalheDoRecibo />} />
 					<Route
 						path="/entrar"
 						element={

@@ -1,4 +1,4 @@
-// Servidor isolado de testes: handlers reais, dependências explicitamente indisponíveis.
+// Servidor isolado de testes: handlers reais e recibo sintético assinado em memória.
 // Não é o ponto de entrada de produção e não lê credenciais.
 package main
 
@@ -18,7 +18,7 @@ func main() {
 	servidor := &http.Server{
 		Addr:              "127.0.0.1:18080",
 		ReadHeaderTimeout: 5 * time.Second,
-		Handler:           api.NovoServidor(api.Opcoes{Dependencias: []api.Dependencia{{Nome: "postgres", Verificar: func(context.Context) error { return errors.New("dependência indisponível no cenário de teste") }}}}).Rotas(),
+		Handler:           api.NovoServidor(api.Opcoes{Recibos: recibosDeTeste(), Dependencias: []api.Dependencia{{Nome: "postgres", Verificar: func(context.Context) error { return errors.New("dependência indisponível no cenário de teste") }}}}).Rotas(),
 	}
 	ctx, cancelar := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancelar()

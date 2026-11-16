@@ -7,6 +7,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Plano de implementação e registro dos lotes](implementacao-dashboard.md)
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
+- [Recibos F2: execução e validação](dashboard-f2.md)
 - [Inventário de telas e componentes Figma](dashboard-inventario-figma.md)
 - [Critérios dos cards consultados na F0](dashboard-cards-f0.md)
 

@@ -5,6 +5,7 @@ levantamento, execução e acompanhamento do dashboard em `design/docs/`.
 O [índice desta pasta](README.md) reúne os documentos. Usar links relativos
 para as referências técnicas do núcleo que permanecem em `docs/` na raiz.
 
+> Execução F2 em 16/11/2026: consulte [recibos por UUID e validação](dashboard-f2.md); aceite com recibo real pendente.
 > Execução F1 em 16/11/2026: consulte [implementação e validação da fundação](dashboard-f1.md).
 > Retomada F0 em 16/11/2026: veja [levantamento atual](dashboard-f0.md),
 > [inventário Figma](dashboard-inventario-figma.md) e
@@ -886,3 +887,24 @@ que incluía uma proposta de AGENTS.md versionado.
 - Validação: Testes Go de fallback/cache/HEAD/checkout sem build, regressão interna/comandos/web com race, lint sem apontamentos e build do binário; smoke HTTP da SPA.
 - Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
 - Dependências/próximo lote: Próxima fase: F2, condicionada a API de teste e UUID real.
+
+### F2A–F2D — 16/11/2026
+
+- Estado: implementação local concluída; aceite de homologação pendente.
+- Base/escopo: `dbafee3`, branch `feat/web-dashboard`; consulta pública por UUID,
+  cinco conferências, chaves e exportação individual. Registro detalhado:
+  [recibos F2](dashboard-f2.md).
+- Card #70 parcialmente coberto; coleção e cadeia completa permanecem em F4C.
+- Nós Figma: `9:1024`, `15:2791`, `16:159`, `10:1272`, `10:1309`;
+  dois temas, viewports 1440×900, 390×844 e 360×844.
+- Contratos: os três GETs públicos de recibos existentes; nenhuma API nova.
+- Arquivos: páginas/serviço/estilo de recibos, rotas, ativos de ajuda/serrilhado,
+  cenários Playwright, fixture assinada do servidor exclusivo de testes e documentação.
+- Validação: Biome e build aprovados; testes Go de API/receipt/web e go vet web
+  aprovados. Regressão F1/servidor aprovada; cenários F2 incluem HTTP local com
+  verificador real e assinatura do download conferida independentemente.
+- Evidências: `.capturas-mcp/f2/`, ignorada pelo Git. Mock, fixture local e
+  homologação são distinguidos no registro detalhado.
+- Dependência/próximo lote: URL da API de teste e UUID real ainda não fornecidos;
+  validar consulta, verificação, download e conferência independente antes de
+  declarar o aceite integrado F2 concluído. F3 é o próximo lote de implementação.
