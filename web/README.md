@@ -23,6 +23,12 @@ recibos usa `src/mocks/recibos.ts`; suas exportações não contêm assinaturas 
 valor de prova. O vínculo Slack usa `src/mocks/conta.ts` e um adapter local,
 sem OAuth ou escrita na API. As telas identificam essas simulações.
 
+Os botões de decisão no detalhe da análise abrem modais de demonstração.
+`src/servicos/acoes-simuladas.ts` usa respostas de `src/mocks/acoes.ts`, sem
+HTTP, reviews, merge ou reexecução real. Solicitações ficam em memória e são
+isoladas por usuário, instalação, repositório, PR, análise e SHA. O reload restaura
+a demonstração; os dados reais da API e os recibos permanecem preservados.
+
 ```sh
 npm --prefix web run verificar
 npm --prefix web run build

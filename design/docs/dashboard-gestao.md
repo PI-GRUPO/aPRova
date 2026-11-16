@@ -67,6 +67,6 @@ incluindo os contratos existentes de sessão, análises e recibos. O build mant�
 o aviso de bundle acima de 500 kB; nenhuma regra ou limite foi desabilitado.
 
 OAuth real do Slack, configuração persistida, coleção/cadeia real e gestão de SLA
-dependem dos contratos do núcleo. As ações humanas estão em rascunho, fora destes
-ciclos. Aprovação e reexecução reais permanecem indisponíveis; nenhum resultado
-simulado muda análises reais.
+dependem dos contratos do núcleo. O ciclo seguinte concluiu as
+[ações humanas simuladas](dashboard-acoes-simuladas.md). Aprovação e reexecução
+reais permanecem indisponíveis; nenhum resultado simulado muda análises reais.

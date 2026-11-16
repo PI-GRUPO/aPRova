@@ -25,8 +25,9 @@ continuam seguindo o inventário e exigem validação visual própria.
 
 Ciclos seguintes de front: [gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md).
 Os contratos reais existentes foram preservados; operações sem contrato usam
-adapters locais explícitos. As ações humanas de aprovação/reexecução ainda estão
-em preparação e não fazem parte destes ciclos concluídos.
+adapters locais explícitos. O ciclo de [ações humanas simuladas](dashboard-acoes-simuladas.md)
+implementa os modais de decisão e reexecução sem enviar comandos ao núcleo.
+Autorização, execução e acompanhamento reais continuam dependentes dos contratos web.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.

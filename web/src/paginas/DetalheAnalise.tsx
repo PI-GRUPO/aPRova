@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
+import { AcoesSimuladas } from "@/componentes/AcoesSimuladas";
 import { dataUTC, Estado, PainelAnalise, Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
@@ -71,6 +72,7 @@ function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string })
 	);
 }
 function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string }) {
+	const { sessao } = useSessao();
 	const a = d.analise;
 	const g = d.gate;
 	return (
@@ -281,12 +283,23 @@ function Conteudo({ dados: d, instalacao }: { dados: Detalhe; instalacao: string
 				) : (
 					<p>Nenhuma decisão humana registrada para esta análise.</p>
 				)}
-				<div className="controles">
-					<Botao disabled>Aprovar</Botao>
-					<Botao disabled>Pedir alterações</Botao>
-					<Botao disabled>Reexecutar análise</Botao>
-				</div>
-				<p className="apoio">As ações pelo painel ainda não estão disponíveis. Você pode revisar pelo GitHub.</p>
+				<AcoesSimuladas
+					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${sessao?.autenticado ? sessao.usuario.id : ""}`}
+					contexto={{
+						instalacao,
+						id: a.id,
+						repo: a.repositorio,
+						pr: a.numero_pr,
+						sha: a.sha_head,
+						usuario: sessao?.autenticado ? String(sessao.usuario.id) : "",
+						nivel: a.nivel,
+						estado: a.estado,
+						atual: d.atual,
+						proprioPR: !!sessao?.autenticado && sessao.usuario.login.toLowerCase() === a.autor.replace(/^@/, "").toLowerCase(),
+						falhaInfra: d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
+					}}
+				/>
+				<p className="apoio">As ações reais pelo painel ainda não estão disponíveis. Você pode revisar pelo GitHub.</p>
 			</PainelAnalise>
 			<PainelAnalise
 				titulo="Recibo assinado"

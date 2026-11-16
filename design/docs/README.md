@@ -7,6 +7,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Plano de implementação e registro dos lotes](implementacao-dashboard.md)
 - [Visão geral com mocks separados](dashboard-visao-geral.md)
 - [Gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md)
+- [Ações humanas simuladas: modais e idempotência](dashboard-acoes-simuladas.md)
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
 - [Recibos F2: execução e validação](dashboard-f2.md)

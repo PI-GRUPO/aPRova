@@ -141,7 +141,7 @@ for (const largura of [1440, 390, 360])
 		await page.getByRole("link", { name: "equipe/projeto #12", exact: true }).click();
 		await expect(page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true })).toBeVisible();
 		await expect(page.getByText("Não informada nesta análise", { exact: true })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeDisabled();
+		await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeEnabled();
 		for (const tema of ["claro", "escuro"]) {
 			if (tema === "escuro") await page.getByRole("button", { name: "Usar tema escuro" }).click();
 			await page.screenshot({ path: `../.capturas-mcp/f4a/local-detalhe-${largura}-${tema}.png`, fullPage: true });
