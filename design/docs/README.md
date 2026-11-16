@@ -5,6 +5,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 (`design/docs/`), inclusive os produzidos a partir de agora.
 
 - [Plano de implementação e registro dos lotes](implementacao-dashboard.md)
+- [Visão geral com mocks separados](dashboard-visao-geral.md)
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
 - [Recibos F2: execução e validação](dashboard-f2.md)

@@ -1,5 +1,28 @@
 # Implementação do dashboard aPRova
 
+## Escopo atual — orientação da usuária em 16/11/2026
+
+Implementar somente o front na branch `feat/web-dashboard`, consumindo a API
+existente. Não alterar API, endpoints, SQL, migrations ou código Go. Para
+endpoints e dados ausentes, criar mocks separados no front e adapters
+substituíveis quando os contratos reais estiverem disponíveis. A autorização
+inclui simulações para desenvolver as telas e fluxos; resultados simulados não
+comprovam ações reais no núcleo. Falha de uma consulta real não habilita fallback
+silencioso para dados fictícios. Não expor HMAC, tokens ou segredos de serviço.
+
+O Figma é a referência visual: página desktop `5:2` do arquivo
+`VtHNXer6wzJj37QdpN3Lb9`, incluindo as variantes claras e mobile correspondentes.
+Reaproveitar a fundação já presente em `web/`. As extensões de backend descritas
+nas fases históricas abaixo ficam fora desta execução. Consultar o design e
+comparar capturas antes de declarar fidelidade visual; guardar as capturas em
+`.capturas-mcp/`, ignorada pelo Git.
+
+Acesso ao Figma restabelecido nesta retomada. A composição da visão geral foi
+consultada em `9:22` (escuro), `15:1789` (claro) e `16:2` (mobile), com contexto
+e capturas. A primeira entrega de front e suas limitações estão registradas em
+[visão geral com mocks separados](dashboard-visao-geral.md). As demais telas
+continuam seguindo o inventário e exigem validação visual própria.
+
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.
 O [índice desta pasta](README.md) reúne os documentos. Usar links relativos

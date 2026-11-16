@@ -5,6 +5,7 @@ export type NomeDoAtivo =
 	| "activity"
 	| "list"
 	| "receipt"
+	| "external"
 	| "folder"
 	| "scale"
 	| "history"

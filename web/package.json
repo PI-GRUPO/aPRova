@@ -10,7 +10,8 @@
 		"verificar": "biome check .",
 		"formatar": "biome check --write .",
 		"teste": "playwright test",
-		"teste:instalar": "playwright install chromium"
+		"teste:instalar": "playwright install chromium",
+		"teste:visual": "playwright test --config=playwright.visual.config.ts"
 	},
 	"dependencies": {
 		"@fontsource-variable/inter": "^5.3.0",

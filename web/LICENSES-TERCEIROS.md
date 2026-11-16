@@ -84,3 +84,10 @@ O que cada um trouxe está no `DESIGN.md`.
   https://designmd.app.br/library/heat-map-heatmap-style
 - Deconstructivism (Graphic): composição da página não encontrada.
   https://designmd.app.br/library/deconstructivism
+
+## Ícone de acesso aos recibos
+
+`src/ativos/escuro-external.svg` e `claro-external.svg` foram exportados do
+componente `aPRova/Ícone/external-link` do Figma fornecido pela usuária,
+referenciado nas telas `9:22` e `15:1789`. Mantêm dimensões e traços da origem;
+seguem a mesma referência Lucide dos demais ícones do projeto.

@@ -45,7 +45,7 @@ for (const largura of [1440, 390, 360])
 		}
 		await page.unroute("**/api/sessao");
 		await page.route("**/api/sessao", (r) => r.fulfill({ json: sessao }));
-		await page.goto("/");
+		await page.goto("/relatorio-semanal");
 		await expect(page.getByText("75%", { exact: true })).toBeVisible();
 		await expect(page.getByText("6 concluídas de 8 finalizadas", { exact: true })).toBeVisible();
 		for (const tema of ["claro", "escuro"]) {
@@ -60,7 +60,7 @@ for (const largura of [1440, 390, 360])
 	});
 test("troca de escopo descarta dados e URL adulterada não dispara relatório", async ({ page }) => {
 	await simular(page);
-	await page.goto("/");
+	await page.goto("/relatorio-semanal");
 	await expect(page.getByText("75%", { exact: true })).toBeVisible();
 	await page.getByRole("combobox", { name: "Instalação", exact: true }).click();
 	await page.getByRole("option", { name: "outra-equipe · 43" }).click();
@@ -71,7 +71,7 @@ test("troca de escopo descarta dados e URL adulterada não dispara relatório", 
 		consultas++;
 		return r.abort();
 	});
-	await page.goto("/?installation_id=999");
+	await page.goto("/relatorio-semanal?installation_id=999");
 	await expect(page.getByRole("heading", { name: "Instalação não autorizada" })).toBeVisible();
 	expect(consultas).toBe(0);
 	await expect(page.getByText("75%", { exact: true })).toHaveCount(0);
@@ -81,7 +81,7 @@ test("taxa nula preserva ausência de denominador e zero execuções", async ({ 
 	await page.route("**/api/web/relatorio-semanal?*", (r) =>
 		r.fulfill({ json: { ...relatorio, total_execucoes: 0, concluidas: 0, rejeitadas: 0, falhas: 0, em_andamento: 0, taxa_sucesso: null } }),
 	);
-	await page.goto("/");
+	await page.goto("/relatorio-semanal");
 	await expect(page.getByText("Sem dados", { exact: true })).toBeVisible();
 	await expect(page.getByRole("heading", { name: "Sem análises neste período" })).toBeVisible();
 });
@@ -89,7 +89,7 @@ for (const status of [401, 403, 503])
 	test(`relatório ${status} limpa acesso ou informa falha`, async ({ page }) => {
 		await simular(page);
 		await page.route("**/api/web/relatorio-semanal?*", (r) => r.fulfill({ status, json: { status: "falha" } }));
-		await page.goto("/");
+		await page.goto("/relatorio-semanal");
 		if (status === 401) {
 			await expect(page).toHaveURL(/\/entrar$/);
 		} else {
@@ -104,7 +104,7 @@ test("sessão sem instalação não consulta relatório", async ({ page }) => {
 		consultas++;
 		return r.abort();
 	});
-	await page.goto("/");
+	await page.goto("/relatorio-semanal");
 	await expect(page.getByRole("heading", { name: "Nenhuma instalação autorizada" })).toBeVisible();
 	expect(consultas).toBe(0);
 });
@@ -112,6 +112,7 @@ test("fluxo HTTP com handlers reais de login, CSRF, relatório e logout", async 
 	await page.goto("http://127.0.0.1:18080/entrar");
 	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
 	await expect(page).toHaveURL("http://127.0.0.1:18080/");
+	await page.goto("http://127.0.0.1:18080/relatorio-semanal");
 	await expect(page.getByText("75%", { exact: true })).toBeVisible();
 	const cookies = await page.context().cookies();
 	const cookie = cookies.find((c) => c.name === "aprova_sessao");

@@ -6,6 +6,7 @@ import { Conta, Entrar } from "@/paginas/Acesso";
 import { Analises } from "@/paginas/Analises";
 import { DetalheAnalise } from "@/paginas/DetalheAnalise";
 import { DetalheDoRecibo, Recibos } from "@/paginas/Recibos";
+import { RelatorioSemanalPagina } from "@/paginas/RelatorioSemanal";
 import { VisaoGeral } from "@/paginas/VisaoGeral";
 import { NaoEncontrada } from "./NaoEncontrada";
 import { secoes } from "./rotas";
@@ -29,7 +30,7 @@ function Titulo() {
 	const { pathname } = useLocation();
 	useEffect(() => {
 		const secao = secoes.find((s) => s.caminho === pathname || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`)));
-		document.title = `${secao?.titulo ?? (pathname === "/entrar" ? "Entrar" : "Página não encontrada")} · aPRova`;
+		document.title = `${secao?.titulo ?? (pathname === "/entrar" ? "Entrar" : pathname === "/relatorio-semanal" ? "Relatório semanal" : "Página não encontrada")} · aPRova`;
 	}, [pathname]);
 	return null;
 }
@@ -60,6 +61,7 @@ export function App() {
 								}
 							/>
 						))}
+						<Route path="/relatorio-semanal" element={<RelatorioSemanalPagina />} />
 						<Route path="/analises/:id" element={<DetalheAnalise />} />
 						<Route path="/recibos/:id" element={<DetalheDoRecibo />} />
 						{Harness && (

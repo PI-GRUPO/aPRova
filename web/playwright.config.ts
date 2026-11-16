@@ -5,7 +5,7 @@ export default defineConfig({
 	forbidOnly: true,
 	reporter: [["list"]],
 	use: {
-		baseURL: "http://127.0.0.1:5173",
+		baseURL: "http://127.0.0.1:5183",
 		locale: "pt-BR",
 		timezoneId: "America/Sao_Paulo",
 		viewport: { width: 1440, height: 900 },
@@ -14,9 +14,9 @@ export default defineConfig({
 	projects: [{ name: "chromium", use: { browserName: "chromium" } }],
 	webServer: [
 		{
-			command: "npm run dev -- --mode teste",
-			url: "http://127.0.0.1:5173",
-			reuseExistingServer: !process.env.CI,
+			command: "npm run dev -- --mode teste --port 5183",
+			url: "http://127.0.0.1:5183",
+			reuseExistingServer: false,
 			timeout: 60000,
 			gracefulShutdown: { signal: "SIGTERM", timeout: 3000 },
 		},
