@@ -76,3 +76,11 @@ test-banco:
 
 lint:
 	golangci-lint run
+
+.PHONY: build-web build-api-web
+build-web:
+	npm --prefix web ci
+	npm --prefix web run build
+
+build-api-web: build-web
+	go build -o bin/api ./cmd/api

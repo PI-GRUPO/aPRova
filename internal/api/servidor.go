@@ -7,6 +7,7 @@ import (
 
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -105,6 +106,8 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
 	roteador.Get("/receipts/{id}", s.manipularRecibo)
 	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)
+
+	roteador.NotFound(web.Handler().ServeHTTP)
 
 	return roteador
 }

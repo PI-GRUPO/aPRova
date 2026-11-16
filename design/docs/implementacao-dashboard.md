@@ -1,5 +1,11 @@
 # Implementação do dashboard aPRova
 
+Documentação das fases: manter este plano e todos os novos documentos de
+levantamento, execução e acompanhamento do dashboard em `design/docs/`.
+O [índice desta pasta](README.md) reúne os documentos. Usar links relativos
+para as referências técnicas do núcleo que permanecem em `docs/` na raiz.
+
+> Execução F1 em 16/11/2026: consulte [implementação e validação da fundação](dashboard-f1.md).
 > Retomada F0 em 16/11/2026: veja [levantamento atual](dashboard-f0.md),
 > [inventário Figma](dashboard-inventario-figma.md) e
 > [critérios dos cards consultados](dashboard-cards-f0.md).
@@ -48,13 +54,13 @@ funcionalidades do escopo sem comportamento real.
 | Fonte | Uso neste plano |
 | --- | --- |
 | [Figma aPRova](https://www.figma.com/design/VtHNXer6wzJj37QdpN3Lb9/aPRova?node-id=9-22) | Metadados das páginas desktop/mobile e contexto estruturado com capturas das telas principais; fluxos, temas, componentes e estados |
-| [PRODUCT.md](../design/prototipo/PRODUCT.md), [DESIGN.md](../design/prototipo/DESIGN.md), [package.json](../design/prototipo/package.json), [App.tsx](../design/prototipo/src/App.tsx) | Stack, tokens, componentes reaproveitáveis e limite do protótipo codificado |
-| [servidor.go](../internal/api/servidor.go), [main.go](../cmd/api/main.go) | Rotas realmente registradas e dependências realmente conectadas |
-| [recibos.go](../internal/api/recibos.go), [exportacao.go](../internal/receipt/exportacao.go), [verificador.go](../internal/receipt/verificador.go) | DTO, erros e alcance da verificação de recibos |
-| [relatorio_semanal.go](../internal/api/relatorio_semanal.go), [reports.sql](../queries/reports.sql) | Autenticação, janela, denominadores e fontes das métricas |
-| [acoes_remotas.go](../internal/api/acoes_remotas.go), [contrato.go](../internal/acaoremota/contrato.go), [executor_github.go](../internal/acaoremota/executor_github.go) | Identidade Slack, justificativa, autorização e reexecução indisponível |
-| [persistencia.go](../internal/domain/persistencia.go), [calibracao.go](../internal/domain/calibracao.go), queries e migrations | Dados existentes no núcleo que ainda não são uma API de dashboard |
-| [Fluxo do produto](fluxograma-produto.mmd), [estados](maquina-estados.mmd), [recibos](verificacao-recibo.md), [calibração](calibracao.md), [sandbox](sandbox-em-duas-etapas.md) | Semântica do produto e limites de evidência |
+| [PRODUCT.md](../prototipo/PRODUCT.md), [DESIGN.md](../prototipo/DESIGN.md), [package.json](../prototipo/package.json), [App.tsx](../prototipo/src/App.tsx) | Stack, tokens, componentes reaproveitáveis e limite do protótipo codificado |
+| [servidor.go](../../internal/api/servidor.go), [main.go](../../cmd/api/main.go) | Rotas realmente registradas e dependências realmente conectadas |
+| [recibos.go](../../internal/api/recibos.go), [exportacao.go](../../internal/receipt/exportacao.go), [verificador.go](../../internal/receipt/verificador.go) | DTO, erros e alcance da verificação de recibos |
+| [relatorio_semanal.go](../../internal/api/relatorio_semanal.go), [reports.sql](../../queries/reports.sql) | Autenticação, janela, denominadores e fontes das métricas |
+| [acoes_remotas.go](../../internal/api/acoes_remotas.go), [contrato.go](../../internal/acaoremota/contrato.go), [executor_github.go](../../internal/acaoremota/executor_github.go) | Identidade Slack, justificativa, autorização e reexecução indisponível |
+| [persistencia.go](../../internal/domain/persistencia.go), [calibracao.go](../../internal/domain/calibracao.go), queries e migrations | Dados existentes no núcleo que ainda não são uma API de dashboard |
+| [Fluxo do produto](../../docs/fluxograma-produto.mmd), [estados](../../docs/maquina-estados.mmd), [recibos](../../docs/verificacao-recibo.md), [calibração](../../docs/calibracao.md), [sandbox](../../docs/sandbox-em-duas-etapas.md) | Semântica do produto e limites de evidência |
 | [Central Slack na branch dos workflows](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/docs/central-slack-implementacao.md), [eventos](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/docs/eventos-n8n.md) e [guia n8n](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/workflows/n8n/README.md) | Estado mais recente da automação, validações documentadas e Etapa S |
 | [Quadro Trello aPRova](https://trello.com/b/BLUfesZg/aprova), cards #63–#78 e dependências | Escopo, critérios de aceite e decisões de implementação do dashboard |
 | Documento de Requisitos_aPRova.docx e diagramas anexados ao projeto | Requisitos de autoridade do núcleo, isolamento, revisão humana, rastreabilidade e ausência de merge automático |
@@ -749,7 +755,7 @@ Não substituir mudanças de outras pessoas.
 
 Prompt inicial sugerido para o agente executor:
 
-> Leia AGENTS.md e docs/implementacao-dashboard.md. Execute a fase/lote indicado
+> Leia AGENTS.md e design/docs/implementacao-dashboard.md. Execute a fase/lote indicado
 > pela solicitação, começando pela primeira dependência não satisfeita. Consulte
 > o Figma via MCP pelos nós do inventário, inspecione os componentes existentes e
 > revalide os handlers do núcleo no SHA atual. Reutilize a stack e o design.
@@ -789,7 +795,7 @@ versionado; o plano local de workflows continua ignorado.
 Usar um único `AGENTS.md` na raiz, preservando o conteúdo local fornecido pela
 usuária e acrescentando a seção de dashboard. Ele e
 `docs/plano-atualizacao-workflows.md` permanecem ignorados e fora dos commits.
-`docs/implementacao-dashboard.md` pode ser versionado. Não usar `git add -f`.
+`design/docs/implementacao-dashboard.md` pode ser versionado. Não usar `git add -f`.
 
 A regra de alterar primeiro a instância n8n e validar antes de exportar aplica-se
 a workflows; o front é implementado em `web/`, com a integração Go autorizada.
@@ -822,3 +828,61 @@ que incluía uma proposta de AGENTS.md versionado.
   e limites descritos em [dashboard-f0.md](dashboard-f0.md).
 - Dependências: AGENTS local ausente; homologação e UUID real aguardam confirmação.
   Próximo lote liberado tecnicamente: F1A (#64), sem novas APIs de produto.
+
+### F1A–F1E — 16/11/2026
+
+- Estado: concluído nos sublotes F1A–F1E.
+- Base: `c75c7d7` em `feat/web-dashboard`, com a reorganização dos documentos
+  autorizada para `design/docs/`. AGENTS local continua ausente.
+- Escopo/card: #64, fundação; nenhum aceite de F2–F7 ou mudança no Trello.
+- Registro detalhado: [dashboard-f1.md](dashboard-f1.md).
+
+#### F1A
+
+- Card/critérios: #64 — web/, fontes/tokens/ativos locais, casca desktop/mobile, tema e 404.
+- Nós/temas/viewports: 9:23, 86:5942, 86:6451, 16:2, 88:826; referências e adaptações no registro F1.
+- Contratos: Nenhuma API nova; rodapé sem sessão e dados fictícios.
+- Arquivos: web/package*, configs, src/app, src/estilos, src/ativos.
+- Validação: Instalação por lockfile, Biome, TypeScript/Vite e capturas em 1440×900/390×844/360×844 nos dois temas.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1B; homologação não bloqueia casca.
+
+#### F1B
+
+- Card/critérios: #64 — Rotas reservadas e primitivas de campo, botão, modal, seleção, tabela e erro.
+- Nós/temas/viewports: 5:135, 5:144, 10:1263, 15:4170, 16:215; inventário de rotas; referências e adaptações no registro F1.
+- Contratos: Telas posteriores ficam indisponíveis; sem mutações simuladas.
+- Arquivos: web/src/componentes, src/app/rotas.ts, src/app/App.tsx.
+- Validação: Modal/foco/Escape/retorno, validação de formulário, filtros/limpeza e ordenação exercitados no harness.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1C; dados e telas operacionais dependem das fases seguintes.
+
+#### F1C
+
+- Card/critérios: #64 — Cliente HTTP, erros tipados, timeout/cancelamento, origem e proxy fixo.
+- Nós/temas/viewports: Sem nova tela de produto; padrões de campo/estado da fundação; referências e adaptações no registro F1.
+- Contratos: GET /health e /ready reais; 401 privado tratado sem implementar sessão C01.
+- Arquivos: web/src/servicos, web/vite.config.ts.
+- Validação: DTOs, JSON inválido/HTML, rede, 503, cancelamento e timeout; smoke real dos handlers separado dos mocks.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1D; credenciais continuam no servidor.
+
+#### F1D
+
+- Card/critérios: #64 — Harness/fixtures de teste isolados e Playwright.
+- Nós/temas/viewports: Mesmos nós da casca/404; capturas locais e comparação inspecionada; referências e adaptações no registro F1.
+- Contratos: Interceptações validam cliente; servidor Go isolado usa dependência controlada.
+- Arquivos: web/e2e, web/playwright.config.ts.
+- Validação: Rotas por URL/reload/voltar, temas, teclado, menu mobile, componentes e erros; /__teste ausente no build normal.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1E; sem evidência de API de homologação.
+
+#### F1E
+
+- Card/critérios: #64 — Build estático incorporado em Go, fallback e CI adicional.
+- Nós/temas/viewports: Casca/404 conforme F1A; sem novo layout; referências e adaptações no registro F1.
+- Contratos: Mesmas dez rotas de API preservadas; fallback só HTML GET/HEAD; APIs/ativos ausentes permanecem erros.
+- Arquivos: web/servidor*.go, web/dist/.gitkeep, internal/api/servidor.go, Makefile, .github/workflows/ci.yml, .gitignore.
+- Validação: Testes Go de fallback/cache/HEAD/checkout sem build, regressão interna/comandos/web com race, lint sem apontamentos e build do binário; smoke HTTP da SPA.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: Próxima fase: F2, condicionada a API de teste e UUID real.

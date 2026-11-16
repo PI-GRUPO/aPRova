@@ -628,3 +628,10 @@ branch. Se a lista estiver vazia, faça um push qualquer e volte à tela.
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
+
+## Dashboard web
+
+A fundação do dashboard fica em `web/`. Consulte o
+[guia de desenvolvimento e build](design/docs/dashboard-f1.md) e o
+[plano das fases](design/docs/implementacao-dashboard.md). A documentação de
+execução das fases é mantida em [design/docs/](design/docs/README.md).

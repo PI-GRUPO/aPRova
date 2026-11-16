@@ -234,3 +234,43 @@ jobs:
               exit 1
               ;;
           esac
+
+  dashboard:
+    name: dashboard web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: instalar front
+        run: npm --prefix web ci
+      - name: verificar front
+        run: npm --prefix web run verificar
+      - name: compilar front
+        run: npm --prefix web run build
+      - name: instalar Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: testar componentes e navegação
+        run: npm --prefix web run teste
+      - name: testar servidor e compilar binário com SPA
+        run: |
+          go test ./web ./internal/api -race
+          go build -o bin/api ./cmd/api
+      - name: preservar evidências em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-evidencias
+          path: |
+            web/test-results/
+            .capturas-mcp/f1/local-*.png
+          if-no-files-found: ignore
+          retention-days: 7
