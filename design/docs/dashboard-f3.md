@@ -167,3 +167,19 @@ leitura e as variáveis carregadas do `.env` na criação. Parar/reiniciar o
 Codespace suspende o serviço; reconstruir o ambiente pode remover esse binário.
 Alterar credenciais no `.env` exige recriar o container para carregar os novos
 valores. Não foi realizado login real nem executado CI remoto.
+
+## Pendência confirmada pela usuária — 16/11/2026
+
+A usuária informou que as credenciais OAuth provavelmente estão no `.env` da
+máquina dela e não estão disponíveis neste Codespace. A localização e os valores
+ainda não foram conferidos. A configuração/homologação real fica adiada por
+orientação explícita; o desenvolvimento segue para F4A com os testes isolados e
+a autorização F3 preservada.
+
+Ao retomar: conferir o Client ID e Client Secret do GitHub App no ambiente local,
+configurar as quatro variáveis descritas acima no Codespace, cadastrar o callback
+exato, gerar uma chave de sessão exclusiva e recriar o container da API para
+carregar o ambiente. Fazer login com a conta real e validar instalações,
+repositórios permitidos, negação de outro escopo e logout. Nenhum segredo deve
+ser enviado pela conversa ou versionado. Até isso ocorrer, login indisponível
+continua sendo o estado correto no ambiente real; não habilitar bypass local.
