@@ -1,5 +1,15 @@
 # Implementação do dashboard aPRova
 
+> Retomada F0 em 16/11/2026: veja [levantamento atual](dashboard-f0.md),
+> [inventário Figma](dashboard-inventario-figma.md) e
+> [critérios dos cards consultados](dashboard-cards-f0.md).
+> Base atual: `feat/web-dashboard`, SHA `a28725d`, a partir de `dev`, sem incorporar
+> `feat/slack-app-home`. Há dez rotas: as duas consultas de análises já existem
+> como serviço HMAC, ainda sem sessão web nem detalhe agregado. Afirmações de
+> oito rotas nas auditorias abaixo são históricas. Por orientação da usuária,
+> o Figma é a referência visual; o protótipo local não é fiel e só fornece código
+> candidato a reaproveitamento. F0 aguarda confirmação de homologação/recibo real.
+
 ## 1. Objetivo, revisão e resultado esperado
 
 Plano revisado em 15/11/2026 para transformar todas as telas do Figma em uma
@@ -265,7 +275,8 @@ obrigatória nem deve navegar o produto real por PRs fictícios.
 | Relatório semanal | B | `GET /reports/weekly`, HMAC da query bruta | F3, por servidor; janela de sete dias, sem heatmap/fila/tentativas por tipo |
 | Aprovar / pedir alteração | B | `POST /acoes-remotas`, HMAC e `usuario_slack`; reviews publicadas no GitHub | F5, após identidade web e origem próprias; não chamar diretamente do React |
 | Reexecutar | D | Tipo aceito, mas `cmd/api/main.go` injeta `ReenfileiradorIndisponivel` | F5B só após implementação e validação de reanálise; hoje falha na execução |
-| Análises, fila, detalhe e timeline | C | `task_runs`, `task_steps`, resultados e gate no banco | F4A; faltam handlers de leitura/listagem |
+| Resumo/lista de análises | B | `GET /api/analises` e `GET /api/analises/{id}` existem na base F0 atual, com HMAC n8n, filtros de estado/repo/PR e paginação | F3/F4A; falta autorização por sessão e filtros de risco/período |
+| Fila enriquecida, detalhe e timeline | C | Consultas atuais retornam só resumo; `task_steps`, resultados e gate não entram no DTO | F4A; falta contrato agregado |
 | Calibração e casos semelhantes | C | `risk_gates.calibration_*`, domínio e memória | F4A/F4C; não estão no DTO do recibo |
 | Sandbox e saídas | C/D | Sumário e `raw_output` persistidos; lista de casos/suítes não é contrato exposto | F4A; estrutura de casos e comprovação das etapas exigem contrato/extração no núcleo |
 | Visão geral de 30 dias | C | Dados de execução existem; não há agregação HTTP para o desenho | F4B; não renomear o relatório semanal como visão de 30 dias |
@@ -645,18 +656,19 @@ na aprovação de uma tela.
 
 ## 7. Contratos a criar — propostas, não endpoints disponíveis
 
-Os caminhos `/api/analises`, `/api/analises/{id}` e `/api/metricas` já são os
-planejados no card #66; os demais nomes serão fechados no lote do núcleo, com
-testes. Usar a família `/api` para sessão web e preservar as rotas de automação
-com autenticação de serviço. Esses caminhos estão **planejados, não implementados**
-no commit auditado. Reusar serviços de domínio não exige expor a mesma credencial
+Os caminhos `/api/analises` e `/api/analises/{id}` já têm handlers de serviço na
+base revalidada em F0, mas ainda precisam evoluir para o contrato web do card #66.
+`/api/metricas` e os demais contratos abaixo continuam propostos. Os demais nomes
+serão fechados no lote do núcleo, com testes. Usar a família `/api` para sessão
+web e preservar as rotas de automação com autenticação de serviço.
+Reusar serviços de domínio não exige expor a mesma credencial
 ou permitir que o n8n simule uma sessão de usuário.
 
 | ID | Contrato proposto | Conteúdo mínimo / requisito | Desbloqueia |
 | --- | --- | --- | --- |
 | C01 | Sessão: início/callback GitHub, `GET /api/sessao`, logout | Usuário resolvido, escopos/instalações/repos autorizados, expiração e proteção de sessão | F3 |
 | C02 | `GET /api/relatorios/semanal` | Autorizar instalação e mediar fonte semanal existente sem segredo no cliente | F3 |
-| C03 | `GET /api/analises` e `GET /api/analises/{id}` (#66) | Coleção com filtros/paginação e detalhe agregado consistente, UUID, SHA, timeline, gate, tentativas e recibo | F4A |
+| C03 | Evoluir `GET /api/analises` e `GET /api/analises/{id}` (#66), hoje resumos de serviço HMAC | Autorização web, filtros de nível/período e detalhe agregado consistente, UUID, SHA, timeline, gate, tentativas e recibo | F4A |
 | C04 | `GET /api/repositorios` e saúde por repositório | Catálogo autorizado, permissões verificadas, check obrigatório com status desconhecido e instante de consulta | F4A/F4C |
 | C05 | `GET /api/metricas` (#66/#67) | Intervalo/fuso/denominadores, fila atual, métricas por tentativa, tempo médio, série diária e último recibo | F4B |
 | C06 | `GET /api/recibos`, exportação e verificação de cadeia | Coleção autorizada; leitura individual pública permanece em `/receipts/*`; cadeia com cabeça/elos/falhas e completude | F4C |
@@ -788,3 +800,25 @@ O patch do pacote contém somente este documento versionável. O `AGENTS.md`
 unificado é aplicado localmente, em separado, preservando eventuais alterações
 locais posteriores ao conteúdo enviado. Não usar o patch das revisões anteriores,
 que incluía uma proposta de AGENTS.md versionado.
+
+## 11. Registro da execução
+
+### F0 — 16/11/2026
+
+- Estado: em andamento; levantamento técnico concluído, confirmação de ambiente pendente.
+- Base/commit e escopo: `feat/web-dashboard`, `a28725daaf15968f45fbcb64ae463bbd9bb14c67`;
+  levantamento, sem incorporar App Home ou implementar F1.
+- Cards: #63–#78 relidos via Trello; critérios e listas registrados em
+  [dashboard-cards-f0.md](dashboard-cards-f0.md). Nenhum card alterado/concluído.
+- Nós Figma: três páginas inventariadas; contexto e captura de `5:58`, `9:22`,
+  `16:2`; referências de desktop 1440×900 e mobile 390×844, temas no inventário.
+- Contratos: dez rotas auditadas; consultas de análises existentes são resumos
+  autenticados por serviço; sessão, detalhe agregado e gestão ainda pendentes.
+- Arquivos: este plano, `dashboard-f0.md`, `dashboard-inventario-figma.md` e
+  `dashboard-cards-f0.md`.
+- Validações: testes locais `internal/api` e `internal/receipt` passaram; nenhum
+  teste de integração implantada. `/health` local sem conexão na porta 8080.
+- Evidências: `.capturas-mcp/f0/` ignorada, com PNGs/contextos/XML; resultados
+  e limites descritos em [dashboard-f0.md](dashboard-f0.md).
+- Dependências: AGENTS local ausente; homologação e UUID real aguardam confirmação.
+  Próximo lote liberado tecnicamente: F1A (#64), sem novas APIs de produto.
