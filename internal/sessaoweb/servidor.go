@@ -25,6 +25,7 @@ type Opcoes struct {
 	Origem        string
 	Provedor      Provedor
 	Armazenamento Armazenamento
+	Analises      Analises
 	Relatorios    Relatorios
 	Agora         func() time.Time
 }
@@ -33,6 +34,7 @@ type Servidor struct {
 	seguro        bool
 	provedor      Provedor
 	armazenamento Armazenamento
+	analises      Analises
 	relatorios    Relatorios
 	agora         func() time.Time
 }
@@ -55,7 +57,7 @@ func Novo(op Opcoes) (*Servidor, error) {
 	if op.Agora == nil {
 		op.Agora = time.Now
 	}
-	return &Servidor{u.Scheme + "://" + u.Host, u.Scheme == "https", op.Provedor, op.Armazenamento, op.Relatorios, op.Agora}, nil
+	return &Servidor{origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
 }
 func origemValida(origem string) (*url.URL, error) {
 	erro := errors.New("WEB_URL_PUBLICA deve ser uma origem HTTPS, ou HTTP em localhost")
@@ -144,6 +146,8 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.consultar(w, r)
 	case "POST /api/sessao/sair":
 		s.sair(w, r)
+	case "GET /api/repositorios":
+		s.repositorios(w, r)
 	case "GET /api/web/relatorio-semanal":
 		s.relatorio(w, r)
 	default:
@@ -321,18 +325,18 @@ func (s *Servidor) relatorio(w http.ResponseWriter, r *http.Request) {
 		falhar(w, 500, "não foi possível montar o relatório")
 		return
 	}
-	jsonResposta(w, 200, map[string]any{"installation_id": id, "repositorios": repos, "inicio": inicio, "fim": fim, "total_execucoes": rel.Total, "concluidas": rel.Concluidas, "rejeitadas": rel.Rejeitadas, "falhas": rel.Falhas, "em_andamento": rel.EmAndamento(), "taxa_sucesso": rel.TaxaDeSucesso(), "exigiram_aprovacao_humana": rel.ExigiramAprovacao, "risco_medio": rel.RiscoMedio, "revertidas": rel.Revertidas})
+	jsonResposta(w, 200, map[string]any{parametroInstalacaoWeb: id, "repositorios": repos, "inicio": inicio, "fim": fim, "total_execucoes": rel.Total, "concluidas": rel.Concluidas, "rejeitadas": rel.Rejeitadas, "falhas": rel.Falhas, "em_andamento": rel.EmAndamento(), "taxa_sucesso": rel.TaxaDeSucesso(), "exigiram_aprovacao_humana": rel.ExigiramAprovacao, "risco_medio": rel.RiscoMedio, "revertidas": rel.Revertidas})
 }
 
 var errSemAcesso = errors.New("escopo não autorizado")
 
 func consultaSemanal(q url.Values, agora time.Time) (int64, time.Time, error) {
 	for nome, valores := range q {
-		if !slices.Contains([]string{"installation_id", "repositorio", "inicio"}, nome) || len(valores) != 1 {
+		if !slices.Contains([]string{parametroInstalacaoWeb, "repositorio", "inicio"}, nome) || len(valores) != 1 {
 			return 0, time.Time{}, errors.New("parâmetros de consulta inválidos")
 		}
 	}
-	id, e := strconv.ParseInt(q.Get("installation_id"), 10, 64)
+	id, e := strconv.ParseInt(q.Get(parametroInstalacaoWeb), 10, 64)
 	if e != nil || id <= 0 {
 		return 0, time.Time{}, errors.New("installation_id inválido")
 	}

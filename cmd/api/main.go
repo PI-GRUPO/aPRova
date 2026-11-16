@@ -158,7 +158,7 @@ func dependencias(bancoDados *pgxpool.Pool, clienteRedis *redis.Client) []api.De
 	}
 }
 
-func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios sessaoweb.Relatorios) (*sessaoweb.Servidor, error) {
+func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios *repository.RepositorioPostgres) (*sessaoweb.Servidor, error) {
 	if c.WebURLPublica == "" {
 		return nil, nil
 	}
@@ -166,5 +166,5 @@ func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios se
 	if err != nil {
 		return nil, err
 	}
-	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios})
+	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios, Analises: relatorios})
 }

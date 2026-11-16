@@ -19,6 +19,12 @@ export type NomeDoAtivo =
 	| "vertical"
 	| "etiqueta"
 	| "fechar"
+	| "concluido"
+	| "falhou"
+	| "risco-baixo"
+	| "risco-medio"
+	| "risco-alto"
+	| "risco-nao_avaliado"
 	| "github"
 	| "ajuda"
 	| "serrilhado";

@@ -9,6 +9,8 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
 - [Recibos F2: execução e validação](dashboard-f2.md)
 - [Sessão e relatório F3: contratos, configuração e validação](dashboard-f3.md)
+- [Análises F4A: leitura, detalhe e validação](dashboard-f4a.md)
+- [OpenAPI das consultas de análises](dashboard-openapi.json)
 - [Inventário de telas e componentes Figma](dashboard-inventario-figma.md)
 - [Critérios dos cards consultados na F0](dashboard-cards-f0.md)
 

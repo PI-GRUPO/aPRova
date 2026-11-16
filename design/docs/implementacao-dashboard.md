@@ -5,6 +5,7 @@ levantamento, execução e acompanhamento do dashboard em `design/docs/`.
 O [índice desta pasta](README.md) reúne os documentos. Usar links relativos
 para as referências técnicas do núcleo que permanecem em `docs/` na raiz.
 
+> Execução F4A em 16/11/2026: [lista e detalhe de análises](dashboard-f4a.md); OAuth real adiado por orientação da usuária.
 > Execução F3 em 16/11/2026: [sessão web e relatório semanal](dashboard-f3.md), F3A–C implementados; OAuth real e F3D pendentes.
 > Execução F2 em 16/11/2026: consulte [recibos por UUID e validação](dashboard-f2.md); aceite com recibo real pendente.
 > Execução F1 em 16/11/2026: consulte [implementação e validação da fundação](dashboard-f1.md).
@@ -935,3 +936,25 @@ que incluía uma proposta de AGENTS.md versionado.
 - Dependências/próximo lote: configurar credenciais/callback do GitHub App e
   homologar login/escopo real. F3D exige prova de propriedade Slack e resolvedor
   persistente; F4A é o próximo lote de leitura, condicionado à sessão autorizada.
+
+### F4A — 16/11/2026
+
+- Estado: implementação e validação local; homologação com usuário real pendente
+  pela configuração OAuth, adiada explicitamente pela usuária.
+- Base/escopo: `bad8b5c`, branch `feat/web-dashboard`; consultas web de análises
+  nas rotas canônicas, catálogo autorizado, filtros, paginação e detalhe agregado.
+- Cards: #66/#68/#69 parcialmente cobertos conforme os dados persistidos;
+  nenhum card alterado no Trello. F4B/F4C são lotes posteriores.
+- Nós Figma: `9:385`, `15:2152`, `9:608`, `15:2375`; desktop/mobile, dois temas.
+- Contratos: [OpenAPI implementado](dashboard-openapi.json); modo web com sessão
+  e modos HMAC anteriores preservados. Não há novas mutações.
+- Arquivos: DTOs do domínio, consultas sqlc/serviço de leitura, handlers de sessão,
+  páginas/cliente/componentes web, ativos Figma e testes PostgreSQL/navegador.
+- Semântica: gate ausente é não avaliado; análise substituída tem aviso; aprovação
+  sem SHA correspondente não é aplicada; vizinhos fora do escopo são omitidos;
+  saída bruta limitada e exibida como texto. Branch, rede e testes individuais
+  ausentes são informados, sem dados fabricados.
+- Evidências e resultados detalhados: [registro F4A](dashboard-f4a.md) e
+  `.capturas-mcp/f4a/local-*`, ignorada pelo Git.
+- Próximo lote de implementação: F4B, agregações de 30 dias e fila atual.
+  Aceite integrado do login/leituras permanece dependente das credenciais reais.

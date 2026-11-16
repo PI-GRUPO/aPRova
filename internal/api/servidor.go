@@ -1,3 +1,4 @@
+
 package api
 
 import (
@@ -100,7 +101,7 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))
 
-	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/web/relatorio-semanal"} {
+	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal"} {
 		roteador.Handle(caminho, s.sessaoWeb)
 	}
 	roteador.Get("/health", s.manipularSaude)

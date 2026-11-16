@@ -62,7 +62,7 @@ func (githubSessaoTeste) Instalacoes(context.Context, string) ([]sessaoweb.Insta
 }
 func (githubSessaoTeste) Repositorios(_ context.Context, _ string, id int64) ([]string, error) {
 	if id == 42 {
-		return []string{"equipe-e2e/projeto"}, nil
+		return []string{repositorioDoCenario}, nil
 	}
 	return []string{"segunda-equipe/projeto"}, nil
 }
@@ -73,7 +73,7 @@ func (relatoriosSessaoTeste) RelatorioSemanalDosRepositorios(_ context.Context, 
 	return domain.RelatorioSemanal{TenantID: id, Inicio: inicio, Fim: fim, Total: 10, Concluidas: 6, Rejeitadas: 1, Falhas: 1, ExigiramAprovacao: 3, RiscoMedio: 2}, nil
 }
 func sessaoDeTeste() *sessaoweb.Servidor {
-	s, e := sessaoweb.Novo(sessaoweb.Opcoes{Origem: "http://127.0.0.1:18080", Provedor: githubSessaoTeste{}, Armazenamento: &armazenamentoSessaoTeste{valores: map[string][]byte{}}, Relatorios: relatoriosSessaoTeste{}})
+	s, e := sessaoweb.Novo(sessaoweb.Opcoes{Origem: "http://127.0.0.1:18080", Provedor: githubSessaoTeste{}, Armazenamento: &armazenamentoSessaoTeste{valores: map[string][]byte{}}, Relatorios: relatoriosSessaoTeste{}, Analises: analisesSessaoTeste{}})
 	if e != nil {
 		panic(e)
 	}

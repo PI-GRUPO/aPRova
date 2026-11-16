@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Casca } from "@/componentes/Casca";
 import { PainelDeEstado } from "@/componentes/Primitivos";
 import { Conta, Entrar } from "@/paginas/Acesso";
+import { Analises } from "@/paginas/Analises";
+import { DetalheAnalise } from "@/paginas/DetalheAnalise";
 import { DetalheDoRecibo, Recibos } from "@/paginas/Recibos";
 import { VisaoGeral } from "@/paginas/VisaoGeral";
 import { NaoEncontrada } from "./NaoEncontrada";
@@ -48,6 +50,8 @@ export function App() {
 										<Recibos />
 									) : s.caminho === "/" ? (
 										<VisaoGeral />
+									) : s.caminho === "/analises" ? (
+										<Analises />
 									) : s.caminho === "/conta" ? (
 										<Conta />
 									) : (
@@ -56,7 +60,7 @@ export function App() {
 								}
 							/>
 						))}
-						<Route path="/analises/:id" element={<Indisponivel titulo="Detalhe da análise" detalhe />} />
+						<Route path="/analises/:id" element={<DetalheAnalise />} />
 						<Route path="/recibos/:id" element={<DetalheDoRecibo />} />
 						{Harness && (
 							<Route

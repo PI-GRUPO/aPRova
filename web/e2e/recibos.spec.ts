@@ -141,7 +141,7 @@ test("handlers Go verificam recibo assinado e exportação confere independentem
 		await route.fulfill({ response });
 	});
 	await page.goto(`/recibos/${idLocal}`);
-	await expect(page.getByText("teste/recibo-local", { exact: true })).toBeVisible();
+	await expect(page.getByText("equipe-e2e/projeto", { exact: true })).toBeVisible();
 	await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 	const promessa = page.waitForEvent("download");
