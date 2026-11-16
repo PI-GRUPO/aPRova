@@ -481,6 +481,47 @@ scripts/emitir-evento.sh aguardando_aprovacao http://localhost:5978/webhook-test
 scripts/emitir-evento.sh analise_concluida http://localhost:5978/webhook-test/aprova --nivel-risco alto --imprimir
 ```
 
+## Demonstração
+
+Para apresentar o aPRova sem depender do GitHub, do sandbox nem de modelo de IA
+ao vivo, o seed grava no banco um conjunto fixo de análises de um repositório
+fictício (`aprova-demo/loja-virtual`). São os mesmos registros que o worker
+gravaria, e os recibos são assinados de verdade com `APROVA_CHAVE_RECIBO`, então
+`GET /receipts/{id}/verify` os aprova.
+
+```sh
+make migrate-up
+make seed-demo                  # usa APROVA_CHAT_INSTALLATION_ID
+make seed-demo INSTALACAO=4242  # ou uma instalação escolhida
+```
+
+| PR | O que mostra | Estado final |
+| --- | --- | --- |
+| #101 | risco baixo, nenhuma regra acionada | `concluido` |
+| #102 | risco médio (`codigo_sem_teste`) | `concluido` |
+| #103, #104 | risco alto (`area_sensivel`), aprovado por humano e mergeado | `concluido` |
+| #105 | alto pelas regras, reduzido a médio pela calibração com #103 e #104 | `concluido` |
+| #106 | risco alto (`dependencia_nova`), aguardando aprovação | `aguardando_aprovacao` |
+| #107 | testes falharam no sandbox, alterações pedidas pelo Slack | `rejeitado` |
+| #108 | falha de infraestrutura no sandbox | `falhou` |
+| #109 | alteração de CI aprovada e mergeada, depois revertida pelo #110 | `concluido` |
+
+Rodar de novo não duplica nada. O seed só deixa análises terminadas ou
+aguardando aprovação sem decisão nova, que o worker não reivindica, então ele
+pode ficar ligado durante a demonstração.
+
+O smoke test confere se a API responde, local ou depois de um deploy, e sai com
+erro se alguma conferência falhar:
+
+```sh
+make smoke-test                                  # http://localhost:8080
+make smoke-test URL=https://<endereço-publico>
+```
+
+Com `SMOKE_RECIBO_ID` ele também verifica um recibo; com `N8N_SEGREDO_ACOES` e
+`SMOKE_INSTALLATION_ID`, assina e confere `/reports/weekly` e `/api/analises`
+do mesmo jeito que o n8n.
+
 ## Testes
 
 Testes unitários ficam no mesmo pacote do código testado, como arquivos
