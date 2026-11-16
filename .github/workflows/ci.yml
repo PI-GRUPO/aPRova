@@ -238,6 +238,16 @@ jobs:
   dashboard:
     name: dashboard web
     runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -262,7 +272,7 @@ jobs:
         run: npm --prefix web run teste
       - name: testar servidor e compilar binário com SPA
         run: |
-          go test ./web ./internal/api -race
+          REDIS_TEST_URL=redis://localhost:6379/15 go test ./web ./internal/api ./internal/sessaoweb -race
           go build -o bin/api ./cmd/api
       - name: preservar evidências em caso de falha
         if: failure()
@@ -271,6 +281,6 @@ jobs:
           name: dashboard-evidencias
           path: |
             web/test-results/
-            .capturas-mcp/f1/local-*.png
+            .capturas-mcp/f*/local-*.png
           if-no-files-found: ignore
           retention-days: 7

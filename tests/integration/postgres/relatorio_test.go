@@ -141,3 +141,35 @@ func TestRelatorioSemanalRecusaJanelaOuTenantInvalidos(t *testing.T) {
 		t.Errorf("janela vazia deveria dar ErrDadosInvalidos, obtive %v", err)
 	}
 }
+
+func TestRelatorioWebRestringeTodasAsContagensAosRepositoriosAutorizados(t *testing.T) {
+	repo := exigirBanco(t)
+	tenant := novoTenant()
+	inicio := time.Date(2026, 11, 9, 0, 0, 0, 0, time.UTC)
+	fim := inicio.AddDate(0, 0, 7)
+	autorizado := taskRunRecebidoEm(t, repo, tenant, inicio)
+	percorrer(t, repo, autorizado, domain.EstadoConcluido)
+	gravarReversao(t, repo, tenant, 1, inicio)
+	privado, _, err := repo.CriarTaskRun(t.Context(), domain.NovoTaskRun{TenantID: tenant, DeliveryID: fmt.Sprintf("web-privado-%d", tenant), Repositorio: "equipe/privado", NumeroPR: 1, SHAHead: "0123456789abcdef0123456789abcdef01234567", Autor: "autora", Acao: "opened", RecebidoEm: inicio})
+	if err != nil {
+		t.Fatal(err)
+	}
+	percorrer(t, repo, privado, domain.EstadoAguardandoAprovacao, domain.EstadoRejeitado)
+	gravarGate(t, repo, privado.ID, domain.RiscoMedio)
+	rv := fechamento(tenant, 102, true, inicio)
+	rv.Repositorio = "equipe/privado"
+	rv.Reverte = 2
+	registrarFechamento(t, repo, rv)
+	taskRunRecebidoEm(t, repo, novoTenant(), inicio)
+	taskRunRecebidoEm(t, repo, tenant, fim)
+	rel, err := repo.RelatorioSemanalDosRepositorios(t.Context(), tenant, []string{"Azulpasta/alvo"}, inicio, fim)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rel.Total != 1 || rel.Concluidas != 1 || rel.Rejeitadas != 0 || rel.RiscoMedio != 0 || rel.ExigiramAprovacao != 0 || rel.Revertidas != 1 {
+		t.Fatalf("vazou dado de outro repositório/tenant/janela: %+v", rel)
+	}
+	if _, err := repo.RelatorioSemanalDosRepositorios(t.Context(), tenant, nil, inicio, fim); !errors.Is(err, domain.ErrDadosInvalidos) {
+		t.Fatalf("escopo vazio deve ser recusado: %v", err)
+	}
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
 	"github.com/PI-GRUPO/aPRova/web"
 
 	"github.com/go-chi/chi/v5"
@@ -40,6 +41,7 @@ type FonteDeRelatorios interface {
 
 // Opcoes reúne as dependências com que o servidor HTTP é construído.
 type Opcoes struct {
+	SessaoWeb           *sessaoweb.Servidor
 	Dependencias        []Dependencia
 	SegredoWebhook      []byte
 	Execucoes           RegistroDeExecucoes
@@ -54,6 +56,7 @@ type Opcoes struct {
 
 // Servidor agrupa as dependências externas usadas pelos handlers HTTP.
 type Servidor struct {
+	sessaoWeb           *sessaoweb.Servidor
 	dependencias        []Dependencia
 	segredoWebhook      []byte
 	execucoes           RegistroDeExecucoes
@@ -74,6 +77,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 	}
 
 	return &Servidor{
+		sessaoWeb:           opcoes.SessaoWeb,
 		dependencias:        opcoes.Dependencias,
 		segredoWebhook:      opcoes.SegredoWebhook,
 		execucoes:           opcoes.Execucoes,
@@ -96,6 +100,9 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))
 
+	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/web/relatorio-semanal"} {
+		roteador.Handle(caminho, s.sessaoWeb)
+	}
 	roteador.Get("/health", s.manipularSaude)
 	roteador.Get("/ready", s.manipularProntidao)
 	roteador.Post("/webhooks/github", s.manipularWebhookGitHub)
