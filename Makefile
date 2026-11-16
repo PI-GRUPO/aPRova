@@ -11,7 +11,7 @@ SQLC ?= sqlc
 # shell, para que aspas ou metacaracteres na senha não virem comando.
 export DATABASE_URL
 
-.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco run-api run-worker test lint keys verificar-token sandbox-azure consultar-permissao imagem-sandbox-go imagem-sandbox-python imagem-sandbox-java
+.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco run-api run-worker test lint keys seed-demo smoke-test verificar-token sandbox-azure consultar-permissao imagem-sandbox-go imagem-sandbox-python imagem-sandbox-java
 
 up:
 	$(COMPOSE) up -d --wait
@@ -46,6 +46,12 @@ run-worker:
 
 keys:
 	@go run ./scripts/gerar-chaves
+
+seed-demo:
+	@go run ./scripts/seed-demo $(if $(INSTALACAO),-instalacao $(INSTALACAO))
+
+smoke-test:
+	@scripts/smoke-test.sh $(or $(URL),http://localhost:8080)
 
 verificar-token:
 	@go run ./scripts/verificar-token $(INSTALLATION_ID)
