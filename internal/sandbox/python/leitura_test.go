@@ -14,7 +14,7 @@ func TestLerArquivoComSegurancaLeArquivoComum(t *testing.T) {
 		t.Fatalf("preparar relatório: %v", err)
 	}
 
-	conteudo, err := lerArquivoComSeguranca(caminho)
+	conteudo, err := lerArquivoComSeguranca(filepath.Dir(caminho), caminho)
 	if err != nil {
 		t.Fatalf("arquivo comum precisa ser lido: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestLerArquivoComSegurancaRecusaOQueNaoEArquivoComum(t *testing.T) {
 		t.Run(nome, func(t *testing.T) {
 			resposta := make(chan error, 1)
 			go func() {
-				_, err := lerArquivoComSeguranca(caminho)
+				_, err := lerArquivoComSeguranca(filepath.Dir(caminho), caminho)
 				resposta <- err
 			}()
 
@@ -80,7 +80,7 @@ func TestLerArquivoComSegurancaRecusaArquivoGrandeDemais(t *testing.T) {
 		t.Fatalf("fechar arquivo: %v", err)
 	}
 
-	if _, err := lerArquivoComSeguranca(caminho); err == nil {
+	if _, err := lerArquivoComSeguranca(filepath.Dir(caminho), caminho); err == nil {
 		t.Error("um relatório acima do limite precisa ser recusado")
 	}
 }

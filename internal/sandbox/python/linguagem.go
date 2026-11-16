@@ -50,11 +50,14 @@ func Nova(opcoes Opcoes) *Linguagem {
 	if agora == nil {
 		agora = time.Now
 	}
+
 	return &Linguagem{
 		rodador:          opcoes.Rodador,
 		diretorioDeCache: opcoes.DiretorioDeCache,
 		agora:            agora,
-		lerRelatorio:     lerArquivoComSeguranca,
+		lerRelatorio: func(caminho string) ([]byte, error) {
+			return lerArquivoComSeguranca(opcoes.DiretorioDeCache, caminho)
+		},
 	}
 }
 

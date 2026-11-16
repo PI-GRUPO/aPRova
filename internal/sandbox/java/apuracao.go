@@ -175,7 +175,7 @@ func apurarRelatorios(diretorio string) (apuracao, error) {
 	}
 
 	for _, arquivo := range arquivos {
-		bruto, err := lerArquivoComSeguranca(arquivo)
+		bruto, err := lerArquivoComSeguranca(diretorio, arquivo)
 		if err != nil {
 			return apuracao{}, fmt.Errorf(
 				"não foi possível ler %s: %w",

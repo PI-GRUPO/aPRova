@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -14,9 +15,22 @@ var errRelatorioNaoEArquivoComum = errors.New(
 	"java: relatório não é um arquivo comum",
 )
 
-func lerArquivoComSeguranca(caminho string) ([]byte, error) {
-	arquivo, err := os.OpenFile(
-		caminho,
+func lerArquivoComSeguranca(diretorio, caminho string) ([]byte, error) {
+	nome, err := filepath.Rel(diretorio, caminho)
+	if err != nil || nome == "." || !filepath.IsLocal(nome) {
+		return nil, fmt.Errorf("caminho de relatório inválido")
+	}
+
+	raiz, err := os.OpenRoot(diretorio)
+	if err != nil {
+		return nil, fmt.Errorf("abrir diretório dos relatórios: %w", err)
+	}
+	defer func() {
+		_ = raiz.Close()
+	}()
+
+	arquivo, err := raiz.OpenFile(
+		nome,
 		os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK,
 		0,
 	)

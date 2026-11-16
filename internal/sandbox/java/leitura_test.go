@@ -21,7 +21,7 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 			t.Fatalf("não foi possível criar relatório: %v", err)
 		}
 
-		conteudo, err := lerArquivoComSeguranca(caminho)
+		conteudo, err := lerArquivoComSeguranca(diretorio, caminho)
 		if err != nil {
 			t.Fatalf("esperava leitura sem erro, obtive: %v", err)
 		}
@@ -36,9 +36,10 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 	})
 
 	t.Run("recusa arquivo inexistente", func(t *testing.T) {
-		caminho := filepath.Join(t.TempDir(), "inexistente.xml")
+		diretorio := t.TempDir()
+		caminho := filepath.Join(diretorio, "inexistente.xml")
 
-		_, err := lerArquivoComSeguranca(caminho)
+		_, err := lerArquivoComSeguranca(diretorio, caminho)
 		if err == nil {
 			t.Fatal("esperava erro para arquivo inexistente")
 		}
@@ -58,7 +59,7 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 			t.Fatalf("não foi possível criar link simbólico: %v", err)
 		}
 
-		_, err := lerArquivoComSeguranca(link)
+		_, err := lerArquivoComSeguranca(diretorio, link)
 		if err == nil {
 			t.Fatal("esperava erro ao tentar ler link simbólico")
 		}
@@ -66,8 +67,13 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 
 	t.Run("recusa diretorio", func(t *testing.T) {
 		diretorio := t.TempDir()
+		caminho := filepath.Join(diretorio, "subdiretorio")
 
-		_, err := lerArquivoComSeguranca(diretorio)
+		if err := os.Mkdir(caminho, 0700); err != nil {
+			t.Fatalf("não foi possível criar diretório: %v", err)
+		}
+
+		_, err := lerArquivoComSeguranca(diretorio, caminho)
 		if !errors.Is(err, errRelatorioNaoEArquivoComum) {
 			t.Fatalf(
 				"esperava erro de arquivo não comum, obtive: %v",
@@ -86,7 +92,7 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 			t.Fatalf("não foi possível criar relatório: %v", err)
 		}
 
-		_, err := lerArquivoComSeguranca(caminho)
+		_, err := lerArquivoComSeguranca(diretorio, caminho)
 		if err == nil {
 			t.Fatal("esperava erro para relatório acima do limite")
 		}
@@ -106,7 +112,7 @@ func TestLerArquivoComSeguranca(t *testing.T) {
 			t.Fatalf("não foi possível criar relatório: %v", err)
 		}
 
-		conteudo, err := lerArquivoComSeguranca(caminho)
+		conteudo, err := lerArquivoComSeguranca(diretorio, caminho)
 		if err != nil {
 			t.Fatalf("esperava leitura sem erro, obtive: %v", err)
 		}
