@@ -19,6 +19,7 @@ export type NomeDoAtivo =
 	| "vertical"
 	| "etiqueta"
 	| "fechar"
+	| "github"
 	| "ajuda"
 	| "serrilhado";
 export function Ativo({ nome, className = "", ativo = false }: { nome: NomeDoAtivo; className?: string; ativo?: boolean }) {

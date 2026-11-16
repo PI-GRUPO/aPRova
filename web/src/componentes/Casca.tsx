@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { secoes } from "@/app/rotas";
+import { useSessao } from "@/app/sessao";
 import { useTema } from "@/app/tema";
+import { Sair } from "@/paginas/Acesso";
 import { Ativo } from "./Ativo";
 import { Botao, Modal } from "./Primitivos";
 
@@ -21,6 +23,7 @@ function Tema() {
 	);
 }
 export function Casca() {
+	const { sessao } = useSessao();
 	const { pathname } = useLocation();
 	const [menu, definirMenu] = useState(false);
 	const anterior = useRef(pathname);
@@ -50,12 +53,18 @@ export function Casca() {
 					{links(6)}
 				</nav>
 				<footer>
-					<p className="contexto-conta">Nenhuma sessão ativa</p>
-					<p className="apoio">Entre para consultar seus repositórios.</p>
+					<p className="contexto-conta caminho">{sessao?.autenticado ? `GitHub · @${sessao.usuario.login}` : "Nenhuma sessão ativa"}</p>
+					<p className="apoio">
+						{sessao?.autenticado ? `${sessao.instalacoes.length} instalações autorizadas` : "Entre para consultar seus repositórios."}
+					</p>
 					<Tema />
-					<Link className="botao botao-secundario" to="/entrar">
-						Entrar com GitHub
-					</Link>
+					{sessao?.autenticado ? (
+						<Sair />
+					) : (
+						<Link className="botao botao-secundario" to="/entrar">
+							Entrar com GitHub
+						</Link>
+					)}
 				</footer>
 			</aside>
 			<header className="cabecalho-mobile">
@@ -74,6 +83,16 @@ export function Casca() {
 						<nav className="menu-mobile" aria-label="Todas as telas">
 							{links()}
 						</nav>
+						{sessao?.autenticado ? (
+							<>
+								<p className="caminho">@{sessao.usuario.login}</p>
+								<Sair />
+							</>
+						) : (
+							<Link to="/entrar" onClick={() => definirMenu(false)}>
+								Entrar com GitHub
+							</Link>
+						)}
 						<Botao onClick={() => definirMenu(false)}>Fechar</Botao>
 					</Modal>
 					<Tema />

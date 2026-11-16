@@ -5,6 +5,7 @@ levantamento, execução e acompanhamento do dashboard em `design/docs/`.
 O [índice desta pasta](README.md) reúne os documentos. Usar links relativos
 para as referências técnicas do núcleo que permanecem em `docs/` na raiz.
 
+> Execução F3 em 16/11/2026: [sessão web e relatório semanal](dashboard-f3.md), F3A–C implementados; OAuth real e F3D pendentes.
 > Execução F2 em 16/11/2026: consulte [recibos por UUID e validação](dashboard-f2.md); aceite com recibo real pendente.
 > Execução F1 em 16/11/2026: consulte [implementação e validação da fundação](dashboard-f1.md).
 > Retomada F0 em 16/11/2026: veja [levantamento atual](dashboard-f0.md),
@@ -908,3 +909,29 @@ que incluía uma proposta de AGENTS.md versionado.
 - Dependência/próximo lote: URL da API de teste e UUID real ainda não fornecidos;
   validar consulta, verificação, download e conferência independente antes de
   declarar o aceite integrado F2 concluído. F3 é o próximo lote de implementação.
+
+### F3A–F3C — 16/11/2026
+
+- Estado: implementação e validação local concluídas; homologação OAuth real
+  pendente. F3D/F7A não iniciado por dependência do contrato de identidade Slack.
+- Base/escopo: `9bc2fd6`, branch `feat/web-dashboard`; sessão do GitHub App,
+  isolamento de instalações/repositórios, logout e relatório semanal privado.
+- Cards: #65/#66 parcialmente cobertos; #67 apenas agregado semanal; #77
+  permanece pendente. Nenhum card alterado no Trello.
+- Nós Figma: `9:2`, `15:1769`, `10:943`, `9:22`; 1440×900, 390×844,
+  360×844 nos dois temas. Referências e adaptações no [registro F3](dashboard-f3.md).
+- Contratos novos: início/callback OAuth, consulta de sessão, logout com CSRF e
+  GET `/api/web/relatorio-semanal`, documentados no registro F3. Rotas n8n
+  continuam exigindo HMAC. Recibos públicos preservados.
+- Arquivos: `internal/sessaoweb`, configuração/API, consulta SQL gerada via sqlc,
+  páginas/contexto/cliente HTTP web, testes Go/PostgreSQL/Redis/Playwright e CI.
+- Validações: build/Biome; regressão Go com race; relatório em PostgreSQL
+  descartável; Redis real com cifra, TTL e GETDEL concorrente; linter sem
+  apontamentos; dez cenários F3 e regressão F1/F2. Resultado detalhado no registro.
+- Evidências: `.capturas-mcp/f3/local-*`, ignoradas. Provedor de teste separado
+  do binário de produção; OAuth de conta real não foi simulado como homologado.
+- Ambiente local: API atualizada no container `aprova-api-local`, porta 8080,
+  reinício automático; `/ready` e recibos da semente aprovados no smoke.
+- Dependências/próximo lote: configurar credenciais/callback do GitHub App e
+  homologar login/escopo real. F3D exige prova de propriedade Slack e resolvedor
+  persistente; F4A é o próximo lote de leitura, condicionado à sessão autorizada.

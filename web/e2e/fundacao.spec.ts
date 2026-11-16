@@ -136,11 +136,12 @@ test("timeout e cancelamento não viram sucesso", async ({ page }) => {
 });
 
 test("401 privado volta para entrar", async ({ page }) => {
+	await page.route("**/api/sessao", (route) => route.fulfill({ json: { autenticado: false, login_disponivel: true } }));
 	await page.route("**/api/teste", (route) => route.fulfill({ status: 401 }));
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar privada", exact: true }).click();
 	await expect(page).toHaveURL(/\/entrar$/);
-	await expect(page.getByRole("heading", { name: "Acesso em preparação" })).toBeVisible();
+	await expect(page.getByRole("heading", { name: /Acompanhe decisões/ })).toBeVisible();
 });
 
 test("teclado alcança o link de pular e tema sem armazenamento", async ({ page }) => {

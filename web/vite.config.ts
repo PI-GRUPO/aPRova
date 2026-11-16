@@ -26,7 +26,7 @@ export default defineConfig(({ command, mode }) => ({
 		port: 5173,
 		strictPort: true,
 		proxy: Object.fromEntries(
-			["/health", "/ready", "/receipts", "/api"].map((path) => [path, { target: "http://127.0.0.1:8080", changeOrigin: false }]),
+			["/health", "/ready", "/receipts", "/api", "/auth"].map((path) => [path, { target: "http://127.0.0.1:8080", changeOrigin: false }]),
 		),
 	},
 }));

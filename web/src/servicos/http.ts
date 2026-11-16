@@ -19,7 +19,7 @@ function origemPublica(valor: string | undefined) {
 const origem = origemPublica(import.meta.env.VITE_API_ORIGEM);
 export async function consultarJSON(
 	caminho: string,
-	opcoes: { signal?: AbortSignal; timeout?: number; privada?: boolean } = {},
+	opcoes: { signal?: AbortSignal; timeout?: number; privada?: boolean; metodo?: "POST"; csrf?: string } = {},
 ): Promise<unknown> {
 	if (!caminho.startsWith("/") || caminho.startsWith("//") || caminho.includes("\\")) throw new Error("Caminho de API inválido.");
 	const destino = new URL(caminho, origem || window.location.origin);
@@ -35,8 +35,8 @@ export async function consultarJSON(
 	}, opcoes.timeout ?? 10000);
 	try {
 		const resposta = await fetch(destino, {
-			method: "GET",
-			headers: { Accept: "application/json" },
+			method: opcoes.metodo ?? "GET",
+			headers: { Accept: "application/json", ...(opcoes.csrf ? { "X-CSRF-Token": opcoes.csrf } : {}) },
 			credentials: "include",
 			cache: "no-store",
 			signal: controlador.signal,
@@ -53,6 +53,7 @@ export async function consultarJSON(
 				resposta.status,
 			);
 		}
+		if (resposta.status === 204 && opcoes.metodo === "POST") return null;
 		if (!resposta.headers.get("content-type")?.includes("application/json")) throw new ErroHTTP("resposta", "O serviço não retornou JSON.");
 		try {
 			return await resposta.json();
