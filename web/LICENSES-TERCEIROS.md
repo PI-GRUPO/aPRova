@@ -95,3 +95,8 @@ seguem a mesma referência Lucide dos demais ícones do projeto.
 Ícones `*-settings-primario.svg`: variantes do botão “Configurar regras”,
 extraídas dos nós Figma `9:1351` e `15:3118`, do arquivo aPRova
 `VtHNXer6wzJj37QdpN3Lb9`. Mesma origem e licença Lucide dos demais ícones.
+
+Ícones `*-github-login.svg`: variantes de contraste do botão “Continuar com
+GitHub”, extraídas dos nós `9:2` e `15:1769` do Figma aPRova. Mesma origem
+Lucide dos demais ícones. A marca do login reutiliza os ativos locais de
+116×28, conferidos como idênticos aos retornados pelo Figma.

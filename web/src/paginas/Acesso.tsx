@@ -1,7 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
-import { useTema } from "@/app/tema";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
 import { VinculoSlack } from "@/componentes/VinculoSlack";
@@ -29,11 +28,12 @@ export function Protegida({ children }: { children: ReactNode }) {
 export function Entrar() {
 	const { sessao, erro, carregar } = useSessao();
 	const [q] = useSearchParams();
-	const { tema, alternar } = useTema();
 	return (
 		<main className="pagina-entrar">
 			<section className="cartao-entrar">
-				<Ativo nome="marca" />
+				<div className="marca-entrar">
+					<Ativo nome="marca" />
+				</div>
 				<h1>
 					Acompanhe decisões.
 					<br />
@@ -54,7 +54,7 @@ export function Entrar() {
 					</Link>
 				) : sessao.login_disponivel ? (
 					<a className="botao botao-primario" href="/auth/github">
-						<Ativo nome="github" />
+						<Ativo nome="github-login" />
 						Continuar com GitHub
 					</a>
 				) : (
@@ -63,9 +63,8 @@ export function Entrar() {
 					</PainelDeEstado>
 				)}
 				<p className="apoio">Você autoriza o acesso no GitHub. O aPRova não pede sua senha.</p>
+				<p className="apoio">Protótipo · dados simulados</p>
 			</section>
-			<Botao onClick={alternar}>Usar tema {tema === "escuro" ? "claro" : "escuro"}</Botao>
-			<Link to="/recibos">Consultar recibo público</Link>
 		</main>
 	);
 }

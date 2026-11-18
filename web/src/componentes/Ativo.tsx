@@ -28,6 +28,7 @@ export type NomeDoAtivo =
 	| "risco-alto"
 	| "risco-nao_avaliado"
 	| "github"
+	| "github-login"
 	| "ajuda"
 	| "serrilhado";
 export function Ativo({ nome, className = "", ativo = false }: { nome: NomeDoAtivo; className?: string; ativo?: boolean }) {

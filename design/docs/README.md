@@ -10,6 +10,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Ações humanas simuladas: modais e idempotência](dashboard-acoes-simuladas.md)
 - [Fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
 - [Mapa diário: seleção e detalhe de demonstração](dashboard-mapa.md)
+- [Correção visual do login conforme o Figma](dashboard-login.md)
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
 - [Recibos F2: execução e validação](dashboard-f2.md)

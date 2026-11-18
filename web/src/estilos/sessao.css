@@ -14,16 +14,29 @@
 	gap: 20px;
 	width: 100%;
 	max-width: 480px;
+	min-width: 272px;
 	padding: 32px;
 	border: 1px solid var(--borda-padrao);
 	border-radius: 6px;
 	background: var(--fundo-superficie);
 }
-.cartao-entrar > img {
+.cartao-entrar :is(h1, p) {
+	text-wrap: wrap;
+}
+.marca-entrar {
+	display: flex;
+	align-items: center;
+	width: 145px;
+	height: 35px;
+}
+[data-tema="claro"] .marca-entrar {
+	justify-content: center;
+}
+.marca-entrar img {
 	width: 116px;
 	height: 28px;
-	align-self: start;
 }
+
 .cartao-entrar > .botao {
 	width: 100%;
 	background: var(--texto-primario);
@@ -91,9 +104,6 @@
 	gap: 12px;
 }
 @media (max-width: 767px) {
-	.cartao-entrar {
-		padding: 24px;
-	}
 	.metricas-semanais {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}

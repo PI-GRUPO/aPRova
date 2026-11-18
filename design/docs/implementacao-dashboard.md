@@ -33,6 +33,8 @@ conecta os links da visão geral às referências locais, sem enviar IDs fictíc
 O ciclo de [seleção pelo mapa diário](dashboard-mapa.md) acrescenta recortes
 compartilháveis por dia/risco e navegação aos detalhes locais, mantendo as leituras
 reais separadas.
+A [correção visual do login](dashboard-login.md), priorizada em 18/11/2026,
+alinha o cartão aos frames claro/escuro e preserva a autenticação existente.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.

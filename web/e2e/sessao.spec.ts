@@ -39,7 +39,10 @@ for (const largura of [1440, 390, 360])
 		await page.goto("/entrar");
 		await expect(page.getByRole("link", { name: "Continuar com GitHub" })).toHaveAttribute("href", "/auth/github");
 		for (const tema of ["escuro", "claro"]) {
-			if (tema === "claro") await page.getByRole("button", { name: "Usar tema claro" }).click();
+			if (tema === "claro") {
+				await page.evaluate(() => localStorage.setItem("aprova-tema", "claro"));
+				await page.reload();
+			}
 			await page.evaluate(() => document.fonts.ready);
 			await page.screenshot({ path: `../.capturas-mcp/f3/local-login-${largura}-${tema}.png`, fullPage: true });
 		}
