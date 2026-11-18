@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Ativo } from "@/componentes/Ativo";
-import { Botao, Campo, Modal, PainelDeEstado } from "@/componentes/Primitivos";
+import { MapaDeAnalises as Mapa } from "@/componentes/MapaDeAnalises";
+import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import { Selecao } from "@/componentes/Selecao";
 import { consultarVisaoGeral, type ItemDaFila, type VisaoGeralDados } from "@/servicos/visao-geral";
 import "@/estilos/visao-geral.css";
@@ -42,72 +43,7 @@ function Distribuicao({ titulo, apoio, itens }: { titulo: string; apoio: string;
 		</section>
 	);
 }
-function Mapa({ dias }: { dias: VisaoGeralDados["mapa"] }) {
-	return (
-		<section className="painel-overview">
-			<h2>Análises por dia e nível</h2>
-			<div className="conteudo-overview">
-				<div className="legenda-mapa apoio">
-					Por dia{" "}
-					{["0", "1", "2", "3+"].map((v, i) => (
-						<span key={v}>
-							<i style={{ opacity: i ? 0.5 + i / 6 : 0.12 }} />
-							{v}
-						</span>
-					))}
-				</div>
-				<div className="mapa-com-rotulos">
-					<div className="rotulos-mapa">
-						{["Alto", "Médio", "Baixo"].map((n) => (
-							<span key={n}>{n}</span>
-						))}
-					</div>
-					<section className="viewport-mapa" aria-label="Mapa de análises de 30 dias, rolagem horizontal">
-						{(["alto", "medio", "baixo"] as const).map((nivel) => (
-							<div className="linha-mapa" key={nivel}>
-								{dias.map((dia) => {
-									const n = dia[nivel];
-									const data = new Date(`${dia.data}T12:00:00Z`).toLocaleDateString("pt-BR", {
-										day: "numeric",
-										month: "short",
-										timeZone: "UTC",
-									});
-									const rotulo = `${data} · risco ${nivel === "medio" ? "médio" : nivel}: ${n} análise(s)`;
-									return (
-										<Modal
-											key={dia.data}
-											titulo={rotulo}
-											descricao="Contagem simulada para validação do dashboard"
-											gatilho={
-												<button type="button" className={`celula-mapa intensidade-${Math.min(n, 3)} nivel-${nivel}`} aria-label={rotulo}>
-													{n >= 2 ? n : ""}
-												</button>
-											}
-										>
-											<p>
-												{n === 0 ? "Nenhuma análise neste recorte simulado." : `${n} análise(s) neste dia e nível no conjunto simulado.`}
-											</p>
-										</Modal>
-									);
-								})}
-							</div>
-						))}
-						<div className="datas-mapa apoio">
-							<span>13 out</span>
-							<span>20 out</span>
-							<span>27 out</span>
-							<span>3 nov</span>
-							<span>11 nov</span>
-						</div>
-					</section>
-				</div>
-				<p className="apoio nota-mapa">
-					Cada célula é um dia. Clique para ver as análises. Zero é neutro; a intensidade indica a quantidade.
-				</p>
-			</div>
-		</section>
-	);
-}
+
 export function VisaoGeral() {
 	const [dados, setDados] = useState<VisaoGeralDados>();
 	const [erro, setErro] = useState(false);

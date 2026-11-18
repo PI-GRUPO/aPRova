@@ -65,7 +65,7 @@ A regressão completa passou com 89 testes, incluindo os caminhos reais.
 A suíte específica passou novamente com nove testes após o ajuste visual final no mobile.
 Permanece o aviso já conhecido de bundle acima de 500 kB.
 
-O mapa diário continua mostrando contagens simuladas, sem inventar uma coleção
-de análises reais por célula. OAuth e contratos de métricas, ações web, coleção
+O ciclo seguinte implementou a [seleção de referências simuladas por célula](dashboard-mapa.md),
+com lista e navegação ao detalhe. A coleção real por dia/nível continua pendente. OAuth e contratos de métricas, ações web, coleção
 real e gestão continuam sendo pendências de integração, fora do escopo autorizado
 de front. A entrega não é homologação real nem conclusão integral do dashboard.

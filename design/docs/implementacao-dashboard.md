@@ -30,6 +30,9 @@ implementa os modais de decisão e reexecução sem enviar comandos ao núcleo.
 Autorização, execução e acompanhamento reais continuam dependentes dos contratos web.
 O ciclo [fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
 conecta os links da visão geral às referências locais, sem enviar IDs fictícios à API.
+O ciclo de [seleção pelo mapa diário](dashboard-mapa.md) acrescenta recortes
+compartilháveis por dia/risco e navegação aos detalhes locais, mantendo as leituras
+reais separadas.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.

@@ -16,6 +16,10 @@ Os links da fila abrem `/analises/demonstracao/:id`, com fixtures de
 `src/mocks/analises-demonstracao.ts` e adapter próprio. Esse fluxo funciona
 sem sessão e sem consultar a API de análises ou recibos. A consulta real em
 `/analises/:id` preserva sua proteção por sessão e tratamento de erros.
+As células do mapa abrem seletores com fixtures em `src/mocks/mapa.ts` e adapter
+em `src/servicos/mapa.ts`. Dia/risco ficam na URL e são preservados no retorno
+do detalhe. Os exemplos identificados por `mapa-...` nunca são consultados como
+IDs reais da API. Célula vazia, recorte inválido e falha de carga são distintos.
 O relatório real da API continua em `/relatorio-semanal`, acessível pelo rodapé.
 Análises, recibos por UUID, chaves públicas e sessão continuam consumindo seus contratos existentes.
 O catálogo de repositórios também consulta a API quando há uma instalação autorizada.

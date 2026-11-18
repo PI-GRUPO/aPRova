@@ -35,7 +35,7 @@ for (const largura of [1440, 390, 360]) {
 			// A formatação do Intl pode variar entre versões do Chromium.
 			const alvo = (await celula.count()) ? celula : page.locator(".nivel-alto.intensidade-2").first();
 			await alvo.click();
-			await expect(page.getByRole("dialog")).toContainText("Contagem simulada");
+			await expect(page.getByRole("dialog")).toContainText("Dados simulados");
 			expect(escritas).toEqual([]);
 		});
 	}

@@ -9,6 +9,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md)
 - [Ações humanas simuladas: modais e idempotência](dashboard-acoes-simuladas.md)
 - [Fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
+- [Mapa diário: seleção e detalhe de demonstração](dashboard-mapa.md)
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)
 - [Recibos F2: execução e validação](dashboard-f2.md)

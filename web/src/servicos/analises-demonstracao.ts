@@ -17,7 +17,12 @@ export async function consultarAnaliseDemonstracao(id: string, signal: AbortSign
 	signal.throwIfAborted();
 	const { analisesDemonstracao, identidadeDemonstracao, complementosDemonstracao } = await import("@/mocks/analises-demonstracao");
 	signal.throwIfAborted();
-	const dados = analisesDemonstracao.find((a) => a.analise.id === id);
+	let dados = analisesDemonstracao.find((a) => a.analise.id === id);
+	if (!dados && /^mapa-\d{4}-\d{2}-\d{2}-(alto|medio|baixo)-[1-9]\d*$/.test(id)) {
+		const { referenciasMapaMock } = await import("@/mocks/mapa");
+		signal.throwIfAborted();
+		dados = referenciasMapaMock.find((r) => r.detalhe.analise.id === id)?.detalhe;
+	}
 	return dados
 		? structuredClone({ origem: "mock", dados, identidade: identidadeDemonstracao, complemento: complementosDemonstracao[id] })
 		: null;
@@ -26,7 +31,7 @@ export async function consultarAnaliseDemonstracao(id: string, signal: AbortSign
 export function retornoDaFila(valor: string | null) {
 	const origem = new URLSearchParams(valor ?? "");
 	const retorno = new URLSearchParams();
-	for (const nome of ["fila", "repositorio"]) {
+	for (const nome of ["fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
 		const v = origem.get(nome);
 		if (v) retorno.set(nome, v);
 	}
