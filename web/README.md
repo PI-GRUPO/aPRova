@@ -2,6 +2,10 @@
 
 Front em React/TypeScript. O backend existente permanece responsável por sessão,
 autorização e dados. O Vite encaminha as chamadas para `http://127.0.0.1:8080`.
+Outro destino pode ser definido por `APROVA_API_PROXY` em `web/.env.local`,
+usando `web/.env.example` como referência. Reinicie o Vite após mudar a variável.
+Ela é lida somente pelo servidor de desenvolvimento; não use `VITE_*` para isso.
+Preparação da API, OAuth e diagnóstico: [guia de desenvolvimento](../design/docs/dashboard-api-desenvolvimento.md).
 
 ```sh
 npm --prefix web ci
