@@ -65,6 +65,7 @@ design/prototipo/tsconfig.tsbuildinfo
 # Contexto local do Codex e plano de manutenção dos workflows
 /AGENTS.md
 /docs/plano-atualizacao-workflows.md
+/design/docs/dashboard-api-desenvolvimento.md
 
 # Capturas recebidas pelos MCPs e comparações visuais locais
 /.capturas-mcp/

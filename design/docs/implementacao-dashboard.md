@@ -35,7 +35,8 @@ compartilháveis por dia/risco e navegação aos detalhes locais, mantendo as le
 reais separadas.
 A [correção visual do login](dashboard-login.md), priorizada em 18/11/2026,
 alinha o cartão aos frames claro/escuro e preserva a autenticação existente.
-O ciclo de [preparação da API para desenvolvimento](dashboard-api-desenvolvimento.md)
+O ciclo de preparação da API para desenvolvimento (guia local
+`dashboard-api-desenvolvimento.md`, ignorado pelo Git)
 permite configurar o destino do proxy do Vite, mantendo as consultas sob a mesma
 origem e sem incluir segredos no navegador. O login real permanece dependente
 da API atualizada e da configuração OAuth do ambiente.
