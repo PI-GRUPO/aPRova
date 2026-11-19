@@ -13,6 +13,14 @@ O que o Codacy analisa neste repositório, o que fica de fora e por quê.
 
 O `.codacy.yml` não desliga um padrão isolado nem ignora uma dependência específica. Para isso servem o arquivo de configuração da própria ferramenta ou a interface.
 
+### O arquivo de configuração substitui o coding standard inteiro
+
+Com "usar arquivo de configuração" ligado, o Codacy deixa de aplicar à ferramenta as regras do coding standard e passa a rodá-la só com o arquivo do repositório. O que o arquivo não menciona segue o padrão da própria ferramenta, e não o do Codacy.
+
+Foi o que aconteceu ao ligar o `.markdownlint.json`: o arquivo só configurava o MD024, o markdownlint voltou com todas as regras ligadas e a análise ganhou 422 issues novas, 404 delas do MD013 (linha de até 80 colunas), que o coding standard deixava desligado. No Hadolint, o DL3018 apareceu pelo mesmo motivo.
+
+Por isso, ao ligar o arquivo de uma ferramenta, compare a análise antes e depois e desligue no arquivo as regras que o coding standard já deixava de fora.
+
 ## Exclusões
 
 | Caminho | Ferramenta | Motivo |
@@ -30,6 +38,8 @@ Código de produção continua inteiro no Opengrep.
 | Regra | Arquivo | Motivo |
 | --- | --- | --- |
 | Hadolint DL3008 | `.hadolint.yaml` | As imagens base já são fixadas pelo digest sha256; fixar a versão de cada pacote do apt quebraria a build quando o Debian retirar a versão |
+| Hadolint DL3018 | `.hadolint.yaml` | Mesmo motivo do DL3008, para o `apk add` da imagem do sandbox Go, que fixa a base Alpine pelo digest |
+| markdownlint MD013 | `.markdownlint.json` | Markdown não quebra linha em 80 colunas; tabelas e parágrafos longos são normais nesta documentação |
 | markdownlint MD024 só entre irmãos | `.markdownlint.json` | `docs/benchmark.md` repete títulos como "Métricas" em seções de rodadas diferentes |
 
 ## Issues ignoradas pela interface
