@@ -113,7 +113,7 @@ go build -o verificar-recibo ./cmd/verificar-recibo
 ./verificar-recibo -chave 'oxyRUCyPXF5VI60ZSAIszVUau7XIK44n/XOaOSOhkyM=' recibo.json
 ```
 
-```
+```text
 VÁLIDO: a assinatura confere com o conteúdo e com a chave informada
 recibo:       6e626559-146f-4b61-b486-a05cd64d2b25
 key_id:       5ae5b1f862c3be22

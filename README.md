@@ -247,12 +247,12 @@ os três serviços, use `docker compose --profile automacao down`. Executar
 
 ## Rotas
 
-| Método | Rota               | Descrição                                              |
-| ------ | ------------------ | ------------------------------------------------------ |
-| GET    | `/health`          | Responde 200 se o processo está no ar                  |
-| GET    | `/ready`           | Responde 200 se PostgreSQL e Redis respondem, 503 se não |
-| POST   | `/webhooks/github` | Aceita o webhook com 202 e ainda não o processa        |
-| POST   | `/acoes-remotas`   | Aprova, pede alteração ou reanálise a pedido do n8n    |
+| Método | Rota               | Descrição                                                  |
+| ------ | ------------------ | ---------------------------------------------------------- |
+| GET    | `/health`          | Responde 200 se o processo está no ar                      |
+| GET    | `/ready`           | Responde 200 se PostgreSQL e Redis respondem, 503 se não   |
+| POST   | `/webhooks/github` | Aceita o webhook com 202 e ainda não o processa            |
+| POST   | `/acoes-remotas`   | Aprova, pede alteração ou reanálise a pedido do n8n        |
 | GET    | `/reports/weekly`  | Métricas da semana de uma instalação, para o digest do n8n |
 
 ```sh
@@ -270,7 +270,7 @@ pedido, sem cache.
 
 O n8n assina cada pedido com HMAC-SHA256 usando `N8N_SEGREDO_ACOES`:
 
-```
+```text
 X-Aprova-Timestamp: <unix em segundos>
 X-Aprova-Assinatura: sha256=<hex de HMAC(segredo, timestamp + "." + corpo)>
 ```

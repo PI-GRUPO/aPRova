@@ -20,7 +20,7 @@ sozinha.
 Tudo acontece em `avaliando_risco`, depois do gate determinístico e antes do
 recibo:
 
-```
+```text
 gate determinístico ─► calibração (se ligada) ─► transação: risk_gate + code_memory + recibo
 ```
 
@@ -117,6 +117,7 @@ hoje pode ser revertido amanhã.
 | PR revertido | `pull_request_reverts` | webhook `closed` com merge de um PR que reverte outro (migration 18) |
 
 **Fechamento.**
+
 - O registro guarda `merged`, o head no fechamento e o commit do merge.
 - O `merge_commit_sha` só é gravado quando houve merge. O GitHub manda um
   commit de merge de teste mesmo em PR fechado sem merge, e ele não interessa.
@@ -329,6 +330,7 @@ mesma área" e recusa todo o resto. A margem é estreita: o pior par legítimo d
 **Por que isso não basta.** Com uma margem de 0,006, o limiar sozinho é frágil,
 e por isso a regra também exige o mesmo conjunto de motivos. Esse filtro não
 depende do modelo. Nos pares da tabela, ele já recusa sozinho:
+
 - `auth/` com `codigo_sem_teste` a mais;
 - o frontend sem teste;
 - a renomeação em massa.

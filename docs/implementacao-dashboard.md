@@ -93,8 +93,8 @@ as fases F0–F8 deste plano de dashboard e não as tornam automaticamente concl
 
 ### 2.2. Rastreabilidade com os cards do Trello
 
-Leitura do quadro em 15/11/2026: **15 cards com Front-end e Desenvolvimento**,
-#64–#78, mais o protótipo #63. Fundação está em “Em andamento”; os outros 14
+Leitura do quadro em 15/11/2026: **15 cards com Front-end e Desenvolvimento**, #64–#78,
+mais o protótipo #63. Fundação está em “Em andamento”; os outros 14
 cards de implementação estão em “A Fazer”; protótipo está em “Pronto”. São
 estados do quadro, não comprovação de integração na branch auditada. Não há
 checklists ou comentários adicionais nos cards de dashboard retornados nessa leitura.

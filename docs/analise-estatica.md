@@ -5,7 +5,7 @@ O que o Codacy analisa neste repositório, o que fica de fora e por quê.
 ## Onde cada decisão mora
 
 | Arquivo | O que controla | Quando vale |
-|---|---|---|
+| --- | --- | --- |
 | `.codacy.yml` | Caminhos excluídos da análise inteira e de uma ferramenta inteira (`engines.<ferramenta>.exclude_paths`) | Só a versão da branch padrão |
 | `.hadolint.yaml` | Regras do Hadolint | Versão da branch analisada, com "usar arquivo de configuração" ligado no Hadolint |
 | `.markdownlint.json` | Regras do markdownlint | Versão da branch analisada, com "usar arquivo de configuração" ligado no markdownlint |
@@ -16,7 +16,7 @@ O `.codacy.yml` não desliga um padrão isolado nem ignora uma dependência espe
 ## Exclusões
 
 | Caminho | Ferramenta | Motivo |
-|---|---|---|
+| --- | --- | --- |
 | `tests/integration/testdata/**` | todas | Repositórios de exemplo, defasados ou quebrados de propósito, usados para testar o aPRova |
 | `bench/suite/**`, `bench/resultados/**` | todas | Exercícios de terceiros do benchmark e saídas das rodadas |
 | `design/**` | todas | Protótipo do dashboard, fora do produto |
@@ -28,7 +28,7 @@ Código de produção continua inteiro no Opengrep.
 ## Regras desligadas
 
 | Regra | Arquivo | Motivo |
-|---|---|---|
+| --- | --- | --- |
 | Hadolint DL3008 | `.hadolint.yaml` | As imagens base já são fixadas pelo digest sha256; fixar a versão de cada pacote do apt quebraria a build quando o Debian retirar a versão |
 | markdownlint MD024 só entre irmãos | `.markdownlint.json` | `docs/benchmark.md` repete títulos como "Métricas" em seções de rodadas diferentes |
 

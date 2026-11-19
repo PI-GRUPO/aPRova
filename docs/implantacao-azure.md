@@ -5,7 +5,7 @@ Este guia publica o resto do núcleo: a **API**, que recebe os webhooks do GitHu
 e precisa de uma URL HTTPS pública, e o **worker**, que leva cada análise pelas
 etapas e dispara o job do sandbox.
 
-```
+```text
 GitHub ──webhook──▶ aprova-api (Container App, HTTPS público)
                         │
                         ▼
