@@ -124,3 +124,119 @@
 		flex: 1;
 	}
 }
+.voltar-recibos-mobile,
+.titulo-recibos-mobile {
+	display: none;
+}
+.pagina-verificacao-mobile {
+	padding-top: 20px;
+}
+.voltar-verificacao {
+	border: 0;
+	background: transparent;
+	padding: 0;
+	color: var(--texto-primario);
+	text-decoration: underline;
+}
+.resultado-verificacao-mobile .painel-recibo {
+	border: 0;
+	background: transparent;
+}
+.resultado-verificacao-mobile .painel-recibo > header {
+	background: transparent;
+	padding: 0;
+	height: 36px;
+}
+.resultado-verificacao-mobile .conteudo-recibo {
+	padding: 0;
+}
+.resultado-verificacao-mobile .resultado-verificacao {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.resultado-verificacao-mobile table {
+	order: -1;
+	margin: 0;
+}
+.resultado-verificacao-mobile caption {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+.resultado-verificacao-mobile th,
+.resultado-verificacao-mobile td {
+	width: 50%;
+	padding: 6px 12px;
+}
+.resultado-verificacao-mobile th {
+	line-height: 16px;
+}
+.resultado-verificacao-mobile td {
+	height: 36px;
+}
+.cards-recibos {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.card-recibo {
+	background: var(--fundo-superficie);
+	border: 1px solid var(--borda-padrao);
+	border-radius: 12px;
+	overflow: hidden;
+}
+.card-recibo h2 {
+	background: var(--fundo-elevado);
+	padding: 8px 12px;
+	font-size: 14px;
+	line-height: 20px;
+}
+.card-recibo > div {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: start;
+	overflow-wrap: anywhere;
+}
+.card-recibo .botao {
+	width: 210px;
+	max-width: 100%;
+}
+.ferramentas-recibos-mobile summary {
+	cursor: pointer;
+	font-size: 12px;
+	text-decoration: underline;
+}
+.ferramentas-recibos-mobile > div {
+	padding-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+@media (max-width: 767px) {
+	.pagina-recibos {
+		padding-top: 20px;
+	}
+	.voltar-recibos-mobile {
+		display: inline-flex;
+	}
+	.titulo-recibos-mobile {
+		display: block;
+	}
+	.titulo-recibos-desktop {
+		display: none;
+	}
+	.pagina-recibos .titulo-contexto {
+		gap: 16px;
+	}
+	.pagina-recibos .filtros-recibos > .seletor-gestao:first-child {
+		width: 100%;
+	}
+}

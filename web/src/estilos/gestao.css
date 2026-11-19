@@ -295,6 +295,7 @@
 	}
 	.voltar-regras {
 		display: flex;
+		height: 24px;
 		align-items: center;
 		gap: 8px;
 		font-size: 12px;
@@ -315,6 +316,9 @@
 	}
 	.pagina-regras .titulo-contexto > p {
 		display: none;
+	}
+	.pagina-regras .titulo-contexto {
+		gap: 0;
 	}
 }
 .filtros-recibos > .seletor-gestao:first-child {

@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
+import { useMobile } from "@/app/responsivo";
 import { Ativo } from "@/componentes/Ativo";
 import { ColecaoRecibos } from "@/componentes/ColecaoRecibos";
 import { Botao, Campo, Modal, PainelDeEstado } from "@/componentes/Primitivos";
@@ -127,10 +128,20 @@ export function Recibos() {
 		return () => c.abort();
 	}, [tentativa]);
 	return (
-		<div className="pagina">
+		<div className="pagina pagina-recibos">
+			<Link className="voltar voltar-recibos-mobile" to="/">
+				<Ativo nome="voltar" />
+				Voltar à visão geral
+			</Link>
 			<div className="titulo-contexto">
-				<h1>Recibos e auditoria</h1>
-				<p className="apoio">Trilha de decisões assinadas · coleção de demonstração e consulta pública real por UUID</p>
+				<h1>
+					<span className="titulo-recibos-desktop">Recibos e auditoria</span>
+					<span className="titulo-recibos-mobile">Recibos</span>
+				</h1>
+				<p className="apoio titulo-recibos-desktop">
+					Trilha de decisões assinadas · coleção de demonstração e consulta pública real por UUID
+				</p>
+				<p className="apoio titulo-recibos-mobile">Demonstração · dados simulados</p>
 			</div>
 			<ColecaoRecibos />
 			<h2>Consultar recibo real</h2>
@@ -170,14 +181,19 @@ export function DetalheDoRecibo() {
 	// A chave desmonta o estado anterior também em navegação entre dois UUIDs.
 	return <ConsultaDoRecibo key={id} id={id.toLowerCase()} />;
 }
+type ConsultaVerificacao = { resposta: Verificacao; instante: string };
+
 function ConsultaDoRecibo({ id }: { id: string }) {
+	const mobile = useMobile();
+	const [mostrarVerificacao, setMostrarVerificacao] = useState(false);
+	const tituloVerificacao = useRef<HTMLHeadingElement>(null);
 	const [recibo, setRecibo] = useState<Recibo>();
 	const [erro, setErro] = useState("");
 	const [tentativa, setTentativa] = useState(0);
 	const [chaves, setChaves] = useState<Chave[]>();
 	const [erroChaves, setErroChaves] = useState("");
 	const [tentativaChaves, setTentativaChaves] = useState(0);
-	const [verificacao, setVerificacao] = useState<{ resposta: Verificacao; instante: string }>();
+	const [verificacao, setVerificacao] = useState<ConsultaVerificacao>();
 	const [verificando, setVerificando] = useState(false);
 	const [erroVerificacao, setErroVerificacao] = useState("");
 	const controlador = useRef<AbortController | null>(null);
@@ -222,16 +238,54 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 		setVerificacao(undefined);
 		try {
 			const resposta = await verificarRecibo(recibo, c.signal);
-			if (!c.signal.aborted) setVerificacao({ resposta, instante: new Date().toISOString() });
+			if (!c.signal.aborted) {
+				setVerificacao({ resposta, instante: new Date().toISOString() });
+				setMostrarVerificacao(true);
+			}
 		} catch (e) {
 			if (!c.signal.aborted) setErroVerificacao(mensagemDeErro(e));
 		} finally {
 			if (!c.signal.aborted) setVerificando(false);
 		}
 	}
+	useEffect(() => {
+		if (mobile && mostrarVerificacao && verificacao) {
+			window.scrollTo(0, 0);
+			tituloVerificacao.current?.focus({ preventScroll: true });
+		}
+	}, [mobile, mostrarVerificacao, verificacao]);
 	const p = recibo?.payload;
 	const chave = chaves?.find((c) => c.key_id === recibo?.key_id);
 	const anterior = p && objeto(p.anterior) ? p.anterior : null;
+	if (mobile && mostrarVerificacao && verificacao)
+		return (
+			<div className="pagina pagina-verificacao-mobile">
+				<button
+					type="button"
+					className="voltar voltar-verificacao"
+					onClick={() => {
+						setMostrarVerificacao(false);
+						requestAnimationFrame(() => document.getElementById("verificar-recibo")?.focus());
+					}}
+				>
+					<Ativo nome="voltar" />
+					Voltar ao recibo
+				</button>
+				<h1 ref={tituloVerificacao} tabIndex={-1}>
+					Verificação do recibo
+				</h1>
+				<p className="apoio">Recibo {id.slice(0, 8)}… · conferência do núcleo</p>
+				<div className="resultado-verificacao-mobile">
+					<Painel
+						titulo="Conferências"
+						ajuda="Hash, chave, assinatura, conteúdo e elo anterior. Esta consulta não comprova toda a cadeia da instalação."
+					>
+						<ResultadoVerificacao consulta={verificacao} compacto />
+					</Painel>
+				</div>
+			</div>
+		);
+
 	return (
 		<div className="pagina">
 			<Link className="voltar" to="/recibos">
@@ -337,35 +391,14 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 							) : erroVerificacao ? (
 								<p role="alert">{erroVerificacao}</p>
 							) : verificacao ? (
-								<>
-									<p>{verificacao.resposta.valido ? "Recibo válido." : "Não foi possível validar o recibo."}</p>
-									<p className="apoio">Consultado nesta sessão em {data(verificacao.instante)}</p>
-									{verificacao.resposta.detalhe && <p>{verificacao.resposta.detalhe}</p>}
-									<table className="conferencias-recibo">
-										<caption className="apoio">Conferências do núcleo</caption>
-										<thead>
-											<tr>
-												<th>Etapa</th>
-												<th>Resultado</th>
-											</tr>
-										</thead>
-										<tbody>
-											{verificacao.resposta.verificacoes.map((c) => (
-												<tr key={c.nome}>
-													<td>{nomes[c.nome]}</td>
-													<td>{resultados[c.resultado]}</td>
-												</tr>
-											))}
-										</tbody>
-									</table>
-								</>
+								<ResultadoVerificacao consulta={verificacao} />
 							) : (
 								<p>Ainda não executada nesta sessão.</p>
 							)}
 						</div>
 					</Painel>
 					<div className="acoes-recibo">
-						<Botao variante="primario" onClick={verificar} disabled={verificando}>
+						<Botao id="verificar-recibo" variante="primario" onClick={verificar} disabled={verificando}>
 							Verificar recibo
 						</Botao>
 						<Botao onClick={() => baixar(`recibo-${recibo.id}.json`, JSON.stringify(recibo, null, 2))}>Exportar recibo</Botao>
@@ -394,6 +427,34 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 					</Painel>
 				</>
 			)}
+		</div>
+	);
+}
+
+function ResultadoVerificacao({ consulta, compacto = false }: { consulta: ConsultaVerificacao; compacto?: boolean }) {
+	const nomesCurtos: Record<string, string> = { hash: "Hash", chave: "Chave", assinatura: "Assinatura", conteudo: "Conteúdo", elo: "Elo" };
+	return (
+		<div className="resultado-verificacao">
+			<p>{consulta.resposta.valido ? "Recibo válido." : "Não foi possível validar o recibo."}</p>
+			<p className="apoio">Consultado nesta sessão em {data(consulta.instante)}</p>
+			{consulta.resposta.detalhe && <p>{consulta.resposta.detalhe}</p>}
+			<table className="conferencias-recibo">
+				<caption className="apoio">Conferências do núcleo</caption>
+				<thead>
+					<tr>
+						<th scope="col">Etapa</th>
+						<th scope="col">Resultado</th>
+					</tr>
+				</thead>
+				<tbody>
+					{consulta.resposta.verificacoes.map((c) => (
+						<tr key={c.nome}>
+							<td>{compacto ? nomesCurtos[c.nome] : nomes[c.nome]}</td>
+							<td>{resultados[c.resultado]}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
 		</div>
 	);
 }

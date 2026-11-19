@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
+import { useMobile } from "@/app/responsivo";
 import { useSessao } from "@/app/sessao";
 import { dataUTC, Estado, Risco } from "@/componentes/Analise";
 import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
@@ -50,7 +51,7 @@ function consultaDaLista(q: URLSearchParams, id: string) {
 	return c;
 }
 function ListaDaInstalacao({ id }: { id: string }) {
-	const mobile = useListaMobile();
+	const mobile = useMobile();
 	const { sessao } = useSessao();
 	const [q, setQ] = useSearchParams();
 	const [repos, setRepos] = useState<string[]>();
@@ -207,17 +208,6 @@ function ListaDaInstalacao({ id }: { id: string }) {
 		</Fragment>
 	);
 	return <div className="lista-analises">{mobile ? [resultados, controles] : [controles, resultados]}</div>;
-}
-function useListaMobile() {
-	const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
-	useEffect(() => {
-		const media = window.matchMedia("(max-width: 767px)");
-		const atualizar = () => setMobile(media.matches);
-		media.addEventListener("change", atualizar);
-		atualizar();
-		return () => media.removeEventListener("change", atualizar);
-	}, []);
-	return mobile;
 }
 function ControlesDaLista({ children, mobile }: { children: ReactNode; mobile: boolean }) {
 	const [aberto, setAberto] = useState(false);

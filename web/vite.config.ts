@@ -22,6 +22,8 @@ export function destinoDaAPI(valor?: string) {
 export default defineConfig(({ command, mode }) => {
 	const destino = destinoDaAPI(loadEnv(mode, process.cwd(), "APROVA_").APROVA_API_PROXY);
 	return {
+		// Desenvolvimento, regressão e o teste de proxy usam servidores simultâneos.
+		cacheDir: `node_modules/.vite/${mode}`,
 		plugins: [
 			react(),
 			tailwindcss(),

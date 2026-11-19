@@ -19,7 +19,9 @@ for (const largura of [1440, 390, 360]) {
 			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
 			for (const [caminho, titulo] of telas) {
 				await page.goto(`/${caminho}`);
-				await expect(page.getByRole("heading", { name: titulo, exact: true })).toBeVisible();
+				await expect(
+					page.getByRole("heading", { name: caminho === "recibos" && largura < 768 ? "Recibos" : titulo, exact: true }),
+				).toBeVisible();
 				if (caminho !== "recibos")
 					await expect(page.getByText("Demonstração · dados e alterações simulados nesta sessão da página.")).toBeVisible();
 				else
@@ -206,3 +208,45 @@ test("coleção exporta somente metadados simulados dos filtros e não forja ver
 	expect(download.suggestedFilename()).toBe("recibos-demonstracao.json");
 	await expect(page.getByRole("cell", { name: "Não executada", exact: true })).toBeVisible();
 });
+
+for (const largura of [390, 320])
+	test(`recibos mobile: prévia, filtros, exportação e consulta real em ${largura}px`, async ({ page }) => {
+		await page.setViewportSize({ width: largura, height: 844 });
+		await page.route("**/receipts/keys", (r) => r.fulfill({ json: { chaves: [] } }));
+		const consultas: string[] = [];
+		const escritas: string[] = [];
+		page.on("request", (r) => {
+			if (r.method() !== "GET") escritas.push(r.url());
+			if (new URL(r.url()).pathname.startsWith("/receipts/") && !r.url().endsWith("/keys")) consultas.push(r.url());
+		});
+		await page.goto("/recibos");
+		const cards = page.getByRole("list", { name: "Recibos de demonstração" });
+		await expect(cards.getByRole("listitem")).toHaveCount(3);
+		await expect(page.getByRole("table")).toHaveCount(0);
+		await page.evaluate(() => document.fonts.ready);
+		const caixa = await cards.getByRole("listitem").first().boundingBox();
+		expect(caixa).toMatchObject({ x: 16, y: 310, width: largura - 32, height: 150 });
+		const previa = cards.getByRole("button", { name: "Ver prévia do recibo 6d290152-demo" });
+		await previa.focus();
+		await page.keyboard.press("Enter");
+		await expect(page.getByRole("dialog")).toContainText("nenhum recibo assinado foi gerado");
+		await page.keyboard.press("Escape");
+		await expect(previa).toBeFocused();
+		await page.getByRole("combobox", { name: "Repositório", exact: true }).click();
+		await page.getByRole("option", { name: "cobranca-api", exact: true }).click();
+		await expect(cards.getByRole("listitem")).toHaveCount(1);
+		await page.reload();
+		await expect(cards.getByRole("listitem")).toHaveCount(1);
+		await page.getByText("Período, cadeia e exportação", { exact: true }).click();
+		await page.getByRole("button", { name: "Exportar JSON", exact: true }).click();
+		await expect(page.getByRole("dialog")).toContainText("1 registros simulados");
+		await page.keyboard.press("Escape");
+		await page.getByRole("button", { name: "Verificar cadeia", exact: true }).click();
+		await expect(page.getByRole("dialog")).toContainText("não comprova a cadeia real");
+		await page.keyboard.press("Escape");
+		expect(consultas).toEqual([]);
+		expect(escritas).toEqual([]);
+		await expect(page.getByLabel("UUID do recibo")).toBeVisible();
+		await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
+		await expect(page.getByRole("heading", { level: 1, name: "Visão geral", exact: true })).toBeVisible();
+	});

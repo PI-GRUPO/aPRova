@@ -64,6 +64,12 @@ for (const largura of [1440, 390, 360]) {
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 		await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 		await expect(page.getByRole("cell", { name: "Confere", exact: true })).toHaveCount(5);
+		if (largura < 768) {
+			await expect(page.getByRole("heading", { name: "Verificação do recibo", exact: true })).toBeFocused();
+			await page.screenshot({ path: `../.capturas-mcp/validacao-final/verificacao-${largura}.png`, fullPage: true });
+			await page.getByRole("button", { name: "Voltar ao recibo", exact: true }).click();
+			await expect(page.getByRole("button", { name: "Verificar recibo", exact: true })).toBeFocused();
+		}
 		const downloadPromise = page.waitForEvent("download");
 		await page.getByRole("button", { name: "Exportar recibo", exact: true }).click();
 		const download = await downloadPromise;
@@ -187,4 +193,43 @@ test("ajuda mantém foco e consulta rejeita UUID inválido", async ({ page }) =>
 	await page.getByLabel("UUID do recibo").fill("inválido");
 	await page.getByRole("button", { name: "Localizar recibo" }).click();
 	await expect(page.getByRole("alert")).toHaveText("Informe um UUID válido.");
+});
+
+for (const largura of [390, 320])
+	for (const tema of ["escuro", "claro"]) {
+		test(`resultado de verificação mobile em ${largura}px e ${tema}`, async ({ page }) => {
+			await simular(page);
+			await page.setViewportSize({ width: largura, height: 844 });
+			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.goto(`/recibos/${id}`);
+			await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
+			await expect(page.getByRole("heading", { name: "Verificação do recibo", exact: true })).toBeFocused();
+			await expect(page.getByRole("cell", { name: "Confere", exact: true })).toHaveCount(5);
+			await page.evaluate(() => document.fonts.ready);
+			const tabela = await page.getByRole("table", { name: "Conferências do núcleo" }).boundingBox();
+			expect(tabela).toMatchObject({ x: 16, y: 276, width: largura - 32 });
+			await page.screenshot({ path: `../.capturas-mcp/validacao-final/verificacao-${largura}-${tema}.png`, fullPage: true });
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+			await page.getByRole("button", { name: "Voltar ao recibo", exact: true }).click();
+			await expect(page.getByRole("button", { name: "Verificar recibo", exact: true })).toBeFocused();
+			await expect(page.getByRole("button", { name: "Exportar recibo", exact: true })).toBeVisible();
+			await page.reload();
+			await expect(page.getByText("Ainda não executada nesta sessão.")).toBeVisible();
+		});
+	}
+
+test("resultado mobile conserva falha e etapas não verificadas", async ({ page }) => {
+	await simular(page, documento, {
+		...verificacao,
+		valido: false,
+		falha: "hash",
+		verificacoes: verificacao.verificacoes.map((c, i) => ({ ...c, resultado: i === 0 ? "falhou" : "nao_verificada" })),
+	});
+	await page.setViewportSize({ width: 320, height: 568 });
+	await page.goto(`/recibos/${id}`);
+	await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
+	await expect(page.getByRole("heading", { name: "Verificação do recibo", exact: true })).toBeVisible();
+	await expect(page.getByRole("cell", { name: "Falhou", exact: true })).toHaveCount(1);
+	await expect(page.getByRole("cell", { name: "Não verificada", exact: true })).toHaveCount(4);
+	await expect(page.getByText("Recibo válido.", { exact: true })).toHaveCount(0);
 });

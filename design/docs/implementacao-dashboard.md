@@ -43,6 +43,10 @@ da API atualizada e da configuração OAuth do ambiente.
 O ciclo de [Análises no mobile](dashboard-analises-mobile.md) apresenta a coleção
 real em cards, com filtros expansíveis, paginação e retorno do detalhe preservados.
 Desktop continua usando a tabela e os contratos existentes.
+A [validação final da interface](dashboard-validacao-interface.md) revisa 17
+variantes de tela nos dois temas, em cinco larguras, e corrige a coleção e o
+resultado de verificação de recibos no mobile. A revisão visual/funcional não
+substitui a homologação OAuth e dos contratos reais pendentes de F8.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.
