@@ -468,7 +468,7 @@ X-Aprova-Assinatura: sha256=<hex do HMAC-SHA256 de "<timestamp>.<corpo bruto>">
 
 O workflow principal fica assim:
 
-```
+```text
 Webhook → assinatura → normalização/validação → resposta 202 → deduplicação → roteamento
 ```
 

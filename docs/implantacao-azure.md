@@ -152,7 +152,7 @@ O papel `AcrPull` da identidade do worker segue a mesma regra do passo 3.
 Quem é dono do GitHub App troca, em **Settings → Developer settings → GitHub
 Apps → (o app) → Webhook URL**, para:
 
-```
+```text
 <URL_API>/webhooks/github
 ```
 

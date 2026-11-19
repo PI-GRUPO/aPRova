@@ -771,7 +771,6 @@ de dashboard nessa comparação. As orientações locais de workflows fornecidas
 ao AGENTS.md unificado, preservado fora do Git. O plano de dashboard pode ser
 versionado; o plano local de workflows continua ignorado.
 
-
 ## 10. Orientações locais e aplicação deste pacote
 
 Usar um único `AGENTS.md` na raiz, preservando o conteúdo local fornecido pela

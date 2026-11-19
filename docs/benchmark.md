@@ -406,14 +406,14 @@ aPRova segura, e a que custo de bloqueios desnecessários?
 - **Instrução:** a mesma da rodada 1, menos a frase sobre rodar os testes.
   A rodada 1 terminava com:
 
-  ```
+  ```text
   Implemente até os testes passarem. Para rodá-los, use: <comando>
   Não altere nem apague os testes.
   ```
 
   A rodada 2 termina com:
 
-  ```
+  ```text
   Implemente até os testes passarem.
   Não altere nem apague os testes.
   ```
@@ -455,7 +455,7 @@ principal, e isso é conferido na tabela de modelos.
 
 Os comandos são:
 
-```
+```sh
 go run ./cmd/benchmark rodar --sem-execucao --modelo claude-haiku-4-5-20251001 2026-11-15-2b <21 ids do grupo A>
 go run ./cmd/benchmark rodar --sem-execucao 2026-11-15-2a <21 ids do grupo A>
 ```

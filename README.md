@@ -316,7 +316,7 @@ make consultar-permissao INSTALLATION_ID=12345678 REPOSITORIO=dono/repo LOGIN=al
 diretamente. A assinatura é a mesma das ações remotas, com a query string no
 lugar do corpo:
 
-```
+```text
 GET /reports/weekly?installation_id=12345678&inicio=2026-10-12
 X-Aprova-Timestamp: <unix em segundos>
 X-Aprova-Assinatura: sha256=<hex de HMAC(segredo, timestamp + "." + query string)>
@@ -363,7 +363,7 @@ dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
 O worker conduz cada `task_run` criado pelo webhook pela máquina de estados,
 até um estado terminal ou até esperar um review:
 
-```
+```text
 pendente → mapeando_contexto → testando_sandbox → avaliando_risco
 avaliando_risco → aplicando (baixo ou médio) → concluido
 avaliando_risco → aguardando_aprovacao (alto) → aplicando ou rejeitado

@@ -60,7 +60,7 @@ calibráveis. Nível baixo não tem o que reduzir.
 O texto que vira embedding é montado de forma determinística a partir do que o
 gate já tem (`calibracao.Assinatura`):
 
-```
+```text
 motivos: area_sensivel, codigo_sem_teste
 caminhos: *, *.md, internal/auth/*.go, migrations/*.sql
 adicionados: 2
@@ -240,7 +240,7 @@ O formato do recibo **não mudou**. A calibração cabe no payload que já exist
 - quando o nível cai, `motivos` ganha `calibracao_historico`, com uma evidência
   por vizinho usado:
 
-```
+```text
 <task_run_id> <dono>/<repo>#<n> similaridade 0.9712 aprovado_e_mergeado
 ```
 
