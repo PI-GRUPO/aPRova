@@ -40,6 +40,9 @@ O ciclo de preparação da API para desenvolvimento (guia local
 permite configurar o destino do proxy do Vite, mantendo as consultas sob a mesma
 origem e sem incluir segredos no navegador. O login real permanece dependente
 da API atualizada e da configuração OAuth do ambiente.
+O ciclo de [Análises no mobile](dashboard-analises-mobile.md) apresenta a coleção
+real em cards, com filtros expansíveis, paginação e retorno do detalhe preservados.
+Desktop continua usando a tabela e os contratos existentes.
 
 Documentação das fases: manter este plano e todos os novos documentos de
 levantamento, execução e acompanhamento do dashboard em `design/docs/`.

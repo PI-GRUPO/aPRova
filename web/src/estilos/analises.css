@@ -1,6 +1,23 @@
 .pagina-analises {
 	min-height: 100dvh;
 }
+.lista-analises {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	flex: 1;
+	min-width: 0;
+}
+.conteudo-filtros-analises {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.controles-lista-analises > summary,
+.contexto-analises-mobile,
+.cards-analises {
+	display: none;
+}
 .filtros-analises {
 	display: flex;
 	flex-wrap: wrap;
@@ -199,6 +216,59 @@
 	padding: 4px 0;
 }
 @media (max-width: 767px) {
+	.pagina-analises .titulo-contexto {
+		gap: 16px;
+	}
+	.contexto-analises-desktop,
+	.titulo-resultados-desktop,
+	.tabela-analises-desktop {
+		display: none;
+	}
+	.contexto-analises-mobile {
+		display: block;
+	}
+	.cards-analises {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.card-analise {
+		border: 1px solid var(--borda-padrao);
+		border-radius: 12px;
+		background: var(--fundo-superficie);
+		overflow: hidden;
+	}
+	.card-analise h2 {
+		padding: 8px 12px;
+		background: var(--fundo-elevado);
+		font-size: 14px;
+		line-height: 20px;
+		overflow-wrap: anywhere;
+	}
+	.card-analise > div {
+		display: flex;
+		flex-direction: column;
+		align-items: start;
+		gap: 10px;
+		padding: 12px;
+	}
+	.card-analise .botao {
+		width: 180px;
+		max-width: 100%;
+	}
+	.controles-lista-analises > summary {
+		display: list-item;
+		cursor: pointer;
+		font-size: 12px;
+		line-height: 20px;
+		text-decoration: underline;
+	}
+	.controles-lista-analises[open] > summary {
+		margin-bottom: 16px;
+	}
 	.grade-analise {
 		grid-template-columns: minmax(0, 1fr);
 	}

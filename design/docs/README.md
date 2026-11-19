@@ -11,6 +11,7 @@ e acompanhamento das fases do dashboard devem ser criados nesta pasta
 - [Fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
 - [Mapa diário: seleção e detalhe de demonstração](dashboard-mapa.md)
 - [Correção visual do login conforme o Figma](dashboard-login.md)
+- [Análises: cards mobile, filtros e retorno do detalhe](dashboard-analises-mobile.md)
 - Guia local de API e OAuth: `dashboard-api-desenvolvimento.md` (ignorado pelo Git).
 - [Levantamento da F0 e dependências](dashboard-f0.md)
 - [Fundação F1: execução, testes e build](dashboard-f1.md)

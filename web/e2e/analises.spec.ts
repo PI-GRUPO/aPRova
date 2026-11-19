@@ -131,14 +131,15 @@ for (const largura of [1440, 390, 360])
 		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
 		await page.goto("/analises?installation_id=42");
 		await expect(page.getByText("1 a 2 de 3 análises · página 1")).toBeVisible();
-		await expect(page.getByText("Não avaliado", { exact: true })).toBeVisible();
+		if (largura >= 768) await expect(page.getByRole("table").getByText("Não avaliado", { exact: true })).toBeVisible();
+		else await expect(page.getByRole("heading", { name: "equipe/projeto #13", exact: true })).toBeVisible();
 		for (const tema of ["escuro", "claro"]) {
 			if (tema === "claro") await page.getByRole("button", { name: "Usar tema claro" }).click();
 			await page.evaluate(() => document.fonts.ready);
 			await page.screenshot({ path: `../.capturas-mcp/f4a/local-lista-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 		}
-		await page.getByRole("link", { name: "equipe/projeto #12", exact: true }).click();
+		await page.getByRole("link", { name: largura >= 768 ? "equipe/projeto #12" : "Abrir análise equipe/projeto #12", exact: true }).click();
 		await expect(page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true })).toBeVisible();
 		await expect(page.getByText("Não informada nesta análise", { exact: true })).toBeVisible();
 		await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeEnabled();
@@ -260,3 +261,128 @@ test("fluxo HTTP real autentica, lista, abre detalhe e verifica recibo", async (
 	});
 	expect(hmac.status()).toBe(401);
 });
+
+for (const largura of [390, 360, 320])
+	for (const tema of ["escuro", "claro"]) {
+		test(`cards de análises do Figma em ${largura}px no tema ${tema}`, async ({ page }) => {
+			await simular(page);
+			await page.setViewportSize({ width: largura, height: 844 });
+			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			const referencias = [
+				["aPRova-TESTES", 1],
+				["cobranca-api", 214],
+				["painel-entregas", 97],
+				["cobranca-api", 217],
+				["painel-entregas", 99],
+			] as const;
+			await page.route("**/api/analises?*", (r) =>
+				r.fulfill({
+					json: {
+						installation_id: 42,
+						snapshot: instante,
+						pagina: 1,
+						limite: 5,
+						total: 5,
+						tem_mais: false,
+						itens: referencias.map(([repositorio, numero_pr], i) => ({
+							...analise,
+							id: `00000000-0000-4000-8000-${String(i + 3).padStart(12, "0")}`,
+							repositorio,
+							numero_pr,
+						})),
+					},
+				}),
+			);
+			await page.goto("/analises?installation_id=42");
+			const cards = page.getByRole("list", { name: "Análises autorizadas" });
+			await expect(cards.getByRole("listitem")).toHaveCount(5);
+			await expect(page.getByRole("table")).toHaveCount(0);
+			await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toBeHidden();
+			await expect(cards.getByRole("link")).toHaveCount(5);
+			await page.evaluate(() => document.fonts.ready);
+			const caixa = await cards.getByRole("listitem").first().boundingBox();
+			expect(caixa).toMatchObject({ x: 16, y: 204, width: largura - 32, height: 120 });
+			const botao = await cards.getByRole("link").first().boundingBox();
+			expect(botao?.width).toBe(180);
+			expect(botao?.height).toBe(32);
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+			await page.screenshot({ path: `../.capturas-mcp/analises-mobile/local-${largura}-${tema}.png`, fullPage: true });
+		});
+	}
+
+test("mobile preserva filtros, snapshot, teclado e retorno do detalhe", async ({ page }) => {
+	await simular(page);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto("/analises?installation_id=42&repositorio=equipe%2Fprojeto&nivel=alto&ordem=antigas");
+	await page.getByRole("button", { name: "Próxima", exact: true }).click();
+	await expect(page.getByRole("heading", { name: "equipe/projeto #14", exact: true })).toBeVisible();
+	const destino = new URL(page.url());
+	const id14 = "00000000-0000-4000-8000-000000000005";
+	await page.route(`**/api/analises/${id14}?*`, (r) =>
+		r.fulfill({ json: { ...detalhe, analise: { ...analise, id: id14, numero_pr: 14 } } }),
+	);
+	await page.getByText("Filtros e instalação", { exact: true }).focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("combobox", { name: "Nível", exact: true })).toBeVisible();
+	await page.getByLabel("Buscar PR", { exact: true }).fill("14");
+	await page.getByText("Filtros e instalação", { exact: true }).focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("combobox", { name: "Nível", exact: true })).toBeHidden();
+	await page.getByText("Filtros e instalação", { exact: true }).click();
+	await expect(page.getByLabel("Buscar PR", { exact: true })).toHaveValue("14");
+	await page.getByRole("link", { name: "Abrir análise equipe/projeto #14", exact: true }).focus();
+	await page.keyboard.press("Enter");
+	await expect(page.getByRole("heading", { name: "equipe/projeto / PR #14", exact: true })).toBeVisible();
+	await page.reload();
+	await page.getByRole("link", { name: "Voltar às análises", exact: true }).click();
+	expect(new URL(page.url()).search).toBe(destino.search);
+	await expect(page.getByRole("heading", { name: "equipe/projeto #14", exact: true })).toBeVisible();
+	await page.getByText("Filtros e instalação", { exact: true }).click();
+	await page.getByRole("combobox", { name: "Nível", exact: true }).click();
+	await page.getByRole("option", { name: "Baixo", exact: true }).click();
+	await expect(page).toHaveURL(/nivel=baixo/);
+	expect(new URL(page.url()).searchParams.has("snapshot")).toBeFalsy();
+	expect(new URL(page.url()).searchParams.has("pagina")).toBeFalsy();
+});
+
+test("redimensionar mantém uma apresentação acessível sem refazer a consulta", async ({ page }) => {
+	await simular(page);
+	let consultas = 0;
+	page.on("request", (r) => {
+		if (new URL(r.url()).pathname === "/api/analises") consultas++;
+	});
+	await page.goto("/analises?installation_id=42");
+	await expect(page.getByRole("table")).toBeVisible();
+	await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toBeVisible();
+	const consultasIniciais = consultas;
+	await page.setViewportSize({ width: 390, height: 844 });
+	await expect(page.getByRole("list", { name: "Análises autorizadas" })).toBeVisible();
+	await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toBeHidden();
+	await page.getByText("Filtros e instalação", { exact: true }).click();
+	await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toBeVisible();
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await expect(page.getByRole("table")).toBeVisible();
+	await expect(page.getByRole("list", { name: "Análises autorizadas" })).toHaveCount(0);
+	await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toBeVisible();
+	expect(consultas).toBe(consultasIniciais);
+});
+
+for (const cenario of ["vazio", "erro", "sem-acesso"] as const)
+	test(`mobile com ${cenario} não mostra cards ou demonstrações`, async ({ page }) => {
+		await simular(page);
+		await page.setViewportSize({ width: 320, height: 844 });
+		await page.route("**/api/analises?*", (r) =>
+			cenario === "vazio"
+				? r.fulfill({ json: { installation_id: 42, snapshot: instante, pagina: 1, limite: 2, total: 0, tem_mais: false, itens: [] } })
+				: r.fulfill({ status: cenario === "erro" ? 503 : 403, json: { status: "erro" } }),
+		);
+		await page.goto("/analises?installation_id=42");
+		await expect(
+			page.getByRole("heading", {
+				name: cenario === "vazio" ? "Nenhuma análise encontrada" : "Não foi possível consultar análises",
+				exact: true,
+			}),
+		).toBeVisible();
+		await expect(page.getByRole("list", { name: "Análises autorizadas" })).toHaveCount(0);
+		await expect(page.getByRole("link", { name: /Abrir análise/ })).toHaveCount(0);
+	});

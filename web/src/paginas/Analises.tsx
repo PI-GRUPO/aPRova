@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { dataUTC, Estado, Risco } from "@/componentes/Analise";
@@ -16,7 +16,8 @@ export function Analises() {
 		<div className="pagina pagina-analises">
 			<div className="titulo-contexto">
 				<h1>Análises</h1>
-				<p className="apoio">Histórico autorizado · filtros aplicados a toda a consulta · horários em UTC</p>
+				<p className="apoio contexto-analises-desktop">Histórico autorizado · filtros aplicados a toda a consulta · horários em UTC</p>
+				<p className="apoio contexto-analises-mobile">Análises da instalação</p>
 			</div>
 			<Protegida>
 				{sessao?.autenticado && sessao.instalacoes.length > 0 ? (
@@ -49,6 +50,7 @@ function consultaDaLista(q: URLSearchParams, id: string) {
 	return c;
 }
 function ListaDaInstalacao({ id }: { id: string }) {
+	const mobile = useListaMobile();
 	const { sessao } = useSessao();
 	const [q, setQ] = useSearchParams();
 	const [repos, setRepos] = useState<string[]>();
@@ -88,8 +90,8 @@ function ListaDaInstalacao({ id }: { id: string }) {
 		setErroBusca("");
 		setQ(new URLSearchParams({ installation_id: id }));
 	}
-	return (
-		<>
+	const controles = (
+		<ControlesDaLista key="controles" mobile={mobile}>
 			<div className="controles">
 				<div className="campo">
 					<span className="rotulo-campo">Instalação</span>
@@ -115,92 +117,124 @@ function ListaDaInstalacao({ id }: { id: string }) {
 					Atualizar resultados
 				</Botao>
 			</div>
+			{autorizado && (
+				<div className="filtros-analises">
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							const v = busca.trim();
+							if (v && !/^[1-9]\d*$/.test(v)) {
+								setErroBusca("Informe apenas o número positivo do PR.");
+								return;
+							}
+							setErroBusca("");
+							filtro("numero_pr", v);
+						}}
+					>
+						<Campo
+							rotulo="Buscar PR"
+							placeholder="Número do PR"
+							inputMode="numeric"
+							value={busca}
+							onChange={(e) => setBusca(e.target.value)}
+							erro={erroBusca}
+						/>
+						<Botao type="submit">Buscar</Botao>
+					</form>
+					<Filtro
+						rotulo="Repositório"
+						valor={q.get("repositorio") ?? "todos"}
+						aoMudar={(v) => filtro("repositorio", v === "todos" ? "" : v)}
+						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...(repos ?? []).map((r) => ({ valor: r, rotulo: r }))]}
+					/>
+					<Filtro
+						rotulo="Nível"
+						valor={q.get("nivel") ?? "todos"}
+						aoMudar={(v) => filtro("nivel", v)}
+						opcoes={[
+							{ valor: "todos", rotulo: "Todos" },
+							{ valor: "alto", rotulo: "Alto" },
+							{ valor: "medio", rotulo: "Médio" },
+							{ valor: "baixo", rotulo: "Baixo" },
+							{ valor: "nao_avaliado", rotulo: "Não avaliado" },
+						]}
+					/>
+					<Filtro
+						rotulo="Estado"
+						valor={q.get("estado") ?? "todos"}
+						aoMudar={(v) => filtro("estado", v)}
+						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...Object.entries(estados).map(([valor, rotulo]) => ({ valor, rotulo }))]}
+					/>
+					<Filtro
+						rotulo="Período"
+						valor={q.get("periodo") ?? "30"}
+						aoMudar={(v) => filtro("periodo", v)}
+						opcoes={[
+							{ valor: "7", rotulo: "Últimos 7 dias" },
+							{ valor: "30", rotulo: "Últimos 30 dias" },
+							{ valor: "90", rotulo: "Últimos 90 dias" },
+							{ valor: "todos", rotulo: "Todo o histórico" },
+						]}
+					/>
+				</div>
+			)}
+		</ControlesDaLista>
+	);
+	const resultados = (
+		<Fragment key="resultados">
+			{erroRepos && <p role="alert">{erroRepos}</p>}
 			{!autorizado ? (
 				<PainelDeEstado titulo="Instalação não autorizada" erro>
 					<p>Selecione uma instalação disponível para sua conta.</p>
 				</PainelDeEstado>
 			) : (
-				<>
-					<div className="filtros-analises">
-						<form
-							onSubmit={(e) => {
-								e.preventDefault();
-								const v = busca.trim();
-								if (v && !/^[1-9]\d*$/.test(v)) {
-									setErroBusca("Informe apenas o número positivo do PR.");
-									return;
-								}
-								setErroBusca("");
-								filtro("numero_pr", v);
-							}}
-						>
-							<Campo
-								rotulo="Buscar PR"
-								placeholder="Número do PR"
-								inputMode="numeric"
-								value={busca}
-								onChange={(e) => setBusca(e.target.value)}
-								erro={erroBusca}
-							/>
-							<Botao type="submit">Buscar</Botao>
-						</form>
-						<Filtro
-							rotulo="Repositório"
-							valor={q.get("repositorio") ?? "todos"}
-							aoMudar={(v) => filtro("repositorio", v === "todos" ? "" : v)}
-							opcoes={[{ valor: "todos", rotulo: "Todos" }, ...(repos ?? []).map((r) => ({ valor: r, rotulo: r }))]}
-						/>
-						<Filtro
-							rotulo="Nível"
-							valor={q.get("nivel") ?? "todos"}
-							aoMudar={(v) => filtro("nivel", v)}
-							opcoes={[
-								{ valor: "todos", rotulo: "Todos" },
-								{ valor: "alto", rotulo: "Alto" },
-								{ valor: "medio", rotulo: "Médio" },
-								{ valor: "baixo", rotulo: "Baixo" },
-								{ valor: "nao_avaliado", rotulo: "Não avaliado" },
-							]}
-						/>
-						<Filtro
-							rotulo="Estado"
-							valor={q.get("estado") ?? "todos"}
-							aoMudar={(v) => filtro("estado", v)}
-							opcoes={[{ valor: "todos", rotulo: "Todos" }, ...Object.entries(estados).map(([valor, rotulo]) => ({ valor, rotulo }))]}
-						/>
-						<Filtro
-							rotulo="Período"
-							valor={q.get("periodo") ?? "30"}
-							aoMudar={(v) => filtro("periodo", v)}
-							opcoes={[
-								{ valor: "7", rotulo: "Últimos 7 dias" },
-								{ valor: "30", rotulo: "Últimos 30 dias" },
-								{ valor: "90", rotulo: "Últimos 90 dias" },
-								{ valor: "todos", rotulo: "Todo o histórico" },
-							]}
-						/>
-					</div>
-					{erroRepos && <p role="alert">{erroRepos}</p>}
-					<Resultados
-						key={`${q.toString()}:${atualizacao}`}
-						id={id}
-						q={q}
-						aoPaginar={(pagina, snapshot) =>
-							setQ(() => {
-								const nova = new URLSearchParams(window.location.search);
-								nova.set("installation_id", id);
-								nova.set("pagina", String(pagina));
-								nova.set("snapshot", snapshot);
-								return nova;
-							})
-						}
-						aoOrdenar={() => filtro("ordem", q.get("ordem") === "antigas" ? "recentes" : "antigas")}
-					/>
-				</>
+				<Resultados
+					key={`${q.toString()}:${atualizacao}`}
+					id={id}
+					q={q}
+					aoPaginar={(pagina, snapshot) =>
+						setQ(() => {
+							const nova = new URLSearchParams(window.location.search);
+							nova.set("installation_id", id);
+							nova.set("pagina", String(pagina));
+							nova.set("snapshot", snapshot);
+							return nova;
+						})
+					}
+					aoOrdenar={() => filtro("ordem", q.get("ordem") === "antigas" ? "recentes" : "antigas")}
+				/>
 			)}
-		</>
+		</Fragment>
+	);
+	return <div className="lista-analises">{mobile ? [resultados, controles] : [controles, resultados]}</div>;
+}
+function useListaMobile() {
+	const [mobile, setMobile] = useState(() => window.matchMedia("(max-width: 767px)").matches);
+	useEffect(() => {
+		const media = window.matchMedia("(max-width: 767px)");
+		const atualizar = () => setMobile(media.matches);
+		media.addEventListener("change", atualizar);
+		atualizar();
+		return () => media.removeEventListener("change", atualizar);
+	}, []);
+	return mobile;
+}
+function ControlesDaLista({ children, mobile }: { children: ReactNode; mobile: boolean }) {
+	const [aberto, setAberto] = useState(false);
+	return (
+		<details
+			className="controles-lista-analises"
+			open={!mobile || aberto}
+			onToggle={(e) => {
+				if (mobile) setAberto(e.currentTarget.open);
+			}}
+		>
+			<summary>Filtros e instalação</summary>
+			<div className="conteudo-filtros-analises">{children}</div>
+		</details>
 	);
 }
+
 function Filtro({
 	rotulo,
 	valor,
@@ -266,56 +300,80 @@ function Resultados({
 	voltar.set("installation_id", id);
 	return (
 		<section className="resultados-analises">
-			<h2>Resultados</h2>
+			<h2 className="titulo-resultados-desktop">Resultados</h2>
 			{dados.itens.length === 0 ? (
 				<PainelDeEstado titulo="Nenhuma análise encontrada">
 					<p>Não há resultados nesta página para os filtros e o escopo selecionados.</p>
 				</PainelDeEstado>
 			) : (
-				// biome-ignore lint/a11y/noNoninteractiveTabindex: a região rolável precisa receber foco para rolagem por teclado.
-				<section className="tabela-rolavel" aria-label="Resultados de análises, tabela rolável" tabIndex={0}>
-					<Tabela legenda="Análises autorizadas">
-						<CabecalhoDaTabela>
-							<Coluna>Repositório / PR</Coluna>
-							<Coluna>Risco</Coluna>
-							<Coluna>Estado</Coluna>
-							<ColunaOrdenavel sentido={q.get("ordem") === "antigas" ? "crescente" : "decrescente"} aoOrdenar={aoOrdenar}>
-								Recebida em
-							</ColunaOrdenavel>
-							<Coluna>Commit</Coluna>
-						</CabecalhoDaTabela>
-						<CorpoDaTabela>
-							{dados.itens.map((a) => (
-								<LinhaDaTabela key={a.id}>
-									<Celula>
-										<Link
-											to={`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: voltar.toString() })}`}
-											onClick={(e) => {
-												if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-												e.preventDefault();
-												const retorno = new URLSearchParams(window.location.search);
-												retorno.set("installation_id", id);
-												navegar(`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: retorno.toString() })}`);
-											}}
-										>
-											{a.repositorio} #{a.numero_pr}
-										</Link>
-									</Celula>
-									<Celula>
-										<Risco nivel={a.nivel} />
-									</Celula>
-									<Celula>
-										<Estado estado={a.estado} />
-									</Celula>
-									<Celula>{dataUTC(a.recebido_em)}</Celula>
-									<Celula>
-										<code title={a.sha_head}>{a.sha_head.slice(0, 7)}</code>
-									</Celula>
-								</LinhaDaTabela>
-							))}
-						</CorpoDaTabela>
-					</Tabela>
-				</section>
+				<>
+					<ul className="cards-analises" aria-label="Análises autorizadas">
+						{dados.itens.map((a) => (
+							<li key={a.id} className="card-analise">
+								<h2>
+									{a.repositorio} #{a.numero_pr}
+								</h2>
+								<div>
+									<p className="apoio">{estados[a.estado] ?? a.estado}</p>
+									<p className="sr-only">
+										<Risco nivel={a.nivel} /> · {dataUTC(a.recebido_em)} · commit {a.sha_head}
+									</p>
+									<Link
+										className="botao botao-secundario"
+										aria-label={`Abrir análise ${a.repositorio} #${a.numero_pr}`}
+										to={`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: voltar.toString() })}`}
+									>
+										Abrir análise
+									</Link>
+								</div>
+							</li>
+						))}
+					</ul>
+					{/* biome-ignore lint/a11y/noNoninteractiveTabindex: a região rolável precisa receber foco para rolagem por teclado. */}
+					<section className="tabela-rolavel tabela-analises-desktop" aria-label="Resultados de análises, tabela rolável" tabIndex={0}>
+						<Tabela legenda="Análises autorizadas">
+							<CabecalhoDaTabela>
+								<Coluna>Repositório / PR</Coluna>
+								<Coluna>Risco</Coluna>
+								<Coluna>Estado</Coluna>
+								<ColunaOrdenavel sentido={q.get("ordem") === "antigas" ? "crescente" : "decrescente"} aoOrdenar={aoOrdenar}>
+									Recebida em
+								</ColunaOrdenavel>
+								<Coluna>Commit</Coluna>
+							</CabecalhoDaTabela>
+							<CorpoDaTabela>
+								{dados.itens.map((a) => (
+									<LinhaDaTabela key={a.id}>
+										<Celula>
+											<Link
+												to={`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: voltar.toString() })}`}
+												onClick={(e) => {
+													if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+													e.preventDefault();
+													const retorno = new URLSearchParams(window.location.search);
+													retorno.set("installation_id", id);
+													navegar(`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: retorno.toString() })}`);
+												}}
+											>
+												{a.repositorio} #{a.numero_pr}
+											</Link>
+										</Celula>
+										<Celula>
+											<Risco nivel={a.nivel} />
+										</Celula>
+										<Celula>
+											<Estado estado={a.estado} />
+										</Celula>
+										<Celula>{dataUTC(a.recebido_em)}</Celula>
+										<Celula>
+											<code title={a.sha_head}>{a.sha_head.slice(0, 7)}</code>
+										</Celula>
+									</LinhaDaTabela>
+								))}
+							</CorpoDaTabela>
+						</Tabela>
+					</section>
+				</>
 			)}
 			<div className="paginacao-analises">
 				<p className="apoio">
