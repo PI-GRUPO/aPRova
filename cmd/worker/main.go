@@ -131,8 +131,16 @@ func montarMotor(configuracao config.Configuracao, repositorio *repository.Repos
 		return nil, nil, err
 	}
 
-	motor, err := worker.NovoMotor(opcoesDoMotor(configuracao, repositorio, clienteGitHub, executorSandbox, calibrador, recibos, publicador,
-		emissorDeEventos, enviadorSARIF))
+	motor, err := worker.NovoMotor(opcoesDoMotor(configuracao, dependenciasDoMotor{
+		repositorio:      repositorio,
+		clienteGitHub:    clienteGitHub,
+		executorSandbox:  executorSandbox,
+		calibrador:       calibrador,
+		recibos:          recibos,
+		publicador:       publicador,
+		emissorDeEventos: emissorDeEventos,
+		enviadorSARIF:    enviadorSARIF,
+	}))
 	if err != nil {
 		encerrarEnvioDeSARIF(enviadorSARIF)
 		return nil, nil, err
@@ -189,26 +197,35 @@ func montarEmissorDeEventos(configuracao config.Configuracao) (*eventos.Emissor,
 	return emissorDeEventos, nil
 }
 
-func opcoesDoMotor(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, clienteGitHub *platform.Cliente,
-	executorSandbox sandbox.Executor, calibrador worker.CalibradorRisco, recibos *receipt.Emissor, publicador *publicacao.Publicador,
-	emissorDeEventos *eventos.Emissor, enviadorSARIF *sarif.Enviador) worker.Opcoes {
+type dependenciasDoMotor struct {
+	repositorio      *repository.RepositorioPostgres
+	clienteGitHub    *platform.Cliente
+	executorSandbox  sandbox.Executor
+	calibrador       worker.CalibradorRisco
+	recibos          *receipt.Emissor
+	publicador       *publicacao.Publicador
+	emissorDeEventos *eventos.Emissor
+	enviadorSARIF    *sarif.Enviador
+}
+
+func opcoesDoMotor(configuracao config.Configuracao, dependencias dependenciasDoMotor) worker.Opcoes {
 	opcoes := worker.Opcoes{
-		Armazenamento: repositorio,
-		LeitorDePR:    clienteGitHub,
-		Permissoes:    clienteGitHub,
-		Sandbox:       executorSandbox,
+		Armazenamento: dependencias.repositorio,
+		LeitorDePR:    dependencias.clienteGitHub,
+		Permissoes:    dependencias.clienteGitHub,
+		Sandbox:       dependencias.executorSandbox,
 		Avaliador:     gate.Novo(gate.Limites{MaxArquivos: configuracao.GateMaxArquivos, CaminhosSensiveis: configuracao.GateCaminhosSensiveis}),
-		Calibrador:    calibrador,
-		Recibos:       recibos,
-		Publicador:    publicador,
-		Eventos:       emissorDeEventos,
+		Calibrador:    dependencias.calibrador,
+		Recibos:       dependencias.recibos,
+		Publicador:    dependencias.publicador,
+		Eventos:       dependencias.emissorDeEventos,
 		Diretorios:    configuracao.SandboxDiretorios,
 		Linguagens:    linguagensDoSandbox(configuracao),
 		URLPublica:    configuracao.URLPublica,
 		MaxTentativas: configuracao.WorkerMaxTentativas,
 	}
-	if enviadorSARIF != nil {
-		opcoes.SARIF = enviadorSARIF
+	if dependencias.enviadorSARIF != nil {
+		opcoes.SARIF = dependencias.enviadorSARIF
 	}
 	return opcoes
 }
