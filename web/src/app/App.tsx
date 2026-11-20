@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Casca } from "@/componentes/Casca";
-import { Conta, Entrar } from "@/paginas/Acesso";
+import { ConsultaGestao } from "@/componentes/Gestao";
+import { Conta, Entrar, Protegida } from "@/paginas/Acesso";
 import { AnaliseDemonstracao } from "@/paginas/AnaliseDemonstracao";
 import { Analises } from "@/paginas/Analises";
 import { Configuracao } from "@/paginas/Configuracao";
@@ -49,18 +50,49 @@ export function App() {
 									) : (
 										{
 											"/repositorios": <Repositorios />,
-											"/regras": <Regras />,
-											"/auditoria": <Auditoria />,
-											"/configuracao": <Configuracao />,
-											"/sugestoes": <Sugestoes />,
-											"/sla": <Sla />,
+											"/regras": (
+												<ConsultaGestao recurso="/regras" titulo={s.titulo}>
+													<Regras />
+												</ConsultaGestao>
+											),
+											"/auditoria": (
+												<ConsultaGestao recurso="/auditoria" titulo={s.titulo}>
+													<Auditoria />
+												</ConsultaGestao>
+											),
+											"/configuracao": (
+												<ConsultaGestao recurso="/configuracao" titulo={s.titulo}>
+													<Configuracao />
+												</ConsultaGestao>
+											),
+											"/sugestoes": (
+												<ConsultaGestao recurso="/sugestoes" titulo={s.titulo}>
+													<Sugestoes />
+												</ConsultaGestao>
+											),
+											"/sla": (
+												<ConsultaGestao recurso="/sla" titulo={s.titulo}>
+													<Sla />
+												</ConsultaGestao>
+											),
 										}[s.caminho]
 									)
 								}
 							/>
 						))}
 						<Route path="/relatorio-semanal" element={<RelatorioSemanalPagina />} />
-						<Route path="/analises/demonstracao/:id?" element={<AnaliseDemonstracao />} />
+						<Route
+							path="/analises/demonstracao/:id?"
+							element={
+								__MOCKS__ ? (
+									<Protegida>
+										<AnaliseDemonstracao />
+									</Protegida>
+								) : (
+									<NaoEncontrada />
+								)
+							}
+						/>
 						<Route path="/analises/:id" element={<DetalheAnalise />} />
 						<Route path="/recibos/:id" element={<DetalheDoRecibo />} />
 						{Harness && (

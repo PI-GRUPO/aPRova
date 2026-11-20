@@ -58,7 +58,7 @@ for (const largura of [1440, 390, 360])
 		}
 		await page.goto("/conta");
 		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
-		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeEnabled();
+		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeDisabled();
 		await page.screenshot({ path: `../.capturas-mcp/f3/local-conta-${largura}.png`, fullPage: true });
 	});
 test("troca de escopo descarta dados e URL adulterada não dispara relatório", async ({ page }) => {
@@ -115,6 +115,18 @@ test("fluxo HTTP com handlers reais de login, CSRF, relatório e logout", async 
 	await page.goto("http://127.0.0.1:18080/entrar");
 	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
 	await expect(page).toHaveURL("http://127.0.0.1:18080/");
+	await expect(page.getByRole("heading", { name: "Recurso indisponível" })).toBeVisible();
+	await expect(page.getByRole("link", { name: "Consultar análises aguardando aprovação" })).toHaveAttribute(
+		"href",
+		/installation_id=42.*estado=aguardando_aprovacao/,
+	);
+	for (const rota of ["regras", "auditoria", "configuracao", "sugestoes", "sla"]) {
+		await page.goto(`http://127.0.0.1:18080/${rota}`);
+		await expect(page.getByRole("heading", { name: "Recurso indisponível" })).toBeVisible();
+	}
+	await page.goto("http://127.0.0.1:18080/analises/demonstracao/123");
+	await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
+
 	await page.goto("http://127.0.0.1:18080/relatorio-semanal");
 	await expect(page.getByText("75%", { exact: true })).toBeVisible();
 	const cookies = await page.context().cookies();
@@ -136,4 +148,15 @@ test("fluxo HTTP com handlers reais de login, CSRF, relatório e logout", async 
 		headers: { Cookie: cabecalho },
 	});
 	expect(revogada.status()).toBe(401);
+});
+
+test("relatório exige o repositório solicitado e logout exige confirmação", async ({ page }) => {
+	await simular(page);
+	await page.goto("/relatorio-semanal?installation_id=42&repositorio=equipe%2Foutro");
+	await expect(page.getByRole("heading", { name: "Relatório indisponível" })).toBeVisible();
+	await expect(page.getByText("75%", { exact: true })).toHaveCount(0);
+	await page.route("**/api/sessao/sair", (r) => r.fulfill({ json: {} }));
+	await page.getByRole("button", { name: "Sair", exact: true }).click();
+	await expect(page.locator("footer").getByRole("alert")).toContainText("O serviço não confirmou a operação.");
+	await expect(page.getByRole("button", { name: "Sair", exact: true })).toBeEnabled();
 });

@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { createContext, useContext } from "react";
 import { Link, useSearchParams } from "react-router";
-import { repositoriosDemonstracao } from "@/servicos/gestao";
+import { consultasGestao, type Gestao } from "@/servicos/gestao";
 import { Ativo } from "./Ativo";
+import { ConsultaPrivada } from "./ConsultaPrivada";
 import { Botao, Modal } from "./Primitivos";
 import { Selecao } from "./Selecao";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "./Tabela";
@@ -11,13 +13,11 @@ export function PaginaGestao({
 	titulo,
 	subtitulo,
 	children,
-	simulado = true,
 	voltar = false,
 }: {
 	titulo: string;
 	subtitulo: string;
 	children: ReactNode;
-	simulado?: boolean;
 	voltar?: boolean;
 }) {
 	return (
@@ -33,7 +33,6 @@ export function PaginaGestao({
 				<p className="apoio">{subtitulo}</p>
 			</div>
 			{children}
-			{simulado && <p className="apoio nota-simulacao">Demonstração · dados e alterações simulados nesta sessão da página.</p>}
 		</div>
 	);
 }
@@ -63,9 +62,7 @@ export function SecaoGestao({
 								<Ativo nome="ajuda" />
 							</Botao>
 						}
-					>
-						<p>Esta prévia usa dados simulados. As operações não alteram a instalação real.</p>
-					</Modal>
+					/>
 				)}
 				{extra && <div className="extra-secao">{extra}</div>}
 			</header>
@@ -130,7 +127,30 @@ export function SeletorGestao({
 		</div>
 	);
 }
-export const opcoesRepos = repositoriosDemonstracao.map((r) => ({ valor: r.nome, rotulo: r.nome }));
+const Contexto = createContext<Gestao | null>(null);
+export function ConsultaGestao({
+	titulo,
+	children,
+	recurso,
+}: {
+	titulo: string;
+	children: ReactNode;
+	recurso: keyof typeof consultasGestao;
+}) {
+	return (
+		<ConsultaPrivada titulo={titulo} consultar={consultasGestao[recurso]}>
+			{(dados) => <Contexto value={dados}>{children}</Contexto>}
+		</ConsultaPrivada>
+	);
+}
+export function useGestao() {
+	const dados = useContext(Contexto);
+	if (!dados) throw new Error("Consulta de gestão ausente.");
+	return dados;
+}
+export function useOpcoesRepos() {
+	return useGestao().repositorios.map((nome) => ({ valor: nome, rotulo: nome }));
+}
 export const opcoesPeriodo = [
 	{ valor: "7", rotulo: "Últimos 7 dias" },
 	{ valor: "30", rotulo: "Últimos 30 dias" },

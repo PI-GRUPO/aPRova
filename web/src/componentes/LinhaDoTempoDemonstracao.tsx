@@ -10,11 +10,7 @@ export function LinhaDoTempoDemonstracao({ etapas }: { etapas: EtapaDemonstracao
 						<Ativo nome={e.estado === "concluida" ? "concluido" : e.estado === "falhou" ? "falhou" : "clock"} />
 						{e.estado === "concluida" ? "Concluída" : e.estado === "falhou" ? "Falhou" : "Aguardando"}
 					</span>
-					<Modal
-						titulo={e.titulo}
-						descricao="Etapa de referência · dados simulados"
-						gatilho={<Botao variante="discreto">{e.titulo}</Botao>}
-					>
+					<Modal titulo={e.titulo} descricao="Detalhes da etapa" gatilho={<Botao variante="discreto">{e.titulo}</Botao>}>
 						<p>{e.detalhe}</p>
 					</Modal>
 					<time className="apoio mono" dateTime={e.momento}>

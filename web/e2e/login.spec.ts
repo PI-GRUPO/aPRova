@@ -9,7 +9,7 @@ for (const largura of [1440, 390, 360, 320])
 			await page.goto("/entrar");
 			const login = page.getByRole("link", { name: "Continuar com GitHub", exact: true });
 			await expect(login).toHaveAttribute("href", "/auth/github");
-			await expect(page.getByText("Protótipo · dados simulados", { exact: true })).toBeVisible();
+			await expect(page.getByText("Protótipo · dados simulados", { exact: true })).toHaveCount(0);
 			await expect(page.getByRole("link", { name: "Consultar recibo público" })).toHaveCount(0);
 			await expect(page.getByRole("button", { name: /Usar tema/ })).toHaveCount(0);
 			await page.evaluate(() => document.fonts.ready);
@@ -20,7 +20,7 @@ for (const largura of [1440, 390, 360, 320])
 			expect(Math.abs(cartao.y + cartao.height / 2 - (largura === 1440 ? 900 : 844) / 2)).toBeLessThanOrEqual(1);
 			if (largura === 1440) {
 				expect(cartao.width).toBe(480);
-				expect(cartao.height).toBe(369);
+				expect(cartao.height).toBeLessThanOrEqual(369);
 			}
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(

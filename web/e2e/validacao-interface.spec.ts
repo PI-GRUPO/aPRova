@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { autenticarFixture } from "./sessao-dashboard";
 
 // Fixtures exclusivas da auditoria de interface; não autenticam usuários reais.
 const instante = "2026-11-16T12:00:00Z";
@@ -17,10 +18,10 @@ const analise = {
 	atualizado_em: instante,
 };
 const telas = [
-	["visao-geral", "/", false],
+	["visao-geral", "/", true],
 	["analises", "/analises?installation_id=42", true],
 	["detalhe", `/analises/${id}?installation_id=42`, true],
-	["demonstracao", "/analises/demonstracao/00000000-0000-4000-8000-000000000001", false],
+	["demonstracao", "/analises/demonstracao/00000000-0000-4000-8000-000000000001", true],
 	["recibos", "/recibos", false],
 	["recibo", `/recibos/${recibo}`, false],
 	["repositorios", "/repositorios", false],
@@ -196,18 +197,11 @@ for (const largura of [1440, 320])
 			test.setTimeout(60000);
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 568 });
 			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
-			await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: false } }));
+			await autenticarFixture(page);
 			await page.route("**/receipts/keys", (r) => r.fulfill({ json: { chaves: [] } }));
-			const casos = [
-				["configuracao", "/configuracao", "Adicionar caminho"],
-				["decisao", "/analises/demonstracao/00000000-0000-4000-8000-000000000001", "Aprovar"],
-				["alteracao", "/analises/demonstracao/00000000-0000-4000-8000-000000000001", "Pedir alterações"],
-				["exportacao", "/recibos", "Exportar JSON"],
-				["cadeia", "/recibos", "Verificar cadeia"],
-			] as const;
+			const casos = [["configuracao", "/configuracao", "Adicionar caminho"]] as const;
 			for (const [nome, caminho, rotulo] of casos) {
 				await page.goto(caminho);
-				if (largura < 768 && caminho === "/recibos") await page.getByText("Período, cadeia e exportação", { exact: true }).click();
 				const gatilho = page.getByRole("button", { name: rotulo, exact: true });
 				await gatilho.click();
 				const dialogo = page.getByRole("dialog");

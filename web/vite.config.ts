@@ -20,7 +20,8 @@ export function destinoDaAPI(valor?: string) {
 }
 
 export default defineConfig(({ command, mode }) => {
-	const destino = destinoDaAPI(loadEnv(mode, process.cwd(), "APROVA_").APROVA_API_PROXY);
+	const env = loadEnv(mode, process.cwd(), "APROVA_");
+	const destino = destinoDaAPI(env.APROVA_API_PROXY);
 	return {
 		// Desenvolvimento, regressão e o teste de proxy usam servidores simultâneos.
 		cacheDir: `node_modules/.vite/${mode}`,
@@ -29,6 +30,12 @@ export default defineConfig(({ command, mode }) => {
 			tailwindcss(),
 			{
 				name: "limpar-build-preservando-checkout",
+				generateBundle(_, bundle) {
+					for (const output of Object.values(bundle)) {
+						if (output.type === "chunk" && Object.keys(output.modules).some((id) => id.includes("/src/mocks/")))
+							this.error("O build inclui fixtures do dashboard.");
+					}
+				},
 				buildStart() {
 					if (command !== "build") return;
 					for (const name of readdirSync(new URL("./dist/", import.meta.url))) {
@@ -38,7 +45,15 @@ export default defineConfig(({ command, mode }) => {
 			},
 		],
 		resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
-		define: { __HARNESS__: JSON.stringify(mode === "teste" && command === "serve") },
+		define: {
+			__MOCKS__: JSON.stringify(
+				command === "serve" &&
+					process.env.NODE_ENV !== "production" &&
+					["development", "teste", "test"].includes(mode) &&
+					env.APROVA_DASHBOARD_MOCKS === "1",
+			),
+			__HARNESS__: JSON.stringify(mode === "teste" && command === "serve"),
+		},
 		build: { emptyOutDir: false },
 		server: {
 			host: "127.0.0.1",

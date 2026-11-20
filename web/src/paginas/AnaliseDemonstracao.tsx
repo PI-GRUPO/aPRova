@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
+import { useSessao } from "@/app/sessao";
 import { Ativo } from "@/componentes/Ativo";
+import { useEscopo } from "@/componentes/ConsultaPrivada";
 import { LinhaDoTempoDemonstracao } from "@/componentes/LinhaDoTempoDemonstracao";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
 import { consultarAnaliseDemonstracao, type AnaliseDemonstracao as Modelo, retornoDaFila } from "@/servicos/analises-demonstracao";
@@ -9,9 +11,17 @@ import "@/estilos/demonstracao.css";
 
 export function AnaliseDemonstracao() {
 	const { id = "" } = useParams();
-	return <ConsultaDemonstracao key={id} id={id} />;
+	const { sessao } = useSessao();
+	const { instalacao } = useEscopo("");
+	if (!sessao?.autenticado || !sessao.instalacoes.some((i) => String(i.id) === instalacao))
+		return (
+			<PainelDeEstado titulo="Instalação não autorizada">
+				<p>Confira suas instalações na conta.</p>
+			</PainelDeEstado>
+		);
+	return <ConsultaDemonstracao key={JSON.stringify([sessao.usuario.id, instalacao, id])} instalacao={instalacao} id={id} />;
 }
-function ConsultaDemonstracao({ id }: { id: string }) {
+function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: string }) {
 	const [dados, setDados] = useState<Modelo | null>();
 	const [erro, setErro] = useState(false);
 	const [q] = useSearchParams();
@@ -34,29 +44,29 @@ function ConsultaDemonstracao({ id }: { id: string }) {
 			</Link>
 			{erro ? (
 				<>
-					<h1>Não foi possível carregar a demonstração</h1>
-					<PainelDeEstado titulo="Demonstração indisponível" erro>
-						<p>Tente carregar novamente os dados locais de referência.</p>
+					<h1>Não foi possível carregar a análise</h1>
+					<PainelDeEstado titulo="Análise indisponível" erro>
+						<p>Tente carregar novamente a análise.</p>
 						<Botao onClick={() => window.location.reload()}>Tentar novamente</Botao>
 					</PainelDeEstado>
 				</>
 			) : dados === null ? (
 				<>
-					<h1>Análise de demonstração não encontrada</h1>
-					<PainelDeEstado titulo="Referência indisponível">
-						<p>Escolha uma análise da fila de demonstração. Nenhuma consulta foi enviada à API de análises.</p>
+					<h1>Análise não encontrada</h1>
+					<PainelDeEstado titulo="Análise indisponível">
+						<p>Escolha uma análise na fila.</p>
 					</PainelDeEstado>
 				</>
 			) : !dados ? (
 				<>
 					<h1>Detalhe da análise</h1>
-					<p role="status">Carregando demonstração…</p>
+					<p role="status">Carregando análise…</p>
 				</>
 			) : (
 				<ConteudoAnalise
 					dados={dados.dados}
-					instalacao={dados.identidade.instalacao}
-					usuarioSimulado={dados.identidade.usuario}
+					instalacao={instalacao}
+					demonstracao
 					complementoSimulado={dados.complemento}
 					linhaDoTempoSimulada={dados.complemento && <LinhaDoTempoDemonstracao etapas={dados.complemento.etapas} />}
 				/>

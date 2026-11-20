@@ -1,12 +1,5 @@
 import { useId, useRef, useState } from "react";
-import {
-	type ContextoAcao,
-	consultarAcaoSimulada,
-	indisponibilidadeSimulada,
-	type ResultadoAcao,
-	registrarAcaoSimulada,
-	type TipoAcao,
-} from "@/servicos/acoes-simuladas";
+import { type ContextoAcao, motivoIndisponivel, type ResultadoAcao, registrarAcao, type TipoAcao } from "@/servicos/acoes-simuladas";
 import { niveis } from "@/servicos/analises";
 import { Risco } from "./Analise";
 import { Botao, Modal } from "./Primitivos";
@@ -34,7 +27,6 @@ function FormularioAcao({
 	aoReceber,
 	aberto,
 	aoMudar,
-	aoConsultar,
 }: {
 	contexto: ContextoAcao;
 	tipo: TipoAcao;
@@ -42,7 +34,6 @@ function FormularioAcao({
 	aoReceber: (r: ResultadoAcao) => void;
 	aberto: boolean;
 	aoMudar: (v: boolean) => void;
-	aoConsultar: (r: ResultadoAcao) => void;
 }) {
 	const [justificativa, setJustificativa] = useState("");
 	const [erro, setErro] = useState("");
@@ -51,10 +42,10 @@ function FormularioAcao({
 	const idAcao = useRef<string>(undefined);
 	const campoId = useId();
 	const texto = rotulos[tipo];
-	const motivo = indisponibilidadeSimulada(contexto, tipo);
+	const motivo = motivoIndisponivel(contexto, tipo);
 	const respostaDaAcao = resultado?.tipo === tipo ? resultado : undefined;
 	async function enviar() {
-		if (trava.current || resultado) return;
+		if (motivo || trava.current || resultado) return;
 		if (tipo !== "reexecutar_analise" && !justificativa.trim()) {
 			setErro("Informe uma justificativa com até 4000 caracteres.");
 			return;
@@ -64,9 +55,9 @@ function FormularioAcao({
 		setErro("");
 		try {
 			idAcao.current ??= crypto.randomUUID();
-			aoReceber(await registrarAcaoSimulada(contexto, tipo, justificativa, idAcao.current));
+			aoReceber(await registrarAcao.executar(contexto, tipo, justificativa, idAcao.current));
 		} catch (e) {
-			setErro(e instanceof Error ? e.message : "Não foi possível registrar a simulação. Tente novamente.");
+			setErro(e instanceof Error ? e.message : "Não foi possível enviar a solicitação. Tente novamente.");
 		} finally {
 			trava.current = false;
 			setEnviando(false);
@@ -83,7 +74,7 @@ function FormularioAcao({
 			}}
 			className={`modal-acao modal-acao-${tipo}`}
 			titulo={respostaDaAcao ? texto.resultado : tipo === "aprovar" ? `${texto.titulo} #${contexto.pr}` : texto.titulo}
-			descricao="Demonstração · ações locais, sem envio ao núcleo."
+			descricao="Confira a análise e o commit antes de confirmar."
 			gatilho={
 				<Botao
 					disabled={!!motivo || (!!resultado && !respostaDaAcao)}
@@ -100,7 +91,6 @@ function FormularioAcao({
 					<p className="apoio caminho">
 						Análise {respostaDaAcao.contexto.id} · commit {respostaDaAcao.contexto.sha}.
 					</p>
-					<p className="apoio">O estado, o risco e o recibo reais permanecem preservados.</p>
 					<div className="rodape-acao">
 						<Botao variante="primario" onClick={() => aoMudar(false)}>
 							Voltar à análise
@@ -118,8 +108,8 @@ function FormularioAcao({
 						{tipo === "aprovar"
 							? "Revise as evidências. Aprovar não executa o merge."
 							: tipo === "reexecutar_analise"
-								? "Falha de infraestrutura recuperável. A demonstração registra a solicitação sem iniciar o executor."
-								: "A solicitação e sua justificativa ficam registradas somente na simulação."}
+								? "Solicitar uma nova tentativa para este commit."
+								: "Informe quais alterações são necessárias."}
 					</p>
 					<form
 						onSubmit={(e) => {
@@ -147,20 +137,10 @@ function FormularioAcao({
 								<p role="alert" id={`${campoId}-erro`}>
 									{erro}
 								</p>
-								{consultarAcaoSimulada(contexto) && (
-									<Botao
-										onClick={() => {
-											const anterior = consultarAcaoSimulada(contexto);
-											if (anterior) aoConsultar(anterior);
-										}}
-									>
-										Consultar solicitação registrada
-									</Botao>
-								)}
 							</div>
 						)}
 						<p className="apoio ajuda-acao" id={`${campoId}-ajuda`}>
-							Até 4000 caracteres. A autorização real depende do núcleo.
+							Até 4000 caracteres.
 						</p>
 						<div className="rodape-acao">
 							<Botao disabled={enviando} onClick={() => aoMudar(false)}>
@@ -177,11 +157,10 @@ function FormularioAcao({
 	);
 }
 export function AcoesSimuladas({ contexto }: { contexto: ContextoAcao }) {
-	const [resultado, setResultado] = useState(() => consultarAcaoSimulada(contexto));
+	const [resultado, setResultado] = useState<ResultadoAcao>();
 	const [aberta, setAberta] = useState<TipoAcao>();
 	return (
 		<div className="acoes-simuladas">
-			<p className="apoio">Ações de demonstração · não alteram a análise real.</p>
 			<div className="controles">
 				{(Object.keys(rotulos) as TipoAcao[]).map((tipo) => (
 					<FormularioAcao
@@ -192,16 +171,11 @@ export function AcoesSimuladas({ contexto }: { contexto: ContextoAcao }) {
 						aoReceber={setResultado}
 						aberto={aberta === tipo}
 						aoMudar={(v) => setAberta(v ? tipo : undefined)}
-						aoConsultar={(r) => {
-							setResultado(r);
-							setAberta(r.tipo);
-						}}
 					/>
 				))}
 			</div>
 			{contexto.proprioPR && <p className="apoio">O autor não pode aprovar o próprio PR.</p>}
 			{!contexto.atual && <p className="apoio">Esta análise foi substituída. Consulte a análise atual.</p>}
-			{resultado && <p className="apoio">Há uma solicitação simulada para este commit. Abra a ação para consultar o resultado.</p>}
 		</div>
 	);
 }

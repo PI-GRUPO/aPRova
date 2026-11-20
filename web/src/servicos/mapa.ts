@@ -1,6 +1,7 @@
+import { indisponivel } from "./fonte";
 export type NivelMapa = "alto" | "medio" | "baixo";
 export type ItemMapa = { id: string; repositorio: string; pr: number; avaliadoEm: string };
-export type RecorteMapa = { origem: "mock"; data: string; nivel: NivelMapa; itens: ItemMapa[] };
+export type RecorteMapa = { origem: "mock" | "api"; data: string; nivel: NivelMapa; itens: ItemMapa[] };
 export function nivelMapaValido(valor: string | null): valor is NivelMapa {
 	return valor === "alto" || valor === "medio" || valor === "baixo";
 }
@@ -15,12 +16,13 @@ export function rotuloDiaMapa(valor: string) {
 	);
 	return `${partes.find((p) => p.type === "day")?.value} ${partes.find((p) => p.type === "month")?.value.replace(/\.$/, "")}`;
 }
-export async function consultarRecorteMapa(data: string, nivel: NivelMapa, signal: AbortSignal): Promise<RecorteMapa> {
+export async function consultarRecorteMapa(_instalacao: string, data: string, nivel: NivelMapa, signal: AbortSignal): Promise<RecorteMapa> {
+	if (!__MOCKS__) return indisponivel();
 	signal.throwIfAborted();
-	if (!dataMapaValida(data) || !nivelMapaValido(nivel)) throw new Error("Recorte de demonstração inválido.");
+	if (!dataMapaValida(data) || !nivelMapaValido(nivel)) throw new Error("Recorte inválido.");
 	const { referenciasMapaMock, diasMapaMock } = await import("@/mocks/mapa");
 	signal.throwIfAborted();
-	if (!diasMapaMock.includes(data)) throw new Error("Dia fora da janela de demonstração.");
+	if (!diasMapaMock.includes(data)) throw new Error("Dia fora da janela.");
 	const itens = referenciasMapaMock
 		.filter((r) => r.data === data && r.nivel === nivel)
 		.map((r) => ({

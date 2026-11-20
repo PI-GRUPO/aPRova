@@ -3,22 +3,33 @@ import { Link } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
-import { opcoesPeriodo, opcoesRepos, PaginaGestao, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "@/componentes/Gestao";
+import {
+	opcoesPeriodo,
+	PaginaGestao,
+	SecaoGestao,
+	SeletorGestao,
+	TabelaGestao,
+	useFiltrosGestao,
+	useGestao,
+	useOpcoesRepos,
+} from "@/componentes/Gestao";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
-import { consultarAuditoria, consultarCalibracoes, consultarSaudeRepositorios, estatisticasRegras } from "@/servicos/gestao";
-import { mensagemDeErro } from "@/servicos/recibos";
+import { erroDeAnalise, listarRepositorios } from "@/servicos/analises";
+import { Protegida } from "./Acesso";
+
 import "@/estilos/analises.css";
 
-const todosRepos = [{ valor: "todos", rotulo: "Todos autorizados" }, ...opcoesRepos];
 function periodoValido(v: string | null) {
 	return opcoesPeriodo.some((p) => p.valor === v) ? (v as string) : "30";
 }
 export function Regras() {
+	const todosRepos = [{ valor: "todos", rotulo: "Todos autorizados" }, ...useOpcoesRepos()];
+	const dados = useGestao();
 	const [detalhes, setDetalhes] = useState(false);
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? "";
 	const periodo = periodoValido(q.get("periodo"));
-	const regras = estatisticasRegras(repo, Number(periodo));
+	const regras = dados.regras;
 	return (
 		<PaginaGestao titulo="Regras do gate" subtitulo="Regras determinísticas em vigor · consulta somente leitura" voltar>
 			<div className="regras-mobile">
@@ -90,13 +101,13 @@ export function Regras() {
 					<TabelaGestao
 						legenda="Calibração por histórico"
 						colunas={["Análise", "Risco inicial → final", "Resultado"]}
-						linhas={consultarCalibracoes(repo).map((c) => ({
+						linhas={dados.calibracoes.map((c) => ({
 							id: c.id,
 							celulas: [
 								<Modal
 									key="analise"
 									titulo={c.nome}
-									descricao="Caso de calibração simulado"
+									descricao="Resultado da calibração"
 									gatilho={
 										<button type="button" className="link-fila">
 											{c.nome}
@@ -104,7 +115,6 @@ export function Regras() {
 									}
 								>
 									<p>{c.resultado}</p>
-									<p>O risco inicial e o resultado desta referência não alteram análises reais.</p>
 								</Modal>,
 								c.risco,
 								<span className="apoio" key="resultado">
@@ -119,13 +129,15 @@ export function Regras() {
 	);
 }
 export function Auditoria() {
+	const todosRepos = [{ valor: "todos", rotulo: "Todos autorizados" }, ...useOpcoesRepos()];
+	const dados = useGestao();
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? "";
 	const periodo = periodoValido(q.get("periodo"));
 	const decisao = q.get("resultado") ?? "";
 	const origem = q.get("origem") ?? "";
 	const recusadas = q.get("recusadas") === "1";
-	const registros = consultarAuditoria({ repo, dias: Number(periodo), origem, decisao, recusadas });
+	const registros = dados.auditoria;
 	return (
 		<PaginaGestao titulo="Auditoria de ações" subtitulo="Tentativas aceitas, recusadas e falhas · somente leitura">
 			<div className="filtros-gestao filtros-auditoria">
@@ -187,15 +199,35 @@ export function Auditoria() {
 }
 export function Repositorios() {
 	const [consulta, setConsulta] = useState(0);
-	return <ConteudoRepositorios key={consulta} aoAtualizar={() => setConsulta((n) => n + 1)} />;
-}
-function ConteudoRepositorios({ aoAtualizar }: { aoAtualizar: () => void }) {
 	const { sessao } = useSessao();
-	const { q, atualizar } = useFiltrosGestao();
-	const [dados, setDados] = useState<Awaited<ReturnType<typeof consultarSaudeRepositorios>>>();
+	const { q } = useFiltrosGestao();
+	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
+	return (
+		<>
+			{!sessao?.autenticado && <h1>Repositórios e instalação</h1>}
+			<Protegida>
+				{sessao?.autenticado &&
+					(sessao.instalacoes.length ? (
+						<ConteudoRepositorios
+							key={JSON.stringify([sessao.usuario.id, instalacao, consulta])}
+							instalacao={instalacao}
+							aoAtualizar={() => setConsulta((n) => n + 1)}
+						/>
+					) : (
+						<PainelDeEstado titulo="Nenhuma instalação autorizada">
+							<p>Confira suas instalações no GitHub.</p>
+						</PainelDeEstado>
+					))}
+			</Protegida>
+		</>
+	);
+}
+function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string; aoAtualizar: () => void }) {
+	const { sessao } = useSessao();
+	const { atualizar } = useFiltrosGestao();
+	const [dados, setDados] = useState<string[]>();
 	const [erro, setErro] = useState("");
-	const instalacao = sessao?.autenticado ? (q.get("installation_id") ?? String(sessao.instalacoes[0]?.id ?? "")) : undefined;
-	const autorizada = !sessao?.autenticado || sessao.instalacoes.some((i) => String(i.id) === instalacao);
+	const autorizada = sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao);
 	useEffect(() => {
 		setDados(undefined);
 		setErro("");
@@ -204,22 +236,18 @@ function ConteudoRepositorios({ aoAtualizar }: { aoAtualizar: () => void }) {
 			return;
 		}
 		const c = new AbortController();
-		void consultarSaudeRepositorios(instalacao, c.signal)
+		void listarRepositorios(instalacao, c.signal)
 			.then((v) => {
 				if (!c.signal.aborted) setDados(v);
 			})
 			.catch((e) => {
-				if (!c.signal.aborted) setErro(mensagemDeErro(e));
+				if (!c.signal.aborted) setErro(erroDeAnalise(e));
 			});
 		return () => c.abort();
 	}, [instalacao, autorizada]);
-	const origem = dados?.origem;
+
 	return (
-		<PaginaGestao
-			titulo="Repositórios e instalação"
-			subtitulo={`${dados?.itens.length ?? "—"} repositórios conectados · ${origem === "mock" ? "última consulta às 14:00" : "catálogo autorizado pela API"}`}
-			simulado={origem === "mock"}
-		>
+		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.length ?? "—"} repositórios conectados`}>
 			{sessao?.autenticado && (
 				<SeletorGestao
 					rotulo="Instalação"
@@ -245,59 +273,25 @@ function ConteudoRepositorios({ aoAtualizar }: { aoAtualizar: () => void }) {
 							legenda="Saúde por repositório"
 							colunas={["Repositório", "Check obrigatório", "Última análise", "Permissões"]}
 							larguras={["276px", "226px", "196px", "318px"]}
-							linhas={dados.itens.map((r) => ({
-								id: r.id,
+							linhas={dados.map((nome) => ({
+								id: nome,
 								celulas: [
-									origem === "api" ? (
-										<Link
-											key="repo"
-											to={`/analises?${new URLSearchParams({ installation_id: instalacao ?? "", repositorio: r.completo })}`}
-										>
-											{r.nome}
-										</Link>
-									) : (
-										<Modal
-											key="repo"
-											titulo={r.nome}
-											descricao="Saúde do repositório · dados simulados"
-											gatilho={
-												<button type="button" className="link-fila">
-													{r.nome}
-												</button>
-											}
-										>
-											<p>Check obrigatório: {r.check}.</p>
-											<p>Permissões: {r.permissoes}.</p>
-											<p>Esta referência não confirma a proteção de um repositório real.</p>
-										</Modal>
-									),
-									r.check,
-									r.ultima,
-									r.permissoes,
+									<Link key="repo" to={`/analises?${new URLSearchParams({ installation_id: instalacao ?? "", repositorio: nome })}`}>
+										{nome}
+									</Link>,
+									"Não confirmado",
+									"Não disponível",
+									"Não confirmadas",
 								],
 							}))}
 						/>
 						<div className="acoes-gestao">
-							{origem === "mock" && (
-								<Modal
-									titulo="Configurar proteção de branch"
-									descricao="A configuração é feita no GitHub por uma pessoa com permissão administrativa."
-									gatilho={<Botao>Configurar cobranca-api no GitHub</Botao>}
-								>
-									<p>Nas configurações do repositório, defina o Check aPRova como obrigatório na proteção da branch.</p>
-									<p>A demonstração não altera permissões ou regras do GitHub.</p>
-								</Modal>
-							)}
 							<Botao variante="primario" onClick={aoAtualizar}>
-								Atualizar verificação
+								Atualizar repositórios
 							</Botao>
 						</div>
 					</SecaoGestao>
-					{origem === "api" && (
-						<p className="apoio">
-							Os nomes vêm da API. Proteção, última análise e permissões detalhadas ainda não estão disponíveis; permanecem não confirmadas.
-						</p>
-					)}
+					<p className="apoio">Proteção de branch, última análise e permissões detalhadas indisponíveis.</p>
 				</>
 			)}
 		</PaginaGestao>

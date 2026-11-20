@@ -1,4 +1,5 @@
 import type { Detalhe } from "./analises";
+import { indisponivel } from "./fonte";
 export type EtapaDemonstracao = {
 	id: number;
 	titulo: string;
@@ -10,12 +11,13 @@ export type ComplementoDemonstracao = { etapas: EtapaDemonstracao[]; contextoCal
 export type AnaliseDemonstracao = {
 	origem: "mock";
 	dados: Detalhe;
-	identidade: { instalacao: string; usuario: string };
+
 	complemento?: ComplementoDemonstracao;
 };
 export async function consultarAnaliseDemonstracao(id: string, signal: AbortSignal): Promise<AnaliseDemonstracao | null> {
+	if (!__MOCKS__) return indisponivel();
 	signal.throwIfAborted();
-	const { analisesDemonstracao, identidadeDemonstracao, complementosDemonstracao } = await import("@/mocks/analises-demonstracao");
+	const { analisesDemonstracao, complementosDemonstracao } = await import("@/mocks/analises-demonstracao");
 	signal.throwIfAborted();
 	let dados = analisesDemonstracao.find((a) => a.analise.id === id);
 	if (!dados && /^mapa-\d{4}-\d{2}-\d{2}-(alto|medio|baixo)-[1-9]\d*$/.test(id)) {
@@ -23,15 +25,13 @@ export async function consultarAnaliseDemonstracao(id: string, signal: AbortSign
 		signal.throwIfAborted();
 		dados = referenciasMapaMock.find((r) => r.detalhe.analise.id === id)?.detalhe;
 	}
-	return dados
-		? structuredClone({ origem: "mock", dados, identidade: identidadeDemonstracao, complemento: complementosDemonstracao[id] })
-		: null;
+	return dados ? structuredClone({ origem: "mock", dados, complemento: complementosDemonstracao[id] }) : null;
 }
 // A volta sempre aponta à visão geral; nunca aceita um destino arbitrário.
 export function retornoDaFila(valor: string | null) {
 	const origem = new URLSearchParams(valor ?? "");
 	const retorno = new URLSearchParams();
-	for (const nome of ["fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
+	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
 		const v = origem.get(nome);
 		if (v) retorno.set(nome, v);
 	}

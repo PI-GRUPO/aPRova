@@ -1,19 +1,26 @@
 import { useRef, useState } from "react";
 import { Ativo } from "@/componentes/Ativo";
-import { opcoesRepos, PaginaGestao, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "@/componentes/Gestao";
+import { useEscopo } from "@/componentes/ConsultaPrivada";
+import { PaginaGestao, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao, useGestao, useOpcoesRepos } from "@/componentes/Gestao";
 import { Botao, Campo, Modal } from "@/componentes/Primitivos";
-import { type Configuracao as Modelo, salvarConfiguracaoSimulada, useGestaoSimulada } from "@/servicos/gestao";
+import { type Configuracao as Modelo, salvarConfiguracao } from "@/servicos/gestao";
 
 export function Configuracao() {
+	const opcoesRepos = useOpcoesRepos();
 	const { q, atualizar } = useFiltrosGestao();
-	const repo = opcoesRepos.some((r) => r.valor === q.get("repositorio")) ? (q.get("repositorio") as string) : "cobranca-api";
-	const dados = useGestaoSimulada();
-	const atual = dados.configuracoes[repo];
+	const repo = q.get("repositorio") ?? opcoesRepos[0]?.valor ?? "";
+	const dados = useGestao();
+	const atual = opcoesRepos.some((r) => r.valor === repo) ? dados.configuracoes[repo] : undefined;
+	if (!atual) return <p>Configuração indisponível para este repositório.</p>;
 	return (
 		<PaginaGestao titulo="Configuração do gate" subtitulo="Limites e áreas sensíveis por repositório">
 			<div className="filtros-gestao escopo-config">
 				<SeletorGestao rotulo="Repositório" valor={repo} aoMudar={(v) => atualizar("repositorio", v)} opcoes={opcoesRepos} />
-				<Campo rotulo="Versão em vigor" readOnly value={`v${atual.versao} · aplicada em ${atual.historico[0].data.split(" · ")[0]}`} />
+				<Campo
+					rotulo="Versão em vigor"
+					readOnly
+					value={`v${atual.versao} · aplicada em ${atual.historico[0]?.data.split(" · ")[0] ?? "data indisponível"}`}
+				/>
 			</div>
 			<FormularioConfiguracao
 				key={`${repo}:${q.get("proposta") ?? ""}`}
@@ -25,7 +32,8 @@ export function Configuracao() {
 	);
 }
 function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual: Modelo; proposta?: string }) {
-	const dados = useGestaoSimulada();
+	const dados = useGestao();
+	const escopo = useEscopo(repo);
 	const sugestao = dados.sugestoes.find((s) => s.id === proposta && s.repo === repo && ["pendente", "em_revisao"].includes(s.estado));
 	const [limite, setLimite] = useState(String(sugestao?.limiteProposto ?? atual.limite));
 	const [caminhos, setCaminhos] = useState([...atual.caminhos]);
@@ -63,14 +71,14 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 		setSucesso("");
 	}
 	async function salvar() {
-		if (trava.current || invalido || !mudou || (reduziu && !ciencia)) return;
+		if (!salvarConfiguracao.disponivel || trava.current || invalido || !mudou || (reduziu && !ciencia)) return;
 		trava.current = true;
 		setEnviando(true);
 		setErro("");
 		try {
-			const v = await salvarConfiguracaoSimulada(repo, numero, caminhos, atual.versao, sugestao?.id);
+			const v = await salvarConfiguracao.executar(escopo, numero, caminhos, atual.versao, sugestao?.id);
 			setRevisar(false);
-			setSucesso(`Versão v${v.versao} registrada na simulação. A configuração real permanece preservada.`);
+			setSucesso(`Versão v${v.versao} registrada.`);
 		} catch (e) {
 			setErro(e instanceof Error ? e.message : "Não foi possível salvar.");
 		} finally {
@@ -154,7 +162,7 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 							</div>
 						</form>
 					</Modal>
-					<p className="apoio">Você tem permissão para editar a demonstração. Revise as mudanças antes de criar uma nova versão.</p>
+					{!salvarConfiguracao.disponivel && <p className="apoio">A publicação de novas versões está indisponível.</p>}
 					<div className="acoes-gestao">
 						<Botao
 							disabled={!mudou}
@@ -177,7 +185,7 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 								}
 							}}
 							titulo="Confirmar nova versão do gate"
-							descricao={`${repo} · nova versão v${atual.versao + 1} · simulação`}
+							descricao={`${repo} · nova versão v${atual.versao + 1}`}
 							gatilho={
 								<Botao variante="primario" disabled={!mudou || invalido}>
 									Revisar mudanças
@@ -222,17 +230,18 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 								<Botao disabled={enviando} onClick={() => setRevisar(false)}>
 									Cancelar
 								</Botao>
-								<Botao variante="primario" disabled={enviando || (reduziu && !ciencia)} onClick={() => void salvar()}>
+								<Botao
+									variante="primario"
+									disabled={!salvarConfiguracao.disponivel || enviando || (reduziu && !ciencia)}
+									onClick={() => void salvar()}
+								>
 									{enviando ? "Registrando…" : "Confirmar e criar versão"}
 								</Botao>
 							</div>
 						</Modal>
 					</div>
 				</SecaoGestao>
-				<SecaoGestao
-					titulo="Histórico de versões"
-					ajuda="A demonstração mantém as versões anteriores nesta sessão da página; nenhuma configuração real é modificada."
-				>
+				<SecaoGestao titulo="Histórico de versões" ajuda="Versões anteriores da configuração do repositório.">
 					<TabelaGestao
 						compacta
 						legenda="Histórico de versões"

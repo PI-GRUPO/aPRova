@@ -1,23 +1,19 @@
-import { referenciaMock } from "@/mocks/gestao";
-import { cadeiaDemonstracao, recibosDemonstracao } from "@/mocks/recibos";
-export function listarRecibosSimulados(repo: string, dias: number) {
-	const inicio = referenciaMock.getTime() - dias * 86400000;
-	return recibosDemonstracao
-		.filter((r) => (!repo || r.repo === repo) && Date.parse(r.emissao) > inicio)
-		.map((r) => ({ ...r, origem: "mock" as const }));
-}
-export async function verificarCadeiaSimulada() {
-	return { ...cadeiaDemonstracao, origem: "mock" as const };
-}
-export function exportarColecaoSimulada(repo: string, dias: number, formato: "json" | "csv") {
-	const registros = listarRecibosSimulados(repo, dias);
-	if (formato === "json")
-		return JSON.stringify({ origem: "mock", aviso: "Demonstração sem assinaturas ou valor de prova", registros }, null, 2);
-	const celula = (v: unknown) => `"${String(v).replaceAll('"', '""')}"`;
-	return [
-		["origem", "recibo", "repositorio", "pr", "commit", "emissao"],
-		...registros.map((r) => ["mock", r.id, r.repo, r.pr, r.sha, r.emissao]),
-	]
-		.map((l) => l.map(celula).join(","))
-		.join("\r\n");
-}
+import { type Consulta, type Escopo, indisponivel, type Operacao, operacaoPendente } from "./fonte";
+export type RegistroRecibo = { id: string; repo: string; pr: number; sha: string; emissao: string };
+export const consultarColecao: Consulta<{ repositorios: string[]; itens: RegistroRecibo[] }> = __MOCKS__
+	? async ({ repositorio }, filtros, signal) => {
+			const [{ recibosDemonstracao }, { referenciaMock }] = await Promise.all([import("@/mocks/recibos"), import("@/mocks/gestao")]);
+			signal.throwIfAborted();
+			const periodo = filtros.get("periodo") ?? "30";
+			const inicio = referenciaMock.getTime() - (["7", "30", "90"].includes(periodo) ? Number(periodo) : 30) * 86400000;
+			return {
+				repositorios: [...new Set(recibosDemonstracao.map((r) => r.repo))],
+				itens: recibosDemonstracao.filter((r) => (!repositorio || r.repo === repositorio) && Date.parse(r.emissao) > inicio),
+			};
+		}
+	: indisponivel;
+export const verificarCadeia: Operacao<
+	(escopo: Escopo, signal: AbortSignal) => Promise<{ valida: boolean; primeiroReciboInvalido: string | null }>
+> = operacaoPendente;
+export const exportarColecao: Operacao<(escopo: Escopo, dias: number, formato: "json" | "csv", signal: AbortSignal) => Promise<Blob>> =
+	operacaoPendente;

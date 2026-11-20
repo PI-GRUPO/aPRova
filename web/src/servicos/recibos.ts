@@ -72,8 +72,8 @@ export async function verificarRecibo(recibo: Recibo, signal: AbortSignal): Prom
 	if (!v.valido && !v.verificacoes.some((c) => c.resultado === "falhou")) return invalida();
 	return v as Verificacao;
 }
-export function baixar(nome: string, conteudo: string, tipo = "application/json") {
-	const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+export function baixar(nome: string, conteudo: string | Blob, tipo = "application/json") {
+	const url = URL.createObjectURL(conteudo instanceof Blob ? conteudo : new Blob([conteudo], { type: tipo }));
 	const a = document.createElement("a");
 	a.href = url;
 	a.download = nome;

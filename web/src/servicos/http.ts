@@ -19,7 +19,7 @@ function origemPublica(valor: string | undefined) {
 const origem = origemPublica(import.meta.env.VITE_API_ORIGEM);
 export async function consultarJSON(
 	caminho: string,
-	opcoes: { signal?: AbortSignal; timeout?: number; privada?: boolean; metodo?: "POST"; csrf?: string } = {},
+	opcoes: { signal?: AbortSignal; timeout?: number; privada?: boolean; metodo?: "POST"; csrf?: string; statusEsperado?: number } = {},
 ): Promise<unknown> {
 	if (!caminho.startsWith("/") || caminho.startsWith("//") || caminho.includes("\\")) throw new Error("Caminho de API inválido.");
 	const destino = new URL(caminho, origem || window.location.origin);
@@ -49,10 +49,16 @@ export async function consultarJSON(
 			}
 			throw new ErroHTTP(
 				"http",
-				resposta.status === 503 ? "Serviço temporariamente indisponível." : "Não foi possível consultar o serviço.",
+				resposta.status === 403
+					? "Você não tem permissão para esta operação."
+					: resposta.status === 503
+						? "Serviço temporariamente indisponível."
+						: "Não foi possível consultar o serviço.",
 				resposta.status,
 			);
 		}
+		if (opcoes.statusEsperado !== undefined && resposta.status !== opcoes.statusEsperado)
+			throw new ErroHTTP("resposta", "O serviço não confirmou a operação.");
 		if (resposta.status === 204 && opcoes.metodo === "POST") return null;
 		if (!resposta.headers.get("content-type")?.includes("application/json")) throw new ErroHTTP("resposta", "O serviço não retornou JSON.");
 		try {

@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ErroHTTP } from "@/servicos/http";
-import { mensagemDeErro } from "@/servicos/recibos";
+
 import { consultarSessao, encerrarSessao, type Sessao } from "@/servicos/sessao";
 
 const Contexto = createContext<{ sessao?: Sessao; erro: string; carregar: () => void; sair: () => Promise<void> } | null>(null);
@@ -21,7 +21,7 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 			.catch((e) => {
 				if (!c.signal.aborted) {
 					if (e instanceof ErroHTTP && e.status === 401) setSessao({ autenticado: false, login_disponivel: true });
-					else setErro(mensagemDeErro(e));
+					else setErro(e instanceof ErroHTTP ? e.message : "Não foi possível consultar a sessão.");
 				}
 			});
 	}, []);
@@ -52,7 +52,14 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 		);
 		return () => clearTimeout(timer);
 	}, [sessao]);
-	async function sair() {
+	const logout = useRef<Promise<void> | null>(null);
+	function sair() {
+		logout.current ??= encerrar().finally(() => {
+			logout.current = null;
+		});
+		return logout.current;
+	}
+	async function encerrar() {
 		if (!sessao?.autenticado) return;
 		try {
 			await encerrarSessao(sessao.csrf_token);

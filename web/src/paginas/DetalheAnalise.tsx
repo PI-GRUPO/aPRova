@@ -16,17 +16,29 @@ export function DetalheAnalise() {
 	const { id = "" } = useParams();
 	const [q] = useSearchParams();
 	const { sessao } = useSessao();
+	const repositorio = q.get("repositorio") ?? "";
 	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
 	return (
 		<div className="pagina">
 			{!sessao?.autenticado && <h1>Detalhe da análise</h1>}
 			<Protegida>
-				<ConsultaAnalise key={`${sessao?.autenticado ? sessao.usuario.id : ""}:${instalacao}:${id}`} id={id} instalacao={instalacao} />
+				{sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao) ? (
+					<ConsultaAnalise
+						key={JSON.stringify([sessao.usuario.id, instalacao, repositorio, id])}
+						id={id}
+						instalacao={instalacao}
+						repositorio={repositorio}
+					/>
+				) : (
+					<PainelDeEstado titulo="Instalação não autorizada">
+						<p>Selecione uma instalação disponível na lista de análises.</p>
+					</PainelDeEstado>
+				)}
 			</Protegida>
 		</div>
 	);
 }
-function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string }) {
+function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalacao: string; repositorio: string }) {
 	const [dados, setDados] = useState<Detalhe>();
 	const [erro, setErro] = useState("");
 	const [tentativa, setTentativa] = useState(0);
@@ -36,7 +48,7 @@ function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string })
 		const c = new AbortController();
 		setDados(undefined);
 		setErro("");
-		detalharAnalise(id, instalacao, c.signal)
+		detalharAnalise(id, instalacao, c.signal, repositorio)
 			.then((v) => {
 				if (!c.signal.aborted) setDados(v);
 			})
@@ -44,7 +56,7 @@ function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string })
 				if (!c.signal.aborted) setErro(erroDeAnalise(e));
 			});
 		return () => c.abort();
-	}, [id, instalacao, tentativa]);
+	}, [id, instalacao, repositorio, tentativa]);
 	const retorno = new URLSearchParams(q.get("retorno") ?? "");
 	retorno.set("installation_id", instalacao);
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
@@ -76,21 +88,21 @@ function ConsultaAnalise({ id, instalacao }: { id: string; instalacao: string })
 export function ConteudoAnalise({
 	dados: d,
 	instalacao,
-	usuarioSimulado,
+	demonstracao = false,
 	complementoSimulado,
 	linhaDoTempoSimulada,
 }: {
 	dados: Detalhe;
 	instalacao: string;
-	usuarioSimulado?: string;
+	demonstracao?: boolean;
 	complementoSimulado?: ComplementoDemonstracao;
 	linhaDoTempoSimulada?: ReactNode;
 }) {
 	const { sessao } = useSessao();
 	const a = d.analise;
 	const g = d.gate;
-	const demonstracao = !!usuarioSimulado;
-	const usuario = usuarioSimulado ?? (sessao?.autenticado ? String(sessao.usuario.id) : "");
+
+	const usuario = sessao?.autenticado ? String(sessao.usuario.id) : "";
 	return (
 		<>
 			<div className="titulo-contexto">
@@ -110,7 +122,6 @@ export function ConteudoAnalise({
 						</>
 					)}
 				</h1>
-				{demonstracao && <p className="apoio">Demonstração · dados simulados, sem operações reais.</p>}
 				<p className="apoio caminho metadados-analise">
 					Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
 				</p>
@@ -356,7 +367,7 @@ export function ConteudoAnalise({
 						falhaInfra: d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
 					}}
 				/>
-				<p className="apoio">As ações reais pelo painel ainda não estão disponíveis. Você pode revisar pelo GitHub.</p>
+				<p className="apoio">Aprovação, pedido de alterações e reexecução pelo painel estão indisponíveis.</p>
 			</PainelAnalise>
 			<PainelAnalise
 				titulo="Recibo assinado"
@@ -364,9 +375,9 @@ export function ConteudoAnalise({
 			>
 				{demonstracao ? (
 					<>
-						<p>Metadados simulados · sem envelope assinado ou verificação criptográfica.</p>
-						{d.recibo_id ? <code className="caminho">{d.recibo_id}</code> : <p>Recibo não incluído nesta referência.</p>}
-						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio })}`}>Consultar coleção de demonstração</Link>
+						<p>Verificação de assinatura indisponível.</p>
+						{d.recibo_id ? <code className="caminho">{d.recibo_id}</code> : <p>Recibo indisponível.</p>}
+						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio })}`}>Consultar recibos</Link>
 					</>
 				) : d.recibo_id ? (
 					<ReciboDaAnalise id={d.recibo_id} analiseID={a.id} />

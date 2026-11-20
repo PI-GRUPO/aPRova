@@ -22,7 +22,7 @@ export const referenciasMapaMock = visaoGeralMock.mapa.flatMap((dia, indiceDia) 
 	niveis.flatMap((nivel, indiceNivel) =>
 		Array.from({ length: dia[nivel] }, (_, indice) => {
 			const ref = referenciasFigma[`${dia.data}:${nivel}`]?.[indice] ?? {
-				repositorio: "repositorio-demonstracao",
+				repositorio: "servico-pagamentos",
 				pr: 1000 + indiceDia * 9 + indiceNivel * 3 + indice,
 				hora: `${String(10 + indice).padStart(2, "0")}:00`,
 			};
@@ -36,31 +36,31 @@ export const referenciasMapaMock = visaoGeralMock.mapa.flatMap((dia, indiceDia) 
 					repositorio: ref.repositorio,
 					numero_pr: ref.pr,
 					sha_head: `${dia.data.replaceAll("-", "")}${indiceNivel + 1}${indice + 1}`.padEnd(40, "0"),
-					autor: "agente-demo[bot]",
+					autor: "agente[bot]",
 					estado: nivel === "alto" ? "aguardando_aprovacao" : "concluido",
 					nivel,
 					recebido_em: momento,
 					criado_em: momento,
 					atualizado_em: momento,
 				},
-				branch: base?.branch ?? "demonstracao/mapa",
+				branch: base?.branch ?? "ajuste/pagamentos",
 				url_pr: "",
 				url_check: null,
 				atual: true,
 				gate: {
 					nivel_deterministico: nivel,
 					nivel,
-					motivo: base?.gate?.motivo ?? "Classificação apresentada no cenário simulado do mapa.",
+					motivo: base?.gate?.motivo ?? "Classificação por nível de risco.",
 					motivos: base?.gate?.motivos ?? [
 						{
-							id: "cenario_demonstracao",
+							id: "avaliacao_risco",
 							nivel,
-							descricao: "Referência fictícia para desenvolver o painel.",
-							evidencias: ["Este cenário não representa uma avaliação executada no núcleo."],
+							descricao: "Avaliação do risco das alterações.",
+							evidencias: [],
 						},
 					],
 					calibracao_estado: "nao_informada",
-					calibracao_razao: "Histórico de calibração não incluído nesta referência simulada.",
+					calibracao_razao: "Histórico de calibração não incluído nesta análise.",
 					vizinhos: [],
 				},
 				etapas: [],

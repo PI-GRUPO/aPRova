@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { opcoesRepos, PaginaGestao, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "@/componentes/Gestao";
+import { useEscopo } from "@/componentes/ConsultaPrivada";
+import { PaginaGestao, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao, useGestao, useOpcoesRepos } from "@/componentes/Gestao";
 import { Botao, Modal } from "@/componentes/Primitivos";
-import { revisarSugestaoSimulada, type Sugestao, useGestaoSimulada } from "@/servicos/gestao";
+import { revisarSugestao, type Sugestao } from "@/servicos/gestao";
 
-const rotulos = { pendente: "Pendente", em_revisao: "Em revisão", recusada: "Recusada", aplicada: "Aplicada na simulação" };
+const rotulos = { pendente: "Pendente", em_revisao: "Em revisão", recusada: "Recusada", aplicada: "Aplicada" };
 function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
+	const escopo = useEscopo(sugestao.repo);
 	const navegar = useNavigate();
 	const [aberto, setAberto] = useState(false);
 	const [erro, setErro] = useState("");
 	const [ocupado, setOcupado] = useState(false);
 	async function agir(acao: "recusada" | "em_revisao") {
-		if (ocupado) return;
+		if (ocupado || !revisarSugestao.disponivel) return;
 		setOcupado(true);
 		setErro("");
 		try {
-			await revisarSugestaoSimulada(sugestao.id, acao);
+			await revisarSugestao.executar(escopo, sugestao.id, acao);
 			setAberto(false);
 			if (acao === "em_revisao") navegar(`/configuracao?${new URLSearchParams({ repositorio: sugestao.repo, proposta: sugestao.id })}`);
 		} catch (e) {
@@ -43,17 +45,17 @@ function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
 		>
 			<p className="secundario">{sugestao.evidencia}</p>
 			<p>A proposta aprovada vira regra determinística somente após passar pela configuração versionada.</p>
-			<p className="apoio">Dados e revisão simulados. Nenhuma regra do núcleo será alterada.</p>
+			{!revisarSugestao.disponivel && <p className="apoio">A revisão de propostas está indisponível.</p>}
 			{erro && <p role="alert">{erro}</p>}
 			{
 				<div className="acoes-modal">
 					<div>
 						{sugestao.estado === "pendente" && (
 							<>
-								<Botao disabled={ocupado} onClick={() => void agir("recusada")}>
+								<Botao disabled={ocupado || !revisarSugestao.disponivel} onClick={() => void agir("recusada")}>
 									Recusar
 								</Botao>
-								<Botao variante="primario" disabled={ocupado} onClick={() => void agir("em_revisao")}>
+								<Botao variante="primario" disabled={ocupado || !revisarSugestao.disponivel} onClick={() => void agir("em_revisao")}>
 									Revisar configuração
 								</Botao>
 							</>
@@ -73,9 +75,10 @@ function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
 	);
 }
 export function Sugestoes() {
+	const opcoesRepos = useOpcoesRepos();
 	const { q, atualizar } = useFiltrosGestao();
-	const dados = useGestaoSimulada();
-	const repo = q.get("repositorio") ?? "cobranca-api";
+	const dados = useGestao();
+	const repo = q.get("repositorio") ?? dados.sugestoes[0]?.repo ?? opcoesRepos[0]?.valor ?? "";
 	const estado = q.get("estado") ?? "pendente";
 	const itens = dados.sugestoes.filter((s) => s.repo === repo && (estado === "todos" || s.estado === estado));
 	return (

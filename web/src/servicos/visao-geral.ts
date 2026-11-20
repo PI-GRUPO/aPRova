@@ -1,3 +1,4 @@
+import { type Consulta, indisponivel } from "./fonte";
 export type ItemDaFila = {
 	id: string;
 	repositorio: string;
@@ -8,7 +9,7 @@ export type ItemDaFila = {
 	evidencia: string;
 };
 export type VisaoGeralDados = {
-	origem: "mock";
+	origem: "mock" | "api";
 	atualizadoEm: string;
 	periodo: string;
 	fila: ItemDaFila[];
@@ -21,8 +22,15 @@ export type VisaoGeralDados = {
 
 // A API de métricas de 30 dias ainda não existe. O agregado semanal não
 // corresponde a este contrato: manter a simulação explícita e substituível.
-export async function consultarVisaoGeral(signal: AbortSignal): Promise<VisaoGeralDados> {
-	const { visaoGeralMock } = await import("@/mocks/visao-geral");
-	signal.throwIfAborted();
-	return structuredClone(visaoGeralMock);
+export const consultarVisaoGeral: Consulta<VisaoGeralDados> = __MOCKS__
+	? async (_escopo, _filtros, signal) => {
+			const { visaoGeralMock } = await import("@/mocks/visao-geral");
+			signal.throwIfAborted();
+			return structuredClone(visaoGeralMock);
+		}
+	: indisponivel;
+
+export function destinoAnalise(id: string, origem: "mock" | "api", instalacao: string, retorno: URLSearchParams) {
+	const caminho = origem === "mock" ? "/analises/demonstracao" : "/analises";
+	return `${caminho}/${encodeURIComponent(id)}?${new URLSearchParams({ installation_id: instalacao, retorno: retorno.toString() })}`;
 }

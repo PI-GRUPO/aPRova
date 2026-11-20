@@ -88,7 +88,7 @@ export type Detalhe = {
 	rede_isolada: boolean | null;
 };
 const data = (v: unknown) => typeof v === "string" && !Number.isNaN(Date.parse(v));
-const numero = (v: unknown) => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
+const numero = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 const textos = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string");
 const anulavel = (v: unknown) => v === null || typeof v === "string";
 function invalida(): never {
@@ -100,7 +100,7 @@ function analise(v: unknown): v is Analise {
 		["id", "repositorio", "sha_head", "autor"].every((k) => typeof v[k] === "string") &&
 		numero(v.numero_pr) &&
 		typeof v.estado === "string" &&
-		v.estado in estados &&
+		Object.hasOwn(estados, v.estado) &&
 		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
 		["recebido_em", "criado_em", "atualizado_em"].every((k) => data(v[k]))
 	);
@@ -114,7 +114,13 @@ export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): P
 		!["pagina", "limite", "total"].every((k) => numero(v[k])) ||
 		typeof v.tem_mais !== "boolean" ||
 		!Array.isArray(v.itens) ||
-		!v.itens.every(analise)
+		!v.itens.every(analise) ||
+		v.pagina !== Number(q.get("pagina") ?? 1) ||
+		!numero(v.limite) ||
+		v.limite < 1 ||
+		v.limite > 50 ||
+		v.itens.length > v.limite ||
+		(q.has("repositorio") && v.itens.some((i) => i.repositorio !== q.get("repositorio")))
 	)
 		return invalida();
 	return v as PaginaAnalises;
@@ -174,14 +180,16 @@ export function urlGitHub(v: string) {
 		return undefined;
 	}
 }
-export async function detalharAnalise(id: string, instalacao: string, signal: AbortSignal): Promise<Detalhe> {
+export async function detalharAnalise(id: string, instalacao: string, signal: AbortSignal, repositorio = ""): Promise<Detalhe> {
 	const q = new URLSearchParams({ installation_id: instalacao });
+	if (repositorio) q.set("repositorio", repositorio);
 	const v = await consultarJSON(`/api/analises/${encodeURIComponent(id)}?${q}`, { signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(instalacao) ||
 		!analise(v.analise) ||
 		v.analise.id !== id ||
+		(!!repositorio && v.analise.repositorio !== repositorio) ||
 		!anulavel(v.branch) ||
 		typeof v.url_pr !== "string" ||
 		!urlGitHub(v.url_pr) ||

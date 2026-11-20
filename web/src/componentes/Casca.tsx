@@ -57,7 +57,6 @@ export function Casca() {
 					<p className="apoio">
 						{sessao?.autenticado ? `${sessao.instalacoes.length} instalações autorizadas` : "Entre para consultar seus repositórios."}
 					</p>
-					{pathname === "/" && <p className="apoio">Visão geral · dados simulados</p>}
 					<Tema />
 					{sessao?.autenticado ? (
 						<Sair />

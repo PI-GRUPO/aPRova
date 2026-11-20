@@ -4,7 +4,7 @@ import { useSessao } from "@/app/sessao";
 import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import { Selecao } from "@/componentes/Selecao";
 import { ErroHTTP } from "@/servicos/http";
-import { mensagemDeErro } from "@/servicos/recibos";
+
 import { consultarRelatorio, type Relatorio } from "@/servicos/sessao";
 import { Protegida } from "./Acesso";
 export function RelatorioSemanalPagina() {
@@ -31,10 +31,12 @@ function RelatorioSemanal() {
 			</PainelDeEstado>
 		);
 	const id = q.get("installation_id") ?? String(sessao.instalacoes[0].id);
+	const repositorio = q.get("repositorio") ?? "";
 	const inicio = q.get("inicio") ?? "";
 	function atualizar(nome: string, valor: string) {
 		setQ((anterior) => {
 			const nova = new URLSearchParams(anterior);
+			if (nome === "installation_id") nova.delete("repositorio");
 			if (valor) nova.set(nome, valor);
 			else nova.delete(nome);
 			return nova;
@@ -53,7 +55,12 @@ function RelatorioSemanal() {
 				<Botao onClick={() => atualizar("inicio", "")}>Semana anterior</Botao>
 			</div>
 			{sessao.instalacoes.some((i) => String(i.id) === id) ? (
-				<DadosDoRelatorio key={`${sessao.usuario.id}:${id}:${inicio}`} id={id} inicio={inicio} />
+				<DadosDoRelatorio
+					repositorio={repositorio}
+					key={JSON.stringify([sessao.usuario.id, id, inicio, repositorio])}
+					id={id}
+					inicio={inicio}
+				/>
 			) : (
 				<PainelDeEstado titulo="Instalação não autorizada" erro>
 					<p>Selecione uma das instalações disponíveis para sua conta.</p>
@@ -62,7 +69,7 @@ function RelatorioSemanal() {
 		</>
 	);
 }
-function DadosDoRelatorio({ id, inicio }: { id: string; inicio: string }) {
+function DadosDoRelatorio({ id, inicio, repositorio }: { id: string; inicio: string; repositorio: string }) {
 	const [dados, setDados] = useState<Relatorio>();
 	const [erro, setErro] = useState("");
 	const [tentativa, setTentativa] = useState(0);
@@ -71,7 +78,7 @@ function DadosDoRelatorio({ id, inicio }: { id: string; inicio: string }) {
 		const c = new AbortController();
 		setDados(undefined);
 		setErro("");
-		consultarRelatorio(id, inicio, c.signal)
+		consultarRelatorio(id, inicio, c.signal, repositorio)
 			.then((v) => {
 				if (!c.signal.aborted) setDados(v);
 			})
@@ -80,11 +87,13 @@ function DadosDoRelatorio({ id, inicio }: { id: string; inicio: string }) {
 					setErro(
 						e instanceof ErroHTTP && e.status === 403
 							? "O GitHub não autorizou o acesso a este escopo. Confirme sua conta e as permissões da instalação."
-							: mensagemDeErro(e),
+							: e instanceof ErroHTTP
+								? e.message
+								: "Não foi possível consultar o relatório.",
 					);
 			});
 		return () => c.abort();
-	}, [id, inicio, tentativa]);
+	}, [id, inicio, repositorio, tentativa]);
 	if (erro)
 		return (
 			<PainelDeEstado titulo="Relatório indisponível" erro>

@@ -138,13 +138,11 @@ export function Recibos() {
 					<span className="titulo-recibos-desktop">Recibos e auditoria</span>
 					<span className="titulo-recibos-mobile">Recibos</span>
 				</h1>
-				<p className="apoio titulo-recibos-desktop">
-					Trilha de decisões assinadas · coleção de demonstração e consulta pública real por UUID
-				</p>
-				<p className="apoio titulo-recibos-mobile">Demonstração · dados simulados</p>
+				<p className="apoio titulo-recibos-desktop">Consulte decisões assinadas pelo UUID do recibo.</p>
+				<p className="apoio titulo-recibos-mobile">Consulta por UUID</p>
 			</div>
 			<ColecaoRecibos />
-			<h2>Consultar recibo real</h2>
+			<h2>Consultar recibo</h2>
 			<Localizar />
 			<Painel titulo="Chaves públicas">
 				{erro ? (
@@ -347,7 +345,7 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 						</Painel>
 						<Painel
 							titulo="Vínculo com o recibo anterior"
-							ajuda="A API verifica o elo anterior deste recibo. Isso não equivale a verificar toda a cadeia da instalação."
+							ajuda="A verificação individual confere o elo anterior deste recibo. Isso não equivale a verificar toda a cadeia da instalação."
 						>
 							<p>Hash e assinatura preservam a integridade da decisão registrada.</p>
 							<div className="mono apoio">

@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { consultarRecorteMapa, type NivelMapa, nivelMapaValido, type RecorteMapa, rotuloDiaMapa } from "@/servicos/mapa";
-import type { VisaoGeralDados } from "@/servicos/visao-geral";
+import { destinoAnalise, type VisaoGeralDados } from "@/servicos/visao-geral";
+import { useEscopo } from "./ConsultaPrivada";
 import { Botao, Modal } from "./Primitivos";
 import "@/estilos/mapa.css";
 
 function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
+	const { instalacao } = useEscopo("");
 	const [recorte, setRecorte] = useState<RecorteMapa>();
 	const [erro, setErro] = useState(false);
 	const [q] = useSearchParams();
 	useEffect(() => {
 		const c = new AbortController();
-		void consultarRecorteMapa(data, nivel, c.signal)
+		void consultarRecorteMapa(instalacao, data, nivel, c.signal)
 			.then((v) => {
 				if (!c.signal.aborted) setRecorte(v);
 			})
@@ -19,9 +21,9 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 				if (!c.signal.aborted) setErro(true);
 			});
 		return () => c.abort();
-	}, [data, nivel]);
+	}, [instalacao, data, nivel]);
 	const retorno = new URLSearchParams();
-	for (const nome of ["fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
+	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
 		const v = q.get(nome);
 		if (v) retorno.set(nome, v);
 	}
@@ -32,16 +34,12 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 				<Botao onClick={() => window.location.reload()}>Tentar novamente</Botao>
 			</div>
 		);
-	if (!recorte) return <p role="status">Carregando análises de demonstração…</p>;
-	if (!recorte.itens.length) return <p role="status">Nenhuma análise neste recorte simulado.</p>;
+	if (!recorte) return <p role="status">Carregando análises…</p>;
+	if (!recorte.itens.length) return <p role="status">Nenhuma análise neste recorte.</p>;
 	return (
 		<nav className="lista-recorte-mapa" aria-label="Análises deste dia e nível">
 			{recorte.itens.map((item) => (
-				<Link
-					className="botao"
-					key={item.id}
-					to={`/analises/demonstracao/${item.id}?${new URLSearchParams({ retorno: retorno.toString() })}`}
-				>
+				<Link className="botao" key={item.id} to={destinoAnalise(item.id, recorte.origem, instalacao, retorno)}>
 					<span>
 						{item.repositorio} #{item.pr}
 						<span className="horario-recorte">
@@ -76,7 +74,7 @@ function CelulaMapa({
 			aberto={aberto}
 			aoMudar={aoMudar}
 			titulo={`${rotuloDiaMapa(data)} · risco ${nivel === "medio" ? "médio" : nivel}`}
-			descricao={`${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível · contagem simulada`}
+			descricao={`${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível`}
 			gatilho={
 				<button
 					type="button"
@@ -91,7 +89,6 @@ function CelulaMapa({
 		>
 			{aberto && <ListaDoRecorte key={`${data}:${nivel}`} data={data} nivel={nivel} />}
 			<div className="rodape-recorte">
-				<span className="apoio">Dados simulados</span>
 				<Botao variante="primario" aria-label="Fechar recorte" onClick={() => aoMudar(false)}>
 					Fechar
 				</Botao>
@@ -174,11 +171,11 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 							</div>
 						))}
 						<div className="datas-mapa apoio">
-							<span>13 out</span>
-							<span>20 out</span>
-							<span>27 out</span>
-							<span>3 nov</span>
-							<span>11 nov</span>
+							{dias
+								.filter((_, i) => i === dias.length - 1 || (i % 7 === 0 && i + 7 < dias.length))
+								.map((dia) => (
+									<span key={dia.data}>{rotuloDiaMapa(dia.data)}</span>
+								))}
 						</div>
 					</section>
 				</div>

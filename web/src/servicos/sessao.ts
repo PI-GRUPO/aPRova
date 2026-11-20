@@ -17,10 +17,12 @@ export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
 	if (
 		v.autenticado &&
 		(!objeto(v.usuario) ||
-			typeof v.usuario.id !== "number" ||
+			!(typeof v.usuario.id === "number" && Number.isSafeInteger(v.usuario.id) && v.usuario.id > 0) ||
 			typeof v.usuario.login !== "string" ||
 			!Array.isArray(v.instalacoes) ||
-			!v.instalacoes.every((i) => objeto(i) && typeof i.id === "number" && typeof i.conta === "string") ||
+			!v.instalacoes.every(
+				(i) => objeto(i) && typeof i.id === "number" && Number.isSafeInteger(i.id) && i.id > 0 && typeof i.conta === "string",
+			) ||
 			typeof v.csrf_token !== "string" ||
 			v.csrf_token.length < 32 ||
 			typeof v.expira_em !== "string" ||
@@ -30,7 +32,7 @@ export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
 	return v as Sessao;
 }
 export async function encerrarSessao(csrf: string) {
-	await consultarJSON("/api/sessao/sair", { metodo: "POST", csrf });
+	await consultarJSON("/api/sessao/sair", { metodo: "POST", csrf, statusEsperado: 204 });
 }
 export type Relatorio = {
 	installation_id: number;
@@ -47,8 +49,9 @@ export type Relatorio = {
 	risco_medio: number;
 	revertidas: number;
 };
-export async function consultarRelatorio(id: string, inicio: string, signal: AbortSignal): Promise<Relatorio> {
+export async function consultarRelatorio(id: string, inicio: string, signal: AbortSignal, repositorio = ""): Promise<Relatorio> {
 	const q = new URLSearchParams({ installation_id: id });
+	if (repositorio) q.set("repositorio", repositorio);
 	if (inicio) q.set("inicio", inicio);
 	const v = await consultarJSON(`/api/web/relatorio-semanal?${q}`, { signal, privada: true });
 	if (
@@ -56,6 +59,7 @@ export async function consultarRelatorio(id: string, inicio: string, signal: Abo
 		v.installation_id !== Number(id) ||
 		!Array.isArray(v.repositorios) ||
 		!v.repositorios.every((r) => typeof r === "string") ||
+		(!!repositorio && (v.repositorios.length !== 1 || v.repositorios[0] !== repositorio)) ||
 		![
 			"total_execucoes",
 			"concluidas",

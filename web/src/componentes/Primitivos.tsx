@@ -37,7 +37,7 @@ export function Modal({
 	gatilho: ReactNode;
 	titulo: string;
 	descricao: string;
-	children: ReactNode;
+	children?: ReactNode;
 	aberto?: boolean;
 	aoMudar?: (aberto: boolean) => void;
 	className?: string;

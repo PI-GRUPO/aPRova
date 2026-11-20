@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { autenticarFixture } from "./sessao-dashboard";
 
 const telas = [
 	["regras", "Regras do gate"],
@@ -10,7 +11,8 @@ const telas = [
 	["recibos", "Recibos e auditoria"],
 ];
 test.beforeEach(async ({ page }) => {
-	await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: false } }));
+	await page.route("**/api/repositorios?*", (r) => r.fulfill({ json: { installation_id: 42, repositorios: [] } }));
+	await autenticarFixture(page);
 });
 for (const largura of [1440, 390, 360]) {
 	for (const tema of ["escuro", "claro"]) {
@@ -22,12 +24,7 @@ for (const largura of [1440, 390, 360]) {
 				await expect(
 					page.getByRole("heading", { name: caminho === "recibos" && largura < 768 ? "Recibos" : titulo, exact: true }),
 				).toBeVisible();
-				if (caminho !== "recibos")
-					await expect(page.getByText("Demonstração · dados e alterações simulados nesta sessão da página.")).toBeVisible();
-				else
-					await expect(
-						page.getByText("Coleção e cadeia simuladas. Nenhum resultado acima comprova assinatura ou integridade real."),
-					).toBeVisible();
+				await expect(page.locator("main")).not.toContainText(/simula[çd]|demonstração/i);
 				await page.evaluate(() => document.fonts.ready);
 				await page.screenshot({ path: `../.capturas-mcp/dashboard/local-${caminho}-${largura}-${tema}.png`, fullPage: true });
 				expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), caminho).toBeTruthy();
@@ -35,7 +32,7 @@ for (const largura of [1440, 390, 360]) {
 		});
 	}
 }
-test("configuração revisa mudanças e mantém versões apenas na simulação", async ({ page }) => {
+test("configuração permite revisar e impede publicar versões", async ({ page }) => {
 	const escritas: string[] = [];
 	page.on("request", (r) => {
 		if (r.method() !== "GET") escritas.push(r.url());
@@ -55,32 +52,18 @@ test("configuração revisa mudanças e mantém versões apenas na simulação",
 	const confirmar = page.getByRole("button", { name: "Confirmar e criar versão" });
 	await expect(confirmar).toBeDisabled();
 	await page.getByRole("checkbox").check();
-	await confirmar.click();
-	await expect(page.getByRole("status")).toContainText("Versão v4 registrada na simulação");
-	await expect(page.getByRole("textbox", { name: "Versão em vigor" })).toHaveValue(/v4/);
-	await expect(page.getByRole("button", { name: "Revisar mudanças" })).toBeDisabled();
-	await page.getByRole("spinbutton", { name: "Limite de arquivos" }).fill("40");
-	await page.getByRole("button", { name: "Descartar alterações" }).click();
-	await expect(page.getByRole("spinbutton", { name: "Limite de arquivos" })).toHaveValue("30");
+	await expect(confirmar).toBeDisabled();
 	await page.reload();
 	await expect(page.getByRole("spinbutton", { name: "Limite de arquivos" })).toHaveValue("20");
 	expect(escritas).toEqual([]);
 });
-test("SLA valida ordem dos prazos e isola repositórios", async ({ page }) => {
+test("SLA impede gravação e limpa edições ao trocar repositório", async ({ page }) => {
 	await page.goto("/sla");
 	await page.getByRole("spinbutton", { name: "Primeiro aviso (horas)" }).fill("9");
-	await page.getByRole("button", { name: "Salvar limites" }).click();
-	await expect(page.getByRole("alert")).toContainText("escalonamento deve ocorrer depois");
-	await page.getByRole("spinbutton", { name: "Primeiro aviso (horas)" }).fill("3");
-	await page.getByRole("button", { name: "Salvar limites" }).click();
-	await expect(page.getByRole("status")).toContainText("Limites salvos na simulação");
-	await expect(page.getByRole("cell", { name: "A partir de 3 horas", exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Salvar limites" })).toBeDisabled();
 	await page.getByRole("combobox", { name: "Repositório" }).click();
 	await page.getByRole("option", { name: "cobranca-api", exact: true }).click();
 	await expect(page.getByRole("spinbutton", { name: "Primeiro aviso (horas)" })).toHaveValue("2");
-	await page.getByRole("combobox", { name: "Repositório" }).click();
-	await page.getByRole("option", { name: "aPRova-TESTES", exact: true }).click();
-	await expect(page.getByRole("spinbutton", { name: "Primeiro aviso (horas)" })).toHaveValue("3");
 });
 test("auditoria filtra resultados e preserva filtro ao recarregar", async ({ page }) => {
 	await page.goto("/auditoria");
@@ -94,25 +77,12 @@ test("auditoria filtra resultados e preserva filtro ao recarregar", async ({ pag
 	await page.getByRole("option", { name: "Slack", exact: true }).click();
 	await expect(page.locator("tbody tr")).toHaveCount(1);
 });
-test("sugestão só altera a configuração simulada após confirmação explícita", async ({ page }) => {
+test("sugestão permanece disponível somente para leitura", async ({ page }) => {
 	await page.goto("/sugestoes");
 	await page.locator("tbody button").first().click();
-	await page.getByRole("button", { name: "Revisar configuração", exact: true }).click();
-	await expect(page).toHaveURL(/configuracao.*proposta=/);
-	await expect(page.getByRole("textbox", { name: "Versão em vigor" })).toHaveValue(/v3/);
-	await expect(page.getByRole("spinbutton", { name: "Limite de arquivos" })).toHaveValue("30");
-	await page.getByRole("button", { name: "Revisar mudanças" }).click();
-	await page.getByRole("checkbox").check();
-	await page.getByRole("button", { name: "Confirmar e criar versão" }).click();
-	await expect(page.getByRole("status")).toContainText("Versão v4");
-	await page.getByRole("link", { name: "Sugestões da IA" }).click();
-	await expect(page.locator("tbody tr")).toHaveCount(1);
-	await page.locator("tbody button").first().click();
-	await page.getByRole("button", { name: "Recusar", exact: true }).click();
-	await expect(page.locator("tbody tr")).toHaveCount(0);
-	await expect(page.getByText("Nenhum registro encontrado para os filtros selecionados.")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Revisar configuração", exact: true })).toBeDisabled();
+	await expect(page.getByRole("button", { name: "Recusar", exact: true })).toBeDisabled();
 });
-
 test("catálogo autenticado consulta a API e não substitui falhas por mocks", async ({ page }) => {
 	await page.route("**/api/sessao", (r) =>
 		r.fulfill({
@@ -137,17 +107,17 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 	await expect(page.getByRole("cell", { name: "cobranca-api", exact: true })).toHaveCount(0);
 	falhar = false;
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
-	await expect(page.getByRole("cell", { name: "real", exact: true })).toBeVisible();
+	await expect(page.getByRole("cell", { name: "equipe/real", exact: true })).toBeVisible();
 	await expect(page.getByRole("cell", { name: "Não confirmado", exact: true })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Configurar cobranca-api no GitHub" })).toHaveCount(0);
-	await page.getByRole("link", { name: "real", exact: true }).click();
+	await page.getByRole("link", { name: "equipe/real", exact: true }).click();
 	await expect(page).toHaveURL(/analises\?installation_id=42&repositorio=equipe%2Freal/);
 	expect(instalacoes.length).toBeGreaterThanOrEqual(2);
 	expect(instalacoes.every((i) => i === "42")).toBeTruthy();
 });
 
 for (const largura of [1440, 390, 360]) {
-	test(`vínculo Slack simulado preserva identidade GitHub em ${largura}px`, async ({ page }) => {
+	test(`vínculo Slack indisponível preserva identidade GitHub em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
 		await page.unroute("**/api/sessao");
 		await page.route("**/api/sessao", (r) =>
@@ -173,39 +143,17 @@ for (const largura of [1440, 390, 360]) {
 			await page.screenshot({ path: `../.capturas-mcp/dashboard/local-conta-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 		}
-		await page.getByRole("button", { name: "Conectar minha conta Slack" }).click();
-		await expect(page.getByRole("dialog")).toContainText("@pessoa-fixture");
-		await page.getByRole("button", { name: "Autorizar vínculo" }).click();
-		await expect(page.getByRole("status")).toContainText("Conectado somente nesta página");
-		await page.getByRole("button", { name: "Desvincular conta", exact: true }).click();
-		await page.getByRole("dialog").getByRole("button", { name: "Desvincular conta", exact: true }).click();
-		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeVisible();
+		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeDisabled();
 		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
 		expect(escritas).toEqual([]);
 	});
 }
 
-test("coleção exporta somente metadados simulados dos filtros e não forja verificação", async ({ page }) => {
+test("coleção filtra metadados e mantém a verificação da cadeia indisponível", async ({ page }) => {
 	await page.route("**/receipts/keys", (r) => r.fulfill({ json: { chaves: [] } }));
 	await page.goto("/recibos?repositorio=cobranca-api");
-	await expect(page.getByRole("table", { name: "Recibos por repositório · demonstração" }).locator("tbody tr")).toHaveCount(1);
-	await page.getByRole("button", { name: "Verificar cadeia", exact: true }).click();
-	await expect(page.getByRole("dialog")).toContainText("não comprova a cadeia real");
-	await expect(page.getByRole("dialog")).toContainText("Primeiro elo quebrado");
-	await page.keyboard.press("Escape");
-	await page.getByRole("button", { name: "Exportar JSON", exact: true }).click();
-	const baixado = page.waitForEvent("download");
-	await page.getByRole("button", { name: "Baixar demonstração" }).click();
-	const download = await baixado;
-	const stream = await download.createReadStream();
-	let conteudo = "";
-	for await (const parte of stream) conteudo += parte.toString();
-	const pacote = JSON.parse(conteudo);
-	expect(pacote.origem).toBe("mock");
-	expect(pacote.registros).toHaveLength(1);
-	expect(pacote.registros[0].repo).toBe("cobranca-api");
-	expect(pacote.registros[0].assinatura_base64).toBeUndefined();
-	expect(download.suggestedFilename()).toBe("recibos-demonstracao.json");
+	await expect(page.getByRole("table", { name: "Recibos por repositório" }).locator("tbody tr")).toHaveCount(1);
+	await expect(page.getByText("Verificação da cadeia e exportação da coleção indisponíveis.")).toBeVisible();
 	await expect(page.getByRole("cell", { name: "Não executada", exact: true })).toBeVisible();
 });
 
@@ -220,16 +168,16 @@ for (const largura of [390, 320])
 			if (new URL(r.url()).pathname.startsWith("/receipts/") && !r.url().endsWith("/keys")) consultas.push(r.url());
 		});
 		await page.goto("/recibos");
-		const cards = page.getByRole("list", { name: "Recibos de demonstração" });
+		const cards = page.getByRole("list", { name: "Recibos" });
 		await expect(cards.getByRole("listitem")).toHaveCount(3);
 		await expect(page.getByRole("table")).toHaveCount(0);
 		await page.evaluate(() => document.fonts.ready);
 		const caixa = await cards.getByRole("listitem").first().boundingBox();
 		expect(caixa).toMatchObject({ x: 16, y: 310, width: largura - 32, height: 150 });
-		const previa = cards.getByRole("button", { name: "Ver prévia do recibo 6d290152-demo" });
+		const previa = cards.getByRole("button", { name: "Ver prévia do recibo 6d290152" });
 		await previa.focus();
 		await page.keyboard.press("Enter");
-		await expect(page.getByRole("dialog")).toContainText("nenhum recibo assinado foi gerado");
+		await expect(page.getByRole("dialog")).toContainText("Identificação do recibo");
 		await page.keyboard.press("Escape");
 		await expect(previa).toBeFocused();
 		await page.getByRole("combobox", { name: "Repositório", exact: true }).click();
@@ -238,12 +186,7 @@ for (const largura of [390, 320])
 		await page.reload();
 		await expect(cards.getByRole("listitem")).toHaveCount(1);
 		await page.getByText("Período, cadeia e exportação", { exact: true }).click();
-		await page.getByRole("button", { name: "Exportar JSON", exact: true }).click();
-		await expect(page.getByRole("dialog")).toContainText("1 registros simulados");
-		await page.keyboard.press("Escape");
-		await page.getByRole("button", { name: "Verificar cadeia", exact: true }).click();
-		await expect(page.getByRole("dialog")).toContainText("não comprova a cadeia real");
-		await page.keyboard.press("Escape");
+		await expect(page.getByText("Verificação da cadeia e exportação da coleção indisponíveis.")).toBeVisible();
 		expect(consultas).toEqual([]);
 		expect(escritas).toEqual([]);
 		await expect(page.getByLabel("UUID do recibo")).toBeVisible();

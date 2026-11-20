@@ -131,3 +131,28 @@ export const sugestoesMock = [
 	},
 ];
 export const slaInicialMock = { primeiro: 2, segundo: 8 };
+
+export function lerGestaoMock(repo: string, filtros: URLSearchParams) {
+	const periodo = filtros.get("periodo") ?? "";
+	const inicio = referenciaMock.getTime() - (["7", "30", "90"].includes(periodo) ? Number(periodo) : 30) * 86400000;
+	const noPeriodo = (i: { repo: string; data: string }) => (!repo || i.repo === repo) && Date.parse(i.data) > inicio;
+	const repositorios = repositoriosMock.map((r) => r.nome);
+	return {
+		repositorios,
+		configuracoes: Object.fromEntries(repositorios.map((r) => [r, configuracaoInicialMock])),
+		sla: Object.fromEntries(repositorios.map((r) => [r, slaInicialMock])),
+		sugestoes: sugestoesMock,
+		regras: regrasMock.map((r) => {
+			const itens = ocorrenciasRegrasMock.filter((i) => i.regra === r.id && noPeriodo(i));
+			return { ...r, acionamentos: itens.length, aprovadas: itens.filter((i) => i.aprovada).length };
+		}),
+		calibracoes: calibracoesMock.filter((c) => !repo || c.repo === repo),
+		auditoria: auditoriaMock.filter(
+			(a) =>
+				noPeriodo(a) &&
+				(!filtros.get("resultado") || a.decisao === filtros.get("resultado")) &&
+				(!filtros.get("origem") || a.origem === filtros.get("origem")) &&
+				(filtros.get("recusadas") !== "1" || a.decisao === "Recusada"),
+		),
+	};
+}

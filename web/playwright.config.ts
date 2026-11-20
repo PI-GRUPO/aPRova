@@ -14,6 +14,7 @@ export default defineConfig({
 	projects: [{ name: "chromium", use: { browserName: "chromium" } }],
 	webServer: [
 		{
+			env: { APROVA_DASHBOARD_MOCKS: "1" },
 			command: "npm run dev -- --mode teste --port 5183",
 			url: "http://127.0.0.1:5183",
 			reuseExistingServer: false,

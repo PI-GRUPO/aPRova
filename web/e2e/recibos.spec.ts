@@ -192,7 +192,7 @@ test("ajuda mantém foco e consulta rejeita UUID inválido", async ({ page }) =>
 	await page.goto("/recibos");
 	await page.getByLabel("UUID do recibo").fill("inválido");
 	await page.getByRole("button", { name: "Localizar recibo" }).click();
-	await expect(page.getByRole("alert")).toHaveText("Informe um UUID válido.");
+	await expect(page.getByRole("alert").filter({ hasText: "Informe um UUID válido." })).toBeVisible();
 });
 
 for (const largura of [390, 320])

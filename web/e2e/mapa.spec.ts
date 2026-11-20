@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { autenticarFixture } from "./sessao-dashboard";
 
 test.beforeEach(async ({ page }) => {
-	await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: false } }));
+	await autenticarFixture(page);
 });
 for (const largura of [1440, 390, 360])
 	for (const tema of ["escuro", "claro"]) {
@@ -23,7 +24,7 @@ for (const largura of [1440, 390, 360])
 				await page.keyboard.press("Enter");
 				const modal = page.getByRole("dialog");
 				await expect(modal.getByRole("link")).toHaveCount(quantidade);
-				await expect(modal).toContainText("Dados simulados");
+				await expect(modal).not.toContainText("Dados simulados");
 				await expect(modal.getByRole("link").first()).toContainText(primeiro);
 				await page.evaluate(() => document.fonts.ready);
 				await modal.screenshot({ path: `../.capturas-mcp/mapa/local-${dia}-${largura}-${tema}.png` });
@@ -32,7 +33,7 @@ for (const largura of [1440, 390, 360])
 				await modal.getByRole("link").first().focus();
 				await page.keyboard.press("Enter");
 				await expect(page).toHaveURL(new RegExp(`/analises/demonstracao/mapa-${dia}-alto-1`));
-				await expect(page.getByText("Demonstração · dados simulados, sem operações reais.")).toBeVisible();
+				await expect(page.locator("main")).not.toContainText(/dados simulados/i);
 				await expect(page.getByRole("heading", { level: 1 })).toContainText(primeiro);
 				await expect(page.locator(".estado-do-detalhe")).toContainText("risco alto");
 				await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
@@ -47,7 +48,7 @@ for (const largura of [1440, 390, 360])
 	}
 test("célula vazia, seleção única, reload e parâmetros inválidos são distintos", async ({ page }) => {
 	await page.goto("/?mapa_dia=2026-10-13&mapa_nivel=alto");
-	await expect(page.getByRole("dialog")).toContainText("Nenhuma análise neste recorte simulado");
+	await expect(page.getByRole("dialog")).toContainText("Nenhuma análise neste recorte");
 	await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(0);
 	await page.getByRole("button", { name: "Fechar recorte", exact: true }).click();
 	await page.locator('button.celula-mapa[data-dia="2026-10-15"][data-nivel="medio"]').click();
@@ -70,13 +71,13 @@ test("todas as contagens correspondem a referências do mesmo dia e risco", asyn
 		const visao = await import(`${location.origin}/src/servicos/visao-geral.ts`);
 		const analises = await import(`${location.origin}/src/servicos/analises-demonstracao.ts`);
 		const sinal = new AbortController().signal;
-		const dados = await visao.consultarVisaoGeral(sinal);
+		const dados = await visao.consultarVisaoGeral({ instalacao: "42", repositorio: "" }, new URLSearchParams(), sinal);
 		const problemas: string[] = [];
 		let total = 0;
 		const ids = new Set();
 		for (const dia of dados.mapa)
 			for (const nivel of ["alto", "medio", "baixo"]) {
-				const recorte = await mapa.consultarRecorteMapa(dia.data, nivel, sinal);
+				const recorte = await mapa.consultarRecorteMapa("42", dia.data, nivel, sinal);
 				if (recorte.itens.length !== dia[nivel]) problemas.push(`contagem:${dia.data}:${nivel}`);
 				for (const item of recorte.itens) {
 					const detalhe = await analises.consultarAnaliseDemonstracao(item.id, sinal);
@@ -96,7 +97,7 @@ test("todas as contagens correspondem a referências do mesmo dia e risco", asyn
 		const falhas: string[] = [];
 		for (const data of ["2026-02-31", "2099-01-01"]) {
 			try {
-				await mapa.consultarRecorteMapa(data, "alto", sinal);
+				await mapa.consultarRecorteMapa("42", data, "alto", sinal);
 			} catch {
 				falhas.push(data);
 			}
@@ -104,7 +105,7 @@ test("todas as contagens correspondem a referências do mesmo dia e risco", asyn
 		const cancelado = new AbortController();
 		cancelado.abort();
 		try {
-			await mapa.consultarRecorteMapa("2026-11-08", "alto", cancelado.signal);
+			await mapa.consultarRecorteMapa("42", "2026-11-08", "alto", cancelado.signal);
 		} catch {
 			falhas.push("cancelado");
 		}
@@ -133,18 +134,13 @@ test("falha ao carregar o recorte permite retry e nunca consulta dados reais", a
 	await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(2);
 	expect(proibidas).toEqual([]);
 });
-test("a decisão do detalhe selecionado permanece somente na demonstração", async ({ page }) => {
+test("a decisão do detalhe selecionado permanece indisponível", async ({ page }) => {
 	const escritas: string[] = [];
 	page.on("request", (r) => {
 		if (r.method() !== "GET") escritas.push(r.url());
 	});
 	await page.goto("/?mapa_dia=2026-11-11&mapa_nivel=alto");
 	await page.getByRole("dialog").getByRole("link").first().click();
-	await page.getByRole("button", { name: "Aprovar", exact: true }).click();
-	await page.getByRole("textbox", { name: "Justificativa obrigatória" }).fill("Revisei a referência do mapa.");
-	await page.getByRole("button", { name: "Confirmar aprovação", exact: true }).click();
-	await expect(page.getByRole("status")).toContainText("Nenhum review ou merge foi executado");
-	await page.getByRole("button", { name: "Voltar à análise", exact: true }).click();
-	await expect(page.getByText("Nenhuma decisão humana registrada para esta análise.")).toBeVisible();
+	await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeDisabled();
 	expect(escritas).toEqual([]);
 });

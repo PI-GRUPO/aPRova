@@ -4,7 +4,6 @@ import { visaoGeralMock } from "./visao-geral";
 
 // Dados públicos do protótipo, sem relação com uma instalação autenticada.
 const commits = ["6be930afc83bb7213d3d4e111f2c6eb7fd008a42", "958be56", "30f2971", "ab21f04", "11645da"];
-export const identidadeDemonstracao = { instalacao: "demonstracao", usuario: "revisor-demonstracao" };
 export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, indice) => {
 	const primeiro = indice === 0;
 	const recebido = "2026-11-09T11:00:00Z";
@@ -34,14 +33,12 @@ export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, in
 				{
 					id: item.motivo.split(" ")[0],
 					nivel: "alto",
-					descricao: primeiro ? "Os testes ou a compilação falharam." : "Motivo apresentado na fila de demonstração.",
+					descricao: primeiro ? "Os testes ou a compilação falharam." : "Motivo apresentado na fila.",
 					evidencias: [item.evidencia],
 				},
 			],
 			calibracao_estado: primeiro ? "motivo_nao_calibravel" : "nao_informada",
-			calibracao_razao: primeiro
-				? "Redução bloqueada por falha de teste"
-				: "Histórico de calibração não incluído nesta referência simulada.",
+			calibracao_razao: primeiro ? "Redução bloqueada por falha de teste" : "Histórico de calibração não incluído nesta análise.",
 			vizinhos: [],
 		},
 		etapas: primeiro
@@ -50,28 +47,28 @@ export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, in
 						id: 1,
 						de: "pendente",
 						para: "mapeando_contexto",
-						detalhe: "Recebida · contexto obtido no cenário simulado.",
+						detalhe: "Recebida · contexto obtido.",
 						criado_em: recebido,
 					},
 					{
 						id: 2,
 						de: "mapeando_contexto",
 						para: "testando_sandbox",
-						detalhe: "Contexto mapeado no protótipo.",
+						detalhe: "Contexto do PR mapeado.",
 						criado_em: "2026-11-09T11:00:01Z",
 					},
 					{
 						id: 3,
 						de: "testando_sandbox",
 						para: "avaliando_risco",
-						detalhe: "Testes executados: 10 passaram e 1 falhou no cenário de referência.",
+						detalhe: "Testes executados: 10 passaram e 1 falhou.",
 						criado_em: "2026-11-09T11:00:46Z",
 					},
 					{
 						id: 4,
 						de: "avaliando_risco",
 						para: "aguardando_aprovacao",
-						detalhe: "Risco alto no cenário simulado; aguardando revisão humana.",
+						detalhe: "Risco alto; aguardando revisão humana.",
 						criado_em: "2026-11-09T11:00:47Z",
 					},
 				]
@@ -108,35 +105,35 @@ export const complementosDemonstracao: Record<string, ComplementoDemonstracao> =
 				titulo: "Recebida",
 				estado: "concluida",
 				momento: "2026-11-09T11:00:00Z",
-				detalhe: "Referência do recebimento da análise no protótipo.",
+				detalhe: "Análise recebida.",
 			},
 			{
 				id: 2,
 				titulo: "Contexto mapeado",
 				estado: "concluida",
 				momento: "2026-11-09T11:00:01Z",
-				detalhe: "Código e contexto obtidos no cenário de referência.",
+				detalhe: "Código e contexto obtidos.",
 			},
 			{
 				id: 3,
 				titulo: "Testes executados",
 				estado: "falhou",
 				momento: "2026-11-09T11:00:04Z",
-				detalhe: "10 testes passaram; TestFretePesoZero falhou no cenário simulado.",
+				detalhe: "10 testes passaram; TestFretePesoZero falhou.",
 			},
 			{
 				id: 4,
 				titulo: "Risco avaliado",
 				estado: "concluida",
 				momento: "2026-11-09T11:00:46Z",
-				detalhe: "Nível alto apresentado no protótipo, sem recálculo do gate pelo navegador.",
+				detalhe: "Risco alto devido à falha nos testes.",
 			},
 			{
 				id: 5,
 				titulo: "Aguardando aprovação",
 				estado: "aguardando",
 				momento: "2026-11-09T11:00:47Z",
-				detalhe: "Pendência humana de referência. Nenhuma operação foi enviada ao núcleo.",
+				detalhe: "Aguardando revisão humana.",
 			},
 		],
 	},

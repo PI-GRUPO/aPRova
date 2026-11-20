@@ -4,7 +4,7 @@ import { useSessao } from "@/app/sessao";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
 import { VinculoSlack } from "@/componentes/VinculoSlack";
-import { mensagemDeErro } from "@/servicos/recibos";
+import { ErroHTTP } from "@/servicos/http";
 import "@/estilos/sessao.css";
 export function Protegida({ children }: { children: ReactNode }) {
 	const { sessao, erro, carregar } = useSessao();
@@ -63,7 +63,6 @@ export function Entrar() {
 					</PainelDeEstado>
 				)}
 				<p className="apoio">Você autoriza o acesso no GitHub. O aPRova não pede sua senha.</p>
-				<p className="apoio">Protótipo · dados simulados</p>
 			</section>
 		</main>
 	);
@@ -82,7 +81,7 @@ export function Sair() {
 					try {
 						await sair();
 					} catch (e) {
-						setErro(mensagemDeErro(e));
+						setErro(e instanceof ErroHTTP ? e.message : "Não foi possível encerrar a sessão.");
 					} finally {
 						setEnviando(false);
 					}
@@ -130,7 +129,7 @@ export function Conta() {
 								)}
 							</div>
 						</section>
-						<VinculoSlack key={sessao.usuario.id} login={sessao.usuario.login} />
+						<VinculoSlack key={sessao.usuario.id} />
 					</>
 				)}
 			</Protegida>
