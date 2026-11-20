@@ -31,6 +31,7 @@ func ambienteLimpo(t *testing.T) {
 		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 		"CALIBRACAO_LIGADA", "CALIBRACAO_VIZINHOS", "CALIBRACAO_SIMILARIDADE_MINIMA",
 		"CALIBRACAO_MINIMO_DE_DESFECHOS", "CALIBRACAO_TIMEOUT", "GEMINI_API_KEY", "SARIF_LIGADO",
+		"METRICAS_ENDERECO",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -556,5 +557,37 @@ func TestCarregarRecusaLimitesDoGateInvalidos(t *testing.T) {
 				t.Errorf("esperava erro nomeando %s, obtive %v", variavel, err)
 			}
 		})
+	}
+}
+
+func TestEnderecoDasMetricasFicaDesligadoPorPadrao(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+
+	if err != nil || configuracao.EnderecoMetricas != "" {
+		t.Errorf("sem METRICAS_ENDERECO o listener interno fica desligado, obtive %q (%v)", configuracao.EnderecoMetricas, err)
+	}
+}
+
+func TestEnderecoDasMetricasAceitaHostEPorta(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("METRICAS_ENDERECO", ":9090")
+
+	configuracao, err := Carregar()
+
+	if err != nil || configuracao.EnderecoMetricas != ":9090" {
+		t.Errorf("esperava :9090, obtive %q (%v)", configuracao.EnderecoMetricas, err)
+	}
+}
+
+func TestEnderecoDasMetricasRecusaValorSemPorta(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("METRICAS_ENDERECO", "metricas.internas")
+
+	_, err := Carregar()
+
+	if err == nil || !strings.Contains(err.Error(), "METRICAS_ENDERECO") {
+		t.Errorf("endereço sem porta precisa ser recusado nomeando a variável, obtive %v", err)
 	}
 }
