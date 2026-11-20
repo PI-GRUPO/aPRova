@@ -672,7 +672,6 @@ PostgreSQL/Redis nesta migração: suas portas não foram alteradas.
 | `AZURE_RESOURCE_GROUP` | Go / Azure grupo de recursos | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
 | `AZURE_SANDBOX_JOB_NAME` | Go / Azure job do sandbox | `vazio` | necessário com executor azure; Azure / implantação do sandbox | worker |
 
-
 ## Integração com a dev — 2026-11-13
 
 O módulo Go é `github.com/PI-GRUPO/aPRova`, com toolchain Go 1.26.11.

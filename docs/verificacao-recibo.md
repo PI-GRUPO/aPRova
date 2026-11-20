@@ -113,7 +113,7 @@ go build -o verificar-recibo ./cmd/verificar-recibo
 ./verificar-recibo -chave 'oxyRUCyPXF5VI60ZSAIszVUau7XIK44n/XOaOSOhkyM=' recibo.json
 ```
 
-```
+```text
 VÁLIDO: a assinatura confere com o conteúdo e com a chave informada
 recibo:       6e626559-146f-4b61-b486-a05cd64d2b25
 key_id:       5ae5b1f862c3be22
@@ -134,7 +134,7 @@ assinados; o campo `payload` do JSON, que existe só para leitura, é ignorado.
 
 Com um único byte do conteúdo alterado:
 
-```
+```text
 INVÁLIDO: a verificação de hash falhou
 o SHA-256 do conteúdo não é o hash informado
 ```
@@ -174,7 +174,7 @@ CHAVE='oxyRUCyPXF5VI60ZSAIszVUau7XIK44n/XOaOSOhkyM='
 openssl pkeyutl -verify -pubin -inkey chave-publica.pem -rawin -in payload.bin -sigfile assinatura.bin
 ```
 
-```
+```text
 Signature Verified Successfully
 ```
 
@@ -189,7 +189,7 @@ openssl dgst -sha256 -r payload.bin
 jq -r .hash_sha256 recibo.json
 ```
 
-```
+```text
 6146756177c1e88eab1218c5032b4b698ad5c20b28ffe1ec81ac6086d88ada4f
 6146756177c1e88eab1218c5032b4b698ad5c20b28ffe1ec81ac6086d88ada4f
 ```
@@ -199,7 +199,7 @@ printf '%s' "$CHAVE" | openssl base64 -d -A | openssl dgst -sha256 -r | cut -c1-
 jq -r .key_id recibo.json
 ```
 
-```
+```text
 5ae5b1f862c3be22
 5ae5b1f862c3be22
 ```
@@ -219,7 +219,7 @@ Enquanto o PR continuar no mesmo commit, qualquer pessoa recalcula:
 curl -sL https://github.com/Azulpasta/aPRova-TESTES/pull/1.diff | openssl dgst -sha256 -r
 ```
 
-```
+```text
 eb988b7001848021e8fcaa95935067459229de32a4be3df52159ba15de24c972
 ```
 

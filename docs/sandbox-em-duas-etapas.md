@@ -22,7 +22,7 @@ em Python) usa um teste do PR que tenta resolver um nome por DNS e abrir
 conexões TCP para `1.1.1.1:443` e para o gateway do host. Com `bridge`, antes
 deste card, ele alcançou os três:
 
-```
+```text
 ataque: alcançou dns proxy.golang.org, tcp 1.1.1.1:443, tcp gateway 172.17.0.1:5432
 ```
 

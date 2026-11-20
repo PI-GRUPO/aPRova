@@ -1,5 +1,61 @@
 # Implementação do dashboard aPRova
 
+## Escopo atual — orientação da usuária em 16/11/2026
+
+Implementar somente o front na branch `feat/web-dashboard`, consumindo a API
+existente. Não alterar API, endpoints, SQL, migrations ou código Go. Para
+endpoints e dados ausentes, criar mocks separados no front e adapters
+substituíveis quando os contratos reais estiverem disponíveis. A autorização
+inclui simulações para desenvolver as telas e fluxos; resultados simulados não
+comprovam ações reais no núcleo. Falha de uma consulta real não habilita fallback
+silencioso para dados fictícios. Não expor HMAC, tokens ou segredos de serviço.
+
+O Figma é a referência visual: página desktop `5:2` do arquivo
+`VtHNXer6wzJj37QdpN3Lb9`, incluindo as variantes claras e mobile correspondentes.
+Reaproveitar a fundação já presente em `web/`. As extensões de backend descritas
+nas fases históricas abaixo ficam fora desta execução. Consultar o design e
+comparar capturas antes de declarar fidelidade visual; guardar as capturas em
+`.capturas-mcp/`, ignorada pelo Git.
+
+O [contexto atual do front](dashboard-contexto.md) reúne as rotas, os adapters,
+os contratos confirmados e as dependências de integração da visão geral, do
+mapa, da fila, das ações humanas e da gestão. As referências visuais por tela
+e modal estão no [inventário Figma](dashboard-inventario-figma.md).
+
+A [correção visual do login](dashboard-login.md), priorizada em 18/11/2026,
+alinha o cartão aos frames claro/escuro e preserva a autenticação existente.
+O ciclo de preparação da API para desenvolvimento (guia local
+`dashboard-api-desenvolvimento.md`, ignorado pelo Git)
+permite configurar o destino do proxy do Vite, mantendo as consultas sob a mesma
+origem e sem incluir segredos no navegador. O login real permanece dependente
+da API atualizada e da configuração OAuth do ambiente.
+O ciclo de [Análises no mobile](dashboard-analises-mobile.md) apresenta a coleção
+real em cards, com filtros expansíveis, paginação e retorno do detalhe preservados.
+Desktop continua usando a tabela e os contratos existentes.
+A [validação final da interface](dashboard-validacao-interface.md) revisa 17
+variantes de tela nos dois temas, em cinco larguras, e corrige a coleção e o
+resultado de verificação de recibos no mobile. A revisão visual/funcional não
+substitui a homologação OAuth e dos contratos reais pendentes de F8.
+
+Documentação das fases: manter este plano e todos os novos documentos de
+levantamento, execução e acompanhamento do dashboard em `design/docs/`.
+O [índice desta pasta](README.md) reúne os documentos. Usar links relativos
+para as referências técnicas do núcleo que permanecem em `docs/` na raiz.
+
+> Execução F4A em 16/11/2026: [lista e detalhe de análises](dashboard-f4a.md); OAuth real adiado por orientação da usuária.
+> Execução F3 em 16/11/2026: [sessão web e relatório semanal](dashboard-f3.md), F3A–C implementados; OAuth real e F3D pendentes.
+> Execução F2 em 16/11/2026: consulte [recibos por UUID e validação](dashboard-f2.md); aceite com recibo real pendente.
+> Execução F1 em 16/11/2026: consulte [implementação e validação da fundação](dashboard-f1.md).
+> Retomada F0 em 16/11/2026: veja [levantamento atual](dashboard-f0.md),
+> [inventário Figma](dashboard-inventario-figma.md) e
+> [critérios dos cards consultados](dashboard-cards-f0.md).
+> Base atual: `feat/web-dashboard`, SHA `a28725d`, a partir de `dev`, sem incorporar
+> `feat/slack-app-home`. Há dez rotas: as duas consultas de análises já existem
+> como serviço HMAC, ainda sem sessão web nem detalhe agregado. Afirmações de
+> oito rotas nas auditorias abaixo são históricas. Por orientação da usuária,
+> o Figma é a referência visual; o protótipo local não é fiel e só fornece código
+> candidato a reaproveitamento. F0 aguarda confirmação de homologação/recibo real.
+
 ## 1. Objetivo, revisão e resultado esperado
 
 Plano revisado em 15/11/2026 para transformar todas as telas do Figma em uma
@@ -38,13 +94,13 @@ funcionalidades do escopo sem comportamento real.
 | Fonte | Uso neste plano |
 | --- | --- |
 | [Figma aPRova](https://www.figma.com/design/VtHNXer6wzJj37QdpN3Lb9/aPRova?node-id=9-22) | Metadados das páginas desktop/mobile e contexto estruturado com capturas das telas principais; fluxos, temas, componentes e estados |
-| [PRODUCT.md](../design/prototipo/PRODUCT.md), [DESIGN.md](../design/prototipo/DESIGN.md), [package.json](../design/prototipo/package.json), [App.tsx](../design/prototipo/src/App.tsx) | Stack, tokens, componentes reaproveitáveis e limite do protótipo codificado |
-| [servidor.go](../internal/api/servidor.go), [main.go](../cmd/api/main.go) | Rotas realmente registradas e dependências realmente conectadas |
-| [recibos.go](../internal/api/recibos.go), [exportacao.go](../internal/receipt/exportacao.go), [verificador.go](../internal/receipt/verificador.go) | DTO, erros e alcance da verificação de recibos |
-| [relatorio_semanal.go](../internal/api/relatorio_semanal.go), [reports.sql](../queries/reports.sql) | Autenticação, janela, denominadores e fontes das métricas |
-| [acoes_remotas.go](../internal/api/acoes_remotas.go), [contrato.go](../internal/acaoremota/contrato.go), [executor_github.go](../internal/acaoremota/executor_github.go) | Identidade Slack, justificativa, autorização e reexecução indisponível |
-| [persistencia.go](../internal/domain/persistencia.go), [calibracao.go](../internal/domain/calibracao.go), queries e migrations | Dados existentes no núcleo que ainda não são uma API de dashboard |
-| [Fluxo do produto](fluxograma-produto.mmd), [estados](maquina-estados.mmd), [recibos](verificacao-recibo.md), [calibração](calibracao.md), [sandbox](sandbox-em-duas-etapas.md) | Semântica do produto e limites de evidência |
+| [PRODUCT.md](../prototipo/PRODUCT.md), [DESIGN.md](../prototipo/DESIGN.md), [package.json](../prototipo/package.json), [App.tsx](../prototipo/src/App.tsx) | Stack, tokens, componentes reaproveitáveis e limite do protótipo codificado |
+| [servidor.go](../../internal/api/servidor.go), [main.go](../../cmd/api/main.go) | Rotas realmente registradas e dependências realmente conectadas |
+| [recibos.go](../../internal/api/recibos.go), [exportacao.go](../../internal/receipt/exportacao.go), [verificador.go](../../internal/receipt/verificador.go) | DTO, erros e alcance da verificação de recibos |
+| [relatorio_semanal.go](../../internal/api/relatorio_semanal.go), [reports.sql](../../queries/reports.sql) | Autenticação, janela, denominadores e fontes das métricas |
+| [acoes_remotas.go](../../internal/api/acoes_remotas.go), [contrato.go](../../internal/acaoremota/contrato.go), [executor_github.go](../../internal/acaoremota/executor_github.go) | Identidade Slack, justificativa, autorização e reexecução indisponível |
+| [persistencia.go](../../internal/domain/persistencia.go), [calibracao.go](../../internal/domain/calibracao.go), queries e migrations | Dados existentes no núcleo que ainda não são uma API de dashboard |
+| [Fluxo do produto](../../docs/fluxograma-produto.mmd), [estados](../../docs/maquina-estados.mmd), [recibos](../../docs/verificacao-recibo.md), [calibração](../../docs/calibracao.md), [sandbox](../../docs/sandbox-em-duas-etapas.md) | Semântica do produto e limites de evidência |
 | [Central Slack na branch dos workflows](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/docs/central-slack-implementacao.md), [eventos](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/docs/eventos-n8n.md) e [guia n8n](https://github.com/PI-GRUPO/aPRova/blob/9c0fd55676895ea7f2506a4b1ce788dd761d7d5c/workflows/n8n/README.md) | Estado mais recente da automação, validações documentadas e Etapa S |
 | [Quadro Trello aPRova](https://trello.com/b/BLUfesZg/aprova), cards #63–#78 e dependências | Escopo, critérios de aceite e decisões de implementação do dashboard |
 | Documento de Requisitos_aPRova.docx e diagramas anexados ao projeto | Requisitos de autoridade do núcleo, isolamento, revisão humana, rastreabilidade e ausência de merge automático |
@@ -93,8 +149,8 @@ as fases F0–F8 deste plano de dashboard e não as tornam automaticamente concl
 
 ### 2.2. Rastreabilidade com os cards do Trello
 
-Leitura do quadro em 15/11/2026: **15 cards com Front-end e Desenvolvimento**,
-#64–#78, mais o protótipo #63. Fundação está em “Em andamento”; os outros 14
+Leitura do quadro em 15/11/2026: **15 cards com Front-end e Desenvolvimento**, #64–#78,
+mais o protótipo #63. Fundação está em “Em andamento”; os outros 14
 cards de implementação estão em “A Fazer”; protótipo está em “Pronto”. São
 estados do quadro, não comprovação de integração na branch auditada. Não há
 checklists ou comentários adicionais nos cards de dashboard retornados nessa leitura.
@@ -265,7 +321,8 @@ obrigatória nem deve navegar o produto real por PRs fictícios.
 | Relatório semanal | B | `GET /reports/weekly`, HMAC da query bruta | F3, por servidor; janela de sete dias, sem heatmap/fila/tentativas por tipo |
 | Aprovar / pedir alteração | B | `POST /acoes-remotas`, HMAC e `usuario_slack`; reviews publicadas no GitHub | F5, após identidade web e origem próprias; não chamar diretamente do React |
 | Reexecutar | D | Tipo aceito, mas `cmd/api/main.go` injeta `ReenfileiradorIndisponivel` | F5B só após implementação e validação de reanálise; hoje falha na execução |
-| Análises, fila, detalhe e timeline | C | `task_runs`, `task_steps`, resultados e gate no banco | F4A; faltam handlers de leitura/listagem |
+| Resumo/lista de análises | B | `GET /api/analises` e `GET /api/analises/{id}` existem na base F0 atual, com HMAC n8n, filtros de estado/repo/PR e paginação | F3/F4A; falta autorização por sessão e filtros de risco/período |
+| Fila enriquecida, detalhe e timeline | C | Consultas atuais retornam só resumo; `task_steps`, resultados e gate não entram no DTO | F4A; falta contrato agregado |
 | Calibração e casos semelhantes | C | `risk_gates.calibration_*`, domínio e memória | F4A/F4C; não estão no DTO do recibo |
 | Sandbox e saídas | C/D | Sumário e `raw_output` persistidos; lista de casos/suítes não é contrato exposto | F4A; estrutura de casos e comprovação das etapas exigem contrato/extração no núcleo |
 | Visão geral de 30 dias | C | Dados de execução existem; não há agregação HTTP para o desenho | F4B; não renomear o relatório semanal como visão de 30 dias |
@@ -645,18 +702,19 @@ na aprovação de uma tela.
 
 ## 7. Contratos a criar — propostas, não endpoints disponíveis
 
-Os caminhos `/api/analises`, `/api/analises/{id}` e `/api/metricas` já são os
-planejados no card #66; os demais nomes serão fechados no lote do núcleo, com
-testes. Usar a família `/api` para sessão web e preservar as rotas de automação
-com autenticação de serviço. Esses caminhos estão **planejados, não implementados**
-no commit auditado. Reusar serviços de domínio não exige expor a mesma credencial
+Os caminhos `/api/analises` e `/api/analises/{id}` já têm handlers de serviço na
+base revalidada em F0, mas ainda precisam evoluir para o contrato web do card #66.
+`/api/metricas` e os demais contratos abaixo continuam propostos. Os demais nomes
+serão fechados no lote do núcleo, com testes. Usar a família `/api` para sessão
+web e preservar as rotas de automação com autenticação de serviço.
+Reusar serviços de domínio não exige expor a mesma credencial
 ou permitir que o n8n simule uma sessão de usuário.
 
 | ID | Contrato proposto | Conteúdo mínimo / requisito | Desbloqueia |
 | --- | --- | --- | --- |
 | C01 | Sessão: início/callback GitHub, `GET /api/sessao`, logout | Usuário resolvido, escopos/instalações/repos autorizados, expiração e proteção de sessão | F3 |
 | C02 | `GET /api/relatorios/semanal` | Autorizar instalação e mediar fonte semanal existente sem segredo no cliente | F3 |
-| C03 | `GET /api/analises` e `GET /api/analises/{id}` (#66) | Coleção com filtros/paginação e detalhe agregado consistente, UUID, SHA, timeline, gate, tentativas e recibo | F4A |
+| C03 | Evoluir `GET /api/analises` e `GET /api/analises/{id}` (#66), hoje resumos de serviço HMAC | Autorização web, filtros de nível/período e detalhe agregado consistente, UUID, SHA, timeline, gate, tentativas e recibo | F4A |
 | C04 | `GET /api/repositorios` e saúde por repositório | Catálogo autorizado, permissões verificadas, check obrigatório com status desconhecido e instante de consulta | F4A/F4C |
 | C05 | `GET /api/metricas` (#66/#67) | Intervalo/fuso/denominadores, fila atual, métricas por tentativa, tempo médio, série diária e último recibo | F4B |
 | C06 | `GET /api/recibos`, exportação e verificação de cadeia | Coleção autorizada; leitura individual pública permanece em `/receipts/*`; cadeia com cabeça/elos/falhas e completude | F4C |
@@ -737,7 +795,7 @@ Não substituir mudanças de outras pessoas.
 
 Prompt inicial sugerido para o agente executor:
 
-> Leia AGENTS.md e docs/implementacao-dashboard.md. Execute a fase/lote indicado
+> Leia AGENTS.md e design/docs/implementacao-dashboard.md. Execute a fase/lote indicado
 > pela solicitação, começando pela primeira dependência não satisfeita. Consulte
 > o Figma via MCP pelos nós do inventário, inspecione os componentes existentes e
 > revalide os handlers do núcleo no SHA atual. Reutilize a stack e o design.
@@ -771,13 +829,12 @@ de dashboard nessa comparação. As orientações locais de workflows fornecidas
 ao AGENTS.md unificado, preservado fora do Git. O plano de dashboard pode ser
 versionado; o plano local de workflows continua ignorado.
 
-
 ## 10. Orientações locais e aplicação deste pacote
 
 Usar um único `AGENTS.md` na raiz, preservando o conteúdo local fornecido pela
 usuária e acrescentando a seção de dashboard. Ele e
 `docs/plano-atualizacao-workflows.md` permanecem ignorados e fora dos commits.
-`docs/implementacao-dashboard.md` pode ser versionado. Não usar `git add -f`.
+`design/docs/implementacao-dashboard.md` pode ser versionado. Não usar `git add -f`.
 
 A regra de alterar primeiro a instância n8n e validar antes de exportar aplica-se
 a workflows; o front é implementado em `web/`, com a integração Go autorizada.
@@ -788,3 +845,152 @@ O patch do pacote contém somente este documento versionável. O `AGENTS.md`
 unificado é aplicado localmente, em separado, preservando eventuais alterações
 locais posteriores ao conteúdo enviado. Não usar o patch das revisões anteriores,
 que incluía uma proposta de AGENTS.md versionado.
+
+## 11. Registro da execução
+
+### F0 — 16/11/2026
+
+- Estado: em andamento; levantamento técnico concluído, confirmação de ambiente pendente.
+- Base/commit e escopo: `feat/web-dashboard`, `a28725daaf15968f45fbcb64ae463bbd9bb14c67`;
+  levantamento, sem incorporar App Home ou implementar F1.
+- Cards: #63–#78 relidos via Trello; critérios e listas registrados em
+  [dashboard-cards-f0.md](dashboard-cards-f0.md). Nenhum card alterado/concluído.
+- Nós Figma: três páginas inventariadas; contexto e captura de `5:58`, `9:22`,
+  `16:2`; referências de desktop 1440×900 e mobile 390×844, temas no inventário.
+- Contratos: dez rotas auditadas; consultas de análises existentes são resumos
+  autenticados por serviço; sessão, detalhe agregado e gestão ainda pendentes.
+- Arquivos: este plano, `dashboard-f0.md`, `dashboard-inventario-figma.md` e
+  `dashboard-cards-f0.md`.
+- Validações: testes locais `internal/api` e `internal/receipt` passaram; nenhum
+  teste de integração implantada. `/health` local sem conexão na porta 8080.
+- Evidências: `.capturas-mcp/f0/` ignorada, com PNGs/contextos/XML; resultados
+  e limites descritos em [dashboard-f0.md](dashboard-f0.md).
+- Dependências: AGENTS local ausente; homologação e UUID real aguardam confirmação.
+  Próximo lote liberado tecnicamente: F1A (#64), sem novas APIs de produto.
+
+### F1A–F1E — 16/11/2026
+
+- Estado: concluído nos sublotes F1A–F1E.
+- Base: `c75c7d7` em `feat/web-dashboard`, com a reorganização dos documentos
+  autorizada para `design/docs/`. AGENTS local continua ausente.
+- Escopo/card: #64, fundação; nenhum aceite de F2–F7 ou mudança no Trello.
+- Registro detalhado: [dashboard-f1.md](dashboard-f1.md).
+
+#### F1A
+
+- Card/critérios: #64 — web/, fontes/tokens/ativos locais, casca desktop/mobile, tema e 404.
+- Nós/temas/viewports: 9:23, 86:5942, 86:6451, 16:2, 88:826; referências e adaptações no registro F1.
+- Contratos: Nenhuma API nova; rodapé sem sessão e dados fictícios.
+- Arquivos: web/package*, configs, src/app, src/estilos, src/ativos.
+- Validação: Instalação por lockfile, Biome, TypeScript/Vite e capturas em 1440×900/390×844/360×844 nos dois temas.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1B; homologação não bloqueia casca.
+
+#### F1B
+
+- Card/critérios: #64 — Rotas reservadas e primitivas de campo, botão, modal, seleção, tabela e erro.
+- Nós/temas/viewports: 5:135, 5:144, 10:1263, 15:4170, 16:215; inventário de rotas; referências e adaptações no registro F1.
+- Contratos: Telas posteriores ficam indisponíveis; sem mutações simuladas.
+- Arquivos: web/src/componentes, src/app/rotas.ts, src/app/App.tsx.
+- Validação: Modal/foco/Escape/retorno, validação de formulário, filtros/limpeza e ordenação exercitados no harness.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1C; dados e telas operacionais dependem das fases seguintes.
+
+#### F1C
+
+- Card/critérios: #64 — Cliente HTTP, erros tipados, timeout/cancelamento, origem e proxy fixo.
+- Nós/temas/viewports: Sem nova tela de produto; padrões de campo/estado da fundação; referências e adaptações no registro F1.
+- Contratos: GET /health e /ready reais; 401 privado tratado sem implementar sessão C01.
+- Arquivos: web/src/servicos, web/vite.config.ts.
+- Validação: DTOs, JSON inválido/HTML, rede, 503, cancelamento e timeout; smoke real dos handlers separado dos mocks.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1D; credenciais continuam no servidor.
+
+#### F1D
+
+- Card/critérios: #64 — Harness/fixtures de teste isolados e Playwright.
+- Nós/temas/viewports: Mesmos nós da casca/404; capturas locais e comparação inspecionada; referências e adaptações no registro F1.
+- Contratos: Interceptações validam cliente; servidor Go isolado usa dependência controlada.
+- Arquivos: web/e2e, web/playwright.config.ts.
+- Validação: Rotas por URL/reload/voltar, temas, teclado, menu mobile, componentes e erros; /__teste ausente no build normal.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: F1E; sem evidência de API de homologação.
+
+#### F1E
+
+- Card/critérios: #64 — Build estático incorporado em Go, fallback e CI adicional.
+- Nós/temas/viewports: Casca/404 conforme F1A; sem novo layout; referências e adaptações no registro F1.
+- Contratos: Mesmas dez rotas de API preservadas; fallback só HTML GET/HEAD; APIs/ativos ausentes permanecem erros.
+- Arquivos: web/servidor*.go, web/dist/.gitkeep, internal/api/servidor.go, Makefile, .github/workflows/ci.yml, .gitignore.
+- Validação: Testes Go de fallback/cache/HEAD/checkout sem build, regressão interna/comandos/web com race, lint sem apontamentos e build do binário; smoke HTTP da SPA.
+- Evidências: `.capturas-mcp/f1/`, ignorada; resultados em `dashboard-f1.md`.
+- Dependências/próximo lote: Próxima fase: F2, condicionada a API de teste e UUID real.
+
+### F2A–F2D — 16/11/2026
+
+- Estado: implementação local concluída; aceite de homologação pendente.
+- Base/escopo: `dbafee3`, branch `feat/web-dashboard`; consulta pública por UUID,
+  cinco conferências, chaves e exportação individual. Registro detalhado:
+  [recibos F2](dashboard-f2.md).
+- Card #70 parcialmente coberto; coleção e cadeia completa permanecem em F4C.
+- Nós Figma: `9:1024`, `15:2791`, `16:159`, `10:1272`, `10:1309`;
+  dois temas, viewports 1440×900, 390×844 e 360×844.
+- Contratos: os três GETs públicos de recibos existentes; nenhuma API nova.
+- Arquivos: páginas/serviço/estilo de recibos, rotas, ativos de ajuda/serrilhado,
+  cenários Playwright, fixture assinada do servidor exclusivo de testes e documentação.
+- Validação: Biome e build aprovados; testes Go de API/receipt/web e go vet web
+  aprovados. Regressão F1/servidor aprovada; cenários F2 incluem HTTP local com
+  verificador real e assinatura do download conferida independentemente.
+- Evidências: `.capturas-mcp/f2/`, ignorada pelo Git. Mock, fixture local e
+  homologação são distinguidos no registro detalhado.
+- Dependência/próximo lote: URL da API de teste e UUID real ainda não fornecidos;
+  validar consulta, verificação, download e conferência independente antes de
+  declarar o aceite integrado F2 concluído. F3 é o próximo lote de implementação.
+
+### F3A–F3C — 16/11/2026
+
+- Estado: implementação e validação local concluídas; homologação OAuth real
+  pendente. F3D/F7A não iniciado por dependência do contrato de identidade Slack.
+- Base/escopo: `9bc2fd6`, branch `feat/web-dashboard`; sessão do GitHub App,
+  isolamento de instalações/repositórios, logout e relatório semanal privado.
+- Cards: #65/#66 parcialmente cobertos; #67 apenas agregado semanal; #77
+  permanece pendente. Nenhum card alterado no Trello.
+- Nós Figma: `9:2`, `15:1769`, `10:943`, `9:22`; 1440×900, 390×844,
+  360×844 nos dois temas. Referências e adaptações no [registro F3](dashboard-f3.md).
+- Contratos novos: início/callback OAuth, consulta de sessão, logout com CSRF e
+  GET `/api/web/relatorio-semanal`, documentados no registro F3. Rotas n8n
+  continuam exigindo HMAC. Recibos públicos preservados.
+- Arquivos: `internal/sessaoweb`, configuração/API, consulta SQL gerada via sqlc,
+  páginas/contexto/cliente HTTP web, testes Go/PostgreSQL/Redis/Playwright e CI.
+- Validações: build/Biome; regressão Go com race; relatório em PostgreSQL
+  descartável; Redis real com cifra, TTL e GETDEL concorrente; linter sem
+  apontamentos; dez cenários F3 e regressão F1/F2. Resultado detalhado no registro.
+- Evidências: `.capturas-mcp/f3/local-*`, ignoradas. Provedor de teste separado
+  do binário de produção; OAuth de conta real não foi simulado como homologado.
+- Ambiente local: API atualizada no container `aprova-api-local`, porta 8080,
+  reinício automático; `/ready` e recibos da semente aprovados no smoke.
+- Dependências/próximo lote: configurar credenciais/callback do GitHub App e
+  homologar login/escopo real. F3D exige prova de propriedade Slack e resolvedor
+  persistente; F4A é o próximo lote de leitura, condicionado à sessão autorizada.
+
+### F4A — 16/11/2026
+
+- Estado: implementação e validação local; homologação com usuário real pendente
+  pela configuração OAuth, adiada explicitamente pela usuária.
+- Base/escopo: `bad8b5c`, branch `feat/web-dashboard`; consultas web de análises
+  nas rotas canônicas, catálogo autorizado, filtros, paginação e detalhe agregado.
+- Cards: #66/#68/#69 parcialmente cobertos conforme os dados persistidos;
+  nenhum card alterado no Trello. F4B/F4C são lotes posteriores.
+- Nós Figma: `9:385`, `15:2152`, `9:608`, `15:2375`; desktop/mobile, dois temas.
+- Contratos: [OpenAPI implementado](dashboard-openapi.json); modo web com sessão
+  e modos HMAC anteriores preservados. Não há novas mutações.
+- Arquivos: DTOs do domínio, consultas sqlc/serviço de leitura, handlers de sessão,
+  páginas/cliente/componentes web, ativos Figma e testes PostgreSQL/navegador.
+- Semântica: gate ausente é não avaliado; análise substituída tem aviso; aprovação
+  sem SHA correspondente não é aplicada; vizinhos fora do escopo são omitidos;
+  saída bruta limitada e exibida como texto. Branch, rede e testes individuais
+  ausentes são informados, sem dados fabricados.
+- Evidências e resultados detalhados: [registro F4A](dashboard-f4a.md) e
+  `.capturas-mcp/f4a/local-*`, ignorada pelo Git.
+- Próximo lote de implementação: F4B, agregações de 30 dias e fila atual.
+  Aceite integrado do login/leituras permanece dependente das credenciais reais.

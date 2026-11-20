@@ -1,0 +1,49 @@
+.resumo-demonstracao-mobile,
+.titulo-demonstracao-mobile {
+	display: none;
+}
+@media (max-width: 767px) {
+	.pagina-demonstracao .metadados-analise {
+		display: none;
+	}
+	.resumo-demonstracao-mobile {
+		display: block;
+	}
+	.pagina-demonstracao .estado-analise {
+		width: 220px;
+		height: 32px;
+		justify-content: center;
+	}
+	.pagina-demonstracao .titulo-demonstracao-desktop {
+		display: none;
+	}
+	.pagina-demonstracao .titulo-demonstracao-mobile {
+		display: inline;
+	}
+	.pagina-demonstracao .grade-analise > .painel-analise:first-child {
+		display: none;
+	}
+	.pagina-demonstracao .estado-do-detalhe {
+		flex-direction: column;
+		align-items: start;
+		gap: 24px;
+	}
+}
+
+.pagina-demonstracao .motivo-analise li {
+	font-weight: 510;
+}
+.timeline-demonstracao .etapa-demo-concluida {
+	color: var(--texto-primario);
+}
+@media (max-width: 767px) {
+	.pagina-demonstracao .descricao-regra-demonstracao {
+		display: none;
+	}
+}
+
+@media (max-width: 767px) {
+	.pagina-demonstracao .grade-analise .conteudo-analise > a {
+		display: none;
+	}
+}

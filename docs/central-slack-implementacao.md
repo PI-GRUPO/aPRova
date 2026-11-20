@@ -671,7 +671,7 @@ são processados por ciclo, um por vez; os demais ficam para o próximo.
 | `T01–T04` | Timer, reserva do ciclo, histórico e planejamento dos prazos/pendências. |
 | `T05–T10` | Seleção dos avisos, lote unitário e releitura de decisões/configuração. |
 | `T11–T12` | Reserva persistente do aviso antes da chamada ao Slack. |
-| `T13–T15` | Envio por `aPRova | Slack`, confirmação de canal/timestamp e resultado persistente. |
+| `T13–T15` | Envio por `aPRova \| Slack`, confirmação de canal/timestamp e resultado persistente. |
 | `T16`, `T90`, `T99` | Cancelamento na execução, liberação do ciclo e resumo das pendências. |
 
 ### Configuração segundo a padronização
@@ -1180,7 +1180,7 @@ completa, segunda 00h até segunda 00h, fim exclusivo.
 | Nó | Função |
 | --- | --- |
 | `01` | Agendamento. |
-| `02` | Lê `Number($env.APROVA_CHAT_INSTALLATION_ID || 0)`, valida e calcula período. |
+| `02` | Lê `Number($env.APROVA_CHAT_INSTALLATION_ID \|\| 0)`, valida e calcula período. |
 | `03` | HMAC da query exata com `N8N_SEGREDO_ACOES`. |
 | `04` | GET `/reports/weekly`, timeout 15s, sem redirects. |
 | `05` | Valida HTTP, tenant, período, contagens/taxa e formata resumo. |

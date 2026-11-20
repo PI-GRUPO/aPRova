@@ -63,6 +63,11 @@ testes com `--network none`. A rede é fixa por etapa e não se configura;
 `SANDBOX_REDE_LOCAL` deixou de existir e, presente no `.env`, impede o worker
 de subir. Veja [docs/sandbox-em-duas-etapas.md](docs/sandbox-em-duas-etapas.md).
 
+A API e o worker são publicados como Container Apps a partir de
+`imagens/nucleo/Dockerfile` (`make imagem-api` e `make imagem-worker` constroem
+as imagens localmente); o passo a passo está em
+[docs/implantacao-azure.md](docs/implantacao-azure.md).
+
 Para disparar o job real na Azure contra um SHA e ver o status final:
 
 ```sh
@@ -242,12 +247,12 @@ os três serviços, use `docker compose --profile automacao down`. Executar
 
 ## Rotas
 
-| Método | Rota               | Descrição                                              |
-| ------ | ------------------ | ------------------------------------------------------ |
-| GET    | `/health`          | Responde 200 se o processo está no ar                  |
-| GET    | `/ready`           | Responde 200 se PostgreSQL e Redis respondem, 503 se não |
-| POST   | `/webhooks/github` | Aceita o webhook com 202 e ainda não o processa        |
-| POST   | `/acoes-remotas`   | Aprova, pede alteração ou reanálise a pedido do n8n    |
+| Método | Rota               | Descrição                                                  |
+| ------ | ------------------ | ---------------------------------------------------------- |
+| GET    | `/health`          | Responde 200 se o processo está no ar                      |
+| GET    | `/ready`           | Responde 200 se PostgreSQL e Redis respondem, 503 se não   |
+| POST   | `/webhooks/github` | Aceita o webhook com 202 e ainda não o processa            |
+| POST   | `/acoes-remotas`   | Aprova, pede alteração ou reanálise a pedido do n8n        |
 | GET    | `/reports/weekly`  | Métricas da semana de uma instalação, para o digest do n8n |
 
 ```sh
@@ -265,7 +270,7 @@ pedido, sem cache.
 
 O n8n assina cada pedido com HMAC-SHA256 usando `N8N_SEGREDO_ACOES`:
 
-```
+```text
 X-Aprova-Timestamp: <unix em segundos>
 X-Aprova-Assinatura: sha256=<hex de HMAC(segredo, timestamp + "." + corpo)>
 ```
@@ -311,7 +316,7 @@ make consultar-permissao INSTALLATION_ID=12345678 REPOSITORIO=dono/repo LOGIN=al
 diretamente. A assinatura é a mesma das ações remotas, com a query string no
 lugar do corpo:
 
-```
+```text
 GET /reports/weekly?installation_id=12345678&inicio=2026-10-12
 X-Aprova-Timestamp: <unix em segundos>
 X-Aprova-Assinatura: sha256=<hex de HMAC(segredo, timestamp + "." + query string)>
@@ -358,7 +363,7 @@ dias em UTC; sem ele, vale a última semana completa, de segunda a segunda.
 O worker conduz cada `task_run` criado pelo webhook pela máquina de estados,
 até um estado terminal ou até esperar um review:
 
-```
+```text
 pendente → mapeando_contexto → testando_sandbox → avaliando_risco
 avaliando_risco → aplicando (baixo ou médio) → concluido
 avaliando_risco → aguardando_aprovacao (alto) → aplicando ou rejeitado
@@ -480,6 +485,47 @@ com `id_evento` e `ocorrido_em` novos, assinado:
 scripts/emitir-evento.sh aguardando_aprovacao http://localhost:5978/webhook-test/aprova
 scripts/emitir-evento.sh analise_concluida http://localhost:5978/webhook-test/aprova --nivel-risco alto --imprimir
 ```
+
+## Demonstração
+
+Para apresentar o aPRova sem depender do GitHub, do sandbox nem de modelo de IA
+ao vivo, o seed grava no banco um conjunto fixo de análises de um repositório
+fictício (`aprova-demo/loja-virtual`). São os mesmos registros que o worker
+gravaria, e os recibos são assinados de verdade com `APROVA_CHAVE_RECIBO`, então
+`GET /receipts/{id}/verify` os aprova.
+
+```sh
+make migrate-up
+make seed-demo                  # usa APROVA_CHAT_INSTALLATION_ID
+make seed-demo INSTALACAO=4242  # ou uma instalação escolhida
+```
+
+| PR | O que mostra | Estado final |
+| --- | --- | --- |
+| #101 | risco baixo, nenhuma regra acionada | `concluido` |
+| #102 | risco médio (`codigo_sem_teste`) | `concluido` |
+| #103, #104 | risco alto (`area_sensivel`), aprovado por humano e mergeado | `concluido` |
+| #105 | alto pelas regras, reduzido a médio pela calibração com #103 e #104 | `concluido` |
+| #106 | risco alto (`dependencia_nova`), aguardando aprovação | `aguardando_aprovacao` |
+| #107 | testes falharam no sandbox, alterações pedidas pelo Slack | `rejeitado` |
+| #108 | falha de infraestrutura no sandbox | `falhou` |
+| #109 | alteração de CI aprovada e mergeada, depois revertida pelo #110 | `concluido` |
+
+Rodar de novo não duplica nada. O seed só deixa análises terminadas ou
+aguardando aprovação sem decisão nova, que o worker não reivindica, então ele
+pode ficar ligado durante a demonstração.
+
+O smoke test confere se a API responde, local ou depois de um deploy, e sai com
+erro se alguma conferência falhar:
+
+```sh
+make smoke-test                                  # http://localhost:8080
+make smoke-test URL=https://<endereço-publico>
+```
+
+Com `SMOKE_RECIBO_ID` ele também verifica um recibo; com `N8N_SEGREDO_ACOES` e
+`SMOKE_INSTALLATION_ID`, assina e confere `/reports/weekly` e `/api/analises`
+do mesmo jeito que o n8n.
 
 ## Testes
 
@@ -628,3 +674,10 @@ branch. Se a lista estiver vazia, faça um push qualquer e volte à tela.
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
+
+## Dashboard web
+
+A fundação do dashboard fica em `web/`. Consulte o
+[guia de desenvolvimento e build](design/docs/dashboard-f1.md) e o
+[plano das fases](design/docs/implementacao-dashboard.md). A documentação de
+execução das fases é mantida em [design/docs/](design/docs/README.md).

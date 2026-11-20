@@ -18,6 +18,7 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -67,10 +68,15 @@ func executar() error {
 		return err
 	}
 
+	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio)
+	if err != nil {
+		return err
+	}
 	servidorHTTP := &http.Server{
 		Addr: configuracao.EnderecoHTTP(),
 		Handler: api.NovoServidor(api.Opcoes{
 			Dependencias:        dependencias(bancoDados, clienteRedis),
+			SessaoWeb:           sessaoWeb,
 			SegredoWebhook:      []byte(configuracao.GitHubSegredoWebhook),
 			Execucoes:           repositorio,
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
@@ -150,4 +156,15 @@ func dependencias(bancoDados *pgxpool.Pool, clienteRedis *redis.Client) []api.De
 			return clienteRedis.Ping(ctx).Err()
 		}},
 	}
+}
+
+func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios *repository.RepositorioPostgres) (*sessaoweb.Servidor, error) {
+	if c.WebURLPublica == "" {
+		return nil, nil
+	}
+	armazenamento, err := sessaoweb.NovoRedis(cliente, c.WebChaveSessao)
+	if err != nil {
+		return nil, err
+	}
+	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios, Analises: relatorios})
 }
