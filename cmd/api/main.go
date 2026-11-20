@@ -15,10 +15,10 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/api"
 	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/observabilidade"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -67,10 +67,16 @@ func executar() error {
 		return err
 	}
 
+	prontidao := dependencias(repositorio, clienteRedis)
+	if configuracao.EnderecoMetricas != "" {
+		parar := observabilidade.Iniciar(observabilidade.NovoServidor(configuracao.EnderecoMetricas, observabilidade.NovoRegistro(), prontidao))
+		defer desligar(parar)
+	}
+
 	servidorHTTP := &http.Server{
 		Addr: configuracao.EnderecoHTTP(),
 		Handler: api.NovoServidor(api.Opcoes{
-			Dependencias:        dependencias(bancoDados, clienteRedis),
+			Dependencias:        prontidao,
 			SegredoWebhook:      []byte(configuracao.GitHubSegredoWebhook),
 			Execucoes:           repositorio,
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
@@ -143,9 +149,17 @@ func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.
 	})
 }
 
-func dependencias(bancoDados *pgxpool.Pool, clienteRedis *redis.Client) []api.Dependencia {
+func desligar(parar func(context.Context) error) {
+	ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDesligamento)
+	defer cancelar()
+	if err := parar(ctx); err != nil {
+		slog.Error("falha ao desligar o listener interno", "erro", err)
+	}
+}
+
+func dependencias(repositorio *repository.RepositorioPostgres, clienteRedis *redis.Client) []api.Dependencia {
 	return []api.Dependencia{
-		{Nome: "postgres", Verificar: bancoDados.Ping},
+		{Nome: "postgres", Verificar: repositorio.ConferirVersaoDoBanco},
 		{Nome: "redis", Verificar: func(ctx context.Context) error {
 			return clienteRedis.Ping(ctx).Err()
 		}},

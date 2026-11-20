@@ -8,9 +8,12 @@ import (
 	"time"
 )
 
+// BinarioDockerPadrao é o binário do docker usado pelo executor local quando
+// nenhum outro é informado.
+const BinarioDockerPadrao = "docker"
+
 const (
-	binarioDockerPadrao = "docker"
-	tempoLimiteRemocao  = 15 * time.Second
+	tempoLimiteRemocao = 15 * time.Second
 
 	redeDoPreparo           = "bridge"
 	redeDoTeste             = "none"
@@ -79,7 +82,7 @@ func novoExecutorLocal(opcoes OpcoesExecutorLocal, comando executorDeComando) *e
 }
 
 func completarOpcoesLocais(opcoes OpcoesExecutorLocal) OpcoesExecutorLocal {
-	opcoes.BinarioDocker = textoOuPadrao(opcoes.BinarioDocker, binarioDockerPadrao)
+	opcoes.BinarioDocker = textoOuPadrao(opcoes.BinarioDocker, BinarioDockerPadrao)
 	opcoes.LimiteCPU = textoOuPadrao(opcoes.LimiteCPU, limiteCPUPadrao)
 	opcoes.LimiteMemoria = textoOuPadrao(opcoes.LimiteMemoria, limiteMemoriaPadrao)
 	if opcoes.LimiteSaidaBytes <= 0 {
