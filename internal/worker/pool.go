@@ -10,7 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/metricas"
 )
 
 const (
@@ -33,6 +36,7 @@ type OpcoesPool struct {
 	Prazo           time.Duration
 	IntervaloOcioso time.Duration
 	Diario          *slog.Logger
+	Metricas        *metricas.Motor
 }
 
 // Pool roda trabalhadores que reivindicam task_runs da fila e os conduzem
@@ -72,6 +76,9 @@ func NovoPool(opcoes OpcoesPool) (*Pool, error) {
 	}
 	if opcoes.Diario == nil {
 		opcoes.Diario = slog.Default()
+	}
+	if opcoes.Metricas == nil {
+		opcoes.Metricas = metricas.NovoMotor(prometheus.NewRegistry())
 	}
 	return &Pool{opcoes: opcoes, parando: make(chan struct{}), emMaos: map[string]taskRunEmMaos{}}, nil
 }
@@ -160,6 +167,9 @@ func (p *Pool) trabalhar(ctx context.Context, trabalhador string) {
 		if err != nil || !encontrado {
 			p.aguardar(ctx)
 			continue
+		}
+		if taskRun.RetomadoDePrazoVencido {
+			p.opcoes.Metricas.LeaseVencidoRetomado()
 		}
 		p.conduzir(ctx, trabalhador, taskRun)
 	}

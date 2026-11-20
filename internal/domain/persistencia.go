@@ -111,6 +111,8 @@ type TaskRun struct {
 	PrazoAte             *time.Time
 	TentativasDaEtapa    int
 	UltimaAprovacaoVista int64
+
+	RetomadoDePrazoVencido bool
 }
 
 // Transicao move um task_run de um estado para outro, deixando uma etapa

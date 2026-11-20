@@ -8,7 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/metricas"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 	"github.com/PI-GRUPO/aPRova/internal/rastro"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
@@ -47,6 +50,7 @@ type Opcoes struct {
 	EsperaBase    time.Duration
 	Diario        *slog.Logger
 	Agora         func() time.Time
+	Metricas      *metricas.Motor
 }
 
 // Motor conduz task_runs pela máquina de estados de domain.EstadoTaskRun.
@@ -92,6 +96,10 @@ func NovoMotor(opcoes Opcoes) (*Motor, error) {
 	if opcoes.Agora == nil {
 		opcoes.Agora = time.Now
 	}
+	if opcoes.Metricas == nil {
+		opcoes.Metricas = metricas.NovoMotor(prometheus.NewRegistry())
+	}
+	opcoes.Publicador = publicadorMedido{PublicadorPR: opcoes.Publicador, metricas: opcoes.Metricas}
 	return &Motor{opcoes: opcoes}, nil
 }
 
@@ -165,6 +173,9 @@ func fechado(sinal <-chan struct{}) bool {
 }
 
 func (c *conducao) avancar() (passo, error) {
+	etapa, inicio := c.taskRun.Estado, time.Now()
+	defer func() { c.opcoes.Metricas.DuracaoDaEtapa(string(etapa), time.Since(inicio)) }()
+
 	substituido, err := c.opcoes.Armazenamento.ExisteTaskRunMaisNovo(c.ctx, c.taskRun)
 	if err != nil {
 		return passo{}, err
@@ -206,7 +217,18 @@ func (c *conducao) transicionarComResumo(para domain.EstadoTaskRun, detalhe, res
 
 	c.diario.Info("task_run mudou de estado", "de", c.taskRun.Estado, "para", para, "detalhe", resumoNoDiario)
 	c.taskRun = atualizado
+	if para.Terminal() {
+		c.opcoes.Metricas.AnaliseEncerrada(para, c.nivelDoGate())
+	}
 	return nil
+}
+
+func (c *conducao) nivelDoGate() domain.NivelRisco {
+	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+	if err != nil {
+		return ""
+	}
+	return gravado.Nivel
 }
 
 func (c *conducao) falhar(detalhe string) error {

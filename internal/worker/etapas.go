@@ -54,6 +54,7 @@ func (c *conducao) tratarErroDoGitHub(err error) (passo, error) {
 	if c.ctx.Err() != nil {
 		return passo{}, err
 	}
+	c.opcoes.Metricas.ErroDoGitHub(err)
 	if !errors.Is(err, platform.ErrGitHubIndisponivel) && !errors.Is(err, platform.ErrLimiteDeRequisicoes) {
 		return c.encerrarEmFalha("erro definitivo do GitHub: " + err.Error())
 	}
@@ -69,6 +70,7 @@ func (c *conducao) novaTentativa(diagnostico string) (passo, error) {
 		return c.esgotarTentativas(tentativa, diagnostico)
 	}
 
+	c.opcoes.Metricas.NovaTentativa(c.taskRun.Estado)
 	espera := c.espera(tentativa)
 	c.diario.Warn("falha transitória, nova tentativa depois da espera", "etapa", c.taskRun.Estado, "tentativa", tentativa, "espera", espera, "diagnostico", diagnostico)
 	return pararCom(Desfecho{Liberar: true, Espera: espera}), nil
@@ -123,13 +125,15 @@ func (c *conducao) testarNoSandbox() (passo, error) {
 }
 
 func (c *conducao) executarTentativa(tentativa int) (passo, error) {
-	resultado, err := c.opcoes.Sandbox.Executar(c.ctx, c.pedidoAoSandbox())
+	pedido := c.pedidoAoSandbox()
+	resultado, err := c.opcoes.Sandbox.Executar(c.ctx, pedido)
 	if c.ctx.Err() != nil {
 		return passo{}, c.ctx.Err()
 	}
 	if err != nil {
 		return c.encerrarEmFalha("pedido recusado pelo sandbox: " + err.Error())
 	}
+	c.opcoes.Metricas.ExecucaoDoSandbox(pedido.Linguagem, resultado.TipoFalha)
 
 	err = c.opcoes.Armazenamento.GravarResultadoDaTentativa(c.ctx, c.taskRun.ID, tentativa, resultado)
 	if errors.Is(err, domain.ErrDuplicado) {
@@ -147,6 +151,7 @@ func (c *conducao) executarTentativa(tentativa int) (passo, error) {
 		return c.esgotarTentativas(tentativa, diagnosticoDoSandbox(resultado))
 	}
 
+	c.opcoes.Metricas.NovaTentativa(c.taskRun.Estado)
 	espera := c.espera(tentativa)
 	c.diario.Warn("falha de infraestrutura no sandbox, nova tentativa depois da espera", "tentativa", tentativa, "espera", espera)
 	return pararCom(Desfecho{Liberar: true, Espera: espera}), nil
@@ -232,7 +237,14 @@ func (c *conducao) decidirPelaPrimeiraVez(tentativa int, resultadoSandbox sandbo
 	if err != nil {
 		return passo{}, err
 	}
+	c.contarDecisao(avaliacao, calibrada)
 	return c.concluirAvaliacao(decisao, recibo, resultadoSandbox)
+}
+
+func (c *conducao) contarDecisao(avaliacao gate.Resultado, calibrada calibracao.Resultado) {
+	c.opcoes.Metricas.ReciboEmitido()
+	c.opcoes.Metricas.MotivosDoGate(avaliacao.Motivos)
+	c.opcoes.Metricas.Calibracao(calibrada.Calibracao.Estado)
 }
 
 func (c *conducao) calibrar(avaliacao gate.Resultado) calibracao.Resultado {
