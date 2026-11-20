@@ -365,6 +365,8 @@ func (r *registroDeChamadas) quantas(chamada string) int {
 type leitorFalso struct {
 	erros    []error
 	leituras int
+	diff     string
+	patch    string
 }
 
 func (l *leitorFalso) ContextoDoPullRequest(context.Context, int64, string, string, int) (platform.ContextoPR, error) {
@@ -374,9 +376,13 @@ func (l *leitorFalso) ContextoDoPullRequest(context.Context, int64, string, stri
 		l.erros = l.erros[1:]
 		return platform.ContextoPR{}, erro
 	}
+	diff := l.diff
+	if diff == "" {
+		diff = "diff --git a/go/frete/frete.go b/go/frete/frete.go"
+	}
 	return platform.ContextoPR{
-		Arquivos: []platform.ArquivoAlterado{{Nome: "go/frete/frete.go", Situacao: "modified", Adicoes: 1, Remocoes: 1}},
-		Diff:     "diff --git a/go/frete/frete.go b/go/frete/frete.go",
+		Arquivos: []platform.ArquivoAlterado{{Nome: "go/frete/frete.go", Situacao: "modified", Adicoes: 1, Remocoes: 1, Patch: l.patch}},
+		Diff:     diff,
 	}, nil
 }
 
