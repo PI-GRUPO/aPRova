@@ -438,7 +438,7 @@ A URL do webhook fica exposta na internet, então qualquer um pode mandar um
 `POST` para ela. Por isso o núcleo assina cada evento, e o workflow só deve
 seguir depois de conferir a assinatura.
 
-```
+```text
 X-Aprova-Timestamp: 1760889600
 X-Aprova-Assinatura: sha256=<hex do HMAC-SHA256 de "<timestamp>.<corpo bruto>">
 ```
@@ -468,7 +468,7 @@ X-Aprova-Assinatura: sha256=<hex do HMAC-SHA256 de "<timestamp>.<corpo bruto>">
 
 O workflow principal fica assim:
 
-```
+```text
 Webhook → assinatura → normalização/validação → resposta 202 → deduplicação → roteamento
 ```
 

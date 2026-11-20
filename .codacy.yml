@@ -1,0 +1,19 @@
+---
+exclude_paths:
+  - "tests/integration/testdata/**"
+  - "bench/suite/**"
+  - "bench/resultados/**"
+  - "design/**"
+engines:
+  tsqllint:
+    exclude_paths:
+      - "**/*.sql"
+      - "*.sql"
+  opengrep:
+    exclude_paths:
+      - "tests/**"
+      - "**/*_test.go"
+      - "*_test.go"
+      - "cmd/benchmark/**"
+      - "internal/benchmark/**"
+      - "workflows/n8n/tests/**"

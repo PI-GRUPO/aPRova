@@ -119,13 +119,16 @@ func TestApagarOReciboDoMeioDaCadeiaFazOTerceiroFalharNoElo(t *testing.T) {
 		}
 	}
 
-	for _, comando := range []string{
-		`ALTER TABLE receipts DISABLE TRIGGER ALL`,
-		`DELETE FROM receipts WHERE id = '` + recibos[1].ID + `'`,
-		`ALTER TABLE receipts ENABLE TRIGGER ALL`,
+	for _, comando := range []struct {
+		sql        string
+		argumentos []any
+	}{
+		{sql: `ALTER TABLE receipts DISABLE TRIGGER ALL`},
+		{sql: `DELETE FROM receipts WHERE id = $1`, argumentos: []any{recibos[1].ID}},
+		{sql: `ALTER TABLE receipts ENABLE TRIGGER ALL`},
 	} {
-		if _, err := banco.pool.Exec(t.Context(), comando); err != nil {
-			t.Fatalf("%s: %v", comando, err)
+		if _, err := banco.pool.Exec(t.Context(), comando.sql, comando.argumentos...); err != nil {
+			t.Fatalf("%s: %v", comando.sql, err)
 		}
 	}
 
