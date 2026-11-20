@@ -5,7 +5,7 @@ Este guia publica o resto do núcleo: a **API**, que recebe os webhooks do GitHu
 e precisa de uma URL HTTPS pública, e o **worker**, que leva cada análise pelas
 etapas e dispara o job do sandbox.
 
-```
+```text
 GitHub ──webhook──▶ aprova-api (Container App, HTTPS público)
                         │
                         ▼
@@ -152,7 +152,7 @@ O papel `AcrPull` da identidade do worker segue a mesma regra do passo 3.
 Quem é dono do GitHub App troca, em **Settings → Developer settings → GitHub
 Apps → (o app) → Webhook URL**, para:
 
-```
+```text
 <URL_API>/webhooks/github
 ```
 

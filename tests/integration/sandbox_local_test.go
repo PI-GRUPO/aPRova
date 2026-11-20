@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
+	"github.com/PI-GRUPO/aPRova/tests/ambiente"
 )
 
 const (
@@ -23,13 +24,15 @@ func exigirDocker(t *testing.T) {
 	t.Helper()
 
 	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("docker não está instalado")
+		ambiente.TratarFaltaDeDocker(t, fmt.Errorf("docker não está instalado: %w", err))
+		return
 	}
 
 	ctx, cancelar := context.WithTimeout(t.Context(), tempoLimiteDoDocker)
 	defer cancelar()
 	if err := exec.CommandContext(ctx, "docker", "info").Run(); err != nil {
-		t.Skip("o daemon do docker não está respondendo")
+		ambiente.TratarFaltaDeDocker(t, fmt.Errorf("o daemon do docker não está respondendo: %w", err))
+		return
 	}
 
 	ctxDownload, cancelarDownload := context.WithTimeout(t.Context(), tempoLimiteDeDownload)

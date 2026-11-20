@@ -14,6 +14,7 @@ import (
 
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
+	"github.com/PI-GRUPO/aPRova/tests/ambiente"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -109,8 +110,9 @@ func exigirBanco(t *testing.T) *repository.RepositorioPostgres {
 	// Só a falta de Docker localmente vira skip; migration ou conexão
 	// quebradas reprovam sempre.
 	if falhaAoSubir != nil {
-		if semDocker && os.Getenv("CI") == "" {
-			t.Skipf("postgres indisponível (docker ausente?): %v", falhaAoSubir)
+		if semDocker {
+			ambiente.TratarFaltaDeDocker(t, falhaAoSubir)
+			return nil
 		}
 		t.Fatalf("preparar o postgres: %v", falhaAoSubir)
 	}

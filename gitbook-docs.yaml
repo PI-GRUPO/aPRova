@@ -1,0 +1,18 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Unipam.edu Docs
+  structure:
+    - type: space
+      key: space-1
+      title: Documentation
+      path: documentation
+      default: true
+      content:
+        directory: ./documentation
+    - type: space
+      key: space-2
+      title: Imported content
+      path: imported-content
+      draft: true
+      content:
+        directory: ./imported-content

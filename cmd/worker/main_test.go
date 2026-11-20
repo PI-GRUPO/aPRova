@@ -48,7 +48,7 @@ func TestWorkerNaoMontaOEnviadorDeSARIFComAVariavelDesligada(t *testing.T) {
 	if err != nil || enviador != nil {
 		t.Fatalf("sem SARIF_LIGADO não há enviador: %v, erro = %v", enviador, err)
 	}
-	if opcoes := opcoesDoMotor(config.Configuracao{}, nil, nil, nil, nil, nil, nil, nil, enviador); opcoes.SARIF != nil {
+	if opcoes := opcoesDoMotor(config.Configuracao{}, dependenciasDoMotor{enviadorSARIF: enviador}); opcoes.SARIF != nil {
 		t.Fatal("o motor precisa receber o envio como ausente, não como um enviador nulo")
 	}
 }
@@ -60,7 +60,7 @@ func TestWorkerMontaOEnviadorDeSARIFComAVariavelLigada(t *testing.T) {
 		t.Fatalf("enviador = %v, erro = %v", enviador, err)
 	}
 	enviador.Encerrar()
-	if opcoes := opcoesDoMotor(config.Configuracao{}, nil, nil, nil, nil, nil, nil, nil, enviador); opcoes.SARIF == nil {
+	if opcoes := opcoesDoMotor(config.Configuracao{}, dependenciasDoMotor{enviadorSARIF: enviador}); opcoes.SARIF == nil {
 		t.Fatal("com o envio ligado o motor recebe o enviador")
 	}
 }
