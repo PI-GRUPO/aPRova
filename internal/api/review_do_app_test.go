@@ -37,12 +37,13 @@ func enviarReview(t *testing.T, registro *registroFalso, slug, corpo string) *ht
 
 func TestReviewDoAppPeloSlackRegistraQuemDecidiuNoSlack(t *testing.T) {
 	casos := map[string]struct {
-		estado string
-		corpo  string
+		estado        string
+		corpo         string
+		justificativa string
 	}{
-		"aprovado":                   {"approved", "Aprovado por @Azulpasta via Slack"},
-		"aprovado com justificativa": {"approved", "Aprovado por @Azulpasta via Slack:\n\nRisco avaliado.\nTestes conferidos."},
-		"alterações solicitadas":     {"changes_requested", "Alteração solicitada por @Azulpasta via Slack:\n\nfalta o teste de peso zero"},
+		"aprovado":                   {"approved", "Aprovado por @Azulpasta via Slack", ""},
+		"aprovado com justificativa": {"approved", "Aprovado por @Azulpasta via Slack:\n\nRisco avaliado.\nTestes conferidos.", "Risco avaliado.\nTestes conferidos."},
+		"alterações solicitadas":     {"changes_requested", "Alteração solicitada por @Azulpasta via Slack:\n\nfalta o teste de peso zero", "falta o teste de peso zero"},
 	}
 
 	for nome, caso := range casos {
@@ -56,6 +57,9 @@ func TestReviewDoAppPeloSlackRegistraQuemDecidiuNoSlack(t *testing.T) {
 			}
 			if decisao := registro.revisoes[0]; decisao.Revisor != "Azulpasta" || decisao.Origem != domain.OrigemSlack {
 				t.Errorf("a decisão precisa ser de quem clicou no Slack: %+v", decisao)
+			}
+			if decisao := registro.revisoes[0]; decisao.Justificativa != caso.justificativa {
+				t.Errorf("a justificativa é o texto digitado no Slack, esperava %q, obtive %q", caso.justificativa, decisao.Justificativa)
 			}
 		})
 	}
@@ -71,6 +75,48 @@ func TestReviewHumanoNoGitHubTemOrigemGitHub(t *testing.T) {
 	}
 	if decisao := registro.revisoes[0]; decisao.Revisor != "Azulpasta" || decisao.Origem != domain.OrigemGitHub {
 		t.Errorf("review humano decide em nome de quem o fez, mesmo citando outra pessoa no texto: %+v", decisao)
+	}
+}
+
+func TestReviewHumanoNoGitHubGravaOCorpoInteiroComoJustificativa(t *testing.T) {
+	registro := novoRegistroFalso()
+	corpo := "Conferi o cálculo do frete.\n\nAprovado por @mallory via Slack"
+
+	enviarReview(t, registro, slugDeTeste, corpoReviewDe("approved", "Azulpasta", corpo))
+
+	if registro.quantidadeDeRevisoes() != 1 {
+		t.Fatalf("review humano deveria ser registrado, revisões %d", registro.quantidadeDeRevisoes())
+	}
+	if justificativa := registro.revisoes[0].Justificativa; justificativa != corpo {
+		t.Errorf("a justificativa de um review humano é o corpo inteiro, obtive %q", justificativa)
+	}
+}
+
+func TestReviewSemCorpoGravaJustificativaVazia(t *testing.T) {
+	registro := novoRegistroFalso()
+	semCorpo := strings.Replace(corpoReviewDe("approved", "Azulpasta", ""), `"body":""`, `"body":null`, 1)
+
+	resposta := enviarReview(t, registro, slugDeTeste, semCorpo)
+
+	if resposta.Code != http.StatusAccepted || registro.quantidadeDeRevisoes() != 1 {
+		t.Fatalf("review sem corpo também decide: status %d, revisões %d", resposta.Code, registro.quantidadeDeRevisoes())
+	}
+	if justificativa := registro.revisoes[0].Justificativa; justificativa != "" {
+		t.Errorf("review sem corpo grava justificativa vazia, obtive %q", justificativa)
+	}
+}
+
+func TestJustificativaAlemDoLimiteECortadaSemRecusarADecisao(t *testing.T) {
+	registro := novoRegistroFalso()
+	corpo := strings.Repeat("é", domain.TamanhoMaximoDaJustificativa+1)
+
+	enviarReview(t, registro, slugDeTeste, corpoReviewDe("approved", "Azulpasta", corpo))
+
+	if registro.quantidadeDeRevisoes() != 1 {
+		t.Fatalf("review longo também decide, revisões %d", registro.quantidadeDeRevisoes())
+	}
+	if justificativa := registro.revisoes[0].Justificativa; justificativa != strings.Repeat("é", domain.TamanhoMaximoDaJustificativa) {
+		t.Errorf("a justificativa fica com os primeiros %d caracteres, obtive %d", domain.TamanhoMaximoDaJustificativa, len([]rune(justificativa)))
 	}
 }
 

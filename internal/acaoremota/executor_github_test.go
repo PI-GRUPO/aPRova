@@ -146,10 +146,35 @@ func TestQuemDecidiuNoSlackVoltaDoTextoDaReview(t *testing.T) {
 				t.Fatalf("executar: %v", err)
 			}
 
-			login, doSlack := QuemDecidiuNoSlack(publicador.publicadas[0].review.Corpo)
+			login, justificativa, doSlack := QuemDecidiuNoSlack(publicador.publicadas[0].review.Corpo)
 
 			if !doSlack || login != "erin" {
 				t.Errorf("o texto publicado precisa devolver o login erin, obtive %q (doSlack=%v)", login, doSlack)
+			}
+			if justificativa != "falta o teste de peso zero" {
+				t.Errorf("o texto publicado precisa devolver a justificativa digitada no Slack, obtive %q", justificativa)
+			}
+		})
+	}
+}
+
+func TestQuemDecidiuNoSlackDevolveAJustificativaComoFoiDigitada(t *testing.T) {
+	casos := map[string]struct {
+		corpo         string
+		justificativa string
+	}{
+		"aprovação sem justificativa":      {"Aprovado por @erin via Slack", ""},
+		"aprovação com várias linhas":      {"Aprovado por @erin via Slack:\n\nRisco aceito.\n\nTestes conferidos.", "Risco aceito.\n\nTestes conferidos."},
+		"alteração solicitada":             {"Alteração solicitada por @erin via Slack:\n\nfalta o teste", "falta o teste"},
+		"justificativa que cita o formato": {"Aprovado por @erin via Slack:\n\nAprovado por @mallory via Slack", "Aprovado por @mallory via Slack"},
+	}
+
+	for nome, caso := range casos {
+		t.Run(nome, func(t *testing.T) {
+			login, justificativa, doSlack := QuemDecidiuNoSlack(caso.corpo)
+
+			if !doSlack || login != "erin" || justificativa != caso.justificativa {
+				t.Errorf("esperava erin com %q, obtive %q com %q (doSlack=%v)", caso.justificativa, login, justificativa, doSlack)
 			}
 		})
 	}
@@ -164,7 +189,7 @@ func TestQuemDecidiuNoSlackRecusaTextoForaDoFormato(t *testing.T) {
 		"  Aprovado por @erin via Slack",
 		"Aprovado por @erin via Slack\n",
 	} {
-		if login, doSlack := QuemDecidiuNoSlack(corpo); doSlack {
+		if login, _, doSlack := QuemDecidiuNoSlack(corpo); doSlack {
 			t.Errorf("%q não é texto do aPRova, mas devolveu %q", corpo, login)
 		}
 	}

@@ -16,7 +16,7 @@ const (
 )
 
 var reviewPublicadaPeloSlack = regexp.MustCompile(
-	`^(?:Aprovado por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack(?::\n\n(?s:.*))?|Alteração solicitada por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack:\n\n(?s:.*))$`)
+	`^(?:Aprovado por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack(?::\n\n((?s:.*)))?|Alteração solicitada por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Slack:\n\n((?s:.*)))$`)
 
 var (
 	// ErrTipoSemExecucao indica ação autorizada para a qual não há efeito definido.
@@ -78,13 +78,15 @@ func (ReenfileiradorIndisponivel) Reenfileirar(context.Context, AcaoAutorizada) 
 }
 
 // QuemDecidiuNoSlack devolve o login do humano nomeado numa review que o
-// próprio aPRova publicou a partir do Slack. Texto fora desse formato devolve
-// doSlack igual a false.
-func QuemDecidiuNoSlack(corpo string) (login string, doSlack bool) {
+// próprio aPRova publicou a partir do Slack e a justificativa digitada, o
+// texto depois de "via Slack:". Texto fora desse formato devolve doSlack igual
+// a false.
+func QuemDecidiuNoSlack(corpo string) (login, justificativa string, doSlack bool) {
 	partes := reviewPublicadaPeloSlack.FindStringSubmatch(corpo)
 	if partes == nil {
-		return "", false
+		return "", "", false
 	}
-	login = partes[1] + partes[2]
-	return login, len(login) <= tamanhoMaximoDoLogin
+	login = partes[1] + partes[3]
+	justificativa = partes[2] + partes[4]
+	return login, justificativa, len(login) <= tamanhoMaximoDoLogin
 }
