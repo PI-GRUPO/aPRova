@@ -45,7 +45,12 @@ type Pool struct {
 
 	mutex            sync.Mutex
 	cancelarTrabalho context.CancelFunc
-	emMaos           map[string]string
+	emMaos           map[string]taskRunEmMaos
+}
+
+type taskRunEmMaos struct {
+	taskRun     domain.TaskRun
+	trabalhador string
 }
 
 // NovoPool constrói o pool. Motor e Armazenamento são obrigatórios.
@@ -68,7 +73,7 @@ func NovoPool(opcoes OpcoesPool) (*Pool, error) {
 	if opcoes.Diario == nil {
 		opcoes.Diario = slog.Default()
 	}
-	return &Pool{opcoes: opcoes, parando: make(chan struct{}), emMaos: map[string]string{}}, nil
+	return &Pool{opcoes: opcoes, parando: make(chan struct{}), emMaos: map[string]taskRunEmMaos{}}, nil
 }
 
 func nomeDoProcesso() string {
@@ -132,12 +137,12 @@ func (p *Pool) liberarOQueFicouEmMaos() {
 	pendentes := maps.Clone(p.emMaos)
 	p.mutex.Unlock()
 
-	for taskRunID, trabalhador := range pendentes {
+	for taskRunID, emMaos := range pendentes {
 		ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDaLiberacao)
-		err := p.opcoes.Armazenamento.Liberar(ctx, taskRunID, trabalhador, 0)
+		err := p.opcoes.Armazenamento.Liberar(ctx, taskRunID, emMaos.trabalhador, 0)
 		cancelar()
 
-		diario := p.opcoes.Diario.With("task_run_id", taskRunID, "trabalhador", trabalhador)
+		diario := p.diarioDoTaskRun(emMaos.taskRun, emMaos.trabalhador)
 		if err != nil {
 			diario.Error("falha ao devolver o task_run à fila no desligamento", "erro", err)
 			continue
@@ -172,12 +177,17 @@ func (p *Pool) aguardar(ctx context.Context) {
 	}
 }
 
+func (p *Pool) diarioDoTaskRun(taskRun domain.TaskRun, trabalhador string) *slog.Logger {
+	return p.opcoes.Diario.With(atributosDoTaskRun(taskRun)...).With("trabalhador", trabalhador)
+}
+
 func (p *Pool) conduzir(ctx context.Context, trabalhador string, taskRun domain.TaskRun) {
-	p.marcarEmMaos(taskRun.ID, trabalhador)
+	p.marcarEmMaos(taskRun, trabalhador)
+	diario := p.diarioDoTaskRun(taskRun, trabalhador)
 
 	ctxDaTarefa, cancelarTarefa := context.WithCancel(ctx)
 	var renovacao sync.WaitGroup
-	renovacao.Go(func() { p.renovarPrazo(ctxDaTarefa, cancelarTarefa, taskRun.ID, trabalhador) })
+	renovacao.Go(func() { p.renovarPrazo(ctxDaTarefa, cancelarTarefa, diario, taskRun.ID, trabalhador) })
 
 	desfecho := p.opcoes.Motor.Conduzir(ctxDaTarefa, trabalhador, taskRun, p.parando)
 	cancelarTarefa()
@@ -188,17 +198,17 @@ func (p *Pool) conduzir(ctx context.Context, trabalhador string, taskRun domain.
 	}
 	p.desmarcarEmMaos(taskRun.ID)
 	if desfecho.Liberar {
-		p.liberar(ctx, trabalhador, taskRun.ID, desfecho.Espera)
+		p.liberar(ctx, diario, trabalhador, taskRun.ID, desfecho.Espera)
 	}
 }
 
-func (p *Pool) liberar(ctx context.Context, trabalhador, taskRunID string, espera time.Duration) {
+func (p *Pool) liberar(ctx context.Context, diario *slog.Logger, trabalhador, taskRunID string, espera time.Duration) {
 	if err := p.opcoes.Armazenamento.Liberar(ctx, taskRunID, trabalhador, espera); err != nil {
-		p.opcoes.Diario.Error("falha ao devolver o task_run à fila", "task_run_id", taskRunID, "trabalhador", trabalhador, "erro", err)
+		diario.Error("falha ao devolver o task_run à fila", "erro", err)
 	}
 }
 
-func (p *Pool) renovarPrazo(ctx context.Context, cancelarTarefa context.CancelFunc, taskRunID, trabalhador string) {
+func (p *Pool) renovarPrazo(ctx context.Context, cancelarTarefa context.CancelFunc, diario *slog.Logger, taskRunID, trabalhador string) {
 	intervalo := time.NewTicker(p.opcoes.Prazo / divisorDaRenovacao)
 	defer intervalo.Stop()
 
@@ -212,19 +222,19 @@ func (p *Pool) renovarPrazo(ctx context.Context, cancelarTarefa context.CancelFu
 		err := p.opcoes.Armazenamento.RenovarPrazo(ctx, taskRunID, trabalhador, p.opcoes.Prazo)
 		switch {
 		case errors.Is(err, domain.ErrPrazoPerdido):
-			p.opcoes.Diario.Warn("prazo do task_run perdido, etapa interrompida", "task_run_id", taskRunID, "trabalhador", trabalhador)
+			diario.Warn("prazo do task_run perdido, etapa interrompida")
 			cancelarTarefa()
 			return
 		case err != nil && ctx.Err() == nil:
-			p.opcoes.Diario.Warn("falha ao renovar o prazo, nova tentativa no próximo intervalo", "task_run_id", taskRunID, "trabalhador", trabalhador, "erro", err)
+			diario.Warn("falha ao renovar o prazo, nova tentativa no próximo intervalo", "erro", err)
 		}
 	}
 }
 
-func (p *Pool) marcarEmMaos(taskRunID, trabalhador string) {
+func (p *Pool) marcarEmMaos(taskRun domain.TaskRun, trabalhador string) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	p.emMaos[taskRunID] = trabalhador
+	p.emMaos[taskRun.ID] = taskRunEmMaos{taskRun: taskRun, trabalhador: trabalhador}
 }
 
 func (p *Pool) desmarcarEmMaos(taskRunID string) {

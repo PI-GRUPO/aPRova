@@ -128,10 +128,10 @@ func dependenciasAusentes(opcoes Opcoes) []string {
 func (m *Motor) Conduzir(ctx context.Context, trabalhador string, taskRun domain.TaskRun, parando <-chan struct{}) Desfecho {
 	c := &conducao{
 		Motor:       m,
-		ctx:         rastro.Com(ctx, "task_run_id", taskRun.ID),
+		ctx:         rastro.Com(ctx, atributosDoTaskRun(taskRun)...),
 		trabalhador: trabalhador,
 		taskRun:     taskRun,
-		diario:      m.opcoes.Diario.With("task_run_id", taskRun.ID, "trabalhador", trabalhador),
+		diario:      m.opcoes.Diario.With(atributosDoTaskRun(taskRun)...).With("trabalhador", trabalhador),
 	}
 
 	for !c.taskRun.Estado.Terminal() && !fechado(parando) {
@@ -144,6 +144,15 @@ func (m *Motor) Conduzir(ctx context.Context, trabalhador string, taskRun domain
 		}
 	}
 	return Desfecho{Liberar: true}
+}
+
+func atributosDoTaskRun(taskRun domain.TaskRun) []any {
+	return []any{
+		"task_run_id", taskRun.ID,
+		"tenant_id", taskRun.TenantID,
+		"repositorio", taskRun.Repositorio,
+		"numero_pr", taskRun.NumeroPR,
+	}
 }
 
 func fechado(sinal <-chan struct{}) bool {
