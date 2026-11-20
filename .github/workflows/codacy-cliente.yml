@@ -108,6 +108,7 @@ jobs:
               --upload \
               --skip-commit-uuid-validation \
               --skip-uncommitted-files-check \
+              --fail-if-incomplete \
               --max-allowed-issues 2147483647
           done
 

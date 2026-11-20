@@ -66,6 +66,10 @@ Com o passo 3 ligado, a análise de cada commit só começa quando o CI chama `r
 
 ### O que esperar
 
+Quando Aligncheck ou Deadcode falham, o Codacy Analysis CLI sai com código 0 e resultado vazio (`[]`): o job ficaria verde e o Codacy receberia zero issues dessas ferramentas sem nenhum aviso. Por isso a etapa usa `--fail-if-incomplete`, que transforma a falha da ferramenta em falha do passo; o `resultsFinal` é chamado do mesmo jeito.
+
+Aligncheck e Deadcode não foram validados localmente. No Mac arm64 a imagem amd64 do CLI roda emulada: o Aligncheck caiu com código 139 (falha de segmentação) e o Deadcode estourou o limite de 930 segundos, sintomas da emulação e não do código. O comportamento real só aparece no primeiro envio, num runner amd64. Se as duas falharem lá, a saída é tirá-las do workflow e desligá-las no Codacy, mantendo GolangCI-Lint, Gosec e Staticcheck.
+
 O Gosec avulso não entende `//nolint:gosec`, só `#nosec`. As linhas que o golangci-lint aceita com `//nolint:gosec` justificado (G304, G204, G115) voltam a aparecer pelo Gosec: na dev, 40 apontamentos em 19 arquivos. GolangCI-Lint e Staticcheck saem limpos.
 
 ## Issues ignoradas pela interface
