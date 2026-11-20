@@ -85,9 +85,11 @@ export function App() {
 							path="/analises/demonstracao/:id?"
 							element={
 								__MOCKS__ ? (
-									<Protegida>
-										<AnaliseDemonstracao />
-									</Protegida>
+									<div className="pagina pagina-demonstracao">
+										<Protegida>
+											<AnaliseDemonstracao />
+										</Protegida>
+									</div>
 								) : (
 									<NaoEncontrada />
 								)

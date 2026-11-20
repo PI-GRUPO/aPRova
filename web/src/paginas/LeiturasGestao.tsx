@@ -199,27 +199,26 @@ export function Auditoria() {
 }
 export function Repositorios() {
 	const [consulta, setConsulta] = useState(0);
-	const { sessao } = useSessao();
+	const { sessao, erro } = useSessao();
 	const { q } = useFiltrosGestao();
 	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
+	if (!erro && sessao?.autenticado && sessao.instalacoes.length)
+		return (
+			<ConteudoRepositorios
+				key={JSON.stringify([sessao.usuario.id, instalacao, consulta])}
+				instalacao={instalacao}
+				aoAtualizar={() => setConsulta((n) => n + 1)}
+			/>
+		);
 	return (
-		<>
-			{!sessao?.autenticado && <h1>Repositórios e instalação</h1>}
+		<div className="pagina">
+			<h1>Repositórios e instalação</h1>
 			<Protegida>
-				{sessao?.autenticado &&
-					(sessao.instalacoes.length ? (
-						<ConteudoRepositorios
-							key={JSON.stringify([sessao.usuario.id, instalacao, consulta])}
-							instalacao={instalacao}
-							aoAtualizar={() => setConsulta((n) => n + 1)}
-						/>
-					) : (
-						<PainelDeEstado titulo="Nenhuma instalação autorizada">
-							<p>Confira suas instalações no GitHub.</p>
-						</PainelDeEstado>
-					))}
+				<PainelDeEstado titulo="Nenhuma instalação autorizada">
+					<p>Confira suas instalações no GitHub.</p>
+				</PainelDeEstado>
 			</Protegida>
-		</>
+		</div>
 	);
 }
 function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string; aoAtualizar: () => void }) {

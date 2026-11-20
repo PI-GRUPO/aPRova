@@ -11,7 +11,13 @@ export function Configuracao() {
 	const repo = q.get("repositorio") ?? opcoesRepos[0]?.valor ?? "";
 	const dados = useGestao();
 	const atual = opcoesRepos.some((r) => r.valor === repo) ? dados.configuracoes[repo] : undefined;
-	if (!atual) return <p>Configuração indisponível para este repositório.</p>;
+	if (!atual)
+		return (
+			<div className="pagina">
+				<h1>Configuração do gate</h1>
+				<p>Configuração indisponível para este repositório.</p>
+			</div>
+		);
 	return (
 		<PaginaGestao titulo="Configuração do gate" subtitulo="Limites e áreas sensíveis por repositório">
 			<div className="filtros-gestao escopo-config">

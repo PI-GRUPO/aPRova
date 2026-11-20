@@ -15,31 +15,28 @@ type Props<T> = {
 	ajuda?: ReactNode;
 };
 export function ConsultaPrivada<T>(props: Props<T>) {
-	const { sessao } = useSessao();
+	const { sessao, erro } = useSessao();
 	const [q] = useSearchParams();
 	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
 	const filtros = props.filtrosLocais ? "" : q.toString();
+	if (!erro && sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao))
+		return (
+			<Resultado key={JSON.stringify([sessao.usuario.id, instalacao, filtros])} {...props} instalacao={instalacao} filtros={filtros} />
+		);
 	const Titulo = props.secao ? "h2" : "h1";
 	return (
-		<>
-			{(!sessao?.autenticado || !sessao.instalacoes.some((i) => String(i.id) === instalacao)) && <Titulo>{props.titulo}</Titulo>}
+		<EspacoDaConsulta secao={props.secao}>
+			<Titulo>{props.titulo}</Titulo>
 			<Protegida>
-				{sessao?.autenticado &&
-					(sessao.instalacoes.some((i) => String(i.id) === instalacao) ? (
-						<Resultado
-							key={JSON.stringify([sessao.usuario.id, instalacao, filtros])}
-							{...props}
-							instalacao={instalacao}
-							filtros={filtros}
-						/>
-					) : (
-						<PainelDeEstado titulo={instalacao ? "Instalação não autorizada" : "Nenhuma instalação autorizada"}>
-							<p>Confira as instalações disponíveis na sua conta.</p>
-						</PainelDeEstado>
-					))}
+				<PainelDeEstado titulo={instalacao ? "Instalação não autorizada" : "Nenhuma instalação autorizada"}>
+					<p>Confira as instalações disponíveis na sua conta.</p>
+				</PainelDeEstado>
 			</Protegida>
-		</>
+		</EspacoDaConsulta>
 	);
+}
+function EspacoDaConsulta({ secao, children }: { secao?: boolean; children: ReactNode }) {
+	return secao ? children : <div className="pagina">{children}</div>;
 }
 function Resultado<T>({
 	secao,
@@ -69,7 +66,7 @@ function Resultado<T>({
 	if (estado && "dados" in estado) return children(estado.dados);
 	const Titulo = secao ? "h2" : "h1";
 	return (
-		<div className={secao ? undefined : "pagina"}>
+		<EspacoDaConsulta secao={secao}>
 			<Titulo>{titulo}</Titulo>
 			{!estado ? (
 				<p role="status">Carregando…</p>
@@ -81,7 +78,7 @@ function Resultado<T>({
 			) : (
 				<PainelDeEstado titulo="Recurso indisponível">{ajuda ?? <p>Esta consulta ainda não está disponível.</p>}</PainelDeEstado>
 			)}
-		</div>
+		</EspacoDaConsulta>
 	);
 }
 export function useEscopo(repositorio: string) {

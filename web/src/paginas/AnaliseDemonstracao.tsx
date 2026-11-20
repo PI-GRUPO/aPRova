@@ -37,7 +37,7 @@ function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: stri
 		return () => c.abort();
 	}, [id]);
 	return (
-		<div className="pagina pagina-demonstracao">
+		<>
 			<Link className="voltar" to={retornoDaFila(q.get("retorno"))}>
 				<Ativo nome="voltar" />
 				Voltar à visão geral
@@ -71,6 +71,6 @@ function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: stri
 					linhaDoTempoSimulada={dados.complemento && <LinhaDoTempoDemonstracao etapas={dados.complemento.etapas} />}
 				/>
 			)}
-		</div>
+		</>
 	);
 }

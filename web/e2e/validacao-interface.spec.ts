@@ -224,3 +224,24 @@ for (const largura of [1440, 320])
 			}
 		});
 	}
+
+for (const largura of [1440, 390]) {
+	test(`espaçamento das telas durante falha de sessão em ${largura}px`, async ({ page }) => {
+		await page.setViewportSize({ width: largura, height: 900 });
+		await page.route("**/api/sessao", (r) => r.fulfill({ status: 503, json: {} }));
+		for (const rota of ["/analises", "/", "/auditoria", "/repositorios", "/configuracao", "/sla", "/regras", "/sugestoes", "/conta"]) {
+			await page.goto(rota);
+			await expect(page.getByRole("heading", { name: "Não foi possível confirmar sua sessão" })).toBeVisible();
+			const medidas = await page.locator("main").evaluate((main) => {
+				const area = main.getBoundingClientRect();
+				const titulo = main.querySelector("h1");
+				const cabecalho = (titulo?.closest(".titulo-contexto") ?? titulo)?.getBoundingClientRect();
+				const painel = main.querySelector(".estado")?.getBoundingClientRect();
+				if (!cabecalho || !painel) throw new Error("Título ou painel ausente");
+				return [cabecalho.left - area.left, cabecalho.top - area.top, painel.top - cabecalho.bottom, area.right - painel.right];
+			});
+			const lateral = largura < 768 ? 16 : 32;
+			expect(medidas, rota).toEqual([lateral, largura < 768 ? 24 : 32, 16, lateral]);
+		}
+	});
+}
