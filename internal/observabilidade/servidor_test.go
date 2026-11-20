@@ -64,7 +64,7 @@ func TestServidorInternoRespondeVivoEPronto(t *testing.T) {
 func enderecoLivre(t *testing.T) string {
 	t.Helper()
 
-	ouvinte, err := net.Listen("tcp", "127.0.0.1:0")
+	ouvinte, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("reservar porta: %v", err)
 	}
@@ -75,28 +75,40 @@ func enderecoLivre(t *testing.T) string {
 	return endereco
 }
 
+func vivo(t *testing.T, endereco string) bool {
+	t.Helper()
+
+	pedido, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "http://"+endereco+"/health/live", nil)
+	if err != nil {
+		t.Fatalf("montar pedido: %v", err)
+	}
+	resposta, err := http.DefaultClient.Do(pedido)
+	if err != nil {
+		return false
+	}
+	defer func() { _ = resposta.Body.Close() }()
+	return resposta.StatusCode == http.StatusOK
+}
+
 func TestIniciarEscutaNoEnderecoEPararDesliga(t *testing.T) {
 	endereco := enderecoLivre(t)
 	parar := Iniciar(NovoServidor(endereco, prometheus.NewRegistry(), nil))
 
-	var resposta *http.Response
-	var err error
+	respondeu := false
 	for range 50 {
-		resposta, err = http.Get("http://" + endereco + "/health/live")
-		if err == nil {
+		if respondeu = vivo(t, endereco); respondeu {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
-	if err != nil || resposta.StatusCode != http.StatusOK {
-		t.Fatalf("o listener interno precisa responder em %s: %v", endereco, err)
+	if !respondeu {
+		t.Fatalf("o listener interno precisa responder em %s", endereco)
 	}
-	_ = resposta.Body.Close()
 
 	if err := parar(t.Context()); err != nil {
 		t.Fatalf("parar: %v", err)
 	}
-	if _, err := http.Get("http://" + endereco + "/health/live"); err == nil {
+	if vivo(t, endereco) {
 		t.Error("depois de parar, o listener interno não responde mais")
 	}
 }
