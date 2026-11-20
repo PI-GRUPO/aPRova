@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -53,7 +54,8 @@ func (i *imagemDeIntegracao) exigir(t *testing.T) {
 }
 
 func construirImagem(ctx context.Context, dockerfile, nome, contexto string) ([]byte, error) {
-	construcao := exec.CommandContext(ctx, "docker", "build", "-q", "-f", dockerfile, "-t", nome, contexto)
+	construcao := exec.CommandContext(ctx, "docker", "build", "-f", dockerfile, "-t", nome, contexto)
+	construcao.Env = append(os.Environ(), "BUILDKIT_PROGRESS=plain")
 	return construcao.CombinedOutput()
 }
 
