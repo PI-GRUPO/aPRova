@@ -31,13 +31,19 @@
 .filtros-analises form {
 	display: flex;
 	gap: 8px;
-	align-items: end;
+	align-items: start;
 	flex: 1.3;
 	min-width: 240px;
+}
+.filtros-analises form > button {
+	margin-top: 22px;
 }
 .filtros-analises form .campo {
 	flex: 1;
 	min-width: 0;
+}
+.filtros-analises .campo label {
+	line-height: 16px;
 }
 .rotulo-campo {
 	font-size: 12px;
