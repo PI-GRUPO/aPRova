@@ -131,6 +131,12 @@ func (a *armazenamentoFalso) RenovarPrazo(_ context.Context, taskRunID, trabalha
 	return nil
 }
 
+func (a *armazenamentoFalso) tomarPrazo(taskRunID, trabalhador string) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.taskRuns[taskRunID].ReivindicadoPor = trabalhador
+}
+
 func (a *armazenamentoFalso) Liberar(_ context.Context, taskRunID, trabalhador string, espera time.Duration) error {
 	a.mutex.Lock()
 	defer a.mutex.Unlock()
