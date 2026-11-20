@@ -25,7 +25,18 @@ func (r *RepositorioPostgres) Reivindicar(ctx context.Context, trabalhador strin
 	if err != nil {
 		return domain.TaskRun{}, false, traduzir("reivindicar task_run", err)
 	}
-	return paraTaskRun(linha), true, nil
+	taskRun := paraTaskRun(linha.TaskRun)
+	taskRun.RetomadoDePrazoVencido = linha.RetomadoDePrazoVencido
+	return taskRun, true, nil
+}
+
+// ContarPendentes devolve quantos task_runs estão no estado pendente.
+func (r *RepositorioPostgres) ContarPendentes(ctx context.Context) (int, error) {
+	total, err := r.consultas.CountPendingTaskRuns(ctx)
+	if err != nil {
+		return 0, traduzir("contar task_runs pendentes", err)
+	}
+	return int(total), nil
 }
 
 // RenovarPrazo estende a reivindicação do trabalhador por mais prazo. Se o

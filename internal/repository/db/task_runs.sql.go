@@ -31,10 +31,9 @@ func (q *Queries) AdvanceApprovalCursor(ctx context.Context, arg AdvanceApproval
 }
 
 const claimNextTaskRun = `-- name: ClaimNextTaskRun :one
-UPDATE task_runs
-SET claimed_by = $1, lease_expires_at = now() + make_interval(secs => $2::double precision)
-WHERE id = (
-    SELECT tr.id FROM task_runs tr
+WITH alvo AS (
+    SELECT tr.id, tr.claimed_by IS NOT NULL AS retomado_de_prazo_vencido
+    FROM task_runs tr
     WHERE tr.state IN ('pendente', 'mapeando_contexto', 'testando_sandbox', 'avaliando_risco', 'aguardando_aprovacao', 'aplicando')
       AND (tr.lease_expires_at IS NULL OR tr.lease_expires_at <= now())
       AND (
@@ -49,7 +48,11 @@ WHERE id = (
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
+UPDATE task_runs
+SET claimed_by = $1, lease_expires_at = now() + make_interval(secs => $2::double precision)
+FROM alvo
+WHERE task_runs.id = alvo.id
+RETURNING task_runs.id, task_runs.tenant_id, task_runs.delivery_id, task_runs.repository, task_runs.pr_number, task_runs.head_sha, task_runs.author, task_runs.event_action, task_runs.state, task_runs.received_at, task_runs.created_at, task_runs.updated_at, task_runs.claimed_by, task_runs.lease_expires_at, task_runs.step_attempts, task_runs.last_approval_seen, task_runs.check_run_id, alvo.retomado_de_prazo_vencido::boolean AS retomado_de_prazo_vencido
 `
 
 type ClaimNextTaskRunParams struct {
@@ -57,29 +60,46 @@ type ClaimNextTaskRunParams struct {
 	LeaseSeconds float64 `json:"lease_seconds"`
 }
 
-func (q *Queries) ClaimNextTaskRun(ctx context.Context, arg ClaimNextTaskRunParams) (TaskRun, error) {
+type ClaimNextTaskRunRow struct {
+	TaskRun                TaskRun `json:"task_run"`
+	RetomadoDePrazoVencido bool    `json:"retomado_de_prazo_vencido"`
+}
+
+func (q *Queries) ClaimNextTaskRun(ctx context.Context, arg ClaimNextTaskRunParams) (ClaimNextTaskRunRow, error) {
 	row := q.db.QueryRow(ctx, claimNextTaskRun, arg.Worker, arg.LeaseSeconds)
-	var i TaskRun
+	var i ClaimNextTaskRunRow
 	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.DeliveryID,
-		&i.Repository,
-		&i.PrNumber,
-		&i.HeadSha,
-		&i.Author,
-		&i.EventAction,
-		&i.State,
-		&i.ReceivedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ClaimedBy,
-		&i.LeaseExpiresAt,
-		&i.StepAttempts,
-		&i.LastApprovalSeen,
-		&i.CheckRunID,
+		&i.TaskRun.ID,
+		&i.TaskRun.TenantID,
+		&i.TaskRun.DeliveryID,
+		&i.TaskRun.Repository,
+		&i.TaskRun.PrNumber,
+		&i.TaskRun.HeadSha,
+		&i.TaskRun.Author,
+		&i.TaskRun.EventAction,
+		&i.TaskRun.State,
+		&i.TaskRun.ReceivedAt,
+		&i.TaskRun.CreatedAt,
+		&i.TaskRun.UpdatedAt,
+		&i.TaskRun.ClaimedBy,
+		&i.TaskRun.LeaseExpiresAt,
+		&i.TaskRun.StepAttempts,
+		&i.TaskRun.LastApprovalSeen,
+		&i.TaskRun.CheckRunID,
+		&i.RetomadoDePrazoVencido,
 	)
 	return i, err
+}
+
+const countPendingTaskRuns = `-- name: CountPendingTaskRuns :one
+SELECT count(*) FROM task_runs WHERE state = 'pendente'
+`
+
+func (q *Queries) CountPendingTaskRuns(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countPendingTaskRuns)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createTaskRun = `-- name: CreateTaskRun :one

@@ -26,10 +26,9 @@ WHERE id = sqlc.arg(id) AND state = sqlc.arg(from_state)
 RETURNING *;
 
 -- name: ClaimNextTaskRun :one
-UPDATE task_runs
-SET claimed_by = sqlc.arg(worker), lease_expires_at = now() + make_interval(secs => sqlc.arg(lease_seconds)::double precision)
-WHERE id = (
-    SELECT tr.id FROM task_runs tr
+WITH alvo AS (
+    SELECT tr.id, tr.claimed_by IS NOT NULL AS retomado_de_prazo_vencido
+    FROM task_runs tr
     WHERE tr.state IN ('pendente', 'mapeando_contexto', 'testando_sandbox', 'avaliando_risco', 'aguardando_aprovacao', 'aplicando')
       AND (tr.lease_expires_at IS NULL OR tr.lease_expires_at <= now())
       AND (
@@ -44,7 +43,14 @@ WHERE id = (
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING *;
+UPDATE task_runs
+SET claimed_by = sqlc.arg(worker), lease_expires_at = now() + make_interval(secs => sqlc.arg(lease_seconds)::double precision)
+FROM alvo
+WHERE task_runs.id = alvo.id
+RETURNING sqlc.embed(task_runs), alvo.retomado_de_prazo_vencido::boolean AS retomado_de_prazo_vencido;
+
+-- name: CountPendingTaskRuns :one
+SELECT count(*) FROM task_runs WHERE state = 'pendente';
 
 -- name: RenewTaskRunLease :execrows
 UPDATE task_runs
