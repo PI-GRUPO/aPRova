@@ -17,22 +17,11 @@ nas fases históricas abaixo ficam fora desta execução. Consultar o design e
 comparar capturas antes de declarar fidelidade visual; guardar as capturas em
 `.capturas-mcp/`, ignorada pelo Git.
 
-Acesso ao Figma restabelecido nesta retomada. A composição da visão geral foi
-consultada em `9:22` (escuro), `15:1789` (claro) e `16:2` (mobile), com contexto
-e capturas. A primeira entrega de front e suas limitações estão registradas em
-[visão geral com mocks separados](dashboard-visao-geral.md). As demais telas
-continuam seguindo o inventário e exigem validação visual própria.
+O [contexto atual do front](dashboard-contexto.md) reúne as rotas, os adapters,
+os contratos confirmados e as dependências de integração da visão geral, do
+mapa, da fila, das ações humanas e da gestão. As referências visuais por tela
+e modal estão no [inventário Figma](dashboard-inventario-figma.md).
 
-Ciclos seguintes de front: [gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md).
-Os contratos reais existentes foram preservados; operações sem contrato usam
-adapters locais explícitos. O ciclo de [ações humanas simuladas](dashboard-acoes-simuladas.md)
-implementa os modais de decisão e reexecução sem enviar comandos ao núcleo.
-Autorização, execução e acompanhamento reais continuam dependentes dos contratos web.
-O ciclo [fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
-conecta os links da visão geral às referências locais, sem enviar IDs fictícios à API.
-O ciclo de [seleção pelo mapa diário](dashboard-mapa.md) acrescenta recortes
-compartilháveis por dia/risco e navegação aos detalhes locais, mantendo as leituras
-reais separadas.
 A [correção visual do login](dashboard-login.md), priorizada em 18/11/2026,
 alinha o cartão aos frames claro/escuro e preserva a autenticação existente.
 O ciclo de preparação da API para desenvolvimento (guia local

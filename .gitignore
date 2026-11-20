@@ -77,3 +77,10 @@ design/prototipo/tsconfig.tsbuildinfo
 /web/test-results/
 /web/playwright-report/
 /web/tsconfig.tsbuildinfo
+
+# Relatórios locais de ciclos do dashboard substituídos pelo contexto atual
+/design/docs/dashboard-acoes-simuladas.md
+/design/docs/dashboard-fila-detalhe.md
+/design/docs/dashboard-gestao.md
+/design/docs/dashboard-mapa.md
+/design/docs/dashboard-visao-geral.md

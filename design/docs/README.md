@@ -4,12 +4,8 @@ Todos os documentos de planejamento, levantamento, execução, evidências textu
 e acompanhamento das fases do dashboard devem ser criados nesta pasta
 (`design/docs/`), inclusive os produzidos a partir de agora.
 
+- [Contexto atual do front, operações confirmadas e contratos pendentes](dashboard-contexto.md)
 - [Plano de implementação e registro dos lotes](implementacao-dashboard.md)
-- [Visão geral com mocks separados](dashboard-visao-geral.md)
-- [Gestão, coleção de recibos e vínculo Slack](dashboard-gestao.md)
-- [Ações humanas simuladas: modais e idempotência](dashboard-acoes-simuladas.md)
-- [Fila até o detalhe e decisão de demonstração](dashboard-fila-detalhe.md)
-- [Mapa diário: seleção e detalhe de demonstração](dashboard-mapa.md)
 - [Correção visual do login conforme o Figma](dashboard-login.md)
 - [Análises: cards mobile, filtros e retorno do detalhe](dashboard-analises-mobile.md)
 - [Validação final da interface e correções responsivas](dashboard-validacao-interface.md)
