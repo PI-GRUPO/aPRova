@@ -226,18 +226,3 @@ Quem tem permissão de escrita aprova o PR pelo GitHub: na aba "Files changed",
 analisado e a origem `github`, e o merge fica disponível. **Não faça o merge**: o PR #6 é o caso da
 demonstração e precisa continuar aberto. Depois, repita os passos 1 e 2 para
 voltar ao bloqueio.
-
-## Pendências
-
-### A justificativa da aprovação pelo Slack não chega a `approvals`
-
-Na aprovação pelo Slack, `approvals.justification` fica vazia, embora a
-justificativa digitada apareça no corpo da review do GitHub. O n8n a envia: a
-API de ações remotas grava o texto em `remote_action_attempts.justification` e
-o publica na review ("Aprovado por @login via Slack:" seguido da
-justificativa). Ela se perde quando o webhook da review volta para a API:
-`quemDecidiu`, em `internal/api/webhooks.go`, extrai só o login com
-`acaoremota.QuemDecidiuNoSlack`; `domain.DecisaoDeReview` não tem campo de
-justificativa; e `RegistrarRevisao`, em `internal/repository/postgres.go`,
-monta a `domain.Aprovacao` sem `Justificativa`. O mesmo vale para o texto de
-uma aprovação feita direto no GitHub.
