@@ -138,7 +138,8 @@ obrigatório.
 
 O PR #6 foi aberto pela conta `Azulpasta`, e o GitHub não deixa o autor aprovar
 o próprio pull request. A aprovação precisa vir de outra conta com permissão de
-escrita no repositório e, na demonstração, é feita pelo GitHub.
+escrita no repositório. Na demonstração, ela é feita pelo Slack, com o GitHub
+como plano B.
 
 ### Só uma instância do aPRova no canal do smee
 
@@ -220,9 +221,22 @@ depois de o PR entrar em espera).
 
 ### Durante a apresentação
 
-Quem tem permissão de escrita aprova o PR pelo GitHub: na aba "Files changed",
-"Review changes" e "Approve". O Check Run passa a `success` com "aprovado por
-@login", a aprovação é gravada em `approvals` com o `commit_sha` do commit
-analisado e a origem `github`, e o merge fica disponível. **Não faça o merge**: o PR #6 é o caso da
-demonstração e precisa continuar aberto. Depois, repita os passos 1 e 2 para
-voltar ao bloqueio.
+Quem tem permissão de escrita aprova o PR pelo Slack, no alerta de risco alto,
+com uma justificativa. O fluxo do Slack publica a review pelo app, com o texto
+"Aprovado por @login via Slack:" seguido da justificativa. O webhook dessa
+review chega à instância local pelo smee, e o aPRova registra a decisão em nome
+de quem clicou. O Check Run passa a `success` com "aprovado por @login", a
+aprovação é gravada em `approvals` com o `commit_sha` do commit analisado, a
+origem `slack` e a justificativa, e o merge fica disponível.
+
+Se o Slack não responder, o plano B é aprovar pelo GitHub: na aba "Files
+changed", "Review changes" e "Approve". O resultado é o mesmo, com a origem
+`github` e o corpo da review como justificativa.
+
+**Não faça o merge**: o PR #6 é o caso da demonstração e precisa continuar
+aberto. Depois, repita os passos 1 e 2 para voltar ao bloqueio.
+
+No ensaio de 2026-11-20, a aprovação pelo Slack funcionou com a instância
+local: o check do commit `2bba201` passou a `success` com "aprovado por
+@julia-ed2", e `approvals` gravou a origem `slack`, o `commit_sha` do commit
+analisado e a justificativa digitada no Slack.
