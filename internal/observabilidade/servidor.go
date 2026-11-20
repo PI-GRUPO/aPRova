@@ -3,6 +3,9 @@
 package observabilidade
 
 import (
+	"context"
+	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -36,4 +39,16 @@ func NovoServidor(endereco string, coletor prometheus.Gatherer, dependencias []s
 		Handler:           rotas,
 		ReadHeaderTimeout: tempoLimiteDaLeituraDoCabecalho,
 	}
+}
+
+// Iniciar põe o servidor para escutar em segundo plano e devolve a função que
+// o desliga.
+func Iniciar(servidor *http.Server) func(context.Context) error {
+	go func() {
+		slog.Info("listener interno de métricas e saúde escutando", "endereco", servidor.Addr)
+		if err := servidor.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("listener interno de métricas e saúde parou", "erro", err)
+		}
+	}()
+	return servidor.Shutdown
 }
