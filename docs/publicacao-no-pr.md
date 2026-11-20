@@ -138,7 +138,7 @@ obrigatório.
 
 O PR #6 foi aberto pela conta `Azulpasta`, e o GitHub não deixa o autor aprovar
 o próprio pull request. A aprovação precisa vir de outra conta com permissão de
-escrita no repositório, pelo GitHub ou pelo Slack.
+escrita no repositório e, na demonstração, é feita pelo GitHub.
 
 ### Só uma instância do aPRova no canal do smee
 
@@ -149,15 +149,21 @@ chave diferente, e a aprovação é processada duas vezes. Os dois aparecem no
 GitHub como o mesmo app `a-prova`; o que distingue um do outro é o `key_id` do
 recibo no resumo do check.
 
-Antes de subir a demonstração, combine com o grupo quem roda o aPRova e confira
-que ninguém mais está com o `smee-client` ligado nesse canal. O teste é o
-próprio commit vazio do passo 2 abaixo: depois dele, o commit novo deve ter um
-único Check Run `aPRova`, com o `key_id` da sua instância.
+Em 2026-11-20, mesmo depois de o grupo combinar quem rodaria o aPRova, uma
+segunda instância continuou analisando os pushes do PR #6. O webhook do app foi
+então trocado para um canal novo do smee. A URL do canal fica só no `.env` de
+quem apresenta, na variável `SMEE_URL`, e nunca nesta documentação nem em outro
+arquivo versionado: quem conhece a URL recebe todos os eventos do app e passa a
+ser mais uma instância no canal.
+
+O teste de que só há uma instância é o próprio commit vazio do passo 2 abaixo:
+depois dele, o commit novo deve ter um único Check Run `aPRova`, com o `key_id`
+da sua instância.
 
 ### Subir a demonstração
 
-O webhook do app entrega num canal do smee.io, repassado para a API local. O
-código Go do repositório de teste fica na pasta `go/`, então o worker precisa
+O webhook do app entrega no canal do smee.io de `SMEE_URL`, repassado para a
+API local. O código Go do repositório de teste fica na pasta `go/`, então o worker precisa
 de `SANDBOX_DIRETORIOS` e de `SANDBOX_LINGUAGENS` para o repositório. Sem
 `SANDBOX_DIRETORIOS`, a análise falha com "repositório sem go.mod na raiz". As
 variáveis vão na linha do comando: o `godotenv` não sobrescreve o que já está no
@@ -165,15 +171,20 @@ ambiente, então o `.env` não muda. Com `APROVA_URL_PUBLICA` apontando para a A
 local, o link "Verificar no aPRova" do check abre na máquina da apresentação;
 sem ela, o link usa o endereço provisório `https://aprova.example.com`.
 
+A API e o worker sobem com `go run`, e não com `make run-api` e
+`make run-worker`: o `Makefile` exporta um `DATABASE_URL` padrão, na porta
+5432, e o `godotenv` não o sobrescreve com o do `.env`. Com o Postgres do
+projeto em outra porta, os alvos do `make` conectam no banco errado.
+
 ```bash
 make up && make migrate-up
-make run-api
+go run ./cmd/api
 SANDBOX_DIRETORIOS="PI-GRUPO/aPRova-TESTES=go" \
 SANDBOX_LINGUAGENS="PI-GRUPO/aPRova-TESTES=go" \
 APROVA_URL_PUBLICA="http://localhost:8080" \
 N8N_WEBHOOK_URL="" \
-make run-worker
-npx smee-client --url <canal do smee configurado no app> --target http://localhost:8080/webhooks/github
+go run ./cmd/worker
+npx smee-client --url "$(grep '^SMEE_URL=' .env | cut -d= -f2-)" --target http://localhost:8080/webhooks/github
 ```
 
 Se o `.env` já define `SANDBOX_DIRETORIOS` ou `SANDBOX_LINGUAGENS` para outros
@@ -209,10 +220,10 @@ depois de o PR entrar em espera).
 
 ### Durante a apresentação
 
-Quem tem permissão de escrita aprova o PR, no GitHub ou pelo Slack. O Check Run
-passa a `success` com "aprovado por @login", a aprovação é gravada em
-`approvals` com o `commit_sha` do commit analisado e a origem (`github` ou
-`slack`), e o merge fica disponível. **Não faça o merge**: o PR #6 é o caso da
+Quem tem permissão de escrita aprova o PR pelo GitHub: na aba "Files changed",
+"Review changes" e "Approve". O Check Run passa a `success` com "aprovado por
+@login", a aprovação é gravada em `approvals` com o `commit_sha` do commit
+analisado e a origem `github`, e o merge fica disponível. **Não faça o merge**: o PR #6 é o caso da
 demonstração e precisa continuar aberto. Depois, repita os passos 1 e 2 para
 voltar ao bloqueio.
 
