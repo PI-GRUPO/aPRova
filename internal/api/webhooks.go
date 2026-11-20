@@ -223,7 +223,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		return http.StatusBadRequest, nil
 	}
 
-	revisor, origem, valida := s.quemDecidiu(carga.Review.Usuario.Login, carga.Review.Corpo)
+	revisor, origem, justificativa, valida := s.quemDecidiu(carga.Review.Usuario.Login, carga.Review.Corpo)
 	if !valida {
 		entrega.diario.Warn("revisão de bot sem prova de vir do Slack ignorada", "revisor", carga.Review.Usuario.Login)
 		return http.StatusNoContent, nil
@@ -239,6 +239,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		Origem:         origem,
 		RecebidoEm:     time.Now().UTC(),
 		CommitSHA:      carga.Review.CommitID,
+		Justificativa:  justificativaNoLimite(justificativa),
 	})
 	if errors.Is(err, domain.ErrNaoEncontrado) {
 		entrega.diario.Warn("revisão de pull request sem task_run ignorada",
@@ -255,14 +256,22 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 	return http.StatusAccepted, nil
 }
 
-func (s *Servidor) quemDecidiu(revisor, corpo string) (string, domain.OrigemAprovacao, bool) {
+func (s *Servidor) quemDecidiu(revisor, corpo string) (string, domain.OrigemAprovacao, string, bool) {
 	if !strings.HasSuffix(revisor, sufixoDeBot) {
-		return revisor, domain.OrigemGitHub, true
+		return revisor, domain.OrigemGitHub, corpo, true
 	}
 	if s.slugDoApp == "" || revisor != s.slugDoApp+sufixoDeBot {
-		return "", "", false
+		return "", "", "", false
 	}
 
-	login, doSlack := acaoremota.QuemDecidiuNoSlack(corpo)
-	return login, domain.OrigemSlack, doSlack
+	login, justificativa, doSlack := acaoremota.QuemDecidiuNoSlack(corpo)
+	return login, domain.OrigemSlack, justificativa, doSlack
+}
+
+func justificativaNoLimite(justificativa string) string {
+	caracteres := []rune(justificativa)
+	if len(caracteres) <= domain.TamanhoMaximoDaJustificativa {
+		return justificativa
+	}
+	return string(caracteres[:domain.TamanhoMaximoDaJustificativa])
 }

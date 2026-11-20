@@ -218,13 +218,14 @@ func (r *RepositorioPostgres) RegistrarRevisao(ctx context.Context, decisao doma
 	}
 
 	return r.RegistrarAprovacao(ctx, domain.Aprovacao{
-		TaskRunID:  taskRun.ID,
-		DeliveryID: decisao.DeliveryID,
-		Decisao:    decisaoAprovacao,
-		Revisor:    decisao.Revisor,
-		Origem:     decisao.Origem,
-		DecididaEm: decisao.RecebidoEm,
-		CommitSHA:  decisao.CommitSHA,
+		TaskRunID:     taskRun.ID,
+		DeliveryID:    decisao.DeliveryID,
+		Decisao:       decisaoAprovacao,
+		Revisor:       decisao.Revisor,
+		Origem:        decisao.Origem,
+		DecididaEm:    decisao.RecebidoEm,
+		CommitSHA:     decisao.CommitSHA,
+		Justificativa: &decisao.Justificativa,
 	})
 }
 

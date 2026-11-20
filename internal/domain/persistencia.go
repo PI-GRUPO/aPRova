@@ -66,6 +66,10 @@ const (
 	OrigemSlack  OrigemAprovacao = "slack"
 )
 
+// TamanhoMaximoDaJustificativa é o número máximo de caracteres da justificativa
+// de uma aprovação.
+const TamanhoMaximoDaJustificativa = 4000
+
 // MotivoFeedback é o motivo declarado por quem aprovou uma mudança de risco alto.
 type MotivoFeedback string
 
