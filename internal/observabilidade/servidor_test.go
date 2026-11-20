@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -56,5 +58,45 @@ func TestServidorInternoRespondeVivoEPronto(t *testing.T) {
 	}
 	if status, _, _ := pedirAoServidor(t, servidor, "/webhooks/github"); status != http.StatusNotFound {
 		t.Errorf("o servidor interno só tem métricas e saúde, obtive %d", status)
+	}
+}
+
+func enderecoLivre(t *testing.T) string {
+	t.Helper()
+
+	ouvinte, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("reservar porta: %v", err)
+	}
+	endereco := ouvinte.Addr().String()
+	if err := ouvinte.Close(); err != nil {
+		t.Fatalf("liberar porta: %v", err)
+	}
+	return endereco
+}
+
+func TestIniciarEscutaNoEnderecoEPararDesliga(t *testing.T) {
+	endereco := enderecoLivre(t)
+	parar := Iniciar(NovoServidor(endereco, prometheus.NewRegistry(), nil))
+
+	var resposta *http.Response
+	var err error
+	for range 50 {
+		resposta, err = http.Get("http://" + endereco + "/health/live")
+		if err == nil {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if err != nil || resposta.StatusCode != http.StatusOK {
+		t.Fatalf("o listener interno precisa responder em %s: %v", endereco, err)
+	}
+	_ = resposta.Body.Close()
+
+	if err := parar(t.Context()); err != nil {
+		t.Fatalf("parar: %v", err)
+	}
+	if _, err := http.Get("http://" + endereco + "/health/live"); err == nil {
+		t.Error("depois de parar, o listener interno não responde mais")
 	}
 }
