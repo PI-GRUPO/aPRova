@@ -104,18 +104,18 @@ func (e *executorLocal) Executar(ctx context.Context, pedido PedidoExecucao) (Re
 
 	inicio := time.Now()
 	execucao := execucaoLocal{
-		diario: slog.With("task_run_id", pedido.TaskRunID, "executor", "local"),
+		diario: slog.With("executor", "local"),
 		imagem: e.opcoes.ImagemPorLinguagem[pedido.Linguagem],
 		volume: prefixoDoVolume + sufixoAleatorio(),
 		pedido: pedido,
 	}
 	if execucao.imagem == "" {
-		execucao.diario.Error("nenhuma imagem configurada para a linguagem", "linguagem", pedido.Linguagem)
+		execucao.diario.ErrorContext(ctx, "nenhuma imagem configurada para a linguagem", "linguagem", pedido.Linguagem)
 		return resultadoDeInfraestrutura("", 0), nil
 	}
 
 	if _, err := e.comando.executar(ctx, e.opcoes.BinarioDocker, "volume", "create", execucao.volume); err != nil {
-		execucao.diario.Error("volume da execução não pôde ser criado", "volume", execucao.volume, "erro", err)
+		execucao.diario.ErrorContext(ctx, "volume da execução não pôde ser criado", "volume", execucao.volume, "erro", err)
 		return resultadoDeInfraestrutura("", time.Since(inicio).Milliseconds()), nil
 	}
 	defer e.removerVolume(ctx, execucao.volume)
@@ -123,7 +123,7 @@ func (e *executorLocal) Executar(ctx context.Context, pedido PedidoExecucao) (Re
 	resultado := e.prepararETestar(ctx, execucao)
 	resultado.SaidaBruta = truncarMantendoFinal(resultado.SaidaBruta, e.opcoes.LimiteSaidaBytes)
 	resultado.DuracaoMS = time.Since(inicio).Milliseconds()
-	execucao.diario.Info("execução concluída", "tipo_falha", resultado.TipoFalha, "duracao_ms", resultado.DuracaoMS)
+	execucao.diario.InfoContext(ctx, "execução concluída", "tipo_falha", resultado.TipoFalha, "duracao_ms", resultado.DuracaoMS)
 	return resultado, nil
 }
 
@@ -136,7 +136,7 @@ func (e *executorLocal) prepararETestar(ctx context.Context, execucao execucaoLo
 	desfecho, valido := interpretarDesfechoDoPreparo(preparo.stdout)
 	switch {
 	case !valido:
-		execucao.diario.Error("a etapa preparar terminou sem desfecho válido")
+		execucao.diario.ErrorContext(ctx, "a etapa preparar terminou sem desfecho válido")
 		return resultadoDeInfraestrutura(preparo.completa, 0)
 	case desfecho.Falha != nil:
 		return *desfecho.Falha
@@ -148,7 +148,7 @@ func (e *executorLocal) prepararETestar(ctx context.Context, execucao execucaoLo
 	}
 	resultado, publicado := interpretarResultadoPublicado(teste.stdout)
 	if !publicado {
-		execucao.diario.Error("a etapa testar terminou sem publicar resultado válido")
+		execucao.diario.ErrorContext(ctx, "a etapa testar terminou sem publicar resultado válido")
 		return resultadoDeInfraestrutura(teste.completa, 0)
 	}
 	return resultado
@@ -161,11 +161,11 @@ func (e *executorLocal) rodarEtapa(ctx context.Context, execucao execucaoLocal, 
 
 	switch {
 	case ctx.Err() != nil:
-		execucao.diario.Warn("etapa excedeu o prazo, removendo o contêiner", "container", nomeDoConteiner)
+		execucao.diario.WarnContext(ctx, "etapa excedeu o prazo, removendo o contêiner", "container", nomeDoConteiner)
 		e.removerConteiner(ctx, nomeDoConteiner)
 		return saida, false
 	case err != nil:
-		execucao.diario.Error("docker não pôde ser executado", "erro", err)
+		execucao.diario.ErrorContext(ctx, "docker não pôde ser executado", "erro", err)
 		return saida, false
 	}
 	return saida, true
@@ -214,7 +214,7 @@ func (e *executorLocal) removerConteiner(ctx context.Context, nomeDoConteiner st
 	defer cancelar()
 
 	if _, err := e.comando.executar(ctxRemocao, e.opcoes.BinarioDocker, "rm", "-f", nomeDoConteiner); err != nil {
-		slog.Error("falha ao remover container após timeout", "container", nomeDoConteiner, "erro", err)
+		slog.ErrorContext(ctxRemocao, "falha ao remover container após timeout", "executor", "local", "container", nomeDoConteiner, "erro", err)
 	}
 }
 
@@ -223,7 +223,7 @@ func (e *executorLocal) removerVolume(ctx context.Context, volume string) {
 	defer cancelar()
 
 	if _, err := e.comando.executar(ctxRemocao, e.opcoes.BinarioDocker, "volume", "rm", "-f", volume); err != nil {
-		slog.Error("falha ao remover o volume da execução", "volume", volume, "erro", err)
+		slog.ErrorContext(ctxRemocao, "falha ao remover o volume da execução", "executor", "local", "volume", volume, "erro", err)
 	}
 }
 
