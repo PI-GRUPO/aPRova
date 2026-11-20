@@ -76,7 +76,8 @@ func (c *conducao) novaTentativa(diagnostico string) (passo, error) {
 
 func (c *conducao) esgotarTentativas(tentativa int, diagnostico string) (passo, error) {
 	etapa := c.taskRun.Estado
-	resultado, err := c.encerrarEmFalha(fmt.Sprintf("tentativas esgotadas em %s: %s", etapa, diagnostico))
+	resumo := fmt.Sprintf("tentativas esgotadas em %s", etapa)
+	resultado, err := c.encerrarEmFalhaComResumo(resumo+": "+diagnostico, resumo)
 	if err != nil {
 		return passo{}, err
 	}
@@ -85,7 +86,11 @@ func (c *conducao) esgotarTentativas(tentativa int, diagnostico string) (passo, 
 }
 
 func (c *conducao) encerrarEmFalha(detalhe string) (passo, error) {
-	if err := c.falhar(detalhe); err != nil {
+	return c.encerrarEmFalhaComResumo(detalhe, detalhe)
+}
+
+func (c *conducao) encerrarEmFalhaComResumo(detalhe, resumoNoDiario string) (passo, error) {
+	if err := c.transicionarComResumo(domain.EstadoFalhou, detalhe, resumoNoDiario); err != nil {
 		return passo{}, err
 	}
 	if err := c.opcoes.Publicador.PublicarFalha(c.ctx, c.taskRun, detalhe); err != nil {

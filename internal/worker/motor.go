@@ -193,6 +193,10 @@ func (c *conducao) avancar() (passo, error) {
 }
 
 func (c *conducao) transicionar(para domain.EstadoTaskRun, detalhe string) error {
+	return c.transicionarComResumo(para, detalhe, detalhe)
+}
+
+func (c *conducao) transicionarComResumo(para domain.EstadoTaskRun, detalhe, resumoNoDiario string) error {
 	atualizado, err := c.opcoes.Armazenamento.TransicionarReivindicado(c.ctx, c.trabalhador, domain.Transicao{
 		TaskRunID: c.taskRun.ID, De: c.taskRun.Estado, Para: para, Detalhe: detalhe,
 	})
@@ -200,7 +204,7 @@ func (c *conducao) transicionar(para domain.EstadoTaskRun, detalhe string) error
 		return err
 	}
 
-	c.diario.Info("task_run mudou de estado", "de", c.taskRun.Estado, "para", para, "detalhe", detalhe)
+	c.diario.Info("task_run mudou de estado", "de", c.taskRun.Estado, "para", para, "detalhe", resumoNoDiario)
 	c.taskRun = atualizado
 	return nil
 }
