@@ -34,10 +34,11 @@ func TestReivindicacaoMarcaQuandoRetomaUmPrazoVencido(t *testing.T) {
 
 func TestContarPendentesContaSoOsTaskRunsPendentes(t *testing.T) {
 	banco := novoBancoDaFila(t)
+	banco.novoTaskRunDoPR(t, 16)
+	andamento, _ := banco.reivindicar(t, "trabalhador-a")
+	banco.levarAte(t, "trabalhador-a", andamento, domain.EstadoMapeandoContexto)
 	banco.novoTaskRunDoPR(t, 14)
 	banco.novoTaskRunDoPR(t, 15)
-	andamento := banco.novoTaskRunDoPR(t, 16)
-	banco.levarAte(t, "trabalhador-a", andamento, domain.EstadoMapeandoContexto)
 
 	pendentes, err := banco.repo.ContarPendentes(t.Context())
 
