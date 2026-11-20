@@ -115,7 +115,9 @@ func (a *armazenamentoFalso) Reivindicar(_ context.Context, trabalhador string, 
 		taskRun := a.taskRuns[id]
 		if a.reivindicavel(taskRun) {
 			taskRun.ReivindicadoPor = trabalhador
-			return *taskRun, true, nil
+			reivindicado := *taskRun
+			taskRun.RetomadoDePrazoVencido = false
+			return reivindicado, true, nil
 		}
 	}
 	return domain.TaskRun{}, false, nil
@@ -129,6 +131,12 @@ func (a *armazenamentoFalso) RenovarPrazo(_ context.Context, taskRunID, trabalha
 		return domain.ErrPrazoPerdido
 	}
 	return nil
+}
+
+func (a *armazenamentoFalso) marcarLeaseVencido(taskRunID string) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.taskRuns[taskRunID].RetomadoDePrazoVencido = true
 }
 
 func (a *armazenamentoFalso) tomarPrazo(taskRunID, trabalhador string) {
