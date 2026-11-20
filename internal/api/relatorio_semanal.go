@@ -30,13 +30,13 @@ type respostaRelatorioSemanal struct {
 
 func (s *Servidor) manipularRelatorioSemanal(w http.ResponseWriter, r *http.Request) {
 	if motivo := s.motivoParaRecusarAssinaturaDoN8N(r.Header, []byte(r.URL.RawQuery)); motivo != "" {
-		slog.Warn("relatório semanal recusado na autenticação", "motivo", motivo)
+		slog.WarnContext(r.Context(), "relatório semanal recusado na autenticação", "motivo", motivo)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	if s.relatorios == nil {
-		responderJSON(w, http.StatusServiceUnavailable, respostaSimples{Status: "relatório indisponível"})
+		responderJSON(w, r, http.StatusServiceUnavailable, respostaSimples{Status: "relatório indisponível"})
 		return
 	}
 
@@ -44,24 +44,24 @@ func (s *Servidor) manipularRelatorioSemanal(w http.ResponseWriter, r *http.Requ
 
 	tenantID, err := strconv.ParseInt(consulta.Get(parametroInstalacao), 10, 64)
 	if err != nil || tenantID <= 0 {
-		responderJSON(w, http.StatusBadRequest, respostaSimples{Status: "installation_id inválido"})
+		responderJSON(w, r, http.StatusBadRequest, respostaSimples{Status: "installation_id inválido"})
 		return
 	}
 
 	inicio, err := s.inicioDoRelatorio(consulta.Get(parametroInicio))
 	if err != nil {
-		responderJSON(w, http.StatusBadRequest, respostaSimples{Status: "inicio deve ser uma data AAAA-MM-DD"})
+		responderJSON(w, r, http.StatusBadRequest, respostaSimples{Status: "inicio deve ser uma data AAAA-MM-DD"})
 		return
 	}
 
 	relatorio, err := s.relatorios.RelatorioSemanal(r.Context(), tenantID, inicio, inicio.AddDate(0, 0, diasDoRelatorio))
 	if err != nil {
-		slog.Error("falha ao montar relatório semanal", "installation_id", tenantID, "erro", err)
-		responderJSON(w, http.StatusInternalServerError, respostaSimples{Status: "falha ao montar relatório"})
+		slog.ErrorContext(r.Context(), "falha ao montar relatório semanal", "installation_id", tenantID, "erro", err)
+		responderJSON(w, r, http.StatusInternalServerError, respostaSimples{Status: "falha ao montar relatório"})
 		return
 	}
 
-	responderJSON(w, http.StatusOK, respostaRelatorioSemanal{
+	responderJSON(w, r, http.StatusOK, respostaRelatorioSemanal{
 		InstallationID:          relatorio.TenantID,
 		Inicio:                  relatorio.Inicio,
 		Fim:                     relatorio.Fim,

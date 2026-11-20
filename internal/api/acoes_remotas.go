@@ -35,13 +35,13 @@ var respostasPorDecisao = map[acaoremota.Decisao]respostaDaDecisao{
 func (s *Servidor) manipularAcaoRemota(w http.ResponseWriter, r *http.Request) {
 	corpoBruto, err := io.ReadAll(http.MaxBytesReader(w, r.Body, tamanhoMaximoDoCorpo))
 	if err != nil {
-		slog.Warn("corpo da ação remota não pôde ser lido")
+		slog.WarnContext(r.Context(), "corpo da ação remota não pôde ser lido")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if motivo := s.motivoParaNaoAutenticar(r.Header, corpoBruto); motivo != "" {
-		slog.Warn("ação remota recusada na autenticação", "motivo", motivo)
+		slog.WarnContext(r.Context(), "ação remota recusada na autenticação", "motivo", motivo)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -51,7 +51,7 @@ func (s *Servidor) manipularAcaoRemota(w http.ResponseWriter, r *http.Request) {
 		resposta = respostaDeFalha
 	}
 
-	responderJSON(w, resposta.status, respostaSimples{Status: resposta.mensagem})
+	responderJSON(w, r, resposta.status, respostaSimples{Status: resposta.mensagem})
 }
 
 func (s *Servidor) motivoParaNaoAutenticar(cabecalhos http.Header, corpoBruto []byte) string {

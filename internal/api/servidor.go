@@ -90,7 +90,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 func (s *Servidor) Rotas() http.Handler {
 	roteador := chi.NewRouter()
 
-	roteador.Use(middleware.RequestID)
+	roteador.Use(identificarRequisicao)
 	roteador.Use(registrarAcesso)
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))

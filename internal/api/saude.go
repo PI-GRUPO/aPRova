@@ -20,8 +20,8 @@ type respostaProntidao struct {
 	Dependencias map[string]string `json:"dependencias"`
 }
 
-func (s *Servidor) manipularSaude(w http.ResponseWriter, _ *http.Request) {
-	responderJSON(w, http.StatusOK, respostaSimples{Status: situacaoDisponivel})
+func (s *Servidor) manipularSaude(w http.ResponseWriter, r *http.Request) {
+	responderJSON(w, r, http.StatusOK, respostaSimples{Status: situacaoDisponivel})
 }
 
 func (s *Servidor) manipularProntidao(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +45,7 @@ func (s *Servidor) manipularProntidao(w http.ResponseWriter, r *http.Request) {
 
 	for indice, dependencia := range s.dependencias {
 		if err := falhas[indice]; err != nil {
-			slog.Error("dependência indisponível", "dependencia", dependencia.Nome, "erro", err)
+			slog.ErrorContext(r.Context(), "dependência indisponível", "dependencia", dependencia.Nome, "erro", err)
 			situacoes[dependencia.Nome] = situacaoIndisponivel
 			pronto = false
 			continue
@@ -54,14 +54,14 @@ func (s *Servidor) manipularProntidao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !pronto {
-		responderJSON(w, http.StatusServiceUnavailable, respostaProntidao{
+		responderJSON(w, r, http.StatusServiceUnavailable, respostaProntidao{
 			Status:       situacaoIndisponivel,
 			Dependencias: situacoes,
 		})
 		return
 	}
 
-	responderJSON(w, http.StatusOK, respostaProntidao{
+	responderJSON(w, r, http.StatusOK, respostaProntidao{
 		Status:       situacaoDisponivel,
 		Dependencias: situacoes,
 	})

@@ -10,11 +10,11 @@ type respostaSimples struct {
 	Status string `json:"status"`
 }
 
-func responderJSON(w http.ResponseWriter, status int, corpo any) {
+func responderJSON(w http.ResponseWriter, r *http.Request, status int, corpo any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(corpo); err != nil {
-		slog.Error("falha ao escrever resposta JSON", "erro", err)
+		slog.ErrorContext(r.Context(), "falha ao escrever resposta JSON", "erro", err)
 	}
 }
