@@ -41,6 +41,32 @@ Código de produção continua inteiro no Opengrep.
 | Hadolint DL3018 | `.hadolint.yaml` | Mesmo motivo do DL3008, para o `apk add` da imagem do sandbox Go, que fixa a base Alpine pelo digest |
 | markdownlint MD013 | `.markdownlint.json` | Markdown não quebra linha em 80 colunas; tabelas e parágrafos longos são normais nesta documentação |
 | markdownlint MD024 só entre irmãos | `.markdownlint.json` | `docs/benchmark.md` repete títulos como "Métricas" em seções de rodadas diferentes |
+| Opengrep `codacy.generic.sql.rac-table-access` | Interface (Code patterns) | Exige tabelas com prefixo `RAC_*`, convenção que não existe neste projeto; acusava 75 consultas e migrations |
+
+## Ferramentas do lado do cliente
+
+GolangCI-Lint, Gosec, Staticcheck, Aligncheck e Deadcode não rodam nos servidores do Codacy: o job `envio` do workflow `codacy-cliente` roda cada uma no CI e envia o resultado para o commit analisado.
+
+| Ferramenta | Como roda | Conversor |
+| --- | --- | --- |
+| GolangCI-Lint | Mesma versão e `.golangci.yml` do job `verificacao` | `codacy/codacy-golangci-lint`, versão e SHA-256 fixados no workflow |
+| Gosec | `go install` com versão fixada | `codacy/codacy-gosec`, versão e SHA-256 fixados |
+| Staticcheck | `go install` com versão fixada | `codacy/codacy-staticcheck`, versão e SHA-256 fixados |
+| Aligncheck e Deadcode | Codacy Analysis CLI com a imagem fixada por versão | Próprio CLI, com `--upload` |
+
+`scripts/codacy-cliente.sh` baixa e confere cada conversor, converte, envia e, no fim, chama `resultsFinal`. Os conversores leem a entrada em ASCII, então o script reescreve os caracteres acentuados como escapes `\uXXXX` antes de converter; o JSON continua o mesmo.
+
+### Ativação, nesta ordem
+
+1. No Codacy, em Settings → API tokens, criar um token em "Repository API tokens".
+2. No GitHub, gravar o token como secret do repositório com o nome `CODACY_PROJECT_TOKEN`.
+3. No Codacy, em Settings → General → Repository analysis, ligar "Run analysis through build server".
+
+Com o passo 3 ligado, a análise de cada commit só começa quando o CI chama `resultsFinal`. Por isso o job roda em todo push, sem filtro de caminho, e o passo final roda mesmo quando uma ferramenta falha. Sem o secret, o job avisa e não envia nada; ligar o passo 3 antes do 2 deixa as análises paradas esperando.
+
+### O que esperar
+
+O Gosec avulso não entende `//nolint:gosec`, só `#nosec`. As linhas que o golangci-lint aceita com `//nolint:gosec` justificado (G304, G204, G115) voltam a aparecer pelo Gosec: na dev, 40 apontamentos em 19 arquivos. GolangCI-Lint e Staticcheck saem limpos.
 
 ## Issues ignoradas pela interface
 
