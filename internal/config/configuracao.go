@@ -92,6 +92,7 @@ type Configuracao struct {
 	N8NSegredoAcoes   string
 	N8NSegredoEventos string
 	URLPublica        string
+	EnderecoMetricas  string
 
 	GitHubAppSlug       string
 	SandboxDiretorios   map[string]string
@@ -158,6 +159,7 @@ func Carregar() (Configuracao, error) {
 		N8NSegredoAcoes:   leitura.opcional("N8N_SEGREDO_ACOES", ""),
 		N8NSegredoEventos: leitura.opcional("N8N_SEGREDO_EVENTOS", ""),
 		URLPublica:        leitura.urlHTTP("APROVA_URL_PUBLICA", urlPublicaProvisoria),
+		EnderecoMetricas:  leitura.enderecoOpcional("METRICAS_ENDERECO"),
 
 		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
 		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
@@ -387,6 +389,17 @@ func (l *leitor) urlHTTP(nome, padrao string) string {
 	endereco, err := url.Parse(valor)
 	if err != nil || (endereco.Scheme != "http" && endereco.Scheme != "https") || endereco.Host == "" {
 		l.registrarPendencia("%s espera uma URL começando com http:// ou https://, obtive %q", nome, valor)
+	}
+	return valor
+}
+
+func (l *leitor) enderecoOpcional(nome string) string {
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return ""
+	}
+	if _, porta, err := net.SplitHostPort(valor); err != nil || porta == "" {
+		l.registrarPendencia("%s espera host:porta, como :9090, obtive %q", nome, valor)
 	}
 	return valor
 }
