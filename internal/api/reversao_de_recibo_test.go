@@ -86,7 +86,7 @@ func novoCenarioDeReversao(t *testing.T, desfecho *domain.DesfechoDePR, statusDo
 }
 
 func desfechoMergeado(commits int) *domain.DesfechoDePR {
-	return &domain.DesfechoDePR{Mergeado: true, SHAHead: headDoReciboDeTeste, SHADoMerge: mergeDoReciboDeTeste, Commits: commits}
+	return &domain.DesfechoDePR{Mergeado: true, Base: "base/reversao-e2e", SHAHead: headDoReciboDeTeste, SHADoMerge: mergeDoReciboDeTeste, Commits: commits}
 }
 
 const commitComDoisPais = `{"parents":[{"sha":"a"},{"sha":"b"}]}`
@@ -135,7 +135,7 @@ func TestReversaoDeMergeCommitDevolveComandoECorpoReconhecidoPelaCalibracao(t *t
 		resposta.CommitNaMain != mergeDoReciboDeTeste || resposta.Tipo != "merge" {
 		t.Errorf("identificação: %+v", resposta)
 	}
-	if !strings.HasSuffix(resposta.Comando, "git revert --no-edit -m 1 "+mergeDoReciboDeTeste) {
+	if resposta.Comando != "git fetch origin && git switch -c revert/pr-1 origin/base/reversao-e2e && git revert --no-edit -m 1 "+mergeDoReciboDeTeste {
 		t.Errorf("comando: %s", resposta.Comando)
 	}
 	if !strings.Contains(resposta.Corpo, urlPublicaDeTeste+"/receipts/"+cenario.ids[1]+"/verify") {
@@ -190,5 +190,17 @@ func TestReversaoESomenteLeituraEExigeIdValido(t *testing.T) {
 		if gravador.Code != http.StatusMethodNotAllowed {
 			t.Errorf("%s: status %d, esperava 405", metodo, gravador.Code)
 		}
+	}
+}
+
+func TestReversaoDePRFechadoAntesDeGravarABaseNaoGeraComando(t *testing.T) {
+	semBase := desfechoMergeado(1)
+	semBase.Base = ""
+	cenario := novoCenarioDeReversao(t, semBase, http.StatusOK, commitComDoisPais)
+
+	resposta := decodificar[respostaDaReversao](t, cenario.pedir(t, "/receipts/"+cenario.ids[1]+"/revert"))
+
+	if resposta.Disponivel || resposta.Recusa != "base_desconhecida" || resposta.Comando != "" || resposta.Explicacao == "" {
+		t.Errorf("resposta %+v", resposta)
 	}
 }

@@ -19,6 +19,7 @@ func corpoDeFechamento(t *testing.T, mergeado bool, corpo string) string {
 	pullRequest := map[string]any{
 		"merged": mergeado, "closed_at": momentoDoFechamento, "body": corpo, "commits": 3,
 		"head": map[string]any{"sha": headDoFechamento}, "user": map[string]any{"login": "alice"},
+		"base": map[string]any{"ref": "release/2026"},
 	}
 	if mergeado {
 		pullRequest["merge_commit_sha"] = commitDoMerge
@@ -57,6 +58,9 @@ func TestFechamentoComMergeRegistraODesfechoSemCriarExecucao(t *testing.T) {
 	}
 	if fechamento.Reverte != 0 {
 		t.Errorf("sem a linha de reversão, não reverte nada: %d", fechamento.Reverte)
+	}
+	if fechamento.Base != "release/2026" {
+		t.Errorf("o fechamento guarda a base do PR: %q", fechamento.Base)
 	}
 	if fechamento.Commits != 3 {
 		t.Errorf("o fechamento guarda quantos commits o PR tinha: %d", fechamento.Commits)
