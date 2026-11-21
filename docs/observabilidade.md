@@ -43,12 +43,23 @@ Os testes `TestDiarioDoWorkerNuncaLevaDiffNemSaidaDoSandbox`,
 
 ### Linhas de dentro do contêiner do sandbox
 
-O programa que roda dentro do contêiner (`cmd/sandbox`) tem três linhas sem
-`task_run_id`: a do encerramento de processos remanescentes e as duas do
-desfecho do preparo. No executor local, o worker guarda a saída do contêiner
-em memória e não a reescreve no próprio log, então essas linhas não aparecem.
-No executor da Azure, elas ficam no log da execução do job. O worker registra
-o par `task_run_id` e `execucao_azure`, e é por esse par que se chega a elas.
+O programa que roda dentro do contêiner (`cmd/sandbox`) monta o logger com o
+`task_run_id` da variável `APROVA_TASK_RUN_ID` logo ao iniciar, e toda linha
+dele leva o campo.
+
+- **Executor local:** o worker guarda a saída do contêiner em memória e não a
+  reescreve no próprio log.
+- **Executor da Azure:** as linhas ficam no log da execução do job, já com o
+  `task_run_id`.
+
+### Limitação conhecida: o oráculo do benchmark
+
+O oráculo do benchmark (`internal/benchmark/oraculo`) chama o executor local do
+sandbox sem o `task_run_id` no contexto. Além disso, o logger do
+`cmd/benchmark` não usa o handler do `rastro`. Por isso, nas rodadas do
+benchmark, as linhas do executor local saem sem `task_run_id`. O benchmark é
+uma ferramenta de medição, fora do caminho de uma análise real, e ficou assim
+de propósito.
 
 ## Métricas
 
