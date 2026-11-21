@@ -84,6 +84,9 @@ func executar() error {
 			Relatorios:          repositorio,
 			ConsultasAnalises:   repositorio,
 			Recibos:             receipt.NovoVerificador(chaveiroDosRecibos(configuracao), repositorio),
+			Desfechos:           repositorio,
+			Commits:             leitorDeCommits(configuracao),
+			URLPublica:          configuracao.URLPublica,
 			SlugDoApp:           configuracao.GitHubAppSlug,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
@@ -147,6 +150,18 @@ func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.
 		Executor:    acaoremota.NovoExecutorNoGitHub(clienteGitHub, acaoremota.ReenfileiradorIndisponivel{}),
 		Tentativas:  tentativas,
 	})
+}
+
+func leitorDeCommits(configuracao config.Configuracao) api.LeitorDeCommits {
+	autenticador, err := platform.NovoAutenticador(platform.OpcoesAutenticador{
+		AppID:           configuracao.GitHubAppID,
+		ChavePrivadaPEM: configuracao.GitHubChavePrivada,
+	})
+	if err != nil {
+		slog.Warn("sem as credenciais do GitHub App, /receipts/{id}/revert responderá indisponível", "erro", err)
+		return nil
+	}
+	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador})
 }
 
 func desligar(parar func(context.Context) error) {

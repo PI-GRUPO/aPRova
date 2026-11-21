@@ -92,7 +92,11 @@ func (s *Servidor) manipularVerificacaoDeRecibo(w http.ResponseWriter, r *http.R
 		responderFalhaDeRecibo(w, r, id, err)
 		return
 	}
-	responderJSON(w, r, http.StatusOK, respostaDaVerificacao{
+	responderJSON(w, r, http.StatusOK, verificacaoDoRecibo(recibo, resultado))
+}
+
+func verificacaoDoRecibo(recibo domain.Recibo, resultado receipt.Resultado) respostaDaVerificacao {
+	return respostaDaVerificacao{
 		ID:           recibo.ID,
 		Valido:       resultado.Valido,
 		Falha:        string(resultado.Falha),
@@ -100,7 +104,7 @@ func (s *Servidor) manipularVerificacaoDeRecibo(w http.ResponseWriter, r *http.R
 		Verificacoes: conferenciasDe(resultado),
 		HashSHA256:   receipt.HashEmHex([]byte(recibo.Conteudo)),
 		KeyID:        recibo.IDChave,
-	})
+	}
 }
 
 func (s *Servidor) manipularChavesDeRecibo(w http.ResponseWriter, r *http.Request) {

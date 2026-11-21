@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
@@ -45,6 +46,9 @@ type Opcoes struct {
 	Relatorios          FonteDeRelatorios
 	ConsultasAnalises   FonteDeAnalises
 	Recibos             VerificadorDeRecibos
+	Desfechos           FonteDeDesfechos
+	Commits             LeitorDeCommits
+	URLPublica          string
 	SlugDoApp           string
 	Agora               func() time.Time
 }
@@ -59,6 +63,9 @@ type Servidor struct {
 	relatorios          FonteDeRelatorios
 	consultasAnalises   FonteDeAnalises
 	recibos             VerificadorDeRecibos
+	desfechos           FonteDeDesfechos
+	commits             LeitorDeCommits
+	urlPublica          string
 	slugDoApp           string
 	agora               func() time.Time
 }
@@ -79,6 +86,9 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		relatorios:          opcoes.Relatorios,
 		consultasAnalises:   opcoes.ConsultasAnalises,
 		recibos:             opcoes.Recibos,
+		desfechos:           opcoes.Desfechos,
+		commits:             opcoes.Commits,
+		urlPublica:          strings.TrimRight(opcoes.URLPublica, "/"),
 		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
 	}
@@ -105,6 +115,7 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
 	roteador.Get("/receipts/{id}", s.manipularRecibo)
 	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)
+	roteador.Get("/receipts/{id}/revert", s.manipularReversaoDeRecibo)
 
 	return roteador
 }
