@@ -25,7 +25,7 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 		};
 	}, [instalacao, data, nivel]);
 	const retorno = new URLSearchParams();
-	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
+	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel", "pagina", "snapshot"]) {
 		const v = q.get(nome);
 		if (v) retorno.set(nome, v);
 	}
@@ -82,7 +82,7 @@ function CelulaMapa({
 			aberto={aberto}
 			aoMudar={aoMudar}
 			titulo={`${rotuloDiaMapa(data)} · risco ${nivel === "medio" ? "médio" : nivel}`}
-			descricao={`${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível`}
+			descricao={`Dados simulados · ${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível`}
 			gatilho={
 				<button
 					type="button"
@@ -151,7 +151,7 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 					</div>
 				)}
 				<div className="legenda-mapa apoio">
-					Por dia{" "}
+					Dados simulados · por dia{" "}
 					{["0", "1", "2", "3+"].map((v, i) => (
 						<span key={v}>
 							<i style={{ opacity: i ? 0.5 + i / 6 : 0.12 }} />

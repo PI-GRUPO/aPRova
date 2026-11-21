@@ -304,7 +304,9 @@ histórico”. Não reintroduzir esse botão por causa dos modais remanescentes.
 O guia `17:2676` é apoio ao protótipo; não é uma funcionalidade operacional
 obrigatória nem deve navegar o produto real por PRs fictícios.
 
-## 5. Matriz de disponibilidade real do núcleo
+## 5. Matriz de disponibilidade do núcleo
+
+A matriz abaixo registra a auditoria F0. Para as leituras web disponíveis hoje, consulte o [registro da fila na visão geral](#leituras-da-visão-geral--21112026).
 
 **A:** HTTP implementado, consumível após verificar ambiente e origem.
 **B:** HTTP implementado, mas exige adaptação segura para uso web.
@@ -1016,3 +1018,21 @@ que incluía uma proposta de AGENTS.md versionado.
 - O servidor estático valida nomes com `fs.ValidPath`, após rejeitar segmentos ocultos, travessia, contrabarras e NUL. Separadores repetidos mantêm o comportamento anterior. Foram adicionados casos de travessia codificada e NUL aos testes existentes.
 - Biome, TypeScript e build aprovados. Go test de `web` e `internal/api` passou com `-race -count=1`, e GolangCI-Lint de `web/...` terminou com zero alertas. O build manteve o aviso de bundle principal acima de 500 kB.
 - A suíte Playwright completa passou nos 133 cenários em 2,4 minutos, incluindo desktop/mobile nos dois temas, HTML malicioso, timeout, cancelamento e handlers Go isolados. As 12 capturas de recortes do mapa coincidiram pixel a pixel com as referências locais da rodada anterior em `.capturas-mcp/mapa/`. A baixa dos demais avisos depende da análise do novo commit pelo Codacy.
+
+### Leituras da visão geral — 21/11/2026
+
+Base local `5fb6476`, cards #65–#68 e #70, visão geral desktop `9:22` e variantes mobile. A integração acrescentada em `web/src/servicos/analises.ts` e `web/src/componentes/FilaDePendencias.tsx` usa os contratos de sessão conferidos em `internal/sessaoweb`, o resumo de `internal/domain/painel_analises.go` e a paginação do repositório PostgreSQL.
+
+| Seção | Origem e comportamento |
+| --- | --- |
+| Fila da visão geral | `GET /api/analises` com instalação, repositório opcional, estado `aguardando_aprovacao`, nível alto e início em 1970 para incluir pendências anteriores aos últimos 30 dias. O servidor ordena por recebimento, calcula o total e fornece o snapshot para paginar. A busca por texto abrange a página indicada. |
+| Filtros e detalhe | `GET /api/repositorios` fornece o catálogo da instalação. O link da fila abre `GET /api/analises/{id}` no escopo da linha. URL, busca e paginação acompanham o retorno. O resumo informa PR, autor, commit e recebimento. A idade da pendência, a branch, os motivos e as evidências estão ausentes no resumo. |
+| Sessão e relatório semanal | Integrações existentes em `GET /api/sessao` e `GET /api/web/relatorio-semanal`. O relatório cobre sete dias UTC no escopo autorizado. |
+| Recibo individual | Consulta por UUID, download, verificação e chaves públicas já integrados a `/receipts/{id}`, `/receipts/{id}/verify` e `/receipts/keys`. O envelope preserva os bytes assinados. A rota de instruções `/receipts/{id}/revert` da base local não tem ação correspondente no dashboard. |
+| Seções simuladas | Métricas de 30 dias, distribuições, mapa e seus detalhes demonstrativos, último recibo, coleção de recibos e gestão pendente exibem sua origem. Seguem o controle `APROVA_DASHBOARD_MOCKS=1` em desenvolvimento/teste. O build de produção continua excluindo as fixtures. |
+
+A falha da fila oferece nova tentativa na própria seção. A troca de escopo cancela a consulta pendente. As operações de escrita mantêm a disponibilidade anterior.
+
+A homologação depende do backend com sessão web e OAuth GitHub configurados, da instalação com repositórios autorizados e de dados de análises e recibos no ambiente. O front usa a configuração existente de origem/proxy. Evidências visuais locais em `.capturas-mcp/dashboard/local-overview-*`.
+
+Validação local da rodada em Chromium com 136 testes Playwright aprovados, incluindo HTML malicioso, sessão expirada, isolamento, cancelamento, erro de contrato, recuperação e retorno paginado. As verificações de interface cobriram 320 a 1440 px nos temas claro e escuro. Instalação pelo lockfile com `npm ci --offline`, Biome, TypeScript e build de produção aprovados. O Vite emitiu o aviso de tamanho do chunk principal. A suíte usa respostas controladas e handlers Go com provedores de teste.

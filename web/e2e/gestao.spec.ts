@@ -26,7 +26,7 @@ for (const largura of [1440, 390, 360]) {
 				await expect(
 					page.getByRole("heading", { name: caminho === "recibos" && largura < 768 ? "Recibos" : titulo, exact: true }),
 				).toBeVisible();
-				await expect(page.locator("main")).not.toContainText(/simula[çd]|demonstração/i);
+				if (caminho !== "repositorios") await expect(page.locator("main")).toContainText(/simulad/i);
 				await page.evaluate(() => document.fonts.ready);
 				await page.screenshot({ path: `../.capturas-mcp/dashboard/local-${caminho}-${largura}-${tema}.png`, fullPage: true });
 				expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), caminho).toBeTruthy();

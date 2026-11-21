@@ -1,18 +1,8 @@
 import { type Consulta, indisponivel } from "./fonte";
-export type ItemDaFila = {
-	id: string;
-	repositorio: string;
-	pr: number;
-	branch: string;
-	espera: string;
-	motivo: string;
-	evidencia: string;
-};
 export type VisaoGeralDados = {
 	origem: "mock" | "api";
 	atualizadoEm: string;
 	periodo: string;
-	fila: ItemDaFila[];
 	metricas: { rotulo: string; valor: string; unidade: string; contexto: string; contextoMobile?: string; proporcao?: number }[];
 	bloqueadas: { nome: string; quantidade: number }[];
 	falhas: { nome: string; quantidade: number }[];

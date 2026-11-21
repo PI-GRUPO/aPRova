@@ -1,8 +1,9 @@
-import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMobile } from "@/app/responsivo";
 import { useSessao } from "@/app/sessao";
 import { dataUTC, Estado, Risco } from "@/componentes/Analise";
+import { ControlesDaLista } from "@/componentes/ControlesDaLista";
 import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import { Selecao } from "@/componentes/Selecao";
 import { CabecalhoDaTabela, Celula, Coluna, ColunaOrdenavel, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
@@ -226,21 +227,6 @@ function ListaDaInstalacao({ id }: { id: string }) {
 		</Fragment>
 	);
 	return <div className="lista-analises">{mobile ? [resultados, controles] : [controles, resultados]}</div>;
-}
-function ControlesDaLista({ children, mobile }: { children: ReactNode; mobile: boolean }) {
-	const [aberto, setAberto] = useState(false);
-	return (
-		<details
-			className="controles-lista-analises"
-			open={!mobile || aberto}
-			onToggle={(e) => {
-				if (mobile) setAberto(e.currentTarget.open);
-			}}
-		>
-			<summary>Filtros e instalação</summary>
-			<div className="conteudo-filtros-analises">{children}</div>
-		</details>
-	);
 }
 
 function Filtro({

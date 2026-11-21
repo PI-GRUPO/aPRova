@@ -1,5 +1,6 @@
+import type { Consulta } from "./fonte";
 import { consultarJSON, ErroHTTP } from "./http";
-import { objeto } from "./recibos";
+import { objeto, uuidValido } from "./recibos";
 export const estados = new Map<string, string>([
 	["pendente", "Pendente"],
 	["mapeando_contexto", "Mapeando contexto"],
@@ -219,3 +220,20 @@ export function erroDeAnalise(e: unknown) {
 	}
 	return "Não foi possível consultar as análises.";
 }
+
+export const consultarRepos: Consulta<string[]> = ({ instalacao }, _, signal) => listarRepositorios(instalacao, signal);
+export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, filtros, signal) => {
+	const q = new URLSearchParams(filtros);
+	q.set("installation_id", instalacao);
+	q.set("estado", "aguardando_aprovacao");
+	q.set("nivel", "alto");
+	q.set("inicio", "1970-01-01");
+	q.set("ordem", "antigas");
+	const dados = await listarAnalises(q, signal);
+	if (
+		dados.itens.some((i) => !uuidValido(i.id) || i.estado !== "aguardando_aprovacao" || i.nivel !== "alto") ||
+		(q.has("snapshot") && dados.snapshot !== q.get("snapshot"))
+	)
+		throw new ErroHTTP("resposta", "A resposta não corresponde aos filtros da fila.");
+	return dados;
+};

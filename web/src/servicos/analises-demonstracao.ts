@@ -31,7 +31,7 @@ export async function consultarAnaliseDemonstracao(id: string, signal: AbortSign
 export function retornoDaFila(valor: string | null) {
 	const origem = new URLSearchParams(valor ?? "");
 	const retorno = new URLSearchParams();
-	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
+	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel", "pagina", "snapshot"]) {
 		const v = origem.get(nome);
 		if (v) retorno.set(nome, v);
 	}

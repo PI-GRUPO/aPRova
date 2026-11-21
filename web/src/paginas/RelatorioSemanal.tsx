@@ -166,7 +166,7 @@ function DadosDoRelatorio({ id, inicio, repositorio }: { id: string; inicio: str
 					</ul>
 				</div>
 			</section>
-			<p className="apoio">Fila atual, série diária, tempo médio e indicadores de 30 dias ainda não estão disponíveis.</p>
+			<p className="apoio">Série diária, tempo médio e indicadores de 30 dias ainda não estão disponíveis.</p>
 		</>
 	);
 }

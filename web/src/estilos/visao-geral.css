@@ -1,11 +1,20 @@
-.titulo-overview {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 12px;
-}
-.titulo-overview .apoio {
-	text-align: right;
+@media (min-width: 768px) {
+	.pagina-overview:has(.periodo-overview) {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		align-content: start;
+	}
+	.pagina-overview:has(.periodo-overview) > * {
+		grid-column: 1 / -1;
+	}
+	.pagina-overview:has(.periodo-overview) > h1 {
+		grid-area: 1 / 1;
+	}
+	.pagina-overview:has(.periodo-overview) > .periodo-overview {
+		grid-area: 1 / 2;
+		align-self: center;
+		text-align: right;
+	}
 }
 .faixa-overview {
 	display: grid;
@@ -300,14 +309,6 @@
 	}
 }
 @media (max-width: 767px) {
-	.titulo-overview {
-		flex-direction: column;
-		align-items: start;
-		gap: 16px;
-	}
-	.titulo-overview .apoio {
-		text-align: left;
-	}
 	.periodo-desktop {
 		display: none;
 	}
@@ -330,7 +331,17 @@
 		background: var(--fundo-elevado);
 		padding: 8px 12px;
 	}
-	.filtros-fila,
+	.filtros-fila {
+		flex-direction: column;
+		align-items: stretch;
+		margin: 0 12px;
+	}
+	.filtros-fila > .campo:nth-child(2) {
+		width: auto;
+	}
+	.fila-overview > :is(.apoio, .controles, details) {
+		padding: 4px 12px;
+	}
 	.tabela-fila-viewport {
 		display: none;
 	}

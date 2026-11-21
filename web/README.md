@@ -13,34 +13,25 @@ npm --prefix web ci
 npm --prefix web run dev
 ```
 
-Abra `http://127.0.0.1:5173`. A visão geral usa dados simulados separados em
-`src/mocks/visao-geral.ts`, pois o contrato de métricas de 30 dias ainda não existe.
-O serviço substituível fica em `src/servicos/visao-geral.ts`. A indicação de dados
-simulados faz parte da tela; falhas da API real nunca ativam mocks automaticamente.
-Os links da fila abrem `/analises/demonstracao/:id`, com fixtures de
-`src/mocks/analises-demonstracao.ts` e adapter próprio. Esse fluxo funciona
-sem sessão e sem consultar a API de análises ou recibos. A consulta real em
-`/analises/:id` preserva sua proteção por sessão e tratamento de erros.
-As células do mapa abrem seletores com fixtures em `src/mocks/mapa.ts` e adapter
-em `src/servicos/mapa.ts`. Dia/risco ficam na URL e são preservados no retorno
-do detalhe. Os exemplos identificados por `mapa-...` nunca são consultados como
-IDs reais da API. Célula vazia, recorte inválido e falha de carga são distintos.
-O relatório real da API continua em `/relatorio-semanal`, acessível pelo rodapé.
-Análises, recibos por UUID, chaves públicas e sessão continuam consumindo seus contratos existentes.
-O catálogo de repositórios também consulta a API quando há uma instalação autorizada.
+Abra `http://127.0.0.1:5173`. Com uma sessão autenticada, a fila da visão geral
+consulta `GET /api/analises` para a instalação selecionada e abre o detalhe em
+`/analises/:id`. O filtro de repositório abrange a fila inteira. A busca textual
+por PR, repositório ou commit abrange a página exibida. Os filtros e a paginação
+ficam na URL. O relatório semanal usa `GET /api/web/relatorio-semanal` e cobre
+sete dias UTC.
 
-Regras, auditoria, configuração, sugestões e SLA usam `src/mocks/gestao.ts`,
-com adapter em `src/servicos/gestao.ts`. Alterações ficam apenas em memória;
-recarregar a página restaura os valores da demonstração. A coleção/cadeia de
-recibos usa `src/mocks/recibos.ts`; suas exportações não contêm assinaturas ou
-valor de prova. O vínculo Slack usa `src/mocks/conta.ts` e um adapter local,
-sem OAuth ou escrita na API. As telas identificam essas simulações.
+Para visualizar as seções simuladas em desenvolvimento, defina
+`APROVA_DASHBOARD_MOCKS=1` em `web/.env.local` e reinicie o Vite. As métricas
+de 30 dias, distribuições, último recibo e mapa diário usam fixtures em
+`src/mocks/`. As células do mapa abrem detalhes de demonstração com o dia e o
+nível na URL. A coleção de recibos e as leituras de regras, auditoria,
+configuração, sugestões e SLA também identificam a simulação. O build de produção
+exclui essas fixtures.
 
-Os botões de decisão no detalhe da análise abrem modais de demonstração.
-`src/servicos/acoes-simuladas.ts` usa respostas de `src/mocks/acoes.ts`, sem
-HTTP, reviews, merge ou reexecução real. Solicitações ficam em memória e são
-isoladas por usuário, instalação, repositório, PR, análise e SHA. O reload restaura
-a demonstração; os dados reais da API e os recibos permanecem preservados.
+Sessão, repositórios, análises, relatório semanal, recibos por UUID, chaves e
+verificação individual usam a API mesmo com as simulações ativadas.
+Aprovação, pedido de alterações, reexecução, gravações de gestão, vínculo Slack
+e operações sobre a cadeia completa permanecem indisponíveis no painel.
 
 ```sh
 npm --prefix web run verificar

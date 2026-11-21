@@ -11,14 +11,16 @@ type Props<T> = {
 	consultar: Consulta<T>;
 	children: (dados: T) => ReactNode;
 	secao?: boolean;
-	filtrosLocais?: boolean;
+	filtrosDaConsulta?: string[];
 	ajuda?: ReactNode;
 };
 export function ConsultaPrivada<T>(props: Props<T>) {
 	const { sessao, erro } = useSessao();
 	const [q] = useSearchParams();
 	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
-	const filtros = props.filtrosLocais ? "" : q.toString();
+	const filtros = props.filtrosDaConsulta
+		? new URLSearchParams([...q].filter(([nome]) => props.filtrosDaConsulta?.includes(nome))).toString()
+		: q.toString();
 	if (!erro && sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao))
 		return (
 			<Resultado key={JSON.stringify([sessao.usuario.id, instalacao, filtros])} {...props} instalacao={instalacao} filtros={filtros} />

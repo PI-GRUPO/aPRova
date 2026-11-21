@@ -93,7 +93,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 								<p>
 									{r.repo} #{r.pr}
 								</p>
-								<p className="apoio">Assinatura não verificada</p>
+								<p className="apoio">Prévia simulada · assinatura não verificada</p>
 								<PreviaDoRecibo recibo={r} gatilho={<Botao aria-label={`Ver prévia do recibo ${r.id}`}>Ver prévia do recibo</Botao>} />
 							</div>
 						</li>
@@ -101,7 +101,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 					{!itens.length && <li className="apoio">Nenhum recibo para os filtros selecionados.</li>}
 				</ul>
 			) : (
-				<SecaoGestao titulo="Recibos por repositório" ajuda="Consulte um recibo pelo UUID para verificar sua assinatura.">
+				<SecaoGestao titulo="Recibos por repositório · dados simulados" ajuda="Consulte um recibo pelo UUID para verificar sua assinatura.">
 					<TabelaGestao
 						legenda="Recibos por repositório"
 						colunas={["Recibo", "Análise", "Commit", "Emissão", "Verificação"]}
@@ -145,7 +145,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 
 function PreviaDoRecibo({ recibo: r, gatilho }: { recibo: RegistroRecibo; gatilho: ReactNode }) {
 	return (
-		<Modal titulo="Prévia do recibo" descricao="Identificação do recibo" gatilho={gatilho}>
+		<Modal titulo="Prévia do recibo" descricao="Identificação do recibo · dados simulados" gatilho={gatilho}>
 			<p>
 				{r.repo} #{r.pr} · commit {r.sha}
 			</p>

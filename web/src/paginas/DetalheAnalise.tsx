@@ -62,9 +62,9 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
 	return (
 		<>
-			<Link className="voltar" to={`/analises?${retorno}`}>
+			<Link className="voltar" to={`${q.get("origem") === "fila" ? "/" : "/analises"}?${retorno}`}>
 				<Ativo nome="voltar" />
-				Voltar às análises
+				{q.get("origem") === "fila" ? "Voltar à visão geral" : "Voltar às análises"}
 			</Link>
 			{erro ? (
 				<>
@@ -123,7 +123,7 @@ export function ConteudoAnalise({
 					)}
 				</h1>
 				<p className="apoio caminho metadados-analise">
-					Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
+					{demonstracao && "Dados simulados · "}Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
 				</p>
 			</div>
 			<div className="controles estado-do-detalhe">

@@ -1,10 +1,57 @@
 import type { Detalhe } from "@/servicos/analises";
 import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
-import { visaoGeralMock } from "./visao-geral";
+
+const referencias = [
+	{
+		id: "00000000-0000-4000-8000-000000000001",
+		repositorio: "aPRova-TESTES",
+		pr: 1,
+		branch: "teste-peso-zero",
+		espera: "2 d 1 h",
+		motivo: "falha_sandbox",
+		evidencia: "1 de 11 testes falharam",
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000002",
+		repositorio: "cobranca-api",
+		pr: 214,
+		branch: "agente/juros-compostos",
+		espera: "1 d 1 h",
+		motivo: "dependencia_nova",
+		evidencia: "go.mod",
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000003",
+		repositorio: "painel-entregas",
+		pr: 97,
+		branch: "agente/exportar-planilha",
+		espera: "7 h 19 min",
+		motivo: "dependencia_nova +1",
+		evidencia: "requirements.txt · planilha.py",
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000004",
+		repositorio: "cobranca-api",
+		pr: 217,
+		branch: "agente/parcelamento",
+		espera: "3 h 3 min",
+		motivo: "area_sensivel +1",
+		evidencia: "000031_parcelas.down.sql +2",
+	},
+	{
+		id: "00000000-0000-4000-8000-000000000005",
+		repositorio: "painel-entregas",
+		pr: 99,
+		branch: "agente/reorganiza-rotas",
+		espera: "47 min",
+		motivo: "muitos_arquivos +1",
+		evidencia: "painel/rotas/rota_01.py +32",
+	},
+];
 
 // Dados públicos do protótipo, sem relação com uma instalação autenticada.
 const commits = ["6be930afc83bb7213d3d4e111f2c6eb7fd008a42", "958be56", "30f2971", "ab21f04", "11645da"];
-export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, indice) => {
+export const analisesDemonstracao: Detalhe[] = referencias.map((item, indice) => {
 	const commit = commits.at(indice);
 	if (!commit) throw new Error("Commit ausente para a análise de demonstração.");
 	const primeiro = indice === 0;
@@ -98,7 +145,7 @@ export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, in
 });
 
 export const complementosDemonstracao: Record<string, ComplementoDemonstracao> = {
-	[visaoGeralMock.fila[0].id]: {
+	[referencias[0].id]: {
 		contextoCalibracao: "1 teste falhou nesta execução.",
 		ajudaCalibracao: "O histórico não reduz o risco de uma execução com falha nos testes.",
 		etapas: [

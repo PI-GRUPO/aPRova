@@ -21,6 +21,7 @@ export function PaginaGestao({
 	children: ReactNode;
 	voltar?: boolean;
 }) {
+	const simulada = !!useContext(Contexto);
 	return (
 		<div className={`pagina pagina-gestao${voltar ? " pagina-regras" : ""}`}>
 			{voltar && (
@@ -31,7 +32,10 @@ export function PaginaGestao({
 			)}
 			<div className="titulo-contexto">
 				<h1>{titulo}</h1>
-				<p className="apoio">{subtitulo}</p>
+				<p className="apoio">
+					{simulada && "Dados simulados · "}
+					{subtitulo}
+				</p>
 			</div>
 			{children}
 		</div>
