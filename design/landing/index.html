@@ -5,24 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>aPRova · nenhum PR de IA chega à main sem prova</title>
 <meta name="description" content="O aPRova testa o código escrito por IA num ambiente isolado, decide o risco com regras fixas e assina cada decisão. Risco alto espera uma pessoa.">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="dark light">
+<script>try{const tema=localStorage.getItem("aprova-tema");if(tema==="claro"||tema==="escuro")document.documentElement.dataset.tema=tema}catch(erro){}</script>
 <link rel="preload" href="fontes/inter-latin-variavel.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="estilo.css">
 <script src="contagem.js" defer></script>
+<script src="ampliar.js" defer></script>
+<script src="menu.js" defer></script>
 </head>
 <body>
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
 
 <header class="topo">
-  <a class="topo-marca" href="#inicio" aria-label="aPRova, início"><img src="logo.svg" alt="" width="116" height="31"></a>
-  <nav aria-label="Seções">
-    <ul>
-      <li><a href="#como-funciona">Como funciona</a></li>
-      <li><a href="#recibo">Recibo</a></li>
-      <li><a href="#benchmark">Benchmark</a></li>
-      <li><a href="https://github.com/PI-GRUPO/aPRova">Código no GitHub</a></li>
-    </ul>
-  </nav>
+  <div class="topo-dentro">
+    <a class="topo-marca" href="#inicio" aria-label="aPRova, início"><svg class="logo" viewBox="0 0 193 52" width="116" height="31" aria-hidden="true" focusable="false"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
+<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg></a>
+    <div class="topo-acoes">
+      <nav aria-label="Seções">
+        <ul>
+          <li><a href="#como-funciona">Como funciona</a></li>
+          <li><a href="#painel">Painel</a></li>
+          <li><a href="#recibo">Recibo</a></li>
+          <li><a href="#benchmark">Benchmark</a></li>
+          <li><a href="https://github.com/PI-GRUPO/aPRova">Código no GitHub</a></li>
+        </ul>
+      </nav>
+      <button class="trocar-tema" type="button" aria-label="Mudar para o tema claro">
+        <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
 </header>
 
 <main id="conteudo">
@@ -76,8 +89,8 @@
         <h1 id="titulo">Nenhum PR de IA chega à main <em>sem prova</em></h1>
       </div>
       <div class="abertura-lado">
-        <p class="glossario"><strong>PR</strong> é o pedido para juntar uma mudança ao código principal. <strong>main</strong> é a versão oficial do código.</p>
-        <p class="subtitulo">Quando uma IA escreve código, alguém precisa conferir antes de ele entrar. O aPRova testa o código num ambiente isolado, sem internet, decide o risco com regras fixas e assina cada decisão. Se o risco for alto, o código espera uma pessoa aprovar.</p>
+        <p class="glossario"><strong>PR</strong>: pedido para juntar uma mudança ao código principal. <strong>main</strong>: a versão oficial do código.</p>
+        <p class="subtitulo">Código escrito por IA é testado num ambiente isolado, sem internet. Regras fixas decidem o risco, cada decisão é assinada, e risco alto espera uma pessoa.</p>
         <div class="acoes">
           <a class="botao botao-principal" href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">Ver a demonstração</a>
           <a class="botao botao-metal" href="#recibo">Verificar um recibo</a>
@@ -105,137 +118,220 @@
         <dd><span class="digitos">Ed25519</span></dd>
       </div>
     </dl>
-    <p class="faixa-fonte">Os dois primeiros números são do estudo-piloto (rodada 2b, 21 tarefas). <a href="#benchmark">Ver o benchmark</a>.</p>
+    <p class="faixa-fonte">Os dois primeiros números vêm do estudo-piloto (rodada 2b, 21 tarefas). <a href="#benchmark">Ver o benchmark</a>.</p>
   </div>
 </section>
 
 <section class="secao" id="como-funciona" aria-labelledby="titulo-como">
-  <div class="como-intro">
+  <div class="como-cabeca">
     <h2 id="titulo-como">Um caso real, do começo ao fim</h2>
-    <p class="lead">Seguimos o PR #6 do nosso projeto de testes. Nele, a mudança traz um teste que falha de propósito. É o caso que mostra a trava funcionando.</p>
-    <dl class="ficha">
-      <div><dt>Projeto</dt><dd>PI-GRUPO/aPRova-TESTES</dd></div>
-      <div><dt>Pedido</dt><dd>PR #6, «Testa frete com peso zero»</dd></div>
-      <div><dt>Teste que falha</dt><dd><code>TestPesoZeroRetornaErro</code></dd></div>
-      <div><dt>Resultado</dt><dd><span class="risco-alto">risco alto</span>, espera uma pessoa</dd></div>
-    </dl>
+    <p class="lead">O PR #6 do projeto de testes traz um teste que falha de propósito.</p>
   </div>
+
+  <figure class="diagrama">
+    <svg class="diagrama-horizontal" viewBox="0 36 1104 108" role="img" aria-labelledby="diagrama-titulo-h">
+      <title id="diagrama-titulo-h">O caminho de um pedido: a IA abre o pedido, o código roda isolado e sem internet, regras fixas decidem o risco, a decisão vira um recibo assinado, o GitHub trava o botão de juntar e, com risco alto, uma pessoa aprova.</title>
+      <g>
+        <rect x="0.0" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="80.0" y="82">A IA abre</tspan><tspan x="80.0" y="102">o pedido (PR)</tspan></text>
+        <path class="ligacao" d="M164.0 88 H184.8 M179.8 83 L184.8 88 L179.8 93"/>
+        <rect x="188.8" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="268.8" y="82">Roda isolado,</tspan><tspan x="268.8" y="102">sem internet</tspan></text>
+        <path class="ligacao" d="M352.8 88 H373.6 M368.6 83 L373.6 88 L368.6 93"/>
+        <rect x="377.6" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="457.6" y="82">Regras fixas</tspan><tspan x="457.6" y="102">decidem o risco</tspan></text>
+        <path class="ligacao" d="M541.6 88 H562.4 M557.4 83 L562.4 88 L557.4 93"/>
+        <rect x="566.4" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="646.4" y="82">A decisão vira</tspan><tspan x="646.4" y="102">recibo assinado</tspan></text>
+        <path class="ligacao" d="M730.4 88 H751.2 M746.2 83 L751.2 88 L746.2 93"/>
+        <rect x="755.2" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="835.2" y="82">O GitHub trava</tspan><tspan x="835.2" y="102">o botão de juntar</tspan></text>
+        <path class="ligacao" d="M919.2 88 H940.0 M935.0 83 L940.0 88 L935.0 93"/>
+        <rect class="destaque" x="944.0" y="36" width="160" height="104" rx="12"/>
+        <text class="texto-no" text-anchor="middle"><tspan x="1024.0" y="72">Risco alto:</tspan><tspan x="1024.0" y="92">uma pessoa</tspan><tspan x="1024.0" y="112">aprova</tspan></text>
+      </g>
+    </svg>
+    <svg class="diagrama-vertical" viewBox="0 0 343 412" role="img" aria-labelledby="diagrama-titulo-v">
+      <title id="diagrama-titulo-v">O caminho de um pedido: a IA abre o pedido, o código roda isolado e sem internet, regras fixas decidem o risco, a decisão vira um recibo assinado, o GitHub trava o botão de juntar e, com risco alto, uma pessoa aprova.</title>
+      <g>
+        <rect x="1" y="1" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="31">A IA abre o pedido (PR)</text>
+        <path class="ligacao" d="M24 52 V71 M19 66 L24 71 L29 66"/>
+        <rect x="1" y="73" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="103">O código roda isolado, sem internet</text>
+        <path class="ligacao" d="M24 124 V143 M19 138 L24 143 L29 138"/>
+        <rect x="1" y="145" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="175">Regras fixas decidem o risco</text>
+        <path class="ligacao" d="M24 196 V215 M19 210 L24 215 L29 210"/>
+        <rect x="1" y="217" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="247">A decisão vira um recibo assinado</text>
+        <path class="ligacao" d="M24 268 V287 M19 282 L24 287 L29 282"/>
+        <rect x="1" y="289" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="319">O GitHub trava o botão de juntar</text>
+        <path class="ligacao" d="M24 340 V359 M19 354 L24 359 L29 354"/>
+        <rect class="destaque" x="1" y="361" width="341" height="50" rx="10"/>
+        <text class="texto-no" x="20" y="391">Risco alto: uma pessoa aprova</text>
+      </g>
+    </svg>
+    <figcaption>Com risco baixo ou médio, o GitHub libera sem o último passo.</figcaption>
+  </figure>
 
   <ol class="passos">
     <li>
-      <h3>Uma IA propõe uma mudança</h3>
-      <p>Um agente de IA abre um pedido de mudança (PR) no GitHub, o site onde o código do projeto fica guardado. O GitHub avisa o aPRova na hora, e o aPRova abre uma análise para aquela versão exata do código.</p>
-      <p class="tecnico">Webhook do GitHub App · uma análise por commit</p>
-      <p class="no-caso"><span>No PR #6</span>A mudança foi feita numa cópia de trabalho (<code>teste-peso-zero</code>) e pede para entrar na main.</p>
+      <h3>A IA abre o pedido</h3>
+      <p>Um agente de IA abre o PR no GitHub, onde o código fica guardado.</p>
+      <p class="no-caso"><span>No PR #6</span> Cópia de trabalho <code>teste-peso-zero</code>.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>O GitHub avisa o aPRova por webhook, e cada versão do código (commit) ganha uma análise.</p></details>
     </li>
     <li>
-      <h3>O código roda isolado, sem internet</h3>
-      <p>Primeiro o aPRova baixa o que o código precisa. Depois roda os testes numa caixa fechada: sem internet e com um usuário sem poderes especiais. Se o código tentar acessar a internet, não consegue.</p>
-      <p class="tecnico">Sandbox em duas etapas: preparar com rede, testar com <code>--network none</code> · usuário sem privilégio · Go, Python e Java</p>
-      <p class="no-caso"><span>No PR #6</span>10 testes passaram e 1 falhou.</p>
+      <h3>Roda isolado, sem internet</h3>
+      <p>Os testes rodam numa caixa fechada, com permissões mínimas.</p>
+      <p class="no-caso"><span>No PR #6</span> 10 testes passaram, 1 falhou.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Sandbox em duas etapas: prepara com rede e testa com <code>--network none</code>, com usuário sem privilégio. Go, Python e Java.</p></details>
     </li>
     <li>
-      <h3>Regras fixas decidem o risco</h3>
-      <p>Sete regras olham o que mudou. A mesma mudança sempre dá o mesmo resultado. Nenhuma IA participa dessa decisão. Se nenhuma regra dispara, o risco é baixo.</p>
+      <h3>Regras fixas decidem</h3>
+      <p>Sete regras olham o que mudou; nenhuma IA participa.</p>
       <table class="regras">
         <caption class="visualmente-oculto">As sete regras e o risco que cada uma dá</caption>
-        <thead><tr><th scope="col">O que aconteceu</th><th scope="col">Risco</th></tr></thead>
+        <thead><tr><th scope="col">O que mudou</th><th scope="col">Risco</th></tr></thead>
         <tbody>
-          <tr><td>Os testes falharam ou o código não compilou <code>falha_sandbox</code></td><td>alto</td></tr>
-          <tr><td>Adicionou uma biblioteca nova <code>dependencia_nova</code></td><td>alto</td></tr>
-          <tr><td>Colocou senha ou chave dentro do código <code>segredo_versionado</code></td><td>alto</td></tr>
-          <tr><td>Mexeu na automação que monta o projeto <code>configuracao_ci</code></td><td>alto</td></tr>
-          <tr><td>Mexeu numa área sensível, como login ou banco de dados <code>area_sensivel</code></td><td>alto</td></tr>
-          <tr><td>Mudou mais de 20 arquivos de uma vez <code>muitos_arquivos</code></td><td>alto</td></tr>
-          <tr><td>Mudou código sem mexer em nenhum teste <code>codigo_sem_teste</code></td><td>médio</td></tr>
+          <tr><td>Testes falharam ou o código não compilou</td><td>alto</td></tr>
+          <tr><td>Biblioteca nova</td><td>alto</td></tr>
+          <tr><td>Senha ou chave no código</td><td>alto</td></tr>
+          <tr><td>Automação que monta o projeto</td><td>alto</td></tr>
+          <tr><td>Área sensível, como login ou banco de dados</td><td>alto</td></tr>
+          <tr><td>Mais de 20 arquivos de uma vez</td><td>alto</td></tr>
+          <tr><td>Código sem teste</td><td>médio</td></tr>
         </tbody>
       </table>
-      <p class="no-caso"><span>No PR #6</span>«Os testes falharam» disparou. Risco alto.</p>
+      <p class="no-caso"><span>No PR #6</span> «Testes falharam»: risco alto.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Nomes no código: <code>falha_sandbox</code>, <code>dependencia_nova</code>, <code>segredo_versionado</code>, <code>configuracao_ci</code>, <code>area_sensivel</code>, <code>muitos_arquivos</code> e <code>codigo_sem_teste</code>. A mesma mudança dá sempre o mesmo risco; sem nenhuma regra, o risco é baixo.</p></details>
     </li>
     <li>
-      <h3>O histórico pode baixar um degrau</h3>
-      <p>Se casos muito parecidos já foram aprovados por pessoas e entraram sem problema, o aPRova pode baixar o risco um nível. Ele nunca sobe o risco e nunca baixa dois níveis. Teste falhando, biblioteca nova, senha no código e mudança na automação nunca baixam. Quando o nível cai, o motivo fica escrito no recibo.</p>
-      <p class="tecnico">Calibração por histórico · desligada por padrão</p>
-      <p class="no-caso"><span>No PR #6</span>Não se aplica: teste falhando nunca baixa.</p>
+      <h3>O histórico pode baixar um nível</h3>
+      <p>Casos parecidos já aprovados podem baixar o risco um nível.</p>
+      <p class="no-caso"><span>No PR #6</span> Não se aplica.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Desligado por padrão e registrado no recibo. Nunca sobe o risco nem baixa dois níveis. Testes falhando, biblioteca nova, senha no código e mudança na automação nunca baixam.</p></details>
     </li>
     <li>
-      <h3>Cada decisão vira um recibo assinado</h3>
-      <p>O <strong>recibo</strong> é o registro assinado de cada decisão, que qualquer pessoa pode conferir. Ele guarda a versão exata do código, o resultado dos testes, o risco e os motivos. Cada recibo aponta para o anterior, como elos de uma corrente.</p>
-      <div class="prova">
-        <p><strong>Prova</strong> que foi essa a decisão, com esses dados, e que ninguém a mudou depois.</p>
-        <p><strong>Não prova</strong> que a decisão estava certa. Também não protege contra quem tiver a chave secreta que assina.</p>
-      </div>
-      <p class="tecnico">Assinatura Ed25519 · recibo encadeado ao anterior</p>
-      <p class="no-caso"><span>No PR #6</span>Recibo <code>6eddb1ce</code>, risco alto, «1 de 11 testes falharam». <a href="#recibo">Conferir</a></p>
+      <h3>Cada decisão vira recibo</h3>
+      <p>O <strong>recibo</strong> é o registro assinado da decisão, que qualquer pessoa pode conferir.</p>
+      <p class="no-caso"><span>No PR #6</span> Recibo <code>6eddb1ce</code>. <a href="#recibo">Conferir</a></p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Cada recibo aponta para o anterior, como elos de uma corrente. Prova que a decisão foi essa e que ninguém a mudou depois. Não prova que estava certa, nem protege contra quem tiver a chave secreta. Assinatura Ed25519.</p></details>
     </li>
     <li>
       <h3>O GitHub trava o botão de juntar</h3>
-      <p>O aPRova publica uma verificação que o GitHub exige antes de juntar o código. Enquanto ela não libera, o botão fica travado. Ele também deixa um único comentário no pedido e o atualiza a cada versão nova, sem encher a conversa.</p>
-      <p class="tecnico">Check Run <code>aPRova</code> obrigatório na proteção da branch · um comentário por PR</p>
-      <p class="no-caso"><span>No PR #6</span>Nem um administrador consegue pular a trava.</p>
+      <p>Sem a verificação do aPRova, o botão fica travado. Um comentário explica o motivo.</p>
+      <p class="no-caso"><span>No PR #6</span> Nem um administrador pula a trava.</p>
+      <figure class="print">
+        <a class="ampliar" href="imagens/pr6-check-aprova.webp"><img src="imagens/pr6-check-aprova.webp" width="860" height="300" loading="lazy" decoding="async" alt="Aba de verificações do PR #6 no GitHub. A verificação aPRova aparece marcada com um X e o título «Risco alto: merge bloqueado até aprovação humana», com o motivo «1 de 11 testes falharam»."></a>
+        <figcaption>A verificação do aPRova no PR #6.</figcaption>
+      </figure>
+      <figure class="print">
+        <a class="ampliar" href="imagens/pr6-comentario-aprova.webp"><img src="imagens/pr6-comentario-aprova.webp" width="620" height="575" loading="lazy" decoding="async" alt="Comentário do aPRova no PR #6: risco alto, versão analisada 3263018, motivo «os testes falharam», 10 testes passaram e 1 falhou, e o recibo assinado com links para conferir."></a>
+        <figcaption>O comentário do aPRova no PR #6.</figcaption>
+      </figure>
+      <details class="mais"><summary>Mais detalhes</summary><p>Check Run <code>aPRova</code> exigido pela proteção da branch; o comentário é editado a cada versão nova.</p></details>
     </li>
     <li>
       <h3>Risco alto espera uma pessoa</h3>
-      <p>Quem tem permissão aprova pelo Slack, o chat da equipe, com uma justificativa. Se o Slack não responder, dá para aprovar pelo próprio GitHub. A aprovação vale só para a versão analisada: se o código mudar, a análise recomeça.</p>
-      <p class="tecnico">Aprovação gravada com o commit analisado e a origem (Slack ou GitHub)</p>
-      <p class="no-caso"><span>No PR #6</span>Na apresentação, a aprovação é feita pelo Slack.</p>
+      <p>Quem tem permissão aprova pelo Slack, o chat da equipe, ou pelo GitHub.</p>
+      <p class="no-caso"><span>No PR #6</span> Aprovação pelo Slack, na apresentação.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>A aprovação vale só para a versão analisada e fica gravada com a origem; se o código mudar, a análise recomeça.</p></details>
     </li>
     <li>
-      <h3>Se algo passou, o recibo ajuda a desfazer</h3>
-      <p>A partir do recibo, o aPRova encontra a mudança que entrou e prepara o comando e o texto para desfazê-la. Ele não executa nada: quem desfaz é uma pessoa, com a própria conta. Para isso, o aPRova só lê o código e não precisa de permissão para alterá-lo.</p>
-      <p class="tecnico">Reversão assistida · <code>GET /receipts/{id}/revert</code> · só leitura</p>
+      <h3>O recibo ajuda a desfazer</h3>
+      <p>Se algo passou, o aPRova prepara o comando; quem desfaz é uma pessoa.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Reversão assistida: <code>GET /receipts/{id}/revert</code>, só leitura, sem permissão de escrita.</p></details>
     </li>
   </ol>
 </section>
 
 <section class="secao tambem" aria-labelledby="titulo-tambem">
-  <h2 id="titulo-tambem">Também faz</h2>
-  <p class="lead">Recursos de apoio. Nenhum deles muda a decisão de risco, e alguns ficam desligados até alguém ligar.</p>
+  <h2 id="titulo-tambem">Além da decisão</h2>
+  <p class="lead">Recursos de apoio. Nenhum muda o risco decidido pelas regras.</p>
   <ul class="lista-tambem">
     <li>
-      <h3>Mostra os motivos na aba de segurança do GitHub</h3>
-      <p>Os motivos do risco aparecem também como alertas no próprio pedido. Desligado por padrão.</p>
-      <p class="tecnico">SARIF no code scanning</p>
+      <div class="item-cabeca">
+        <svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5 21 19.5H3Z"/><path d="M12 10v4.5M12 17v.5"/></svg>
+        <span class="selo-desligado">desligado por padrão</span>
+      </div>
+      <h3>Alertas no GitHub</h3>
+      <p>Os motivos do risco aparecem como alertas na aba de segurança.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>SARIF 2.1.0 enviado ao code scanning; liga com <code>SARIF_LIGADO</code>.</p></details>
     </li>
     <li>
-      <h3>Diz como está funcionando</h3>
-      <p>Registra cada passo e mostra, para quem cuida do sistema, números de uso e se ele está no ar. Esses dados ficam num endereço interno, desligado até ser configurado.</p>
-      <p class="tecnico"><code>/metrics</code>, <code>/health/live</code> e <code>/health/ready</code></p>
+      <div class="item-cabeca">
+        <svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12h4l2.5-6 4.5 12 2.5-6h5.5"/></svg>
+        <span class="selo-desligado">desligado por padrão</span>
+      </div>
+      <h3>Saúde do sistema</h3>
+      <p>Números de uso e de saúde para quem opera, num endereço interno.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p><code>/metrics</code>, <code>/health/live</code> e <code>/health/ready</code>; liga com <code>METRICAS_ENDERECO</code>.</p></details>
     </li>
     <li>
-      <h3>Tem limites de uso</h3>
-      <p>Cada conta que instala o aPRova inicia até 60 análises por hora; acima disso, o pedido espera na fila e continua barrado. Cada endereço de internet lê até 60 recibos por minuto. Nenhum limite libera código sem análise.</p>
-      <p class="tecnico">Teto por instalação e por IP</p>
+      <div class="item-cabeca">
+        <svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg>
+        
+      </div>
+      <h3>Limites de uso</h3>
+      <p>Até 60 análises por hora por conta; acima disso, o pedido espera na fila, nunca passa sem análise.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Teto por instalação em <code>APROVA_TETO_ANALISES_POR_HORA</code>; leitura pública de recibos limitada a 60 por minuto por IP.</p></details>
     </li>
     <li>
-      <h3>Explica o risco em linguagem simples</h3>
-      <p>Se ligada, uma IA escreve um parágrafo no comentário explicando a decisão. Ela só descreve o que as regras já decidiram. Desligada por padrão.</p>
-      <p class="tecnico">Explicação por IA (Gemini)</p>
+      <div class="item-cabeca">
+        <svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H10l-4 3.5v-3.5H4Z"/><path d="M8 9h8M8 12h5"/></svg>
+        <span class="selo-desligado">desligado por padrão</span>
+      </div>
+      <h3>Explicação em texto simples</h3>
+      <p>Uma IA descreve a decisão que as regras já tomaram.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Gemini, só no comentário do PR; liga com <code>EXPLICACAO_LIGADA</code>.</p></details>
     </li>
   </ul>
 </section>
 
+<section class="secao painel" id="painel" aria-labelledby="titulo-painel">
+  <div class="painel-cabeca">
+    <h2 id="titulo-painel">O painel da equipe</h2>
+    <p class="lead">Num painel web, a equipe vê cada pedido com risco, motivo, testes e recibo.</p>
+    <p class="tecnico">Dados reais da instância usada na demonstração.</p>
+  </div>
+  <figure class="print painel-principal">
+    <a class="ampliar" href="imagens/painel-analises.webp"><img src="imagens/painel-analises.webp" width="1416" height="659" loading="lazy" decoding="async" alt="Lista de análises no painel do aPRova, com filtros por repositório, nível, estado e período. Cada linha mostra o pedido do repositório aPRova-TESTES, o risco (alto ou baixo), o estado, como «Aguardando aprovação», «Concluído» ou «Falhou», a data e a versão do código."></a>
+    <figcaption>Lista de análises.</figcaption>
+  </figure>
+  <div class="painel-dupla">
+    <figure class="print">
+      <a class="ampliar" href="imagens/painel-detalhe.webp"><img src="imagens/painel-detalhe.webp" width="1180" height="395" loading="lazy" decoding="async" alt="Detalhe da análise do PR #6 no painel: risco alto, aguardando aprovação, autor, versão analisada, o motivo «os testes ou a compilação falharam» e «1 de 11 testes falharam»."></a>
+      <figcaption>Detalhe do PR #6.</figcaption>
+    </figure>
+    <figure class="print">
+      <a class="ampliar" href="imagens/painel-recibo.webp"><img src="imagens/painel-recibo.webp" width="620" height="360" loading="lazy" decoding="async" alt="Final do detalhe do PR #6: nenhuma decisão humana registrada ainda, com o aviso de que o autor não pode aprovar o próprio pedido, e o recibo assinado 6eddb1ce com os botões «Verificar recibo» e «Abrir recibo e exportar»."></a>
+      <figcaption>Decisão humana pendente e recibo do PR #6.</figcaption>
+    </figure>
+  </div>
+</section>
+
 <section class="secao recibo" id="recibo" aria-labelledby="titulo-recibo">
   <div class="recibo-texto">
-    <h2 id="titulo-recibo">Qualquer pessoa pode confirmar que a decisão não foi alterada</h2>
-    <p class="lead">Basta a chave pública do aPRova, que pode ser divulgada. Não precisa de conta, nem de acesso ao servidor, nem confiar em nós. A verificação roda no seu computador.</p>
-    <p>O recibo é <strong>assinado e verificável</strong>: o conteúdo é público, e a assinatura mostra se alguém mudou um único caractere.</p>
+    <h2 id="titulo-recibo">Qualquer pessoa pode confirmar que a decisão não mudou</h2>
+    <p class="lead">Basta a chave pública: sem conta e sem acesso ao servidor.</p>
+    <p>O recibo é <strong>assinado e verificável</strong>; um caractere alterado já invalida a assinatura.</p>
   </div>
 
   <div class="recibo-cartao">
     <dl>
       <div><dt>Pedido</dt><dd>PI-GRUPO/aPRova-TESTES, PR #6</dd></div>
       <div><dt>Versão analisada</dt><dd><code>3263018</code></dd></div>
-      <div><dt>Testes</dt><dd>10 passaram, 1 falhou</dd></div>
       <div><dt>Risco</dt><dd><span class="risco-alto">alto</span></dd></div>
-      <div><dt>Motivo</dt><dd>os testes falharam</dd></div>
       <div><dt>Recibo anterior</dt><dd><code>0af9e531</code></dd></div>
       <div><dt>Chave que assinou</dt><dd><code>46c0151cbbfd52b8</code></dd></div>
     </dl>
 
     <details class="conferir">
       <summary>Ver como conferir</summary>
-      <p>Baixe o <a href="recibo-pr6.json" download="recibo.json">recibo do PR #6</a> e rode, com OpenSSL 3:</p>
+      <p>Comandos para conferir o <a href="recibo-pr6.json" download="recibo.json">recibo do PR #6</a> com OpenSSL 3:</p>
 <pre class="terminal" tabindex="0"><code><span class="prompt">$</span> jq -r .payload_base64    recibo.json | openssl base64 -d -A &gt; payload.bin
 <span class="prompt">$</span> jq -r .assinatura_base64 recibo.json | openssl base64 -d -A &gt; assinatura.bin
 <span class="prompt">$</span> CHAVE='Jlx6KQYEoJTm/atXMaj53IJHUfJxKEDtKrtqPWKsm1s='
@@ -243,7 +339,7 @@
     | openssl pkey -pubin -inform DER -out chave-publica.pem
 <span class="prompt">$</span> openssl pkeyutl -verify -pubin -inkey chave-publica.pem -rawin -in payload.bin -sigfile assinatura.bin
 <span class="saida">Signature Verified Successfully</span></code></pre>
-      <p class="nota">No macOS, o <code>openssl</code> que vem no sistema não confere Ed25519. Use o OpenSSL 3 do Homebrew (<code>brew install openssl@3</code>). A chave acima é a da instância usada na demonstração. Com um byte do recibo alterado, a resposta vira <code>Signature Verification Failure</code>.</p>
+      <p class="nota">No macOS, o <code>openssl</code> do sistema não confere Ed25519; o do Homebrew confere (<code>brew install openssl@3</code>). A chave é a da instância da demonstração.</p>
       <p class="nota"><a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/verificacao-recibo.md">Passo a passo completo</a></p>
     </details>
   </div>
@@ -252,49 +348,39 @@
 <section class="secao" id="benchmark" aria-labelledby="titulo-bench">
   <div class="bench-intro">
     <h2 id="titulo-bench">O aPRova barra o código quebrado e deixa passar o certo?</h2>
-    <p class="lead">Pedimos a uma IA que resolvesse 21 exercícios de programação e mandamos cada solução ao aPRova. Um avaliador separado, com os testes originais de cada exercício, dizia quais soluções estavam certas. A tabela compara as duas coisas.</p>
+    <p class="lead">Uma IA resolveu 21 exercícios, e cada solução passou pelo aPRova. Os testes originais diziam quais estavam certas.</p>
     <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
   </div>
 
   <div class="tabela-bench">
     <table>
-      <caption>Resultados por rodada, sempre como «N de M». Com tão poucos casos, nenhum número tem valor estatístico.</caption>
+      <caption>Resultados como «N de M», sem valor estatístico.</caption>
       <thead>
-        <tr><th scope="col">O que medimos</th><th scope="col">Rodada 1</th><th scope="col">Rodada 2b</th></tr>
+        <tr><th scope="col">O que foi medido</th><th scope="col">Rodada 1</th><th scope="col">Rodada 2b</th></tr>
       </thead>
       <tbody>
         <tr><th scope="row">Soluções certas</th><td>21 de 21</td><td>17 de 21</td></tr>
         <tr><th scope="row">Soluções quebradas</th><td>0 de 21</td><td>4 de 21</td></tr>
-        <tr><th scope="row">Quebradas que o aPRova deixou passar</th><td>0 de 21</td><td>0 de 21</td></tr>
+        <tr><th scope="row">Quebradas que passaram</th><td>0 de 21</td><td>0 de 21</td></tr>
         <tr><th scope="row">Certas barradas sem motivo</th><td>0 de 21</td><td>0 de 21</td></tr>
-        <tr><th scope="row">Testes originais alterados pela IA</th><td>0 de 21</td><td>0 de 21</td></tr>
+        <tr><th scope="row">Testes originais alterados</th><td>0 de 21</td><td>0 de 21</td></tr>
       </tbody>
     </table>
-    <p class="legenda-tabela"><strong>Rodada 1:</strong> a IA podia rodar os testes antes de entregar (claude-sonnet-5). <strong>Rodada 2b:</strong> a IA não podia rodar nada (claude-haiku-4-5).</p>
+    <p class="legenda-tabela"><strong>Rodada 1:</strong> a IA podia rodar os testes (claude-sonnet-5). <strong>Rodada 2b:</strong> não podia (claude-haiku-4-5).</p>
   </div>
 
   <div class="bench-leitura">
-    <p>Na rodada 2b, as 4 soluções quebradas foram barradas como risco alto, e nenhuma solução certa foi barrada. Em outros 6 casos montados de propósito, um para cada regra além dos testes falhando, 6 de 6 receberam o nível e o motivo esperados.</p>
-    <p class="limites"><strong>Limites:</strong> cada tarefa rodou uma vez; só 4 soluções quebradas; a rodada 2b trocou o modelo e tirou a execução ao mesmo tempo; a regra de código sem teste se engana com arquivos que só têm nome de teste. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo</a></p>
+    <p>Na rodada 2b, as 4 quebradas foram barradas; em 6 casos de risco montados, 6 de 6 acertaram o nível.</p>
+    <p class="limites"><strong>Limites:</strong> uma rodada por tarefa, só 4 quebradas, e a 2b mudou modelo e execução juntos. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo</a></p>
   </div>
 </section>
 
 <section class="secao nunca" aria-labelledby="titulo-nunca">
   <h2 id="titulo-nunca">O que o aPRova nunca faz</h2>
-  <p class="lead">Isso vale sempre, em qualquer configuração.</p>
   <ul class="lista-nunca">
-    <li>
-      <h3>Juntar o código sozinho</h3>
-      <p>Quem trava é o GitHub. Quem junta é uma pessoa.</p>
-    </li>
-    <li>
-      <h3>Decidir o risco com IA</h3>
-      <p>Regras fixas decidem. A IA, quando ligada, só explica.</p>
-    </li>
-    <li>
-      <h3>Liberar risco alto sem uma pessoa</h3>
-      <p>O pedido fica barrado até alguém com permissão aprovar.</p>
-    </li>
+    <li><h3>Juntar o código sozinho</h3><p>Quem junta é sempre uma pessoa.</p></li>
+    <li><h3>Decidir o risco com IA</h3><p>Quem decide são regras fixas.</p></li>
+    <li><h3>Liberar risco alto sem uma pessoa</h3><p>O pedido fica barrado até alguém aprovar.</p></li>
   </ul>
 </section>
 
@@ -302,7 +388,8 @@
 
 <footer class="rodape">
   <div class="rodape-grupo">
-    <img src="logo.svg" alt="aPRova" width="116" height="31">
+    <svg class="logo" viewBox="0 0 193 52" width="116" height="31" role="img" aria-label="aPRova"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
+<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg>
     <p>Projeto Integrador de Sistemas de Informação, UNIPAM, 2026.</p>
     <p>Pedro, Júlia, Sara, Laís, Geizilane e Luís.</p>
   </div>
@@ -312,5 +399,8 @@
     <li><a href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">PR #6, o caso da demonstração</a></li>
   </ul>
 </footer>
+<dialog class="ampliacao" aria-label="Imagem ampliada">
+  <button class="fechar" type="button">Fechar</button>
+</dialog>
 </body>
 </html>
