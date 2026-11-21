@@ -107,6 +107,15 @@ type RemoteActionAttempt struct {
 	Justification string    `json:"justification"`
 }
 
+type RiskExplanation struct {
+	TaskRunID string    `json:"task_run_id"`
+	Result    string    `json:"result"`
+	Text      string    `json:"text"`
+	Model     string    `json:"model"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type RiskGate struct {
 	ID                   int64     `json:"id"`
 	TenantID             int64     `json:"tenant_id"`
