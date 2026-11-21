@@ -116,7 +116,9 @@ issues; para um número que é de PR, `pull_requests: write` basta e
 
 ## O comentário
 
-É montado só a partir dos motivos do gate, sem modelo de IA. Mostra o nível e
+É montado a partir dos motivos do gate. Por padrão não usa modelo de IA; com
+`EXPLICACAO_LIGADA=true`, ganha um parágrafo escrito por IA que só descreve a
+decisão já tomada (veja [explicação por IA](explicacao.md)). Mostra o nível e
 o que ele significa para o merge, cada motivo com as evidências (até 20 por
 motivo), o resultado do sandbox, o recibo (hash, `key_id`, link para
 `/receipts/{id}/verify` e link para `docs/verificacao-recibo.md`) e o commit
