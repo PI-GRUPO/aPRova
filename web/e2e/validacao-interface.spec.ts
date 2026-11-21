@@ -43,12 +43,9 @@ async function conferirInterface(page: Page) {
 	await expect(page.getByRole("main")).toHaveCount(1);
 	await expect
 		.poll(() =>
-			page.locator("img:visible").evaluateAll((itens) =>
-				itens.every((el) => {
-					const img = el as HTMLImageElement;
-					return img.complete && img.naturalWidth > 0;
-				}),
-			),
+			page
+				.locator("img:visible")
+				.evaluateAll((itens) => itens.every((img) => img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0)),
 		)
 		.toBeTruthy();
 	const problemas = await page.evaluate(() => {
@@ -57,17 +54,19 @@ async function conferirInterface(page: Page) {
 		const ids = [...document.querySelectorAll("[id]")].map((el) => el.id);
 		if (new Set(ids).size !== ids.length) erros.push("IDs duplicados");
 		const visivel = (el: Element) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== "hidden";
-		const nome = (el: Element) =>
-			el.getAttribute("aria-label") ||
-			el.getAttribute("title") ||
-			el.textContent?.trim() ||
-			el
-				.getAttribute("aria-labelledby")
-				?.split(" ")
-				.map((id) => document.getElementById(id)?.textContent)
-				.join(" ");
+		const temNome = (el: Element) =>
+			[
+				el.getAttribute("aria-label"),
+				el.getAttribute("title"),
+				el.textContent?.trim(),
+				el
+					.getAttribute("aria-labelledby")
+					?.split(" ")
+					.map((id) => document.getElementById(id)?.textContent)
+					.join(" "),
+			].some((texto) => Boolean(texto?.trim()));
 		for (const el of document.querySelectorAll("button,a[href]")) {
-			if (visivel(el) && !nome(el)) erros.push(`Controle sem nome: ${el.tagName}`);
+			if (visivel(el) && !temNome(el)) erros.push(`Controle sem nome: ${el.tagName}`);
 		}
 		for (const el of document.querySelectorAll<HTMLInputElement>("input:not([type=hidden]),textarea,select")) {
 			if (visivel(el) && !el.labels?.length && !el.getAttribute("aria-label") && !el.getAttribute("aria-labelledby"))
@@ -92,7 +91,9 @@ for (const largura of [1440, 1024, 768, 390, 320])
 		test(`auditoria transversal em ${largura}px e ${tema}`, async ({ page }) => {
 			test.setTimeout(120000);
 			await page.setViewportSize({ width: largura, height: largura >= 768 ? 900 : 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			let autenticado = false;
 			const erros: string[] = [];
 			page.on("pageerror", (erro) => erros.push(erro.message));
@@ -196,7 +197,9 @@ for (const largura of [1440, 320])
 		test(`modais: teclado, foco e rolagem em ${largura}px e ${tema}`, async ({ page }) => {
 			test.setTimeout(60000);
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 568 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			await autenticarFixture(page);
 			await page.route("**/receipts/keys", (r) => r.fulfill({ json: { chaves: [] } }));
 			const casos = [["configuracao", "/configuracao", "Adicionar caminho"]] as const;

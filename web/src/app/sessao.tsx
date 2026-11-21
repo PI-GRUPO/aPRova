@@ -47,10 +47,14 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 	useEffect(() => {
 		if (!sessao?.autenticado) return;
 		const timer = setTimeout(
-			() => setSessao({ autenticado: false, login_disponivel: true }),
+			() => {
+				setSessao({ autenticado: false, login_disponivel: true });
+			},
 			Math.max(0, Date.parse(sessao.expira_em) - Date.now()),
 		);
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(timer);
+		};
 	}, [sessao]);
 	const logout = useRef<Promise<void> | null>(null);
 	function sair() {

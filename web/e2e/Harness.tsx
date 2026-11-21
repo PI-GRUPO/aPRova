@@ -51,7 +51,13 @@ export default function Harness() {
 		<div className="pagina">
 			<h1>Ambiente isolado de testes</h1>
 			<div className="controles">
-				<Campo rotulo="Buscar cenário" value={busca} onChange={(e) => definirBusca(e.target.value)} />
+				<Campo
+					rotulo="Buscar cenário"
+					value={busca}
+					onChange={(e) => {
+						definirBusca(e.target.value);
+					}}
+				/>
 				<Selecao
 					rotulo="Grupo"
 					valor={grupo}
@@ -73,7 +79,12 @@ export default function Harness() {
 			<div className="tabela-rolavel">
 				<Tabela legenda="Cenários de teste">
 					<CabecalhoDaTabela>
-						<ColunaOrdenavel sentido={sentido} aoOrdenar={() => definirSentido(sentido === "crescente" ? "decrescente" : "crescente")}>
+						<ColunaOrdenavel
+							sentido={sentido}
+							aoOrdenar={() => {
+								definirSentido(sentido === "crescente" ? "decrescente" : "crescente");
+							}}
+						>
 							Nome
 						</ColunaOrdenavel>
 						<Coluna>Quantidade</Coluna>
@@ -108,7 +119,14 @@ export default function Harness() {
 						}
 					}}
 				>
-					<Campo rotulo="Justificativa de teste" value={valor} onChange={(e) => definirValor(e.target.value)} erro={erro} />
+					<Campo
+						rotulo="Justificativa de teste"
+						value={valor}
+						onChange={(e) => {
+							definirValor(e.target.value);
+						}}
+						erro={erro}
+					/>
 					<Botao type="submit">Confirmar</Botao>
 				</form>
 			</Modal>
@@ -118,7 +136,12 @@ export default function Harness() {
 						Consultar {t}
 					</Botao>
 				))}
-				<Botao disabled={!cancelamento} onClick={() => cancelamento?.abort()}>
+				<Botao
+					disabled={!cancelamento}
+					onClick={() => {
+						cancelamento?.abort();
+					}}
+				>
 					Cancelar consulta
 				</Botao>
 			</div>

@@ -13,6 +13,7 @@ import { RelatorioSemanalPagina } from "@/paginas/RelatorioSemanal";
 import { Sla } from "@/paginas/Sla";
 import { Sugestoes } from "@/paginas/Sugestoes";
 import { VisaoGeral } from "@/paginas/VisaoGeral";
+import { consultasGestao } from "@/servicos/gestao";
 import { NaoEncontrada } from "./NaoEncontrada";
 import { secoes } from "./rotas";
 import { ProvedorDeSessao } from "./sessao";
@@ -51,27 +52,27 @@ export function App() {
 										{
 											"/repositorios": <Repositorios />,
 											"/regras": (
-												<ConsultaGestao recurso="/regras" titulo={s.titulo}>
+												<ConsultaGestao consultar={consultasGestao["/regras"]} titulo={s.titulo}>
 													<Regras />
 												</ConsultaGestao>
 											),
 											"/auditoria": (
-												<ConsultaGestao recurso="/auditoria" titulo={s.titulo}>
+												<ConsultaGestao consultar={consultasGestao["/auditoria"]} titulo={s.titulo}>
 													<Auditoria />
 												</ConsultaGestao>
 											),
 											"/configuracao": (
-												<ConsultaGestao recurso="/configuracao" titulo={s.titulo}>
+												<ConsultaGestao consultar={consultasGestao["/configuracao"]} titulo={s.titulo}>
 													<Configuracao />
 												</ConsultaGestao>
 											),
 											"/sugestoes": (
-												<ConsultaGestao recurso="/sugestoes" titulo={s.titulo}>
+												<ConsultaGestao consultar={consultasGestao["/sugestoes"]} titulo={s.titulo}>
 													<Sugestoes />
 												</ConsultaGestao>
 											),
 											"/sla": (
-												<ConsultaGestao recurso="/sla" titulo={s.titulo}>
+												<ConsultaGestao consultar={consultasGestao["/sla"]} titulo={s.titulo}>
 													<Sla />
 												</ConsultaGestao>
 											),

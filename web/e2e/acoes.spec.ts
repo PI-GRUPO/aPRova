@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import type { ContextoAcao } from "../src/servicos/acoes-simuladas";
 import type { Detalhe } from "../src/servicos/analises";
 
 const id = "00000000-0000-4000-8000-000000000074";
@@ -59,15 +60,28 @@ test("ações pendentes não registram decisões pelo painel", async ({ page }) 
 	for (const nome of ["Aprovar", "Pedir alterações", "Reexecutar análise"])
 		await expect(page.getByRole("button", { name: nome, exact: true })).toBeDisabled();
 	await expect(page.getByText("Nenhuma decisão humana registrada para esta análise.")).toBeVisible();
-	const mensagem = await page.evaluate(async () => {
-		const adapter = await import(`${location.origin}/src/servicos/acoes-simuladas.ts`);
+	const contexto: ContextoAcao = {
+		instalacao: String(dados.installation_id),
+		id,
+		repo: dados.analise.repositorio,
+		pr: dados.analise.numero_pr,
+		sha: dados.analise.sha_head,
+		usuario: "revisor-demo",
+		nivel: dados.analise.nivel,
+		estado: dados.analise.estado,
+		atual: dados.atual,
+		proprioPR: false,
+		falhaInfra: false,
+	};
+	const mensagem = await page.evaluate(async (contexto) => {
+		const adapter = await import("/src/servicos/acoes-simuladas");
 		try {
-			await adapter.registrarAcao.executar({}, "aprovar", "revisado", "id");
+			await adapter.registrarAcao.executar(contexto, "aprovar", "revisado", "id");
 			return "aceita";
 		} catch (e) {
 			return String(e);
 		}
-	});
+	}, contexto);
 	expect(mensagem).toContain("indisponível");
 });
 test("autor e análise substituída permanecem impedidos", async ({ page }) => {

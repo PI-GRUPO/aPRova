@@ -994,3 +994,10 @@ que incluía uma proposta de AGENTS.md versionado.
   `.capturas-mcp/f4a/local-*`, ignorada pelo Git.
 - Próximo lote de implementação: F4B, agregações de 30 dias e fila atual.
   Aceite integrado do login/leituras permanece dependente das credenciais reais.
+
+### Revisão do Codacy na PR #10 — 20/11/2026
+
+- Base `bd859cd` da branch `feat/web-dashboard`. Em `web/src/`, as consultas de gestão recebem o adapter da rota e os rótulos de análise aceitam apenas entradas cadastradas. Os callbacks de interface e o ciclo de vida das consultas preservam os retornos usados pelo React.
+- Em `web/e2e/`, os testes do mapa e das ações carregam módulos fixos do Vite. Os testes de recibo conferem os bytes do download pelo stream do Playwright. O teste de saída de análise compara o texto integral da fixture, a ausência de um elemento `script` e a ausência do efeito no navegador.
+- Instalação pelo lockfile, Biome, TypeScript e build de produção aprovados. A suíte completa passou nos 133 cenários, incluindo as integrações com os handlers Go isolados. O Vite avisou sobre o tamanho do bundle principal.
+- As 12 capturas dos recortes do mapa em `.capturas-mcp/mapa/` coincidiram pixel a pixel com as do commit de base nos dois temas e nas larguras de 1440, 390 e 360 px. A baixa dos alertas depende da análise do novo commit pelo Codacy.

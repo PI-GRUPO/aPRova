@@ -263,9 +263,9 @@ export function ConteudoAnalise({
 										{e.para === "concluido" ? "Concluída" : e.para === "falhou" ? "Falhou" : "Transição registrada"}
 									</span>
 									<Modal
-										titulo={estados[e.para] ?? e.para}
-										descricao={`De ${estados[e.de] ?? e.de} para ${estados[e.para] ?? e.para}, em ${dataUTC(e.criado_em)}.`}
-										gatilho={<Botao variante="discreto">{estados[e.para] ?? e.para}</Botao>}
+										titulo={estados.get(e.para) ?? e.para}
+										descricao={`De ${estados.get(e.de) ?? e.de} para ${estados.get(e.para) ?? e.para}, em ${dataUTC(e.criado_em)}.`}
+										gatilho={<Botao variante="discreto">{estados.get(e.para) ?? e.para}</Botao>}
 									>
 										<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
 									</Modal>

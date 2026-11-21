@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { type Dispatch, useId, useRef, useState } from "react";
 import { type ContextoAcao, motivoIndisponivel, type ResultadoAcao, registrarAcao, type TipoAcao } from "@/servicos/acoes-simuladas";
 import { niveis } from "@/servicos/analises";
 import { Risco } from "./Analise";
@@ -31,7 +31,7 @@ function FormularioAcao({
 	contexto: ContextoAcao;
 	tipo: TipoAcao;
 	resultado?: ResultadoAcao;
-	aoReceber: (r: ResultadoAcao) => void;
+	aoReceber: Dispatch<ResultadoAcao>;
 	aberto: boolean;
 	aoMudar: (v: boolean) => void;
 }) {
@@ -39,7 +39,7 @@ function FormularioAcao({
 	const [erro, setErro] = useState("");
 	const [enviando, setEnviando] = useState(false);
 	const trava = useRef(false);
-	const idAcao = useRef<string>(undefined);
+	const idAcao = useRef<string | null>(null);
 	const campoId = useId();
 	const texto = rotulos[tipo];
 	const motivo = motivoIndisponivel(contexto, tipo);
@@ -54,7 +54,7 @@ function FormularioAcao({
 		setEnviando(true);
 		setErro("");
 		try {
-			idAcao.current ??= crypto.randomUUID();
+			if (idAcao.current === null) idAcao.current = crypto.randomUUID();
 			aoReceber(await registrarAcao.executar(contexto, tipo, justificativa, idAcao.current));
 		} catch (e) {
 			setErro(e instanceof Error ? e.message : "Não foi possível enviar a solicitação. Tente novamente.");
@@ -92,7 +92,12 @@ function FormularioAcao({
 						Análise {respostaDaAcao.contexto.id} · commit {respostaDaAcao.contexto.sha}.
 					</p>
 					<div className="rodape-acao">
-						<Botao variante="primario" onClick={() => aoMudar(false)}>
+						<Botao
+							variante="primario"
+							onClick={() => {
+								aoMudar(false);
+							}}
+						>
 							Voltar à análise
 						</Botao>
 					</div>
@@ -102,7 +107,7 @@ function FormularioAcao({
 					{tipo !== "reexecutar_analise" && <Risco nivel={contexto.nivel} />}
 					<p className="apoio mono caminho contexto-acao">
 						{contexto.repo} #{contexto.pr} ·{" "}
-						{tipo === "solicitar_alteracao" ? niveis[contexto.nivel ?? "nao_avaliado"] : `commit ${contexto.sha.slice(0, 7)}`}
+						{tipo === "solicitar_alteracao" ? niveis.get(contexto.nivel ?? "nao_avaliado") : `commit ${contexto.sha.slice(0, 7)}`}
 					</p>
 					<p className="explicacao-acao">
 						{tipo === "aprovar"
@@ -124,7 +129,9 @@ function FormularioAcao({
 								<textarea
 									id={campoId}
 									value={justificativa}
-									onChange={(e) => setJustificativa(e.target.value)}
+									onChange={(e) => {
+										setJustificativa(e.target.value);
+									}}
 									maxLength={4000}
 									rows={4}
 									aria-invalid={!!erro}
@@ -143,7 +150,12 @@ function FormularioAcao({
 							Até 4000 caracteres.
 						</p>
 						<div className="rodape-acao">
-							<Botao disabled={enviando} onClick={() => aoMudar(false)}>
+							<Botao
+								disabled={enviando}
+								onClick={() => {
+									aoMudar(false);
+								}}
+							>
 								Cancelar
 							</Botao>
 							<Botao variante="primario" type="submit" disabled={enviando}>
@@ -170,7 +182,9 @@ export function AcoesSimuladas({ contexto }: { contexto: ContextoAcao }) {
 						resultado={resultado}
 						aoReceber={setResultado}
 						aberto={aberta === tipo}
-						aoMudar={(v) => setAberta(v ? tipo : undefined)}
+						aoMudar={(v) => {
+							setAberta(v ? tipo : undefined);
+						}}
 					/>
 				))}
 			</div>

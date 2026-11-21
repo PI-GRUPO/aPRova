@@ -8,7 +8,9 @@ for (const largura of [1440, 390, 360])
 	for (const tema of ["escuro", "claro"]) {
 		test(`seleção do mapa em ${largura}px e tema ${tema}`, async ({ page }) => {
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			const proibidas: string[] = [];
 			page.on("request", (r) => {
 				const caminho = new URL(r.url()).pathname;
@@ -32,13 +34,13 @@ for (const largura of [1440, 390, 360])
 				expect(await modal.evaluate((el) => el.contains(document.activeElement))).toBeTruthy();
 				await modal.getByRole("link").first().focus();
 				await page.keyboard.press("Enter");
-				await expect(page).toHaveURL(new RegExp(`/analises/demonstracao/mapa-${dia}-alto-1`));
+				await expect(page).toHaveURL((url) => url.pathname === `/analises/demonstracao/mapa-${dia}-alto-1`);
 				await expect(page.locator("main")).not.toContainText(/dados simulados/i);
 				await expect(page.getByRole("heading", { level: 1 })).toContainText(primeiro);
 				await expect(page.locator(".estado-do-detalhe")).toContainText("risco alto");
 				await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
 				await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(quantidade);
-				await expect(page).toHaveURL(new RegExp(`fila=go.mod&repositorio=cobranca-api&mapa_dia=${dia}&mapa_nivel=alto`));
+				await expect(page).toHaveURL(`/?fila=go.mod&repositorio=cobranca-api&mapa_dia=${dia}&mapa_nivel=alto`);
 				await page.keyboard.press("Escape");
 				await expect(page.getByRole("dialog")).toHaveCount(0);
 				await expect(celula).toBeFocused();
@@ -67,18 +69,22 @@ test("célula vazia, seleção única, reload e parâmetros inválidos são dist
 test("todas as contagens correspondem a referências do mesmo dia e risco", async ({ page }) => {
 	await page.goto("/");
 	const validacao = await page.evaluate(async () => {
-		const mapa = await import(`${location.origin}/src/servicos/mapa.ts`);
-		const visao = await import(`${location.origin}/src/servicos/visao-geral.ts`);
-		const analises = await import(`${location.origin}/src/servicos/analises-demonstracao.ts`);
+		const mapa = await import("/src/servicos/mapa");
+		const visao = await import("/src/servicos/visao-geral");
+		const analises = await import("/src/servicos/analises-demonstracao");
 		const sinal = new AbortController().signal;
 		const dados = await visao.consultarVisaoGeral({ instalacao: "42", repositorio: "" }, new URLSearchParams(), sinal);
 		const problemas: string[] = [];
 		let total = 0;
-		const ids = new Set();
+		const ids = new Set<string>();
 		for (const dia of dados.mapa)
-			for (const nivel of ["alto", "medio", "baixo"]) {
+			for (const [nivel, quantidade] of [
+				["alto", dia.alto],
+				["medio", dia.medio],
+				["baixo", dia.baixo],
+			] as const) {
 				const recorte = await mapa.consultarRecorteMapa("42", dia.data, nivel, sinal);
-				if (recorte.itens.length !== dia[nivel]) problemas.push(`contagem:${dia.data}:${nivel}`);
+				if (recorte.itens.length !== quantidade) problemas.push(`contagem:${dia.data}:${nivel}`);
 				for (const item of recorte.itens) {
 					const detalhe = await analises.consultarAnaliseDemonstracao(item.id, sinal);
 					if (

@@ -164,7 +164,7 @@ function ListaDaInstalacao({ id }: { id: string }) {
 						rotulo="Estado"
 						valor={q.get("estado") ?? "todos"}
 						aoMudar={(v) => filtro("estado", v)}
-						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...Object.entries(estados).map(([valor, rotulo]) => ({ valor, rotulo }))]}
+						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...[...estados].map(([valor, rotulo]) => ({ valor, rotulo }))]}
 					/>
 					<Filtro
 						rotulo="Período"
@@ -304,7 +304,7 @@ function Resultados({
 									{a.repositorio} #{a.numero_pr}
 								</h2>
 								<div>
-									<p className="apoio">{estados[a.estado] ?? a.estado}</p>
+									<p className="apoio">{estados.get(a.estado) ?? a.estado}</p>
 									<p className="sr-only">
 										<Risco nivel={a.nivel} /> · {dataUTC(a.recebido_em)} · commit {a.sha_head}
 									</p>

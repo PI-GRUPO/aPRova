@@ -31,9 +31,12 @@ export function Casca() {
 		if (anterior.current !== pathname) document.getElementById("conteudo")?.focus({ preventScroll: true });
 		anterior.current = pathname;
 	}, [pathname]);
+	function fecharMenu() {
+		definirMenu(false);
+	}
 	const links = (de = 0, ate: number = secoes.length) =>
 		secoes.slice(de, ate).map((s) => (
-			<NavLink key={s.caminho} to={s.caminho} end={s.caminho === "/"} className="item-nav" onClick={() => definirMenu(false)}>
+			<NavLink key={s.caminho} to={s.caminho} end={s.caminho === "/"} className="item-nav" onClick={fecharMenu}>
 				<Ativo nome={s.icone} ativo={pathname === s.caminho || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`))} />
 				<span>{s.titulo}</span>
 			</NavLink>
@@ -89,11 +92,11 @@ export function Casca() {
 								<Sair />
 							</>
 						) : (
-							<Link to="/entrar" onClick={() => definirMenu(false)}>
+							<Link to="/entrar" onClick={fecharMenu}>
 								Entrar com GitHub
 							</Link>
 						)}
-						<Botao onClick={() => definirMenu(false)}>Fechar</Botao>
+						<Botao onClick={fecharMenu}>Fechar</Botao>
 					</Modal>
 					<Tema />
 				</div>

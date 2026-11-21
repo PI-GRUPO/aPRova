@@ -61,7 +61,9 @@ function Resultado<T>({
 			.catch((e) => {
 				if (!c.signal.aborted) definir(e instanceof RecursoIndisponivel ? { indisponivel: true } : { erro: erroDeAnalise(e) });
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [consultar, instalacao, filtros, tentativa]);
 	if (estado && "dados" in estado) return children(estado.dados);
 	const Titulo = secao ? "h2" : "h1";
@@ -73,7 +75,13 @@ function Resultado<T>({
 			) : "erro" in estado ? (
 				<PainelDeEstado titulo="Falha na consulta" erro>
 					<p>{estado.erro}</p>
-					<Botao onClick={() => repetir((n) => n + 1)}>Tentar novamente</Botao>
+					<Botao
+						onClick={() => {
+							repetir((n) => n + 1);
+						}}
+					>
+						Tentar novamente
+					</Botao>
 				</PainelDeEstado>
 			) : (
 				<PainelDeEstado titulo="Recurso indisponível">{ajuda ?? <p>Esta consulta ainda não está disponível.</p>}</PainelDeEstado>

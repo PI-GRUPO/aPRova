@@ -1,23 +1,23 @@
 import { consultarJSON, ErroHTTP } from "./http";
 import { objeto } from "./recibos";
-export const estados: Record<string, string> = {
-	pendente: "Pendente",
-	mapeando_contexto: "Mapeando contexto",
-	gerando: "Gerando",
-	testando_sandbox: "Testando sandbox",
-	avaliando_risco: "Avaliando risco",
-	aguardando_aprovacao: "Aguardando aprovação",
-	aplicando: "Aplicando",
-	concluido: "Concluído",
-	rejeitado: "Rejeitado",
-	falhou: "Falhou",
-};
-export const niveis: Record<string, string> = {
-	baixo: "risco baixo",
-	medio: "risco médio",
-	alto: "risco alto",
-	nao_avaliado: "Não avaliado",
-};
+export const estados = new Map<string, string>([
+	["pendente", "Pendente"],
+	["mapeando_contexto", "Mapeando contexto"],
+	["gerando", "Gerando"],
+	["testando_sandbox", "Testando sandbox"],
+	["avaliando_risco", "Avaliando risco"],
+	["aguardando_aprovacao", "Aguardando aprovação"],
+	["aplicando", "Aplicando"],
+	["concluido", "Concluído"],
+	["rejeitado", "Rejeitado"],
+	["falhou", "Falhou"],
+]);
+export const niveis = new Map<string, string>([
+	["baixo", "risco baixo"],
+	["medio", "risco médio"],
+	["alto", "risco alto"],
+	["nao_avaliado", "Não avaliado"],
+]);
 export type Analise = {
 	id: string;
 	repositorio: string;
@@ -100,7 +100,7 @@ function analise(v: unknown): v is Analise {
 		["id", "repositorio", "sha_head", "autor"].every((k) => typeof v[k] === "string") &&
 		numero(v.numero_pr) &&
 		typeof v.estado === "string" &&
-		Object.hasOwn(estados, v.estado) &&
+		estados.has(v.estado) &&
 		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
 		["recebido_em", "criado_em", "atualizado_em"].every((k) => data(v[k]))
 	);

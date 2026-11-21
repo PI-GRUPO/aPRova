@@ -4,7 +4,9 @@ for (const largura of [1440, 390, 360, 320])
 	for (const tema of ["escuro", "claro"]) {
 		test(`login conforme Figma em ${largura}px e ${tema}`, async ({ page }) => {
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: true } }));
 			await page.goto("/entrar");
 			const login = page.getByRole("link", { name: "Continuar com GitHub", exact: true });
@@ -24,12 +26,18 @@ for (const largura of [1440, 390, 360, 320])
 			}
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(
-				await page.locator("img").evaluateAll((imgs) =>
-					imgs.every((el) => {
-						const i = el as HTMLImageElement;
-						return i.complete && i.naturalWidth > 0 && i.width === i.naturalWidth && i.height === i.naturalHeight;
-					}),
-				),
+				await page
+					.locator("img")
+					.evaluateAll((imgs) =>
+						imgs.every(
+							(img) =>
+								img instanceof HTMLImageElement &&
+								img.complete &&
+								img.naturalWidth > 0 &&
+								img.width === img.naturalWidth &&
+								img.height === img.naturalHeight,
+						),
+					),
 			).toBeTruthy();
 			await page.screenshot({ path: `../.capturas-mcp/login/local-${largura}-${tema}.png`, fullPage: true });
 			await page.keyboard.press("Tab");

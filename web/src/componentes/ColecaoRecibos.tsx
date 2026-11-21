@@ -31,7 +31,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 	const consulta = useRef<AbortController | null>(null);
 	useEffect(() => () => consulta.current?.abort(), []);
 	async function executar(acao: "cadeia" | "json" | "csv") {
-		if (consulta.current || !(acao === "cadeia" ? verificarCadeia : exportarColecao).disponivel) return;
+		if (consulta.current !== null || !(acao === "cadeia" ? verificarCadeia : exportarColecao).disponivel) return;
 		const c = new AbortController();
 		consulta.current = c;
 		setOcupado(true);
@@ -78,7 +78,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 			<div className="filtros-gestao filtros-recibos">
 				<SeletorGestao
 					rotulo="Repositório"
-					valor={repo || "todos"}
+					valor={repo === "" ? "todos" : repo}
 					aoMudar={(v) => atualizar("repositorio", v === "todos" ? "" : v)}
 					opcoes={[{ valor: "todos", rotulo: "Todos autorizados" }, ...opcoesRepos]}
 				/>

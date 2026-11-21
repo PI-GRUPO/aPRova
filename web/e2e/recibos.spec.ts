@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { text } from "node:stream/consumers";
 import { expect, type Page, test } from "@playwright/test";
 
 const id = "6d290152-af24-4462-a525-72adf3b22d6c";
@@ -53,12 +53,18 @@ for (const largura of [1440, 390, 360]) {
 			await page.screenshot({ path: `../.capturas-mcp/f2/local-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(
-				await page.locator("img:visible").evaluateAll((imgs) =>
-					imgs.every((el) => {
-						const i = el as HTMLImageElement;
-						return i.complete && i.naturalWidth > 0 && i.width === i.naturalWidth && i.height === i.naturalHeight;
-					}),
-				),
+				await page
+					.locator("img:visible")
+					.evaluateAll((imgs) =>
+						imgs.every(
+							(img) =>
+								img instanceof HTMLImageElement &&
+								img.complete &&
+								img.naturalWidth > 0 &&
+								img.width === img.naturalWidth &&
+								img.height === img.naturalHeight,
+						),
+					),
 			).toBeTruthy();
 		}
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
@@ -73,14 +79,11 @@ for (const largura of [1440, 390, 360]) {
 		const downloadPromise = page.waitForEvent("download");
 		await page.getByRole("button", { name: "Exportar recibo", exact: true }).click();
 		const download = await downloadPromise;
-		const arquivo = await download.path();
-		if (!arquivo) throw new Error("Download ausente");
-		expect(JSON.parse(await readFile(arquivo, "utf8"))).toEqual(documento);
+		expect(JSON.parse(await text(await download.createReadStream()))).toEqual(documento);
 		const keyPromise = page.waitForEvent("download");
 		await page.getByRole("button", { name: /Exportar chave pública de/ }).click();
-		const arquivoChave = await (await keyPromise).path();
-		if (!arquivoChave) throw new Error("Download da chave ausente");
-		expect(await readFile(arquivoChave, "utf8")).toBe(chave.chave_publica_base64);
+		const downloadChave = await keyPromise;
+		expect(await text(await downloadChave.createReadStream())).toBe(chave.chave_publica_base64);
 		await page.reload();
 		await expect(page.getByText("Ainda não executada nesta sessão.")).toBeVisible();
 	});
@@ -124,12 +127,13 @@ test("troca de UUID cancela consulta e limpa a verificação anterior", async ({
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 	await page.route(`**/receipts/${anterior}`, async (route) => {
 		await new Promise((resolve) => setTimeout(resolve, 300));
-		await route.fulfill({ json: { ...documento, id: anterior, recibo_anterior_id: null } }).catch(() => {});
+		await route.fulfill({ json: { ...documento, id: anterior, recibo_anterior_id: null } });
 	});
 	await page.getByRole("link", { name: "Consultar recibo anterior" }).click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toHaveCount(0);
 	await page.getByRole("link", { name: "Voltar para recibos" }).click();
 	await expect(page.getByRole("heading", { name: "Recibos e auditoria", exact: true })).toBeVisible();
+	await page.unrouteAll({ behavior: "wait" });
 });
 test("verificação com identidade divergente é recusada", async ({ page }) => {
 	await simular(page, documento, { ...verificacao, id: anterior });
@@ -152,9 +156,8 @@ test("handlers Go verificam recibo assinado e exportação confere independentem
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 	const promessa = page.waitForEvent("download");
 	await page.getByRole("button", { name: "Exportar recibo", exact: true }).click();
-	const caminho = await (await promessa).path();
-	if (!caminho) throw new Error("Download ausente");
-	const exportado = JSON.parse(await readFile(caminho, "utf8"));
+	const download = await promessa;
+	const exportado = JSON.parse(await text(await download.createReadStream()));
 	const chaves = await (await request.get("http://127.0.0.1:18080/receipts/keys")).json();
 	const { createHash, createPublicKey, verify } = await import("node:crypto");
 	const payload = Buffer.from(exportado.payload_base64, "base64");
@@ -200,7 +203,9 @@ for (const largura of [390, 320])
 		test(`resultado de verificação mobile em ${largura}px e ${tema}`, async ({ page }) => {
 			await simular(page);
 			await page.setViewportSize({ width: largura, height: 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			await page.goto(`/recibos/${id}`);
 			await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 			await expect(page.getByRole("heading", { name: "Verificação do recibo", exact: true })).toBeFocused();

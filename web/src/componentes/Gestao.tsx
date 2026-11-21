@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { createContext, useContext } from "react";
 import { Link, useSearchParams } from "react-router";
-import { consultasGestao, type Gestao } from "@/servicos/gestao";
+import type { Consulta } from "@/servicos/fonte";
+import type { Gestao } from "@/servicos/gestao";
 import { Ativo } from "./Ativo";
 import { ConsultaPrivada } from "./ConsultaPrivada";
 import { Botao, Modal } from "./Primitivos";
@@ -89,7 +90,7 @@ export function TabelaGestao({
 				<CabecalhoDaTabela>
 					{colunas.map((c, i) => (
 						<Coluna key={c}>
-							<span style={{ display: "block", minWidth: larguras?.[i] }}>{c}</span>
+							<span style={{ display: "block", minWidth: larguras?.at(i) }}>{c}</span>
 						</Coluna>
 					))}
 				</CabecalhoDaTabela>
@@ -97,7 +98,7 @@ export function TabelaGestao({
 					{linhas.map((l) => (
 						<LinhaDaTabela key={l.id}>
 							{l.celulas.map((c, i) => (
-								<Celula key={colunas[i]}>{c}</Celula>
+								<Celula key={colunas.at(i)}>{c}</Celula>
 							))}
 						</LinhaDaTabela>
 					))}
@@ -107,19 +108,7 @@ export function TabelaGestao({
 		</div>
 	);
 }
-export function SeletorGestao({
-	rotulo,
-	valor,
-	aoMudar,
-	opcoes,
-	className = "",
-}: {
-	rotulo: string;
-	valor: string;
-	aoMudar: (valor: string) => void;
-	opcoes: { valor: string; rotulo: string }[];
-	className?: string;
-}) {
+export function SeletorGestao({ rotulo, valor, aoMudar, opcoes, className = "" }: ComponentProps<typeof Selecao>) {
 	return (
 		<div className={`campo seletor-gestao ${className}`}>
 			<span className="rotulo-campo">{rotulo}</span>
@@ -128,17 +117,9 @@ export function SeletorGestao({
 	);
 }
 const Contexto = createContext<Gestao | null>(null);
-export function ConsultaGestao({
-	titulo,
-	children,
-	recurso,
-}: {
-	titulo: string;
-	children: ReactNode;
-	recurso: keyof typeof consultasGestao;
-}) {
+export function ConsultaGestao({ titulo, children, consultar }: { titulo: string; children: ReactNode; consultar: Consulta<Gestao> }) {
 	return (
-		<ConsultaPrivada titulo={titulo} consultar={consultasGestao[recurso]}>
+		<ConsultaPrivada titulo={titulo} consultar={consultar}>
 			{(dados) => <Contexto value={dados}>{children}</Contexto>}
 		</ConsultaPrivada>
 	);

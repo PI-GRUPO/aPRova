@@ -1,5 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import tentativaComHtml from "./fixtures/tentativa-com-html.json" with { type: "json" };
+
 const id = "00000000-0000-4000-8000-000000000003";
 const id2 = "00000000-0000-4000-8000-000000000004";
 const reciboID = "00000000-0000-4000-8000-000000000002";
@@ -46,19 +48,7 @@ const detalhe = {
 		{ id: 1, de: "pendente", para: "testando_sandbox", detalhe: "Início da execução isolada.", criado_em: instante },
 		{ id: 2, de: "testando_sandbox", para: "avaliando_risco", detalhe: "Contadores persistidos.", criado_em: instante },
 	],
-	tentativas: [
-		{
-			tentativa: 1,
-			compilou: true,
-			testes_passaram: 10,
-			testes_falharam: 1,
-			saida: "<script>window.invasao=true</script>\nFAIL: teste de referência",
-			saida_truncada: true,
-			duracao_ms: 42459,
-			tipo_falha: "teste",
-			criado_em: instante,
-		},
-	],
+	tentativas: [tentativaComHtml],
 	aprovacoes: [
 		{
 			id: 1,
@@ -148,16 +138,24 @@ for (const largura of [1440, 390, 360])
 			await page.screenshot({ path: `../.capturas-mcp/f4a/local-detalhe-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(
-				await page.locator("img:visible").evaluateAll((imgs) =>
-					imgs.every((el) => {
-						const i = el as HTMLImageElement;
-						return i.complete && i.naturalWidth > 0 && i.width === i.naturalWidth && i.height === i.naturalHeight;
-					}),
-				),
+				await page
+					.locator("img:visible")
+					.evaluateAll((imgs) =>
+						imgs.every(
+							(img) =>
+								img instanceof HTMLImageElement &&
+								img.complete &&
+								img.naturalWidth > 0 &&
+								img.width === img.naturalWidth &&
+								img.height === img.naturalHeight,
+						),
+					),
 			).toBeTruthy();
 		}
 		await page.getByText("Saída da tentativa 1", { exact: true }).click();
-		await expect(page.locator("pre.saida-analise")).toContainText("<script>");
+		const saida = page.locator("pre.saida-analise");
+		await expect.poll(() => saida.textContent()).toBe(tentativaComHtml.saida);
+		await expect(saida.locator("script")).toHaveCount(0);
 		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
@@ -267,7 +265,9 @@ for (const largura of [390, 360, 320])
 		test(`cards de análises do Figma em ${largura}px no tema ${tema}`, async ({ page }) => {
 			await simular(page);
 			await page.setViewportSize({ width: largura, height: 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			const referencias = [
 				["aPRova-TESTES", 1],
 				["cobranca-api", 214],

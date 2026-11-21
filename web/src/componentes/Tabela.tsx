@@ -4,11 +4,6 @@ import { cn } from "./classes";
 
 export type Sentido = "crescente" | "decrescente";
 
-const sentidoParaLeitores: Record<Sentido, "ascending" | "descending"> = {
-	crescente: "ascending",
-	decrescente: "descending",
-};
-
 interface PropsComFilhos {
 	children: ReactNode;
 	className?: string;
@@ -59,7 +54,11 @@ interface PropsDaColunaOrdenavel extends PropsComFilhos {
 
 export function ColunaOrdenavel({ children, sentido, aoOrdenar, aDireita = false, className }: PropsDaColunaOrdenavel) {
 	return (
-		<th scope="col" aria-sort={sentido ? sentidoParaLeitores[sentido] : "none"} className={cn("p-0 text-12 font-medium", className)}>
+		<th
+			scope="col"
+			aria-sort={sentido === "crescente" ? "ascending" : sentido === "decrescente" ? "descending" : "none"}
+			className={cn("p-0 text-12 font-medium", className)}
+		>
 			<button
 				type="button"
 				onClick={aoOrdenar}

@@ -89,6 +89,11 @@ test("Vite encaminha API e OAuth ao destino configurado preservando erros, cooki
 		if (anterior === undefined) delete process.env.APROVA_API_PROXY;
 		else process.env.APROVA_API_PROXY = anterior;
 		await vite?.close();
-		await new Promise<void>((resolve, reject) => api.close((erro) => (erro ? reject(erro) : resolve())));
+		await new Promise<void>((resolve, reject) => {
+			api.close((erro) => {
+				if (erro) reject(erro);
+				else resolve();
+			});
+		});
 	}
 });

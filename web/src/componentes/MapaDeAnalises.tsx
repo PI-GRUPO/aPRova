@@ -20,7 +20,9 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 			.catch(() => {
 				if (!c.signal.aborted) setErro(true);
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [instalacao, data, nivel]);
 	const retorno = new URLSearchParams();
 	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel"]) {
@@ -31,7 +33,13 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 		return (
 			<div role="alert">
 				<p>Não foi possível carregar as referências deste recorte.</p>
-				<Botao onClick={() => window.location.reload()}>Tentar novamente</Botao>
+				<Botao
+					onClick={() => {
+						window.location.reload();
+					}}
+				>
+					Tentar novamente
+				</Botao>
 			</div>
 		);
 	if (!recorte) return <p role="status">Carregando análises…</p>;
@@ -89,7 +97,13 @@ function CelulaMapa({
 		>
 			{aberto && <ListaDoRecorte key={`${data}:${nivel}`} data={data} nivel={nivel} />}
 			<div className="rodape-recorte">
-				<Botao variante="primario" aria-label="Fechar recorte" onClick={() => aoMudar(false)}>
+				<Botao
+					variante="primario"
+					aria-label="Fechar recorte"
+					onClick={() => {
+						aoMudar(false);
+					}}
+				>
 					Fechar
 				</Botao>
 			</div>
@@ -104,13 +118,13 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 	const invalido =
 		(dataSelecionada !== null || nivelSelecionado !== null) &&
 		(!dias.some((d) => d.data === dataSelecionada) || !nivelMapaValido(nivelSelecionado));
-	function selecionar(data: string | null, nivel: NivelMapa | null) {
+	function selecionar(recorte?: Pick<RecorteMapa, "data" | "nivel">) {
 		setQ(
 			(anterior) => {
 				const novo = new URLSearchParams(anterior);
-				if (data && nivel) {
-					novo.set("mapa_dia", data);
-					novo.set("mapa_nivel", nivel);
+				if (recorte) {
+					novo.set("mapa_dia", recorte.data);
+					novo.set("mapa_nivel", recorte.nivel);
 				} else {
 					novo.delete("mapa_dia");
 					novo.delete("mapa_nivel");
@@ -127,7 +141,13 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 				{invalido && (
 					<div role="status" className="recorte-invalido">
 						<p>Recorte do mapa inválido. Escolha um dia e nível da janela apresentada.</p>
-						<Botao onClick={() => selecionar(null, null)}>Limpar recorte</Botao>
+						<Botao
+							onClick={() => {
+								selecionar();
+							}}
+						>
+							Limpar recorte
+						</Botao>
 					</div>
 				)}
 				<div className="legenda-mapa apoio">
@@ -149,7 +169,7 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 						{(["alto", "medio", "baixo"] as const).map((nivel) => (
 							<div className="linha-mapa" key={nivel}>
 								{dias.map((dia) => {
-									const n = dia[nivel];
+									const n = nivel === "alto" ? dia.alto : nivel === "medio" ? dia.medio : dia.baixo;
 									const data = new Date(`${dia.data}T12:00:00Z`).toLocaleDateString("pt-BR", {
 										day: "numeric",
 										month: "short",
@@ -164,7 +184,9 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 											quantidade={n}
 											rotulo={rotulo}
 											aberto={dataSelecionada === dia.data && nivelSelecionado === nivel}
-											aoMudar={(aberto) => selecionar(aberto ? dia.data : null, aberto ? nivel : null)}
+											aoMudar={(aberto) => {
+												selecionar(aberto ? { data: dia.data, nivel } : undefined);
+											}}
 										/>
 									);
 								})}

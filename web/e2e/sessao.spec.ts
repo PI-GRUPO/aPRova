@@ -40,7 +40,9 @@ for (const largura of [1440, 390, 360])
 		await expect(page.getByRole("link", { name: "Continuar com GitHub" })).toHaveAttribute("href", "/auth/github");
 		for (const tema of ["escuro", "claro"]) {
 			if (tema === "claro") {
-				await page.evaluate(() => localStorage.setItem("aprova-tema", "claro"));
+				await page.evaluate(() => {
+					localStorage.setItem("aprova-tema", "claro");
+				});
 				await page.reload();
 			}
 			await page.evaluate(() => document.fonts.ready);

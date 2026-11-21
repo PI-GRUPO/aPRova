@@ -21,7 +21,9 @@ export function VinculoSlack() {
 			.catch(() => {
 				if (!c.signal.aborted) setErro("Não foi possível consultar o vínculo.");
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [revisao]);
 	async function alterar() {
 		if (trava.current || vinculo === undefined || !alterarVinculo.disponivel) return;
@@ -51,7 +53,15 @@ export function VinculoSlack() {
 				) : (
 					<p>{vinculo ? `${vinculo.usuarioSlack} · ${vinculo.workspace}` : "Nenhuma conta Slack vinculada."}</p>
 				)}
-				{erro && <Botao onClick={() => atualizar((n) => n + 1)}>Consultar novamente</Botao>}
+				{erro && (
+					<Botao
+						onClick={() => {
+							atualizar((n) => n + 1);
+						}}
+					>
+						Consultar novamente
+					</Botao>
+				)}
 				<Botao disabled={!alterarVinculo.disponivel || vinculo === undefined || enviando} onClick={() => void alterar()}>
 					{vinculo ? "Desvincular conta" : "Conectar minha conta Slack"}
 				</Botao>

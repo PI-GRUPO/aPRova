@@ -7,7 +7,9 @@ for (const largura of [1440, 390, 360])
 	for (const tema of ["escuro", "claro"]) {
 		test(`fila até ações indisponíveis em ${largura}px e ${tema}`, async ({ page }) => {
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			await autenticarFixture(page);
 			const proibidas: string[] = [];
 			page.on("request", (r) => {
