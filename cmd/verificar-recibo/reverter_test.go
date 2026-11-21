@@ -81,7 +81,7 @@ func TestReverterReciboAdulteradoNaoGeraInstrucao(t *testing.T) {
 	atual.HashSHA256 = strings.Repeat("0", 64)
 
 	codigo, saida, erros := reverter(t, atual, "-chave", chave, "-url-publica", urlPublica, "-anterior", arquivoDoRecibo(t, "anterior.json", anterior),
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
 
 	if codigo != 1 || !strings.Contains(saida, "INVÁLIDO") || strings.Contains(saida, "git revert") {
 		t.Errorf("código %d, saída %q, erros %q", codigo, saida, erros)
@@ -93,7 +93,7 @@ func TestReverterComEloQuebradoNaoGeraInstrucao(t *testing.T) {
 	anterior.PayloadBase64 = atual.PayloadBase64
 
 	codigo, saida, _ := reverter(t, atual, "-chave", chave, "-url-publica", urlPublica, "-anterior", arquivoDoRecibo(t, "anterior.json", anterior),
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
 
 	if codigo != 1 || !strings.Contains(saida, "elo") || strings.Contains(saida, "git revert") {
 		t.Errorf("código %d, saída %q", codigo, saida)
@@ -104,7 +104,7 @@ func TestReverterSemAnteriorAvisaQueOEloNaoFoiConferido(t *testing.T) {
 	_, atual, chave := cadeiaDeDoisRecibos(t)
 
 	codigo, saida, _ := reverter(t, atual, "-chave", chave, "-url-publica", urlPublica,
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
 
 	if codigo != 0 || !strings.HasPrefix(saida, "ATENÇÃO: ELO NÃO CONFERIDO") {
 		t.Errorf("o aviso abre a saída: código %d, saída %q", codigo, saida)
@@ -115,7 +115,7 @@ func TestReverterPrimeiroReciboDaCadeiaNaoPedeAnterior(t *testing.T) {
 	primeiro, _, chave := cadeiaDeDoisRecibos(t)
 
 	codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
 
 	if codigo != 0 || strings.Contains(saida, "NÃO CONFERIDO") {
 		t.Errorf("código %d, saída %q", codigo, saida)
@@ -126,7 +126,7 @@ func TestReverterMergeCommitComAnteriorDevolveComandoECorpo(t *testing.T) {
 	anterior, atual, chave := cadeiaDeDoisRecibos(t)
 
 	codigo, saida, erros := reverter(t, atual, "-chave", chave, "-url-publica", urlPublica, "-anterior", arquivoDoRecibo(t, "anterior.json", anterior),
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
 
 	if codigo != 0 {
 		t.Fatalf("código %d, saída %q, erros %q", codigo, saida, erros)
@@ -157,7 +157,7 @@ func TestReverterEscolheOComandoPeloTipo(t *testing.T) {
 	for nome, caso := range casos {
 		t.Run(nome, func(t *testing.T) {
 			codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
-				"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", caso.tipo, "-commits", caso.commits)
+				"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", caso.tipo, "-commits", caso.commits)
 
 			if codigo != 0 || !strings.Contains(saida, inicioDoComando+caso.alvo+"\n") {
 				t.Errorf("código %d, saída:\n%s", codigo, saida)
@@ -170,7 +170,7 @@ func TestReverterSemTipoEAmbiguo(t *testing.T) {
 	primeiro, _, chave := cadeiaDeDoisRecibos(t)
 
 	codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
-		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-commits", "3")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-commits", "3")
 
 	if codigo != 1 || !strings.Contains(saida, "tipo_ambiguo") || strings.Contains(saida, "git revert") {
 		t.Errorf("código %d, saída %q", codigo, saida)
@@ -191,7 +191,7 @@ func TestReverterComPushDepoisDaAnaliseAvisaQueOReciboNaoCobre(t *testing.T) {
 	primeiro, _, chave := cadeiaDeDoisRecibos(t)
 
 	codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
-		"-merge-sha", commitDoMerge, "-head-final", pushPosterior, "-tipo", "merge")
+		"-base", "main", "-merge-sha", commitDoMerge, "-head-final", pushPosterior, "-tipo", "merge")
 
 	if codigo != 1 || !strings.Contains(saida, "não cobre") || strings.Contains(saida, "git revert") {
 		t.Errorf("código %d, saída %q", codigo, saida)
@@ -202,7 +202,7 @@ func TestReverterSemURLPublicaOuComArgumentosDemaisEUsoIncorreto(t *testing.T) {
 	primeiro, _, chave := cadeiaDeDoisRecibos(t)
 
 	for nome, argumentos := range map[string][]string{
-		"sem url pública":   {"-chave", chave, "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge"},
+		"sem url pública":   {"-chave", chave, "-base", "main", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge"},
 		"argumentos demais": {"-chave", chave, "-url-publica", urlPublica, "a.json", "b.json"},
 		"commits negativos": {"-chave", chave, "-url-publica", urlPublica, "-commits", "-1"},
 	} {
@@ -212,5 +212,28 @@ func TestReverterSemURLPublicaOuComArgumentosDemaisEUsoIncorreto(t *testing.T) {
 				t.Errorf("código %d, saída %q, erros %q", codigo, saida, erros)
 			}
 		})
+	}
+}
+
+func TestReverterSemBaseNaoGeraComando(t *testing.T) {
+	primeiro, _, chave := cadeiaDeDoisRecibos(t)
+
+	codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
+		"-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+
+	if codigo != 1 || !strings.Contains(saida, "base_desconhecida") || strings.Contains(saida, "git revert") {
+		t.Errorf("código %d, saída %q", codigo, saida)
+	}
+}
+
+func TestReverterPartindoDeOutraBase(t *testing.T) {
+	primeiro, _, chave := cadeiaDeDoisRecibos(t)
+
+	codigo, saida, _ := reverter(t, primeiro, "-chave", chave, "-url-publica", urlPublica,
+		"-base", "release/2026", "-merge-sha", commitDoMerge, "-head-final", headAnalisado, "-tipo", "merge")
+
+	comando := "git fetch origin && git switch -c revert/pr-1 origin/release/2026 && git revert --no-edit -m 1 " + commitDoMerge
+	if codigo != 0 || !strings.Contains(saida, comando) || !strings.Contains(saida, "que entrou na release/2026") {
+		t.Errorf("código %d, saída:\n%s", codigo, saida)
 	}
 }
