@@ -454,7 +454,10 @@ não pode ser forjado.
 | `GET /receipts/keys` | as chaves públicas aceitas |
 | `GET /receipts/{id}/revert` | a verificação e, para PR mergeado, o comando `git` e o texto do PR de reversão |
 
-Todas são públicas e só de leitura. O passo a passo para verificar com o
+Todas são públicas e só de leitura. Cada IP faz até
+`APROVA_TETO_LEITURAS_POR_MINUTO` leituras por minuto (padrão 60); acima disso
+a resposta é `429` com `Retry-After`. Atrás do ingress da Azure, ligue
+`APROVA_PROXY_CONFIAVEL=true`. Veja [limites](docs/limites.md). O passo a passo para verificar com o
 executável `cmd/verificar-recibo` e com `openssl` puro está em
 [docs/verificacao-recibo.md](docs/verificacao-recibo.md). A reversão assistida,
 que nunca executa nada, está em

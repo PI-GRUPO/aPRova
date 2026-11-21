@@ -106,6 +106,19 @@ az role assignment create --role AcrPull \
   --scope "$(az acr show -n "$REGISTRO" --query id -o tsv)"
 ```
 
+A API fica atrás do ingress da Azure. Depois de obter `URL_API`, passe a ela o
+que o teto por IP e o Check Run da fila precisam:
+
+```sh
+az containerapp update -n aprova-api -g "$GRUPO" --set-env-vars \
+  APROVA_PROXY_CONFIAVEL=true GITHUB_APP_SLUG='<slug do app>' APROVA_URL_PUBLICA="$URL_API"
+```
+
+Sem `APROVA_PROXY_CONFIAVEL=true`, todos os clientes chegam com o IP do
+ingress e dividem um só teto de leituras. Sem o slug, a API sobe, mas o PR
+acima do teto de análises não recebe o Check Run em `queued`. Os dois limites
+estão em [limites](limites.md).
+
 Com `--min-replicas 0` a API dorme sem tráfego e acorda no primeiro pedido,
 como pede o card; a primeira resposta depois de um tempo parado é mais lenta.
 

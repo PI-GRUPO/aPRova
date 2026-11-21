@@ -49,3 +49,32 @@ evitar poucas análises a mais.
 - Retomada de um `task_run` que já começou (prazo vencido, review novo em
   `aguardando_aprovacao`): ele já foi contado e nunca é segurado pelo teto.
 - Reentrega do mesmo webhook: não cria `task_run` novo.
+
+## Teto de leituras de recibo por IP
+
+As rotas `/receipts/*` são públicas: qualquer pessoa confere um recibo sem
+login. Cada IP faz no máximo `APROVA_TETO_LEITURAS_POR_MINUTO` leituras por
+minuto, somadas entre as quatro rotas. O padrão é `60`. Acima disso a resposta
+é `429` com `Retry-After`, em segundos até a janela abrir. `/health`,
+`/ready` e o webhook ficam de fora.
+
+### Onde a contagem vive
+
+Em memória, em cada processo da API. Um teto por IP não precisa ser exato
+entre réplicas. Com N réplicas, um IP faz no máximo N vezes o teto, o que
+ainda segura abuso. A contagem zera a cada minuto, então a memória fica
+limitada aos IPs que leram no último minuto.
+
+### De onde vem o IP
+
+| `APROVA_PROXY_CONFIAVEL` | IP usado |
+| --- | --- |
+| `false` (padrão) | `RemoteAddr` da conexão; `X-Forwarded-For` é ignorado |
+| `true` | a entrada **mais à direita** do `X-Forwarded-For` |
+
+Qualquer cliente escreve o que quiser no `X-Forwarded-For`. O ingress da Azure
+acrescenta o IP real de quem conectou no **fim** da lista. Por isso só a
+última entrada é confiável. Usar a primeira deixaria qualquer um trocar de
+balde a cada pedido. Ligue a variável só quando a API estiver atrás desse
+proxy. Exposta direto, a API ficaria lendo um cabeçalho que o próprio cliente
+escreve.
