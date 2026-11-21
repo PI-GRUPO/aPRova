@@ -32,15 +32,18 @@ const (
 	RecusaPullRequestNaoMergeado Recusa = "pr_nao_mergeado"
 	RecusaCommitDiferente        Recusa = "commit_diferente"
 	RecusaTipoAmbiguo            Recusa = "tipo_ambiguo"
+	RecusaBaseDesconhecida       Recusa = "base_desconhecida"
 	RecusaDadosDoMergeInvalidos  Recusa = "dados_do_merge_invalidos"
 )
 
-// Merge é o desfecho do pull request. SHAHeadFinal é o head no fechamento;
-// SHADoMerge é o commit que o GitHub informa como o que entrou na main. Pais
+// Merge é o desfecho do pull request. Base é a branch em que ele entrou, vazia
+// quando não foi gravada. SHAHeadFinal é o head no fechamento; SHADoMerge é o
+// commit que o GitHub informa como o que entrou na base. Pais
 // é o número de pais desse commit, ou 0 quando não se sabe. Commits é quantos
 // commits o PR tinha. Tipo, quando informado por quem pede, vale sobre Pais.
 type Merge struct {
 	Mergeado     bool
+	Base         string
 	SHAHeadFinal string
 	SHADoMerge   string
 	Pais         int
@@ -70,11 +73,15 @@ type Instrucao struct {
 	Corpo        string
 }
 
-var formatoDoSHA = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
+var (
+	formatoDoSHA  = regexp.MustCompile(`^[0-9a-f]{40}([0-9a-f]{24})?$`)
+	formatoDaBase = regexp.MustCompile(`^[A-Za-z0-9_][A-Za-z0-9._-]*(/[A-Za-z0-9_][A-Za-z0-9._-]*)*$`)
+)
 
 // Montar devolve a instrução de reversão do pedido, ou a recusa explicada
-// quando o recibo é inválido, o PR não entrou na main, o commit analisado não
-// é o que entrou ou o tipo de merge não pode ser determinado.
+// quando o recibo é inválido, o PR não entrou na base, a base não é conhecida,
+// o commit analisado não é o que entrou ou o tipo de merge não pode ser
+// determinado.
 func Montar(pedido Pedido) Instrucao {
 	if recusa := recusaDoDesfecho(pedido); recusa.Recusa != "" {
 		return recusa
@@ -90,7 +97,7 @@ func Montar(pedido Pedido) Instrucao {
 	return Instrucao{
 		Tipo:         tipo,
 		CommitNaMain: merge.SHADoMerge,
-		Comando:      comandoDeReversao(numero, alvoDoRevert(tipo, merge)),
+		Comando:      comandoDeReversao(numero, merge.Base, alvoDoRevert(tipo, merge)),
 		Titulo:       fmt.Sprintf("Reverte o PR #%d", numero),
 		Corpo:        corpoDoPullRequest(pedido),
 	}
@@ -109,13 +116,18 @@ func recusaDoDesfecho(pedido Pedido) Instrucao {
 	case merge == nil:
 		return recusar(RecusaPullRequestAberto, "o pull request ainda não foi fechado; não há o que reverter")
 	case !merge.Mergeado:
-		return recusar(RecusaPullRequestNaoMergeado, "o pull request não foi mergeado; nada dele entrou na main")
+		return recusar(RecusaPullRequestNaoMergeado, "o pull request não foi mergeado; nada dele entrou na base")
 	case !formatoDoSHA.MatchString(merge.SHADoMerge) || !formatoDoSHA.MatchString(merge.SHAHeadFinal):
 		return recusar(RecusaDadosDoMergeInvalidos, "os SHAs do merge precisam ser hexadecimais minúsculos de 40 ou 64 caracteres")
 	case merge.SHAHeadFinal != pedido.Conteudo.SHAHead:
 		return recusar(RecusaCommitDiferente, fmt.Sprintf(
 			"o recibo analisou o commit %s, mas o PR entrou com o head %s: houve push depois da análise e o recibo não cobre o que entrou",
 			pedido.Conteudo.SHAHead, merge.SHAHeadFinal))
+	case merge.Base == "":
+		return recusar(RecusaBaseDesconhecida,
+			"a base do pull request não foi gravada no fechamento; sem saber em que branch ele entrou, não há comando seguro")
+	case !formatoDaBase.MatchString(merge.Base) || strings.Contains(merge.Base, ".."):
+		return recusar(RecusaDadosDoMergeInvalidos, "a base do pull request não é um nome de branch aceito: "+merge.Base)
 	default:
 		return Instrucao{}
 	}
@@ -152,21 +164,29 @@ func alvoDoRevert(tipo Tipo, merge Merge) string {
 	}
 }
 
-func comandoDeReversao(numero int, alvo string) string {
-	return fmt.Sprintf("git fetch origin && git switch -c revert/pr-%d origin/main && git revert --no-edit %s", numero, alvo)
+func comandoDeReversao(numero int, base, alvo string) string {
+	return fmt.Sprintf("git fetch origin && git switch -c revert/pr-%d origin/%s && git revert --no-edit %s", numero, base, alvo)
 }
 
 func corpoDoPullRequest(pedido Pedido) string {
 	conteudo := pedido.Conteudo
 	var corpo strings.Builder
 	fmt.Fprintf(&corpo, "Reverts %s#%d\n\n", conteudo.Repositorio, conteudo.NumeroPR)
-	fmt.Fprintf(&corpo, "Este PR reverte o commit %s, que entrou na main pelo PR #%d.\n\n",
-		pedido.Merge.SHADoMerge, conteudo.NumeroPR)
-	fmt.Fprintf(&corpo, "A análise do aPRova sobre o commit %s deu nível %s, com os motivos:\n\n", conteudo.SHAHead, conteudo.Nivel)
-	for _, motivo := range conteudo.Motivos {
-		fmt.Fprintf(&corpo, "- %s: %s\n", motivo.ID, strings.Join(motivo.Evidencias, "; "))
-	}
+	fmt.Fprintf(&corpo, "Este PR reverte o commit %s, que entrou na %s pelo PR #%d.\n\n",
+		pedido.Merge.SHADoMerge, pedido.Merge.Base, conteudo.NumeroPR)
+	escreverAnalise(&corpo, conteudo)
 	fmt.Fprintf(&corpo, "\nRecibo da análise: %s\n\n", pedido.URLDoRecibo)
 	corpo.WriteString("Este PR de reversão também passa pelo aPRova, como qualquer outro.\n")
 	return corpo.String()
+}
+
+func escreverAnalise(corpo *strings.Builder, conteudo receipt.Conteudo) {
+	if len(conteudo.Motivos) == 0 {
+		fmt.Fprintf(corpo, "A análise do aPRova sobre o commit %s deu nível %s, sem motivos de risco.\n", conteudo.SHAHead, conteudo.Nivel)
+		return
+	}
+	fmt.Fprintf(corpo, "A análise do aPRova sobre o commit %s deu nível %s, com os motivos:\n\n", conteudo.SHAHead, conteudo.Nivel)
+	for _, motivo := range conteudo.Motivos {
+		fmt.Fprintf(corpo, "- %s: %s\n", motivo.ID, strings.Join(motivo.Evidencias, "; "))
+	}
 }
