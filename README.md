@@ -394,6 +394,7 @@ push novo cria outro `task_run`, e o anterior encerra em `falhou` com o motivo
 | `WORKER_CONCORRENCIA` | `4` | quantos `task_runs` o processo conduz ao mesmo tempo |
 | `WORKER_MAX_TENTATIVAS` | `3` | tentativas de uma falha transitória (infraestrutura do sandbox, 5xx ou limite do GitHub) antes de `falhou` e do evento `falha_recuperavel` |
 | `GITHUB_APP_SLUG` | vazio | nome do app no GitHub; o review que o próprio app publica a partir do Slack só vale quando o revisor é `<slug>[bot]` |
+| `APROVA_TETO_ANALISES_POR_HORA` | `60` | análises novas que cada instalação inicia por hora; acima disso o PR recebe o Check Run em `queued` e espera, ver [limites](docs/limites.md) |
 
 O worker publica Check Runs e comentários reais no GitHub, com retomada
 idempotente. Consulte [publicação no PR](docs/publicacao-no-pr.md).
