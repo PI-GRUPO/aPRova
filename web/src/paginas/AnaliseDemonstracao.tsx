@@ -5,7 +5,7 @@ import { Ativo } from "@/componentes/Ativo";
 import { useEscopo } from "@/componentes/ConsultaPrivada";
 import { LinhaDoTempoDemonstracao } from "@/componentes/LinhaDoTempoDemonstracao";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
-import { consultarAnaliseDemonstracao, type AnaliseDemonstracao as Modelo, retornoDaFila } from "@/servicos/analises-demonstracao";
+import { consultarAnaliseDemonstracao, retornoDaFila } from "@/servicos/analises-demonstracao";
 import { ConteudoAnalise } from "./DetalheAnalise";
 import "@/estilos/demonstracao.css";
 
@@ -22,7 +22,7 @@ export function AnaliseDemonstracao() {
 	return <ConsultaDemonstracao key={JSON.stringify([sessao.usuario.id, instalacao, id])} instalacao={instalacao} id={id} />;
 }
 function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: string }) {
-	const [dados, setDados] = useState<Modelo | null>();
+	const [dados, setDados] = useState<Awaited<ReturnType<typeof consultarAnaliseDemonstracao>>>();
 	const [erro, setErro] = useState(false);
 	const [q] = useSearchParams();
 	useEffect(() => {
@@ -34,7 +34,9 @@ function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: stri
 			.catch(() => {
 				if (!c.signal.aborted) setErro(true);
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [id]);
 	return (
 		<>
@@ -47,7 +49,13 @@ function ConsultaDemonstracao({ id, instalacao }: { id: string; instalacao: stri
 					<h1>Não foi possível carregar a análise</h1>
 					<PainelDeEstado titulo="Análise indisponível" erro>
 						<p>Tente carregar novamente a análise.</p>
-						<Botao onClick={() => window.location.reload()}>Tentar novamente</Botao>
+						<Botao
+							onClick={() => {
+								window.location.reload();
+							}}
+						>
+							Tentar novamente
+						</Botao>
 					</PainelDeEstado>
 				</>
 			) : dados === null ? (

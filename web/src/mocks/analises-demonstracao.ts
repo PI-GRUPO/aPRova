@@ -5,6 +5,8 @@ import { visaoGeralMock } from "./visao-geral";
 // Dados públicos do protótipo, sem relação com uma instalação autenticada.
 const commits = ["6be930afc83bb7213d3d4e111f2c6eb7fd008a42", "958be56", "30f2971", "ab21f04", "11645da"];
 export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, indice) => {
+	const commit = commits.at(indice);
+	if (!commit) throw new Error("Commit ausente para a análise de demonstração.");
 	const primeiro = indice === 0;
 	const recebido = "2026-11-09T11:00:00Z";
 	return {
@@ -13,7 +15,7 @@ export const analisesDemonstracao: Detalhe[] = visaoGeralMock.fila.map((item, in
 			id: item.id,
 			repositorio: item.repositorio,
 			numero_pr: item.pr,
-			sha_head: commits[indice].padEnd(40, "0"),
+			sha_head: commit.padEnd(40, "0"),
 			autor: "agente-frete[bot]",
 			estado: "aguardando_aprovacao",
 			nivel: "alto",

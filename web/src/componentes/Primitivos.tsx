@@ -1,5 +1,5 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, useId } from "react";
+import { type ButtonHTMLAttributes, type ComponentProps, type InputHTMLAttributes, type ReactNode, useId } from "react";
 import { Ativo } from "./Ativo";
 import { cn } from "./classes";
 
@@ -39,7 +39,7 @@ export function Modal({
 	descricao: string;
 	children?: ReactNode;
 	aberto?: boolean;
-	aoMudar?: (aberto: boolean) => void;
+	aoMudar?: ComponentProps<typeof Dialog.Root>["onOpenChange"];
 	className?: string;
 }) {
 	return (

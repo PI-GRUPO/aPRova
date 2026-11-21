@@ -60,7 +60,9 @@ function ListaDaInstalacao({ id }: { id: string }) {
 	const [busca, setBusca] = useState(q.get("numero_pr") ?? "");
 	const [erroBusca, setErroBusca] = useState("");
 	const numeroPR = q.get("numero_pr") ?? "";
-	useEffect(() => setBusca(numeroPR), [numeroPR]);
+	useEffect(() => {
+		setBusca(numeroPR);
+	}, [numeroPR]);
 	const autorizado = !!sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === id);
 	useEffect(() => {
 		if (!autorizado) return;
@@ -72,7 +74,9 @@ function ListaDaInstalacao({ id }: { id: string }) {
 			.catch((e) => {
 				if (!c.signal.aborted) setErroRepos(erroDeAnalise(e));
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [id, autorizado]);
 	function filtro(nome: string, valor: string) {
 		setQ(() => {
@@ -99,7 +103,9 @@ function ListaDaInstalacao({ id }: { id: string }) {
 					<Selecao
 						rotulo="Instalação"
 						valor={id}
-						aoMudar={(v) => filtro("installation_id", v)}
+						aoMudar={(v) => {
+							filtro("installation_id", v);
+						}}
 						opcoes={sessao?.autenticado ? sessao.instalacoes.map((i) => ({ valor: String(i.id), rotulo: `${i.conta} · ${i.id}` })) : []}
 					/>
 				</div>
@@ -137,7 +143,9 @@ function ListaDaInstalacao({ id }: { id: string }) {
 							placeholder="Número do PR"
 							inputMode="numeric"
 							value={busca}
-							onChange={(e) => setBusca(e.target.value)}
+							onChange={(e) => {
+								setBusca(e.target.value);
+							}}
 							erro={erroBusca}
 						/>
 						<Botao type="submit">Buscar</Botao>
@@ -145,13 +153,17 @@ function ListaDaInstalacao({ id }: { id: string }) {
 					<Filtro
 						rotulo="Repositório"
 						valor={q.get("repositorio") ?? "todos"}
-						aoMudar={(v) => filtro("repositorio", v === "todos" ? "" : v)}
+						aoMudar={(v) => {
+							filtro("repositorio", v === "todos" ? "" : v);
+						}}
 						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...(repos ?? []).map((r) => ({ valor: r, rotulo: r }))]}
 					/>
 					<Filtro
 						rotulo="Nível"
 						valor={q.get("nivel") ?? "todos"}
-						aoMudar={(v) => filtro("nivel", v)}
+						aoMudar={(v) => {
+							filtro("nivel", v);
+						}}
 						opcoes={[
 							{ valor: "todos", rotulo: "Todos" },
 							{ valor: "alto", rotulo: "Alto" },
@@ -163,13 +175,17 @@ function ListaDaInstalacao({ id }: { id: string }) {
 					<Filtro
 						rotulo="Estado"
 						valor={q.get("estado") ?? "todos"}
-						aoMudar={(v) => filtro("estado", v)}
+						aoMudar={(v) => {
+							filtro("estado", v);
+						}}
 						opcoes={[{ valor: "todos", rotulo: "Todos" }, ...[...estados].map(([valor, rotulo]) => ({ valor, rotulo }))]}
 					/>
 					<Filtro
 						rotulo="Período"
 						valor={q.get("periodo") ?? "30"}
-						aoMudar={(v) => filtro("periodo", v)}
+						aoMudar={(v) => {
+							filtro("periodo", v);
+						}}
 						opcoes={[
 							{ valor: "7", rotulo: "Últimos 7 dias" },
 							{ valor: "30", rotulo: "Últimos 30 dias" },
@@ -193,16 +209,18 @@ function ListaDaInstalacao({ id }: { id: string }) {
 					key={`${q.toString()}:${atualizacao}`}
 					id={id}
 					q={q}
-					aoPaginar={(pagina, snapshot) =>
+					aoPaginar={(pagina, snapshot) => {
 						setQ(() => {
 							const nova = new URLSearchParams(window.location.search);
 							nova.set("installation_id", id);
 							nova.set("pagina", String(pagina));
 							nova.set("snapshot", snapshot);
 							return nova;
-						})
-					}
-					aoOrdenar={() => filtro("ordem", q.get("ordem") === "antigas" ? "recentes" : "antigas")}
+						});
+					}}
+					aoOrdenar={() => {
+						filtro("ordem", q.get("ordem") === "antigas" ? "recentes" : "antigas");
+					}}
 				/>
 			)}
 		</Fragment>
@@ -275,13 +293,21 @@ function Resultados({
 		} catch (e) {
 			setErro(e instanceof Error ? e.message : "Filtros inválidos.");
 		}
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [chave, id, tentativa]);
 	if (erro)
 		return (
 			<PainelDeEstado titulo="Não foi possível consultar análises" erro>
 				<p>{erro}</p>
-				<Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao>
+				<Botao
+					onClick={() => {
+						setTentativa((v) => v + 1);
+					}}
+				>
+					Tentar novamente
+				</Botao>
 			</PainelDeEstado>
 		);
 	if (!dados) return <p role="status">Carregando análises…</p>;
@@ -369,10 +395,20 @@ function Resultados({
 				<p className="apoio">
 					{inicio} a {inicio ? inicio + dados.itens.length - 1 : 0} de {dados.total} análises · página {dados.pagina}
 				</p>
-				<Botao disabled={dados.pagina <= 1} onClick={() => aoPaginar(dados.pagina - 1, dados.snapshot)}>
+				<Botao
+					disabled={dados.pagina <= 1}
+					onClick={() => {
+						aoPaginar(dados.pagina - 1, dados.snapshot);
+					}}
+				>
 					Anterior
 				</Botao>
-				<Botao disabled={!dados.tem_mais || dados.pagina >= 201} onClick={() => aoPaginar(dados.pagina + 1, dados.snapshot)}>
+				<Botao
+					disabled={!dados.tem_mais || dados.pagina >= 201}
+					onClick={() => {
+						aoPaginar(dados.pagina + 1, dados.snapshot);
+					}}
+				>
 					Próxima
 				</Botao>
 			</div>

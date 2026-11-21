@@ -5,7 +5,9 @@ for (const largura of [1440, 390, 360]) {
 	for (const tema of ["escuro", "claro"]) {
 		test(`visão geral em ${largura}px e tema ${tema}`, async ({ page }) => {
 			await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
-			await page.addInitScript((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.addInitScript((t) => {
+				localStorage.setItem("aprova-tema", t);
+			}, tema);
 			await autenticarFixture(page);
 			const escritas: string[] = [];
 			page.on("request", (r) => {

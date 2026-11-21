@@ -154,7 +154,7 @@ for (const largura of [1440, 390, 360])
 		}
 		await page.getByText("Saída da tentativa 1", { exact: true }).click();
 		const saida = page.locator("pre.saida-analise");
-		await expect.poll(() => saida.textContent()).toBe(tentativaComHtml.saida);
+		await expect.poll(async () => (await saida.textContent()) === tentativaComHtml.saida).toBe(true);
 		await expect(saida.locator("script")).toHaveCount(0);
 		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();

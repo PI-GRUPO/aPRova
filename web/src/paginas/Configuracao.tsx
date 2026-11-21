@@ -10,7 +10,9 @@ export function Configuracao() {
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? opcoesRepos[0]?.valor ?? "";
 	const dados = useGestao();
-	const atual = opcoesRepos.some((r) => r.valor === repo) ? dados.configuracoes[repo] : undefined;
+	const atual = opcoesRepos.some((r) => r.valor === repo)
+		? Object.entries(dados.configuracoes).find(([nome]) => nome === repo)?.[1]
+		: undefined;
 	if (!atual)
 		return (
 			<div className="pagina">
@@ -21,7 +23,14 @@ export function Configuracao() {
 	return (
 		<PaginaGestao titulo="Configuração do gate" subtitulo="Limites e áreas sensíveis por repositório">
 			<div className="filtros-gestao escopo-config">
-				<SeletorGestao rotulo="Repositório" valor={repo} aoMudar={(v) => atualizar("repositorio", v)} opcoes={opcoesRepos} />
+				<SeletorGestao
+					rotulo="Repositório"
+					valor={repo}
+					aoMudar={(v) => {
+						atualizar("repositorio", v);
+					}}
+					opcoes={opcoesRepos}
+				/>
 				<Campo
 					rotulo="Versão em vigor"
 					readOnly
@@ -157,11 +166,19 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 								rotulo="Caminho da pasta ou arquivo"
 								placeholder="billing/"
 								value={novo}
-								onChange={(e) => setNovo(e.target.value)}
+								onChange={(e) => {
+									setNovo(e.target.value);
+								}}
 								erro={erroCaminho}
 							/>
 							<div className="acoes-modal">
-								<Botao onClick={() => setAdicionar(false)}>Fechar</Botao>
+								<Botao
+									onClick={() => {
+										setAdicionar(false);
+									}}
+								>
+									Fechar
+								</Botao>
 								<Botao type="submit" variante="primario">
 									Adicionar
 								</Botao>
@@ -226,14 +243,25 @@ function FormularioConfiguracao({ repo, atual, proposta }: { repo: string; atual
 							/>
 							{reduziu && (
 								<label className="checkbox-gestao aviso-protecao">
-									<input type="checkbox" checked={ciencia} onChange={(e) => setCiencia(e.target.checked)} />
+									<input
+										type="checkbox"
+										checked={ciencia}
+										onChange={(e) => {
+											setCiencia(e.target.checked);
+										}}
+									/>
 									Estou ciente de que esta alteração reduz a proteção
 									{removidos.length ? ` de ${removidos.join(", ")}` : " pelo limite de arquivos"}.
 								</label>
 							)}
 							{erro && <p role="alert">{erro}</p>}
 							<div className="acoes-modal">
-								<Botao disabled={enviando} onClick={() => setRevisar(false)}>
+								<Botao
+									disabled={enviando}
+									onClick={() => {
+										setRevisar(false);
+									}}
+								>
 									Cancelar
 								</Botao>
 								<Botao

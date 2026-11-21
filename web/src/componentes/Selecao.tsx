@@ -1,5 +1,6 @@
 import * as Primitiva from "@radix-ui/react-select";
 import { Check, ChevronDown } from "lucide-react";
+import type { ComponentProps } from "react";
 import { cn } from "./classes";
 
 export interface OpcaoDaSelecao {
@@ -10,7 +11,7 @@ export interface OpcaoDaSelecao {
 interface Props {
 	rotulo: string;
 	valor: string;
-	aoMudar: (valor: string) => void;
+	aoMudar: NonNullable<ComponentProps<typeof Primitiva.Root>["onValueChange"]>;
 	opcoes: OpcaoDaSelecao[];
 	className?: string;
 }

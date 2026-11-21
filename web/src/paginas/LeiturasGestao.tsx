@@ -33,36 +33,47 @@ export function Regras() {
 	return (
 		<PaginaGestao titulo="Regras do gate" subtitulo="Regras determinísticas em vigor · consulta somente leitura" voltar>
 			<div className="regras-mobile">
-				{["falha_sandbox", "dependencia_nova", "area_sensivel", "muitos_arquivos"].map((id) => {
+				{[
+					["falha_sandbox", "Testes ou compilação falharam"],
+					["dependencia_nova", "Dependência nova identificada"],
+					["area_sensivel", "Alteração em área sensível"],
+					["muitos_arquivos", "Limite de arquivos excedido"],
+				].map(([id, descricao]) => {
 					const r = regras.find((r) => r.id === id);
 					return (
 						r && (
 							<SecaoGestao key={id} titulo={id} caixa>
-								<p>
-									{
-										{
-											falha_sandbox: "Testes ou compilação falharam",
-											dependencia_nova: "Dependência nova identificada",
-											area_sensivel: "Alteração em área sensível",
-											muitos_arquivos: "Limite de arquivos excedido",
-										}[id]
-									}
-								</p>
+								<p>{descricao}</p>
 							</SecaoGestao>
 						)
 					);
 				})}
 			</div>
-			<Botao className="alternar-regras" aria-expanded={detalhes} onClick={() => setDetalhes((v) => !v)}>
+			<Botao
+				className="alternar-regras"
+				aria-expanded={detalhes}
+				onClick={() => {
+					setDetalhes((v) => !v);
+				}}
+			>
 				Estatísticas e configuração
 			</Botao>
 			<div className={`regras-detalhadas${detalhes ? " aberto" : ""}`}>
 				<div className="filtros-gestao filtros-regras">
-					<SeletorGestao rotulo="Período" valor={periodo} aoMudar={(v) => atualizar("periodo", v)} opcoes={opcoesPeriodo} />
+					<SeletorGestao
+						rotulo="Período"
+						valor={periodo}
+						aoMudar={(v) => {
+							atualizar("periodo", v);
+						}}
+						opcoes={opcoesPeriodo}
+					/>
 					<SeletorGestao
 						rotulo="Repositório"
 						valor={repo || "todos"}
-						aoMudar={(v) => atualizar("repositorio", v === "todos" ? "" : v)}
+						aoMudar={(v) => {
+							atualizar("repositorio", v === "todos" ? "" : v);
+						}}
 						opcoes={todosRepos}
 					/>
 					<Link className="botao botao-primario" to={`/configuracao${repo ? `?repositorio=${encodeURIComponent(repo)}` : ""}`}>
@@ -144,7 +155,9 @@ export function Auditoria() {
 				<SeletorGestao
 					rotulo="Resultado"
 					valor={decisao || "todos"}
-					aoMudar={(v) => atualizar("resultado", v === "todos" ? "" : v)}
+					aoMudar={(v) => {
+						atualizar("resultado", v === "todos" ? "" : v);
+					}}
 					opcoes={[
 						{ valor: "todos", rotulo: "Todas as tentativas" },
 						...["Aceita", "Recusada", "Falhou"].map((v) => ({ valor: v, rotulo: v })),
@@ -153,7 +166,9 @@ export function Auditoria() {
 				<SeletorGestao
 					rotulo="Origem"
 					valor={origem || "todos"}
-					aoMudar={(v) => atualizar("origem", v === "todos" ? "" : v)}
+					aoMudar={(v) => {
+						atualizar("origem", v === "todos" ? "" : v);
+					}}
 					opcoes={[
 						{ valor: "todos", rotulo: "Slack e painel" },
 						{ valor: "Slack", rotulo: "Slack" },
@@ -163,17 +178,32 @@ export function Auditoria() {
 				<SeletorGestao
 					rotulo="Repositório"
 					valor={repo || "todos"}
-					aoMudar={(v) => atualizar("repositorio", v === "todos" ? "" : v)}
+					aoMudar={(v) => {
+						atualizar("repositorio", v === "todos" ? "" : v);
+					}}
 					opcoes={todosRepos}
 				/>
-				<SeletorGestao rotulo="Período" valor={periodo} aoMudar={(v) => atualizar("periodo", v)} opcoes={opcoesPeriodo} />
+				<SeletorGestao
+					rotulo="Período"
+					valor={periodo}
+					aoMudar={(v) => {
+						atualizar("periodo", v);
+					}}
+					opcoes={opcoesPeriodo}
+				/>
 			</div>
 			<SecaoGestao
 				titulo="Histórico de ações"
 				ajuda="O histórico distingue tentativa aceita, recusa e falha. Aceitar um pedido não comprova merge."
 				extra={
 					<label className="checkbox-gestao">
-						<input type="checkbox" checked={recusadas} onChange={(e) => atualizar("recusadas", e.target.checked ? "1" : "")} />
+						<input
+							type="checkbox"
+							checked={recusadas}
+							onChange={(e) => {
+								atualizar("recusadas", e.target.checked ? "1" : "");
+							}}
+						/>
 						Somente recusadas
 					</label>
 				}
@@ -207,7 +237,9 @@ export function Repositorios() {
 			<ConteudoRepositorios
 				key={JSON.stringify([sessao.usuario.id, instalacao, consulta])}
 				instalacao={instalacao}
-				aoAtualizar={() => setConsulta((n) => n + 1)}
+				aoAtualizar={() => {
+					setConsulta((n) => n + 1);
+				}}
 			/>
 		);
 	return (
@@ -242,7 +274,9 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 			.catch((e) => {
 				if (!c.signal.aborted) setErro(erroDeAnalise(e));
 			});
-		return () => c.abort();
+		return () => {
+			c.abort();
+		};
 	}, [instalacao, autorizada]);
 
 	return (
@@ -251,7 +285,9 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 				<SeletorGestao
 					rotulo="Instalação"
 					valor={instalacao ?? ""}
-					aoMudar={(v) => atualizar("installation_id", v)}
+					aoMudar={(v) => {
+						atualizar("installation_id", v);
+					}}
 					opcoes={sessao.instalacoes.map((i) => ({ valor: String(i.id), rotulo: i.conta }))}
 				/>
 			)}

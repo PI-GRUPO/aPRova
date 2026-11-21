@@ -12,7 +12,13 @@ export class FronteiraDeErro extends Component<{ children: ReactNode }, { falhou
 					<h1>Não foi possível abrir o dashboard</h1>
 					<PainelDeEstado erro titulo="Tente novamente">
 						<p>Ocorreu um erro ao apresentar esta página.</p>
-						<Botao onClick={() => window.location.reload()}>Recarregar página</Botao>
+						<Botao
+							onClick={() => {
+								window.location.reload();
+							}}
+						>
+							Recarregar página
+						</Botao>
 					</PainelDeEstado>
 				</div>
 			);

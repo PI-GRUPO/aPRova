@@ -61,6 +61,9 @@ func reservado(caminho string) bool {
 }
 
 func caminhoInvalido(caminho string) bool {
+	if !strings.HasPrefix(caminho, "/") || strings.ContainsRune(caminho, 0) {
+		return true
+	}
 	for _, parte := range strings.Split(caminho, "/") {
 		if strings.HasPrefix(parte, ".") || strings.Contains(parte, "\\") {
 			return true
@@ -70,8 +73,8 @@ func caminhoInvalido(caminho string) bool {
 }
 
 func (s *servidorEstatico) servirArquivo(w http.ResponseWriter, r *http.Request) bool {
-	nome := strings.TrimPrefix(path.Clean(r.URL.Path), "/")
-	if nome == "." || nome == "" || nome == "index.html" {
+	nome := strings.Join(strings.FieldsFunc(r.URL.Path, func(c rune) bool { return c == '/' }), "/")
+	if !fs.ValidPath(nome) || nome == "index.html" {
 		return false
 	}
 	info, err := fs.Stat(s.ativos, nome)

@@ -26,13 +26,13 @@ for (const largura of [1440, 390, 360]) {
 		await page.locator(".arte-404").screenshot({ path: `../.capturas-mcp/f1/local-composicao-${largura}.png` });
 		const imagens = await page.locator("img:visible").evaluateAll((imgs) =>
 			imgs.map((elemento) => {
-				const i = elemento as HTMLImageElement;
+				if (!(elemento instanceof HTMLImageElement)) throw new Error("Ativo sem elemento de imagem");
 				return {
-					ok: i.complete && i.naturalWidth > 0,
-					w: i.width,
-					h: i.height,
-					naturalW: i.naturalWidth,
-					naturalH: i.naturalHeight,
+					ok: elemento.complete && elemento.naturalWidth > 0,
+					w: elemento.width,
+					h: elemento.height,
+					naturalW: elemento.naturalWidth,
+					naturalH: elemento.naturalHeight,
 				};
 			}),
 		);
@@ -114,7 +114,7 @@ test("cliente trata saúde, prontidão 503 e falha de rede", async ({ page }) =>
 
 test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) => {
 	await page.route("**/health", (route) => route.fulfill({ json: { status: "inventado" } }));
-	await page.route("**/ready", (route) => route.fulfill({ contentType: "text/html", body: "<html>login</html>" }));
+	await page.route("**/ready", (route) => route.fulfill({ contentType: "text/html", path: "e2e/fixtures/login.html" }));
 	await page.route("**/api/teste", (route) => route.fulfill({ contentType: "application/json", body: "{" }));
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar health", exact: true }).click();
@@ -126,7 +126,10 @@ test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) =>
 });
 
 test("timeout e cancelamento não viram sucesso", async ({ page }) => {
-	await page.route("**/api/teste", () => {});
+	await page.route("**/api/teste", (route) => {
+		// Mantém o GET interceptado para exercitar timeout e cancelamento do cliente.
+		expect(route.request().method()).toBe("GET");
+	});
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar timeout", exact: true }).click();
 	await expect(page.getByRole("status")).toContainText("timeout:");
@@ -169,7 +172,13 @@ test("timeout durante a leitura do corpo preserva o tipo do erro", async ({ page
 			const corpo = new ReadableStream({
 				start(controlador) {
 					controlador.enqueue(new TextEncoder().encode('{"status":'));
-					opcoes?.signal?.addEventListener("abort", () => controlador.error(new DOMException("Cancelado", "AbortError")), { once: true });
+					opcoes?.signal?.addEventListener(
+						"abort",
+						() => {
+							controlador.error(new DOMException("Cancelado", "AbortError"));
+						},
+						{ once: true },
+					);
 				},
 			});
 			return Promise.resolve(new Response(corpo, { headers: { "Content-Type": "application/json" } }));
