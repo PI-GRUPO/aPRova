@@ -114,6 +114,12 @@ func (tokenDaPublicacao) TokenParaInstalacao(context.Context, int64) (string, er
 
 func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisco, ajustes ...func(*worker.Opcoes)) (*worker.Motor, *githubDaPublicacao) {
 	t.Helper()
+	return motorQuePublicaComExplicador(t, banco, nivel, nil, ajustes...)
+}
+
+func motorQuePublicaComExplicador(t *testing.T, banco bancoDaFila, nivel domain.NivelRisco, explicador publicacao.Explicador,
+	ajustes ...func(*worker.Opcoes)) (*worker.Motor, *githubDaPublicacao) {
+	t.Helper()
 
 	github := &githubDaPublicacao{proximo: 7_000_000_000}
 	servidor := httptest.NewServer(github)
@@ -121,7 +127,7 @@ func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisc
 
 	cliente := platform.NovoCliente(platform.OpcoesCliente{Tokens: tokenDaPublicacao{}, URLBase: servidor.URL, ClienteHTTP: servidor.Client()})
 	publicador, err := publicacao.NovoPublicador(publicacao.OpcoesPublicador{
-		GitHub: cliente, Registro: banco.repo, SlugDoApp: "a-prova", URLPublica: "https://aprova.example.com",
+		GitHub: cliente, Registro: banco.repo, SlugDoApp: "a-prova", URLPublica: "https://aprova.example.com", Explicador: explicador,
 	})
 	if err != nil {
 		t.Fatalf("montar o publicador: %v", err)
