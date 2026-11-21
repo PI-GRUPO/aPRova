@@ -31,6 +31,7 @@ func TestInstrucaoPedeOSignificadoUmaVezSemAprovacaoParaFalhaENaturalidade(t *te
 		`"conforme apontado"`,
 		`"como visto em"`,
 		"Exemplo de estilo",
+		`a palavra "conforme"`,
 	} {
 		if !strings.Contains(instrucaoDoSistema, regra) {
 			t.Errorf("a instrução não traz %q", regra)
