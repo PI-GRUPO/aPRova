@@ -92,11 +92,11 @@ func (p Programa) entregar(ctx context.Context, publicador PublicadorResultado, 
 	resultado.DuracaoMS = p.Agora().Sub(inicio).Milliseconds()
 	resultado.SaidaBruta = sandbox.LimitarSaida(resultado.SaidaBruta)
 
-	slog.Info("execução concluída", "task_run_id", taskRunID, "tipo_falha", resultado.TipoFalha,
+	slog.Info("execução concluída", "tipo_falha", resultado.TipoFalha,
 		"testes_passaram", resultado.TestesPassaram, "testes_falharam", resultado.TestesFalharam)
 
 	if err := publicador.Publicar(context.WithoutCancel(ctx), taskRunID, resultado); err != nil {
-		slog.Error("resultado não pôde ser entregue", "task_run_id", taskRunID, "erro", err)
+		slog.Error("resultado não pôde ser entregue", "erro", err)
 		return codigoEntregaImpossivel
 	}
 	return codigoResultadoEntregue
