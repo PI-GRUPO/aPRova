@@ -31,6 +31,8 @@ const (
 	maximoDeTentativasPadrao = 3
 	tetoDeAnalisesPadrao     = 60
 	tetoDeLeiturasPadrao     = 60
+	modeloDaExplicacaoPadrao = "gemini-3.5-flash-lite"
+	timeoutDaExplicacao      = 5 * time.Second
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
@@ -106,6 +108,10 @@ type Configuracao struct {
 	TetoDeLeiturasPorMinuto int
 	ProxyConfiavel          bool
 
+	ExplicacaoLigada  bool
+	ExplicacaoModelo  string
+	ExplicacaoTimeout time.Duration
+
 	GateMaxArquivos       int
 	GateCaminhosSensiveis []string
 
@@ -176,6 +182,10 @@ func Carregar() (Configuracao, error) {
 		TetoDeAnalisesPorHora:   leitura.inteiroPositivo("APROVA_TETO_ANALISES_POR_HORA", tetoDeAnalisesPadrao),
 		TetoDeLeiturasPorMinuto: leitura.inteiroPositivo("APROVA_TETO_LEITURAS_POR_MINUTO", tetoDeLeiturasPadrao),
 		ProxyConfiavel:          leitura.booleano("APROVA_PROXY_CONFIAVEL"),
+
+		ExplicacaoLigada:  leitura.booleano("EXPLICACAO_LIGADA"),
+		ExplicacaoModelo:  leitura.opcional("EXPLICACAO_MODELO", modeloDaExplicacaoPadrao),
+		ExplicacaoTimeout: leitura.duracaoPositiva("EXPLICACAO_TIMEOUT", timeoutDaExplicacao),
 
 		GateMaxArquivos:       leitura.inteiroPositivoOpcional("GATE_MAX_ARQUIVOS"),
 		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),

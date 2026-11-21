@@ -40,6 +40,7 @@ type Motor struct {
 	recibos         prometheus.Counter
 	leasesRetomados prometheus.Counter
 	errosDoGitHub   *prometheus.CounterVec
+	explicacoes     *prometheus.CounterVec
 }
 
 // NovoMotor cria as métricas do motor e as registra em registro.
@@ -82,10 +83,20 @@ func NovoMotor(registro prometheus.Registerer) *Motor {
 			Name: prefixoDosNomes + "erros_github_total",
 			Help: "Erros da API do GitHub vistos pelo motor, por tipo.",
 		}, []string{"tipo"}),
+		explicacoes: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name: prefixoDosNomes + "explicacoes_total",
+			Help: "Explicações por IA do risco, por resultado: gerada, descartada, falha ou reusada.",
+		}, []string{"resultado"}),
 	}
 	registro.MustRegister(m.analises, m.motivos, m.calibracoes, m.duracaoDaEtapa, m.execucoes,
-		m.novasTentativas, m.recibos, m.leasesRetomados, m.errosDoGitHub)
+		m.novasTentativas, m.recibos, m.leasesRetomados, m.errosDoGitHub, m.explicacoes)
 	return m
+}
+
+// Explicacao conta uma explicação por IA pelo resultado: gerada, descartada,
+// falha ou reusada.
+func (m *Motor) Explicacao(resultado string) {
+	m.explicacoes.WithLabelValues(resultado).Inc()
 }
 
 // AnaliseEncerrada conta um task_run que chegou ao estado final, com o nível
