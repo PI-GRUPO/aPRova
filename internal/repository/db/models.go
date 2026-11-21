@@ -64,6 +64,7 @@ type PullRequestOutcome struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 	Commits        int32     `json:"commits"`
+	BaseRef        *string   `json:"base_ref"`
 }
 
 type PullRequestRevert struct {

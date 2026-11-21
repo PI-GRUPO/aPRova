@@ -39,7 +39,8 @@ type Execucao struct {
 // FechamentoDePR descreve um pull request fechado, com ou sem merge. SHAHead é
 // o head no fechamento e SHADoMerge o commit do merge, vazio sem merge.
 // Reverte é o número do pull request do mesmo repositório que este reverte, ou
-// zero. Commits é quantos commits o PR tinha no fechamento.
+// zero. Commits é quantos commits o PR tinha no fechamento e Base a branch em
+// que ele entraria.
 type FechamentoDePR struct {
 	InstallationID int64  `validate:"required,gt=0"`
 	DeliveryID     string `validate:"required,max=100"`
@@ -51,13 +52,15 @@ type FechamentoDePR struct {
 	FechadoEm      time.Time `validate:"required"`
 	Reverte        int       `validate:"gte=0,max=2147483647"`
 	Commits        int       `validate:"gte=0,max=2147483647"`
+	Base           string    `validate:"max=255"`
 }
 
 // DesfechoDePR é o desfecho gravado de um pull request fechado: se entrou na
-// main, o head no fechamento, o commit do merge, vazio sem merge, e quantos
-// commits o PR tinha, zero quando não se sabe.
+// base, a base, vazia quando não foi gravada, o head no fechamento, o commit do
+// merge, vazio sem merge, e quantos commits o PR tinha, zero quando não se sabe.
 type DesfechoDePR struct {
 	Mergeado   bool
+	Base       string
 	SHAHead    string
 	SHADoMerge string
 	Commits    int

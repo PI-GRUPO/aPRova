@@ -83,7 +83,7 @@ func (s *Servidor) completarPedido(ctx context.Context, pedido reversao.Pedido, 
 	}
 
 	merge := reversao.Merge{
-		Mergeado: desfecho.Mergeado, SHAHeadFinal: desfecho.SHAHead, SHADoMerge: desfecho.SHADoMerge, Commits: desfecho.Commits,
+		Mergeado: desfecho.Mergeado, Base: desfecho.Base, SHAHeadFinal: desfecho.SHAHead, SHADoMerge: desfecho.SHADoMerge, Commits: desfecho.Commits,
 	}
 	if desfecho.Mergeado {
 		dono, repositorio, _ := strings.Cut(conteudo.Repositorio, "/")

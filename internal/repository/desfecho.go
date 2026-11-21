@@ -27,7 +27,7 @@ func (r *RepositorioPostgres) RegistrarFechamento(ctx context.Context, fechament
 	return r.EmTransacao(ctx, func(tx *RepositorioPostgres) error {
 		err := tx.consultas.UpsertPullRequestOutcome(ctx, db.UpsertPullRequestOutcomeParams{
 			TenantID: fechamento.InstallationID, Repository: fechamento.Repositorio, PrNumber: numero,
-			Merged: fechamento.Mergeado, HeadSha: fechamento.SHAHead, MergeCommitSha: textoOuNulo(fechamento.SHADoMerge),
+			Merged: fechamento.Mergeado, BaseRef: textoOuNulo(fechamento.Base), HeadSha: fechamento.SHAHead, MergeCommitSha: textoOuNulo(fechamento.SHADoMerge),
 			Commits: commits, ClosedAt: fechamento.FechadoEm, DeliveryID: fechamento.DeliveryID,
 		})
 		if err != nil {
@@ -64,6 +64,6 @@ func (r *RepositorioPostgres) DesfechoDoPR(ctx context.Context, tenantID int64, 
 		return domain.DesfechoDePR{}, traduzir("ler o desfecho do pull request", err)
 	}
 	return domain.DesfechoDePR{
-		Mergeado: linha.Merged, SHAHead: linha.HeadSha, SHADoMerge: valorOuVazio(linha.MergeCommitSha), Commits: int(linha.Commits),
+		Mergeado: linha.Merged, Base: valorOuVazio(linha.BaseRef), SHAHead: linha.HeadSha, SHADoMerge: valorOuVazio(linha.MergeCommitSha), Commits: int(linha.Commits),
 	}, nil
 }

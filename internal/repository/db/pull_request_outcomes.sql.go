@@ -38,7 +38,7 @@ func (q *Queries) CreatePullRequestRevert(ctx context.Context, arg CreatePullReq
 }
 
 const getPullRequestOutcome = `-- name: GetPullRequestOutcome :one
-SELECT merged, head_sha, merge_commit_sha, commits FROM pull_request_outcomes
+SELECT merged, base_ref, head_sha, merge_commit_sha, commits FROM pull_request_outcomes
 WHERE tenant_id = $1 AND repository = $2 AND pr_number = $3
 `
 
@@ -50,6 +50,7 @@ type GetPullRequestOutcomeParams struct {
 
 type GetPullRequestOutcomeRow struct {
 	Merged         bool    `json:"merged"`
+	BaseRef        *string `json:"base_ref"`
 	HeadSha        string  `json:"head_sha"`
 	MergeCommitSha *string `json:"merge_commit_sha"`
 	Commits        int32   `json:"commits"`
@@ -60,6 +61,7 @@ func (q *Queries) GetPullRequestOutcome(ctx context.Context, arg GetPullRequestO
 	var i GetPullRequestOutcomeRow
 	err := row.Scan(
 		&i.Merged,
+		&i.BaseRef,
 		&i.HeadSha,
 		&i.MergeCommitSha,
 		&i.Commits,
@@ -68,11 +70,11 @@ func (q *Queries) GetPullRequestOutcome(ctx context.Context, arg GetPullRequestO
 }
 
 const upsertPullRequestOutcome = `-- name: UpsertPullRequestOutcome :exec
-INSERT INTO pull_request_outcomes (tenant_id, repository, pr_number, merged, head_sha, merge_commit_sha, commits, closed_at, delivery_id)
-VALUES ($1, $2, $3, $4, $5,
-        $6, $7, $8, $9)
+INSERT INTO pull_request_outcomes (tenant_id, repository, pr_number, merged, base_ref, head_sha, merge_commit_sha, commits, closed_at, delivery_id)
+VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8, $9, $10)
 ON CONFLICT (tenant_id, repository, pr_number) DO UPDATE
-SET merged = EXCLUDED.merged, head_sha = EXCLUDED.head_sha, merge_commit_sha = EXCLUDED.merge_commit_sha,
+SET merged = EXCLUDED.merged, base_ref = EXCLUDED.base_ref, head_sha = EXCLUDED.head_sha, merge_commit_sha = EXCLUDED.merge_commit_sha,
     commits = EXCLUDED.commits, closed_at = EXCLUDED.closed_at, delivery_id = EXCLUDED.delivery_id, updated_at = now()
 WHERE pull_request_outcomes.closed_at < EXCLUDED.closed_at
 `
@@ -82,6 +84,7 @@ type UpsertPullRequestOutcomeParams struct {
 	Repository     string    `json:"repository"`
 	PrNumber       int32     `json:"pr_number"`
 	Merged         bool      `json:"merged"`
+	BaseRef        *string   `json:"base_ref"`
 	HeadSha        string    `json:"head_sha"`
 	MergeCommitSha *string   `json:"merge_commit_sha"`
 	Commits        int32     `json:"commits"`
@@ -95,6 +98,7 @@ func (q *Queries) UpsertPullRequestOutcome(ctx context.Context, arg UpsertPullRe
 		arg.Repository,
 		arg.PrNumber,
 		arg.Merged,
+		arg.BaseRef,
 		arg.HeadSha,
 		arg.MergeCommitSha,
 		arg.Commits,

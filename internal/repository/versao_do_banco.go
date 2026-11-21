@@ -8,7 +8,7 @@ import (
 
 // VersaoEsperadaDoBanco é o número da última migration que este binário
 // conhece.
-const VersaoEsperadaDoBanco = 23
+const VersaoEsperadaDoBanco = 24
 
 // ErrVersaoDoBanco indica banco com migration suja ou numa versão diferente
 // da esperada.
