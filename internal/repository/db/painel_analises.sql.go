@@ -51,7 +51,7 @@ func (q *Queries) CountWebAnalyses(ctx context.Context, arg CountWebAnalysesPara
 }
 
 const getWebAnalysis = `-- name: GetWebAnalysis :one
-SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, rg.level AS risk_level,
+SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, tr.started_at, rg.level AS risk_level,
  NOT EXISTS(SELECT 1 FROM task_runs newer
    WHERE newer.tenant_id=tr.tenant_id AND newer.repository=tr.repository AND newer.pr_number=tr.pr_number
     AND (newer.created_at,newer.id)>(tr.created_at,tr.id))::boolean AS is_current
@@ -85,6 +85,7 @@ type GetWebAnalysisRow struct {
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
 	CheckRunID       *int64     `json:"check_run_id"`
+	StartedAt        *time.Time `json:"started_at"`
 	RiskLevel        *string    `json:"risk_level"`
 	IsCurrent        *bool      `json:"is_current"`
 }
@@ -110,6 +111,7 @@ func (q *Queries) GetWebAnalysis(ctx context.Context, arg GetWebAnalysisParams) 
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 		&i.RiskLevel,
 		&i.IsCurrent,
 	)
@@ -162,7 +164,7 @@ func (q *Queries) GetWebRiskGate(ctx context.Context, arg GetWebRiskGateParams) 
 }
 
 const listWebAnalyses = `-- name: ListWebAnalyses :many
-SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, rg.level AS risk_level
+SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, tr.started_at, rg.level AS risk_level
 FROM task_runs tr
 LEFT JOIN risk_gates rg ON rg.task_run_id = tr.id AND rg.tenant_id = tr.tenant_id
 WHERE tr.tenant_id = $1
@@ -212,6 +214,7 @@ type ListWebAnalysesRow struct {
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
 	CheckRunID       *int64     `json:"check_run_id"`
+	StartedAt        *time.Time `json:"started_at"`
 	RiskLevel        *string    `json:"risk_level"`
 }
 
@@ -254,6 +257,7 @@ func (q *Queries) ListWebAnalyses(ctx context.Context, arg ListWebAnalysesParams
 			&i.StepAttempts,
 			&i.LastApprovalSeen,
 			&i.CheckRunID,
+			&i.StartedAt,
 			&i.RiskLevel,
 		); err != nil {
 			return nil, err
