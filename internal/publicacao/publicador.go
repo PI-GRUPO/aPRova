@@ -90,14 +90,11 @@ func NovoPublicador(opcoes OpcoesPublicador) (*Publicador, error) {
 	return &Publicador{opcoes: opcoes}, nil
 }
 
-// Iniciar cria o Check Run em andamento, para o pull request mostrar que a
-// análise começou. Se o task_run já tem Check Run, nada muda.
+// Iniciar deixa o Check Run do task_run em andamento, para o pull request
+// mostrar que a análise começou. Se o task_run já tem Check Run, por exemplo o
+// da fila, ele é atualizado em vez de criado outro.
 func (p *Publicador) Iniciar(ctx context.Context, taskRun domain.TaskRun) error {
-	id, err := p.checkRunConhecido(ctx, taskRun)
-	if err != nil || id != 0 {
-		return explicar(err)
-	}
-	return explicar(p.criarCheckRun(ctx, taskRun, p.checkRunEmAndamento(taskRun)))
+	return explicar(p.gravarCheckRun(ctx, taskRun, p.checkRunEmAndamento(taskRun)))
 }
 
 // Publicar conclui o Check Run do task_run e escreve o resultado no
