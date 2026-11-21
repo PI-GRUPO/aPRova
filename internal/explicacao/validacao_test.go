@@ -117,3 +117,41 @@ func TestLinkMencaoOuComandoDescarta(t *testing.T) {
 		exigirDescarte(t, textoFiel+extra, entradaDeRiscoAlto())
 	}
 }
+
+func gateDeAreaSensivel() domain.GateDeRisco {
+	return domain.GateDeRisco{
+		NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto,
+		Motivos: []domain.MotivoDeRisco{{ID: "area_sensivel", Nivel: domain.RiscoAlto, Descricao: "o PR altera um caminho sensível", Evidencias: []string{"internal/auth/sessao.go"}}},
+	}
+}
+
+const textoDeAreaSensivel = "Este pull request ficou com risco alto, então o merge está bloqueado até alguém com permissão de escrita aprovar. " +
+	"Ele altera internal/auth/sessao.go, uma área sensível de segurança do sistema. " +
+	"Peça uma revisão cuidadosa da mudança em sessao.go antes do merge."
+
+func TestTextoQueGaranteSegurancaOuAusenciaDeProblemaDescarta(t *testing.T) {
+	for _, frase := range []string{
+		" A mudança é segura.",
+		" O código está seguro para o merge.",
+		" Isso garante a segurança do merge.",
+		" O merge segue sem riscos.",
+		" A alteração está sem problemas.",
+		" Nenhuma ação é necessária.",
+		" Você pode seguir com o merge.",
+	} {
+		exigirDescarte(t, textoFiel+frase, entradaDeRiscoAlto())
+	}
+}
+
+func TestSegurancaComoAreaSensivelNaoDescarta(t *testing.T) {
+	entrada := NovaEntrada(gateDeAreaSensivel(), sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 4})
+
+	if _, err := Validar(textoDeAreaSensivel, entrada); err != nil {
+		t.Errorf("com area_sensivel, \"área sensível de segurança\" descreve o motivo e não descarta: %v", err)
+	}
+	exigirDescarte(t, textoDeAreaSensivel+" Depois da revisão, a mudança fica segura.", entrada)
+}
+
+func TestSegurancaSemAreaSensivelDescarta(t *testing.T) {
+	exigirDescarte(t, textoFiel+" O teste cobre uma regra de segurança.", entradaDeRiscoAlto())
+}

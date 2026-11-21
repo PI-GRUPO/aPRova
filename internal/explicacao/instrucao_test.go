@@ -41,3 +41,17 @@ func TestInstrucaoPedeOSignificadoUmaVezSemAprovacaoParaFalhaENaturalidade(t *te
 		t.Error("a instrução não pode pedir para repetir que a aprovação libera o merge")
 	}
 }
+
+func TestInstrucaoParaRiscoBaixoNuncaGaranteSegurancaETemExemploDeConcordancia(t *testing.T) {
+	for _, regra := range []string{
+		"nenhuma regra do aPRova disparou",
+		"a revisão normal do pull request continua valendo",
+		"Nunca afirme que a mudança é segura",
+		"Exemplo de concordância",
+		`"1 dos 11 testes falhou no sandbox"`,
+	} {
+		if !strings.Contains(instrucaoDoSistema, regra) {
+			t.Errorf("a instrução não traz %q", regra)
+		}
+	}
+}

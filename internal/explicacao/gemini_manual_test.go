@@ -9,7 +9,10 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
-const repeticoesPorCaso = 5
+const (
+	repeticoesPorCaso      = 5
+	intervaloEntreChamadas = 4500 * time.Millisecond
+)
 
 type casoManual struct {
 	nome      string
@@ -35,6 +38,11 @@ func casosManuais() []casoManual {
 			},
 			resultado: sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 12, TipoFalha: sandbox.FalhaNenhuma},
 		},
+		{
+			nome:      "risco baixo sem motivos",
+			gate:      domain.GateDeRisco{NivelDeterministico: domain.RiscoBaixo, Nivel: domain.RiscoBaixo},
+			resultado: sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 1, TipoFalha: sandbox.FalhaNenhuma},
+		},
 	}
 }
 
@@ -58,6 +66,7 @@ func TestExplicacaoComOGeminiReal(t *testing.T) {
 			t.Fatalf("serializar a entrada: %v", err)
 		}
 		for repeticao := 1; repeticao <= repeticoesPorCaso; repeticao++ {
+			time.Sleep(intervaloEntreChamadas)
 			inicio := time.Now()
 			resposta, err := gemini.Gerar(t.Context(), instrucaoDoSistema, conteudo)
 			latencia := time.Since(inicio)
