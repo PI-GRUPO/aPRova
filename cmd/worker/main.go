@@ -142,7 +142,7 @@ func desligarListenerInterno(parar func(context.Context) error) {
 func dependenciasDeProntidao(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) []saude.Dependencia {
 	dependencias := []saude.Dependencia{{Nome: "postgres", Verificar: repositorio.ConferirVersaoDoBanco}}
 	if configuracao.SandboxExecutor == sandbox.TipoExecutorLocal {
-		dependencias = append(dependencias, saude.Dependencia{Nome: "docker", Verificar: sandbox.ConferirDocker(sandbox.BinarioDockerPadrao)})
+		dependencias = append(dependencias, saude.Dependencia{Nome: "docker", Verificar: sandbox.ConferirDocker()})
 	}
 	return dependencias
 }
