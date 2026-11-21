@@ -170,7 +170,9 @@ de `SANDBOX_DIRETORIOS` e de `SANDBOX_LINGUAGENS` para o repositório. Sem
 variáveis vão na linha do comando: o `godotenv` não sobrescreve o que já está no
 ambiente, então o `.env` não muda. Com `APROVA_URL_PUBLICA` apontando para a API
 local, o link "Verificar no aPRova" do check abre na máquina da apresentação;
-sem ela, o link usa o endereço provisório `https://aprova.example.com`.
+sem ela, o link usa o endereço provisório `https://aprova.example.com`. A API
+também precisa dela: é com ela que `GET /receipts/{id}/revert` monta o link do
+recibo no corpo do PR de reversão.
 
 A API e o worker sobem com `go run`, e não com `make run-api` e
 `make run-worker`: o `Makefile` exporta um `DATABASE_URL` padrão, na porta
@@ -179,7 +181,7 @@ projeto em outra porta, os alvos do `make` conectam no banco errado.
 
 ```bash
 make up && make migrate-up
-go run ./cmd/api
+APROVA_URL_PUBLICA="http://localhost:8080" go run ./cmd/api
 SANDBOX_DIRETORIOS="PI-GRUPO/aPRova-TESTES=go" \
 SANDBOX_LINGUAGENS="PI-GRUPO/aPRova-TESTES=go" \
 APROVA_URL_PUBLICA="http://localhost:8080" \

@@ -1,9 +1,10 @@
 # Reversão assistida
 
 Quando uma análise do aPRova deixou passar algo que não devia, a pergunta
-seguinte é: **o que exatamente entrou na main por causa dela, e como desfazer?**
+seguinte é: **o que exatamente entrou na base do PR por causa dela, e como
+desfazer?**
 A reversão assistida responde a partir do recibo. Ela confere o recibo,
-encontra o commit que entrou na main e devolve o que uma pessoa precisa para
+encontra o commit que entrou na base do PR (em geral a `main`) e devolve o que uma pessoa precisa para
 reverter: o comando `git` pronto e o título e o corpo do PR de reversão.
 
 ## O que ela nunca faz
@@ -41,9 +42,9 @@ escrever.
 
 O recibo assinado guarda o repositório, o número do PR e o `head_sha`
 analisado. Quando o PR é fechado, o webhook `closed` grava em
-`pull_request_outcomes` se ele foi mergeado, o head no fechamento, o
-`merge_commit_sha` e quantos commits o PR tinha (coluna `commits`, migração
-23). A ligação entre recibo e desfecho é `(tenant, repositório, número do PR)`.
+`pull_request_outcomes` se ele foi mergeado, a base (`pull_request.base.ref`,
+coluna `base_ref`, migração 24), o head no fechamento, o `merge_commit_sha` e
+quantos commits o PR tinha (coluna `commits`, migração 23). A ligação entre recibo e desfecho é `(tenant, repositório, número do PR)`.
 
 O GitHub informa o `merge_commit_sha` nas três formas de merge, mas não diz
 qual delas foi usada. O comando de reversão muda conforme a forma:
@@ -55,9 +56,9 @@ qual delas foi usada. O comando de reversão muda conforme a forma:
 | 1 | mais de 1 | squash **ou** rebase | nenhum: ambíguo |
 
 No merge commit, `-m 1` diz ao git que o lado a preservar é o primeiro pai, a
-main de antes do merge. No squash, o PR inteiro virou um commit só. No rebase
+base de antes do merge. No squash, o PR inteiro virou um commit só. No rebase
 de N commits, o `merge_commit_sha` é a ponta dos N commits reaplicados em
-sequência na main, e a reversão é a faixa `<sha>~N..<sha>`.
+sequência na base, e a reversão é a faixa `<sha>~N..<sha>`.
 
 Com um pai e mais de um commit no PR, squash e rebase têm a mesma aparência
 vista de fora. Daria para desempatar com outra leitura no GitHub
@@ -68,11 +69,18 @@ pede o tipo, que no executável vem por `-tipo`.
 PRs fechados antes da migração 23 têm `commits = 0`. Para eles, só o merge
 commit (2 pais) gera comando; o resto cai no caso ambíguo.
 
-O comando sempre parte de uma branch nova a partir da `main` remota:
+O comando sempre parte de uma branch nova a partir da base remota do PR, que
+nem sempre é a `main`. No ensaio de ponta a ponta, o PR mirava
+`base/reversao-e2e`, e um comando fixo em `origin/main` teria revertido na
+branch errada:
 
 ```sh
-git fetch origin && git switch -c revert/pr-42 origin/main && git revert --no-edit -m 1 <sha>
+git fetch origin && git switch -c revert/pr-21 origin/base/reversao-e2e && git revert --no-edit -m 1 <sha>
 ```
+
+PRs fechados antes da migração 24 não têm a base gravada. Para eles não há
+comando: a recusa é `base_desconhecida`, porque supor a `main` é exatamente o
+erro que a coluna nova corrige.
 
 ## Quando não há instrução
 
@@ -80,17 +88,21 @@ git fetch origin && git switch -c revert/pr-42 origin/main && git revert --no-ed
 | --- | --- |
 | `recibo_invalido` | a assinatura, o hash, a chave, o conteúdo ou o elo com o anterior não conferem |
 | `pr_aberto` | o PR ainda não foi fechado |
-| `pr_nao_mergeado` | o PR foi fechado sem merge; nada dele entrou na main |
+| `pr_nao_mergeado` | o PR foi fechado sem merge; nada dele entrou na base |
 | `commit_diferente` | houve push depois da análise: o recibo não cobre o que entrou |
 | `tipo_ambiguo` | um pai e mais de um commit, sem o tipo informado |
-| `dados_do_merge_invalidos` | SHA fora do formato, tipo desconhecido ou rebase sem a contagem de commits |
+| `base_desconhecida` | o PR foi fechado antes da migração 24, ou o executável não recebeu `-base` |
+| `dados_do_merge_invalidos` | SHA ou base fora do formato, tipo desconhecido ou rebase sem a contagem de commits |
 
 Recibo inválido não consulta banco nem GitHub: a recusa sai antes de qualquer
 leitura. No caso `commit_diferente`, a explicação mostra os dois SHAs, o
 analisado e o que entrou.
 
-Os SHAs entram num comando de shell, então só são aceitos em hexadecimal
-minúsculo de 40 ou 64 caracteres. Qualquer outra coisa é recusada em vez de
+Os SHAs e a base entram num comando de shell. Os SHAs só são aceitos em
+hexadecimal minúsculo de 40 ou 64 caracteres. A base é mais delicada: o git
+aceita nomes de branch com `;`, `$` e crase, que o shell interpretaria. Por
+isso só passam segmentos de letras, dígitos, `.`, `_` e `-`, separados por `/`,
+sem começar com `-` e sem `..`. Qualquer outra coisa é recusada em vez de
 virar comando.
 
 ## O texto do PR de reversão
@@ -108,8 +120,9 @@ desfecho negativo, que impede reduzir o nível de casos parecidos (ver
 [calibracao.md](calibracao.md)). Um
 teste da rota passa o corpo gerado pelo mesmo detector que o webhook usa.
 
-Depois dessa linha, o corpo diz em português qual commit está sendo revertido,
-o nível e os motivos do recibo original com as evidências, o link de
+Depois dessa linha, o corpo diz em português qual commit está sendo revertido
+e em que base ele entrou, o nível e os motivos do recibo original com as
+evidências (ou "sem motivos de risco", quando o recibo não tem nenhum), o link de
 verificação do recibo e o aviso de que o PR de reversão também passa pelo
 aPRova.
 
@@ -118,6 +131,9 @@ aPRova.
 ```sh
 curl -s "$APROVA/receipts/$ID/revert"
 ```
+
+O link do recibo no corpo usa `APROVA_URL_PUBLICA` da API; sem ela, sai o
+endereço provisório `https://aprova.example.com`.
 
 A resposta traz `verificacao`, o mesmo objeto de `/receipts/{id}/verify`, mais
 `repositorio`, `numero_pr`, `head_sha` e `commit_na_main`; `disponivel`
@@ -144,12 +160,13 @@ o tipo vem por `-tipo`:
 go run ./cmd/verificar-recibo reverter \
   -chave "$CHAVE" -url-publica "$APROVA" \
   -anterior recibo-anterior.json \
-  -merge-sha <merge_commit_sha> -head-final <head no fechamento> \
+  -base main -merge-sha <merge_commit_sha> -head-final <head no fechamento> \
   -tipo rebase -commits 3 \
   recibo.json
 ```
 
 - Sem `-merge-sha`, o PR é tratado como não mergeado.
+- `-base` é a branch em que o PR entrou; sem ela não há comando.
 - `-head-final` é o head do PR no fechamento; se não for o `head_sha` do
   recibo, a saída avisa que o recibo não cobre o que entrou.
 - `-anterior` é opcional. Sem ele, quando o recibo cita um anterior, a saída
