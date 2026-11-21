@@ -550,6 +550,29 @@ make test-banco
 make lint
 ```
 
+### Teste ponta a ponta
+
+`make e2e` abre um PR de verdade e confere o que o aPRova faz com ele. Fica
+fora do CI: sem `E2E_LIGADO=true` o teste é pulado. Ele precisa de:
+
+- a API e o worker no ar, recebendo os webhooks do app (smee no local);
+- `E2E_REPOSITORIO`, um repositório só para isso, com o app instalado e ao
+  menos um commit na `main` (o PR #6 do aPRova-TESTES e os repositórios do
+  benchmark nunca entram);
+- `E2E_URL_APROVA`, a base pública da API, a mesma de `APROVA_URL_PUBLICA`;
+- `gh auth login` feito, com permissão de escrita no repositório.
+
+O teste cria a branch `e2e-<unix>` com um módulo Go pequeno e o teste dele, e
+abre o PR para a `main`. Depois espera até 10 minutos pelo Check Run `aPRova`
+e confere a conclusão `success`, o comentário do aPRova citando o recibo e o
+`/receipts/{id}/verify` com `valido`. No fim, mesmo com falha, fecha o PR e
+apaga a branch. Se o `go test` estourar o prazo, a limpeza não roda; a rodada
+seguinte apaga as branches `e2e-*` com mais de uma hora.
+
+```sh
+E2E_REPOSITORIO=Azulpasta/aprova-e2e E2E_URL_APROVA=https://<url> make e2e
+```
+
 ## Banco de dados
 
 O modelo está em [docs/modelo-dados.html](docs/modelo-dados.html). São nove
