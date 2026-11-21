@@ -37,6 +37,9 @@ func pedidoMergeado(merge Merge) Pedido {
 	if merge.SHADoMerge == "" {
 		merge.SHADoMerge = shaDoMerge
 	}
+	if merge.Base == "" {
+		merge.Base = "main"
+	}
 	return Pedido{
 		Conteudo:    conteudoAnalisado(),
 		Verificacao: receipt.Resultado{Valido: true},
@@ -191,5 +194,50 @@ func TestCorpoTrazNivelMotivosLinkEAviso(t *testing.T) {
 	}
 	if !strings.Contains(instrucao.Titulo, "#42") {
 		t.Errorf("título sem o número do PR: %q", instrucao.Titulo)
+	}
+}
+
+func TestComandoETextoPartemDaBaseDoPR(t *testing.T) {
+	instrucao := Montar(pedidoMergeado(Merge{Pais: 2, Base: "base/reversao-e2e"}))
+
+	exigirComando(t, instrucao,
+		"git fetch origin && git switch -c revert/pr-42 origin/base/reversao-e2e && git revert --no-edit -m 1 "+shaDoMerge)
+	if !strings.Contains(instrucao.Corpo, "que entrou na base/reversao-e2e pelo PR #42") {
+		t.Errorf("corpo não nomeia a base:\n%s", instrucao.Corpo)
+	}
+	if strings.Contains(instrucao.Corpo, "main") {
+		t.Errorf("corpo cita a main num PR de outra base:\n%s", instrucao.Corpo)
+	}
+}
+
+func TestSemBaseGravadaNaoGeraComando(t *testing.T) {
+	pedido := pedidoMergeado(Merge{Pais: 2})
+	pedido.Merge.Base = ""
+
+	instrucao := Montar(pedido)
+
+	exigirRecusa(t, instrucao, RecusaBaseDesconhecida)
+	if !strings.Contains(instrucao.Explicacao, "base") {
+		t.Errorf("explicação não fala da base: %q", instrucao.Explicacao)
+	}
+}
+
+func TestBaseForaDoFormatoNaoEntraNoComando(t *testing.T) {
+	for _, base := range []string{"main; rm -rf ~", "$(id)", "`id`", "-x", "a..b", "main lixo", "/main", "main/"} {
+		t.Run(base, func(t *testing.T) {
+			exigirRecusa(t, Montar(pedidoMergeado(Merge{Pais: 2, Base: base})), RecusaDadosDoMergeInvalidos)
+		})
+	}
+}
+
+func TestCorpoSemMotivosDizQueNaoHouveMotivos(t *testing.T) {
+	pedido := pedidoMergeado(Merge{Pais: 2})
+	pedido.Conteudo.Nivel = domain.RiscoBaixo
+	pedido.Conteudo.Motivos = nil
+
+	corpo := Montar(pedido).Corpo
+
+	if !strings.Contains(corpo, "deu nível baixo, sem motivos de risco.") || strings.Contains(corpo, "com os motivos") {
+		t.Errorf("corpo:\n%s", corpo)
 	}
 }
