@@ -109,7 +109,7 @@ func recusaDoDesfecho(pedido Pedido) Instrucao {
 	case merge == nil:
 		return recusar(RecusaPullRequestAberto, "o pull request ainda não foi fechado; não há o que reverter")
 	case !merge.Mergeado:
-		return recusar(RecusaPullRequestNaoMergeado, "o pull request foi fechado sem merge; nada dele entrou na main")
+		return recusar(RecusaPullRequestNaoMergeado, "o pull request não foi mergeado; nada dele entrou na main")
 	case !formatoDoSHA.MatchString(merge.SHADoMerge) || !formatoDoSHA.MatchString(merge.SHAHeadFinal):
 		return recusar(RecusaDadosDoMergeInvalidos, "os SHAs do merge precisam ser hexadecimais minúsculos de 40 ou 64 caracteres")
 	case merge.SHAHeadFinal != pedido.Conteudo.SHAHead:
