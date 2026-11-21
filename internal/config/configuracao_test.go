@@ -31,7 +31,7 @@ func ambienteLimpo(t *testing.T) {
 		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 		"CALIBRACAO_LIGADA", "CALIBRACAO_VIZINHOS", "CALIBRACAO_SIMILARIDADE_MINIMA",
 		"CALIBRACAO_MINIMO_DE_DESFECHOS", "CALIBRACAO_TIMEOUT", "GEMINI_API_KEY", "SARIF_LIGADO",
-		"METRICAS_ENDERECO",
+		"METRICAS_ENDERECO", "APROVA_TETO_ANALISES_POR_HORA",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -404,6 +404,9 @@ func TestCarregarUsaOsPadroesDoWorker(t *testing.T) {
 	if configuracao.WorkerConcorrencia != 4 || configuracao.WorkerMaxTentativas != 3 {
 		t.Errorf("padrões do worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
 	}
+	if configuracao.TetoDeAnalisesPorHora != 60 {
+		t.Errorf("sem APROVA_TETO_ANALISES_POR_HORA o teto é 60, obtive %d", configuracao.TetoDeAnalisesPorHora)
+	}
 	if configuracao.URLPublica != "https://aprova.example.com" {
 		t.Errorf("sem APROVA_URL_PUBLICA vale o endereço provisório, obtive %q", configuracao.URLPublica)
 	}
@@ -420,6 +423,7 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 	t.Setenv("APROVA_URL_PUBLICA", "https://api.aprova.test/")
 	t.Setenv("SANDBOX_DIRETORIOS", " Azulpasta/aPRova-TESTES=go , PI-GRUPO/outro=servicos/api ")
 	t.Setenv("GITHUB_APP_SLUG", "aprova-pi")
+	t.Setenv("APROVA_TETO_ANALISES_POR_HORA", "90")
 
 	configuracao, err := Carregar()
 	if err != nil {
@@ -428,6 +432,9 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 
 	if configuracao.WorkerConcorrencia != 8 || configuracao.WorkerMaxTentativas != 5 {
 		t.Errorf("worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
+	}
+	if configuracao.TetoDeAnalisesPorHora != 90 {
+		t.Errorf("teto de análises lido errado: %d", configuracao.TetoDeAnalisesPorHora)
 	}
 	if configuracao.N8NSegredoEventos != "segredo-dos-eventos" || configuracao.GitHubAppSlug != "aprova-pi" {
 		t.Errorf("segredo ou slug lidos errado: %q %q", configuracao.N8NSegredoEventos, configuracao.GitHubAppSlug)
@@ -447,6 +454,7 @@ func TestCarregarRecusaVariaveisDoWorkerInvalidas(t *testing.T) {
 		"WORKER_CONCORRENCIA=-2":                             "WORKER_CONCORRENCIA",
 		"WORKER_CONCORRENCIA=quatro":                         "WORKER_CONCORRENCIA",
 		"WORKER_MAX_TENTATIVAS=0":                            "WORKER_MAX_TENTATIVAS",
+		"APROVA_TETO_ANALISES_POR_HORA=0":                    "APROVA_TETO_ANALISES_POR_HORA",
 		"APROVA_URL_PUBLICA=api.aprova.test":                 "APROVA_URL_PUBLICA",
 		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES":         "SANDBOX_DIRETORIOS",
 		"SANDBOX_DIRETORIOS==go":                             "SANDBOX_DIRETORIOS",
