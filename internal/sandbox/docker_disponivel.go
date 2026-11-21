@@ -10,7 +10,7 @@ import (
 // docker do PATH responde e alcança o daemon.
 func ConferirDocker() func(context.Context) error {
 	return func(ctx context.Context) error {
-		if err := exec.CommandContext(ctx, BinarioDockerPadrao, "version", "--format", "{{.Server.Version}}").Run(); err != nil {
+		if err := exec.CommandContext(ctx, "docker", "version", "--format", "{{.Server.Version}}").Run(); err != nil {
 			return fmt.Errorf("docker do sandbox indisponível: %w", err)
 		}
 		return nil
