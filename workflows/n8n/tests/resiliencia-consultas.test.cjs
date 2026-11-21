@@ -62,7 +62,7 @@ test('destino ausente, modo/tipo incompatível ou identidade inválida interromp
 });
 test('rota de erro preserva ferramentas somente leitura, autenticação, memória e envio sem thread', () => {
   const tools = Object.entries(chat.connections).filter(([, c]) => c.ai_tool).map(([n]) => n).sort();
-  assert.deepEqual(tools, ['comparar_relatorios_semanais', 'consultar_detalhe_execucao', 'consultar_execucoes', 'consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
+  assert.deepEqual(tools, ['consultar_prontidao_api', 'consultar_saude_api']);
   assert.equal(chat.connections[node(chat, '02 |').name].main[1][0].node, node(chat, '02E |').name);
   for (const p of ['08A |', '08B |']) {
     const n = node(chat, p); assert.equal(n.parameters.channelId.value, '={{ $json.slack.channel }}');
@@ -153,8 +153,8 @@ test('segunda tentativa é isolada, usa a pergunta autenticada e somente as mesm
   assert.match(fallback.parameters.text,/04 \| Preparar Consulta do Slack/);assert.match(fallback.parameters.text,/chatInput/);assert.ok(!fallback.parameters.text.includes('$json.output'));
   const targets=kind=>Object.entries(chat.connections).filter(([,c])=>c[kind]?.flat().some(t=>t.node===fallback.name)).map(([n])=>n).sort();
   assert.deepEqual(targets('ai_memory'),[]);
-  assert.deepEqual(targets('ai_tool'),['comparar_relatorios_semanais','consultar_detalhe_execucao','consultar_execucoes','consultar_prontidao_api','consultar_relatorio_semanal','consultar_saude_api']);
+  assert.deepEqual(targets('ai_tool'),['consultar_prontidao_api', 'consultar_saude_api']);
   assert.deepEqual(targets('ai_languageModel'),['Google Gemini Chat Model']);
-  assert.match(fallback.parameters.options.systemMessage,/Não envie datas vazias/);
+  assert.match(fallback.parameters.options.systemMessage,/acesso individual/);
   assert.deepEqual(chat.connections[fallback.name].main[0].map(n=>n.node),[node(chat,'06 |').name]);
 });

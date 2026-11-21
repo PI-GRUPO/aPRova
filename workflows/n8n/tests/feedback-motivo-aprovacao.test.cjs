@@ -51,7 +51,8 @@ test('Feedback: export portátil e chamadas preservam autenticação e rotas ant
   }
   assert.equal(core.connections['07H | aprovacao_registrada | Conectar workflow'].main[0][0].node,
     '07I | Solicitar Motivo da Aprovação');
-  assert.equal(central.connections['07 | Confirmar Recebimento'].main[0][0].node, '07F | É Feedback de Aprovação');
+  assert.equal(central.connections['07 | Confirmar Recebimento'].main[0][0].node, 'H01 | Separar App Home');
+  assert.equal(central.connections['H01 | Separar App Home'].main[1][0].node, '07F | É Feedback de Aprovação');
   assert.equal(central.connections['07F | É Feedback de Aprovação'].main[1][0].node, '08 | Separar Tipo de Interação');
 });
 
@@ -106,4 +107,9 @@ test('Feedback: corpo assinado é exato; 202 ou aprovação diferente não confi
   assert.equal(rodar('14 |', { ...resposta, body: { ...resposta.body, id_aprovacao: 8 } }, refs).feedback.status, 'nao_confirmado');
   v.configuracao_feedback.caminho_api_feedback = '/acoes-remotas';
   assert.throws(() => rodar('12 |', v));
+});
+
+test('decisão Slack não gera uma segunda pergunta de feedback', () => {
+  const e = evento(); e.aprovacao.origem = 'slack';
+  assert.equal(rodar('04 |', rodar('02 |', e)).feedback.status, 'ignorado');
 });

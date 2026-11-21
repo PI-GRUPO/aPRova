@@ -30,7 +30,7 @@ const validarRelatorio = resposta => new Function('$json', '$', codigo(consulta,
 ).json;
 
 test('consultas: exports portáteis não têm simulação, credenciais, dados fixados ou referências locais', () => {
-  assert.equal(chat.nodes.length, 23);
+  assert.ok(no(chat, 'H01 |') && no(chat, 'H02 |'));
   assert.equal(consulta.nodes.length, 6);
   for (const workflow of [chat, consulta]) {
     assert.equal(workflow.active, false);
@@ -45,9 +45,8 @@ test('consultas: exports portáteis não têm simulação, credenciais, dados fi
       }
     }
   }
-  const ferramenta = no(chat, 'consultar_relatorio_semanal');
-  assert.equal(ferramenta.parameters.workflowId.value, '={{ $env.APROVA_CONSULTA_SEMANAL_WORKFLOW_ID }}');
-  assert.deepEqual(Object.keys(ferramenta.parameters.workflowInputs.value), ['inicio']);
+  assert.equal(no(chat, 'consultar_relatorio_semanal'), undefined);
+  assert.equal(chat.nodes.some(n => n.type.endsWith('.toolWorkflow')), false);
 });
 
 test('Slack: exige configuração externa e autenticação antes de processar a pergunta', () => {
@@ -81,7 +80,7 @@ test('Slack: memória separa DM, canal e usuários; deduplicação preserva a id
   assert.equal(preparar()[0].json.dedupe_key, canal.dedupe_key);
   assert.equal(no(chat, '05 |').parameters.operation, 'removeItemsSeenInPreviousExecutions');
   assert.equal(no(chat, '05 |').parameters.options.historySize, 10000);
-  assert.match(no(chat, 'Simple Memory').parameters.sessionKey, /consultas-reais-v2:/);
+  assert.match(no(chat, 'Simple Memory').parameters.sessionKey, /slack-publico-v1:sem-equipe:sem-repo:/);
 });
 
 test('Slack: bots, mensagens vazias e eventos inválidos não acionam a IA', () => {
@@ -124,9 +123,9 @@ test('Slack: resposta usa destino autenticado, escapa menções e não usa threa
   for (const prefixo of ['08A |', '08B |']) assert.equal(no(chat, prefixo).parameters.otherOptions.thread_ts, undefined);
 });
 
-test('agente: expõe seis consultas somente leitura e nenhum destino HTTP controlado pelo modelo', () => {
+test('agente: expõe apenas as consultas públicas e nenhum destino HTTP controlado pelo modelo', () => {
   assert.deepEqual(chat.nodes.filter(n => chat.connections[n.name]?.ai_tool).map(n => n.name).sort(),
-    ['comparar_relatorios_semanais', 'consultar_detalhe_execucao', 'consultar_execucoes', 'consultar_prontidao_api', 'consultar_relatorio_semanal', 'consultar_saude_api']);
+    ['consultar_prontidao_api', 'consultar_saude_api']);
   for (const [nome, caminho] of [['consultar_saude_api', '/health'], ['consultar_prontidao_api', '/ready']]) {
     const p = no(chat, nome).parameters;
     assert.equal(p.method, 'GET'); assert.ok(p.url.includes(caminho));

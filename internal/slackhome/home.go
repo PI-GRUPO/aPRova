@@ -1,156 +1,223 @@
-// Package slackhome publica uma Home de leitura para o piloto de workspace único.
+// Package slackhome apresenta a App Home a partir de interações autenticadas.
 package slackhome
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io"
-	"net/http"
+	"html"
 	"net/url"
-	"regexp"
 	"strings"
-	"time"
-
-	"github.com/PI-GRUPO/aPRova/internal/domain"
 )
 
-type Config struct {
-	Token, TeamID, AppID, UserID string
-	InstallationID               int64
+type Secao string
+
+const (
+	Geral        Secao = "geral"
+	Pendencias   Secao = "pendencias"
+	Detalhes     Secao = "detalhes"
+	Historico    Secao = "historico"
+	Configuracao Secao = "configuracao"
+)
+
+var secoes = []struct {
+	id                         Secao
+	titulo, descricao, caminho string
+}{
+	{Geral, "Visão geral", "O resumo de repositórios e execuções depende da confirmação do seu acesso pelo núcleo.", "/repositorios"},
+	{Pendencias, "Pendências", "A fila, o motivo do risco e o tempo de espera exigem acesso confirmado ao repositório.", "/analises"},
+	{Detalhes, "Detalhes", "No dashboard, selecione uma análise para consultar commit, testes, gate, decisões e recibo disponíveis.", "/analises"},
+	{Historico, "Histórico e relatórios", "O relatório semanal cobre sete dias UTC. Consulte o histórico e as métricas com sua sessão GitHub.", "/relatorio-semanal"},
+	{Configuracao, "Integrações e configuração", "A configuração pelo Slack aguarda vínculo individual, permissões e gravação no núcleo. O Trello é opcional.", "/conta"},
 }
 
-func (c Config) Validar() error {
-	for _, p := range []struct{ valor, padrao string }{{c.TeamID, `^T[A-Z0-9]+$`}, {c.AppID, `^A[A-Z0-9]+$`}, {c.UserID, `^U[A-Z0-9]+$`}} {
-		if !regexp.MustCompile(p.padrao).MatchString(p.valor) {
-			return errors.New("configure APROVA_SLACK_TEAM_ID, APROVA_SLACK_APP_ID e APROVA_SLACK_HOME_USER_ID válidos")
+func secaoValida(s Secao) bool {
+	for _, item := range secoes {
+		if item.id == s {
+			return true
 		}
 	}
-	if c.Token == "" || c.InstallationID <= 0 {
-		return errors.New("configure APROVA_SLACK_BOT_TOKEN e APROVA_CHAT_INSTALLATION_ID positivo")
-	}
-	return nil
+	return false
 }
 
-type Fonte interface {
-	ListarAnalises(context.Context, domain.FiltroAnalises) ([]domain.TaskRun, error)
+type bloco = map[string]any
+
+func texto(s string) bloco     { return bloco{"type": "plain_text", "text": s} }
+func paragrafo(s string) bloco { return bloco{"type": "section", "text": texto(s)} }
+func botao(id, nome, valor string) bloco {
+	return bloco{"type": "button", "action_id": "aprova_home_" + id, "text": texto(nome), "value": valor}
 }
+func opcoes() []bloco {
+	var lista []bloco
+	for _, item := range secoes {
+		lista = append(lista, bloco{"text": texto(item.titulo), "value": item.id})
+	}
+	return lista
+}
+
+// Filtro é apenas apresentação. O dashboard resolve a instalação com a sessão do navegador.
+type Filtro struct {
+	Secao   Secao
+	Periodo string
+}
+
+func periodoValido(p string) bool { return p == "7" || p == "30" || p == "90" || p == "todos" }
+func filtroDaView(meta string) (Filtro, bool) {
+	secao, periodo, temPeriodo := strings.Cut(meta, ":")
+	if !temPeriodo {
+		periodo = "30"
+	}
+	f := Filtro{Secao(secao), periodo}
+	return f, secaoValida(f.Secao) && periodoValido(f.Periodo)
+}
+func (f Filtro) metadata() string { return string(f.Secao) + ":" + f.Periodo }
+func (f Filtro) caminhoAnalises() string {
+	q := url.Values{"periodo": {f.Periodo}}
+	if f.Secao == Pendencias {
+		q.Set("estado", "aguardando_aprovacao")
+	}
+	return "/analises?" + q.Encode()
+}
+
+type Pessoa struct{ Workspace, Usuario string }
+
+// Cada capacidade deve ser consultada com a identidade do evento. A porta não
+// recebe instalação, repositório nem credencial fornecida pelo cliente Slack.
+type Recurso string
+
+const (
+	Vinculo      Recurso = "vinculo"
+	Catalogo     Recurso = "catalogo"
+	Fila         Recurso = "pendencias"
+	Evidencias   Recurso = "analise_e_recibo"
+	Metricas     Recurso = "historico_e_relatorios"
+	Decisoes     Recurso = "acoes"
+	Preferencias Recurso = "preferencias_sla_onboarding"
+	Integracoes  Recurso = "integracoes_e_alertas"
+)
+
+type Situacao int
+
+const (
+	SemContrato Situacao = iota
+	SemVinculo
+	SemPermissao
+	FalhaConsulta
+	ListaVazia
+)
+
+// Resultado descreve a capacidade da interface. ListaVazia exige leitura
+// autorizada, concluída e correlacionada pelo núcleo para o titular.
+type Resultado struct {
+	Titular  Pessoa
+	Recurso  Recurso
+	Situacao Situacao
+}
+
+type AcessoIndividual interface {
+	Consultar(context.Context, Pessoa, Recurso) Resultado
+}
+type acessoPendente struct{}
+
+func (acessoPendente) Consultar(_ context.Context, p Pessoa, recurso Recurso) Resultado {
+	return Resultado{p, recurso, SemContrato}
+}
+
+func aviso(s Situacao) string {
+	switch s {
+	case SemVinculo:
+		return "Sua conta Slack ainda não está vinculada ao GitHub."
+	case SemPermissao:
+		return "Você não tem permissão para consultar estes dados."
+	case FalhaConsulta:
+		return "Falha ao consultar seu acesso. Atualize a Home para tentar novamente."
+	case ListaVazia:
+		return "Nenhum item no recorte autorizado."
+	default:
+		return "A API ainda não confirma o acesso individual pelo Slack."
+	}
+}
+
+var recursos = map[Secao][]Recurso{
+	Geral: {Vinculo, Catalogo}, Pendencias: {Fila}, Detalhes: {Evidencias, Decisoes},
+	Historico: {Metricas}, Configuracao: {Preferencias, Integracoes},
+}
+
 type View struct {
-	Type   string           `json:"type"`
-	Blocks []map[string]any `json:"blocks"`
+	Type     string  `json:"type"`
+	Callback string  `json:"callback_id,omitempty"`
+	Metadata string  `json:"private_metadata,omitempty"`
+	Blocks   []bloco `json:"blocks"`
 }
 
-func texto(tipo, s string) map[string]any { return map[string]any{"type": tipo, "text": s} }
-func bloco(tipo, s string) map[string]any {
-	t := "mrkdwn"
-	if tipo == "header" {
-		t = "plain_text"
-	}
-	return map[string]any{"type": tipo, "text": texto(t, s)}
-}
-func escapar(s string) string {
-	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;").Replace(s)
-}
+func construir(ctx context.Context, c Config, pessoa Pessoa, filtro Filtro, acesso AcessoIndividual, estado EstadoPublico) View {
+	secao := filtro.Secao
+	v := View{Type: "home", Callback: "aprova_home", Metadata: filtro.metadata()}
+	destinoDM := "https://slack.com/app_redirect?" + url.Values{"app": {c.AppID}, "team": {pessoa.Workspace}}.Encode()
+	v.Blocks = append(v.Blocks,
+		bloco{"type": "header", "text": texto("aPRova")},
+		bloco{"type": "section", "text": bloco{"type": "mrkdwn", "text": "<" + html.EscapeString(destinoDM) + "|Conversar com o aPRova> · Consulte a saúde da API na aba Mensagens."}},
+	)
 
-// Construir usa apenas a projeção de leitura existente, sem inferir risco ou permissões.
-func Construir(ctx context.Context, c Config, fonte Fonte, agora time.Time) View {
-	v := View{Type: "home", Blocks: []map[string]any{bloco("header", "aPRova"), bloco("section", "Converse com o aPRova"), bloco("section", "Pergunte sobre análises, pendências e resultados da equipe na aba Mensagens."), bloco("section", "<https://slack.com/app_redirect?"+url.Values{"app": {c.AppID}, "team": {c.TeamID}}.Encode()+"|Conversar com o bot>"), bloco("section", "Experimente: “Tem algum PR aguardando aprovação?” ou “Compare esta semana com a anterior.”"), {"type": "divider"}, bloco("header", "Acompanhamento")}}
-	var pendentes, recentes []domain.TaskRun
-	var e1, e2 error
-	if fonte == nil {
-		e1 = errors.New("indisponível")
-	} else {
-		pendentes, e1 = fonte.ListarAnalises(ctx, domain.FiltroAnalises{TenantID: c.InstallationID, Estado: "aguardando_aprovacao", Limite: 6})
-		recentes, e2 = fonte.ListarAnalises(ctx, domain.FiltroAnalises{TenantID: c.InstallationID, Estado: "todos", Limite: 6})
+	lista := opcoes()
+	for i, item := range secoes {
+		if item.id != secao {
+			continue
+		}
+		v.Blocks = append(v.Blocks, bloco{"type": "actions", "elements": []bloco{{"type": "static_select", "action_id": "aprova_home_secao", "placeholder": texto("Escolher seção"), "options": lista, "initial_option": lista[i]}}}, bloco{"type": "header", "text": texto(item.titulo)})
+		if !estado.Carregando {
+			v.Blocks = append(v.Blocks, paragrafo(item.descricao))
+			situacao := SemContrato
+			for _, recurso := range recursos[secao] {
+				resultado := acesso.Consultar(ctx, pessoa, recurso)
+				situacao = resultado.Situacao
+				if resultado.Titular != pessoa || resultado.Recurso != recurso || (situacao == ListaVazia && recurso != Fila && recurso != Catalogo) {
+					situacao = FalhaConsulta
+				}
+				if situacao != SemContrato {
+					break
+				}
+			}
+			v.Blocks = append(v.Blocks, paragrafo(aviso(situacao)))
+			if estado.Login == Disponivel && c.WebURL != "" {
+				caminho := item.caminho
+				if secao == Pendencias || secao == Detalhes {
+					caminho = filtro.caminhoAnalises()
+				}
+				links := "<" + html.EscapeString(c.WebURL+caminho) + "|Abrir no dashboard com minha conta GitHub>"
+				if secao == Historico {
+					links += " · <" + html.EscapeString(c.WebURL+filtro.caminhoAnalises()) + "|Ver análises do período>"
+				}
+				v.Blocks = append(v.Blocks, bloco{"type": "section", "text": bloco{"type": "mrkdwn", "text": links}})
+			}
+		}
 	}
-	if e1 != nil || e2 != nil {
-		v.Blocks = append(v.Blocks, bloco("section", "*Não foi possível carregar as análises*\nAs pendências não puderam ser confirmadas. Tente novamente mais tarde."))
+	if estado.Carregando {
+		v.Blocks = append(v.Blocks, paragrafo("Consultando a API…"))
 		return v
 	}
-	adicionar := func(titulo string, itens []domain.TaskRun, vazio string) {
-		v.Blocks = append(v.Blocks, bloco("header", titulo))
-		if len(itens) == 0 {
-			v.Blocks = append(v.Blocks, bloco("section", vazio))
-			return
-		}
-		for i, a := range itens {
-			if i == 5 {
-				break
-			}
-			v.Blocks = append(v.Blocks, bloco("section", fmt.Sprintf("*%s · PR #%d*\nEstado: %s\nAnálise: %s\nCommit: %s", escapar(a.Repositorio), a.NumeroPR, escapar(string(a.Estado)), escapar(a.ID), escapar(a.SHAHead))))
-		}
-		if len(itens) > 5 {
-			v.Blocks = append(v.Blocks, bloco("section", "Exibindo as 5 mais recentes deste recorte. Consulte outras análises pela conversa."))
-		}
-	}
-	adicionar("Aguardando aprovação", pendentes, "Nenhuma análise aguardando aprovação nesta instalação.")
-	adicionar("Últimas análises", recentes, "As primeiras análises aparecerão aqui quando forem registradas nesta instalação.")
-	v.Blocks = append(v.Blocks, bloco("section", "Consultado em "+agora.UTC().Format(time.RFC3339)+". A lista mostra o estado registrado das análises. Informações de risco e métricas indisponíveis nesta Home."))
+	v.Blocks = append(v.Blocks, paragrafo(estado.descricao()), bloco{"type": "actions", "elements": []bloco{botao("atualizar", "Atualizar", string(secao)), botao("navegar", "Seção e período…", string(secao))}})
 	return v
 }
-
-// Cliente não registra respostas externas, que podem conter dados sensíveis.
-type Cliente struct {
-	HTTP    *http.Client
-	baseURL string
-}
-
-func NovoCliente() *Cliente {
-	return &Cliente{HTTP: &http.Client{Timeout: 15 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, baseURL: "https://slack.com/api/"}
-}
-func (s *Cliente) chamar(ctx context.Context, c Config, metodo string, payload any, destino any) error {
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return errors.New("payload Slack inválido")
+func modal(hash string, atual Filtro) bloco {
+	secoesDisponiveis := opcoes()
+	var inicial bloco
+	for i, item := range secoes {
+		if item.id == atual.Secao {
+			inicial = secoesDisponiveis[i]
+		}
 	}
-	r, err := http.NewRequestWithContext(ctx, http.MethodPost, s.baseURL+metodo, bytes.NewReader(b))
-	if err != nil {
-		return errors.New("requisição Slack inválida")
+	var periodos []bloco
+	var periodoAtual bloco
+	for _, p := range []string{"7", "30", "90", "todos"} {
+		nome := "Últimos " + p + " dias"
+		if p == "todos" {
+			nome = "Todo o histórico"
+		}
+		opcao := bloco{"text": texto(nome), "value": p}
+		periodos = append(periodos, opcao)
+		if atual.Periodo == p {
+			periodoAtual = opcao
+		}
 	}
-	r.Header.Set("Authorization", "Bearer "+c.Token)
-	r.Header.Set("Content-Type", "application/json; charset=utf-8")
-	resp, err := s.HTTP.Do(r)
-	if err != nil {
-		return errors.New("Slack indisponível ou resultado incerto; sem repetição automática")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Slack respondeu HTTP %d; sem repetição automática", resp.StatusCode)
-	}
-	if json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(destino) != nil {
-		return errors.New("resposta Slack inválida; resultado pode ser incerto")
-	}
-	return nil
-}
-func (s *Cliente) Publicar(ctx context.Context, c Config, fonte Fonte) error {
-	if err := c.Validar(); err != nil {
-		return err
-	}
-	var auth struct {
-		OK     bool   `json:"ok"`
-		TeamID string `json:"team_id"`
-		BotID  string `json:"bot_id"`
-	}
-	if err := s.chamar(ctx, c, "auth.test", struct{}{}, &auth); err != nil {
-		return err
-	}
-	if !auth.OK || auth.TeamID != c.TeamID || auth.BotID == "" {
-		return errors.New("identidade do bot/workspace Slack não confirmada; publicação cancelada")
-	}
-	v := Construir(ctx, c, fonte, time.Now())
-	var resultado struct {
-		OK bool `json:"ok"`
-	}
-	if err := s.chamar(ctx, c, "views.publish", struct {
-		UserID string `json:"user_id"`
-		View   View   `json:"view"`
-	}{c.UserID, v}, &resultado); err != nil {
-		return err
-	}
-	if !resultado.OK {
-		return errors.New("Slack recusou views.publish; confira token, usuário e aba Home habilitada")
-	}
-	return nil
+	periodo := bloco{"type": "input", "block_id": "intervalo", "label": texto("Período para abrir a lista de análises no dashboard"), "element": bloco{"type": "static_select", "action_id": "periodo", "options": periodos, "initial_option": periodoAtual}}
+	return bloco{"type": "modal", "callback_id": "aprova_home_navegacao", "private_metadata": hash, "title": texto("Navegar no aPRova"), "submit": texto("Abrir"), "close": texto("Cancelar"), "blocks": []bloco{{"type": "input", "block_id": "destino", "label": texto("Qual seção deseja abrir?"), "element": bloco{"type": "static_select", "action_id": "secao", "options": secoesDisponiveis, "initial_option": inicial, "placeholder": texto("Escolher seção")}}, periodo}}
 }

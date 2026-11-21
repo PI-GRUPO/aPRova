@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/PI-GRUPO/aPRova/internal/config"
-	"github.com/PI-GRUPO/aPRova/internal/repository"
-	"github.com/PI-GRUPO/aPRova/internal/slackhome"
+	"net/http"
 	"os"
-	"strconv"
 	"time"
+
+	"github.com/PI-GRUPO/aPRova/internal/slackhome"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -16,24 +17,20 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Println("Home publicada para o usuário de teste configurado.")
 }
 func executar() error {
-	c, err := config.Carregar()
+	if err := godotenv.Load(); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return errors.New("não foi possível ler o arquivo de ambiente")
+	}
+	c := slackhome.Config{Token: os.Getenv("APROVA_SLACK_BOT_TOKEN"), AppID: os.Getenv("APROVA_SLACK_APP_ID"), TeamID: os.Getenv("APROVA_SLACK_TEAM_ID"), SigningSecret: os.Getenv("SLACK_SIGNING_SECRET"), APIURL: os.Getenv("APROVA_API_URL"), WebURL: os.Getenv("WEB_URL_PUBLICA")}
+	h, err := slackhome.NovoServidor(context.Background(), c)
 	if err != nil {
 		return err
 	}
-	id, _ := strconv.ParseInt(os.Getenv("APROVA_CHAT_INSTALLATION_ID"), 10, 64)
-	home := slackhome.Config{Token: os.Getenv("APROVA_SLACK_BOT_TOKEN"), TeamID: os.Getenv("APROVA_SLACK_TEAM_ID"), AppID: os.Getenv("APROVA_SLACK_APP_ID"), UserID: os.Getenv("APROVA_SLACK_HOME_USER_ID"), InstallationID: id}
-	if err := home.Validar(); err != nil {
-		return err
+	addr := os.Getenv("APROVA_SLACK_HOME_LISTEN")
+	if addr == "" {
+		addr = "127.0.0.1:8091"
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-	defer cancel()
-	banco, err := repository.ConectarPostgres(ctx, c.URLBancoDados)
-	if err != nil {
-		return fmt.Errorf("banco indisponível; publicação cancelada")
-	}
-	defer banco.Close()
-	return slackhome.NovoCliente().Publicar(ctx, home, repository.NovoRepositorioPostgres(banco, repository.OpcoesPostgres{}))
+	server := &http.Server{Addr: addr, Handler: h, ReadHeaderTimeout: 3 * time.Second, ReadTimeout: 5 * time.Second, WriteTimeout: 20 * time.Second, IdleTimeout: 30 * time.Second}
+	return server.ListenAndServe()
 }

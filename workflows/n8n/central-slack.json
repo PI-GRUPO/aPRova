@@ -145,7 +145,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const evento = $json;\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n};\n\nconst diagnostico = evento.execucao?.diagnostico;\n\nif (\n  evento.evento?.tipo !== 'falha_recuperavel' ||\n  evento.execucao?.falha_recuperavel !== true ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  typeof diagnostico !== 'string' ||\n  !diagnostico.trim()\n) {\n  throw new Error('Evento de falha recuperável incompleto ou incompatível.');\n}\n\nconst valorBotao = JSON.stringify(contexto);\n\nif (valorBotao.length > 2000) {\n  throw new Error('Contexto do botão excede o limite do Slack.');\n}\n\nconst slack_payload = {\n  text: `Falha recuperável: ${contexto.repositorio} #${contexto.numero_pr}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `Falha recuperável na análise\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}`,\n      },\n    },\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Diagnóstico informado pelo núcleo:\\n${diagnostico.slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'actions',\n      elements: [\n        {\n          type: 'button',\n          text: { type: 'plain_text', text: 'Reexecutar' },\n          action_id: 'reexecutar_analise',\n          value: valorBotao,\n        },\n      ],\n    },\n  ],\n};\n\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};"
+        "jsCode": "const evento = $json;\n\nconst contexto = {\n  installation_id: evento.meta?.tenant_id,\n  repositorio: evento.repositorio?.full_name,\n  numero_pr: evento.pr?.numero,\n  id_evento: evento.meta?.id_evento,\n  task_run_id: evento.meta?.execution_id,\n};\n\nconst diagnostico = evento.execucao?.diagnostico;\n\nif (\n  evento.evento?.tipo !== 'falha_recuperavel' ||\n  evento.execucao?.falha_recuperavel !== true ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !contexto.repositorio ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  !contexto.id_evento ||\n  !contexto.task_run_id ||\n  typeof diagnostico !== 'string' ||\n  !diagnostico.trim()\n) {\n  throw new Error('Evento de falha recuperável incompleto ou incompatível.');\n}\n\nconst slack_payload = {\n  text: `Falha recuperável: ${contexto.repositorio} #${contexto.numero_pr}`,\n  blocks: [\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text:\n          `Falha recuperável na análise\\n` +\n          `${contexto.repositorio} #${contexto.numero_pr}`,\n      },\n    },\n    {\n      type: 'section',\n      text: {\n        type: 'plain_text',\n        text: `Diagnóstico informado pelo núcleo:\\n${diagnostico.slice(0, 2800)}`,\n      },\n    },\n    {\n      type: 'section',\n      text: { type: 'plain_text', text: 'Reexecução indisponível enquanto o núcleo não oferecer um executor.' },\n    },\n  ],\n};\n\nreturn {\n  json: {\n    ...evento,\n    slack_payload,\n  },\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -190,6 +190,7 @@
         }
       },
       "type": "n8n-nodes-base.webhook",
+      "webhookId": "84d701aa-1002-53c1-aa20-efdeb3aabed7",
       "typeVersion": 2.1,
       "position": [
         -16,
@@ -200,7 +201,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const crypto = require('crypto');\n\nconst entrada = $input.first();\nconst segredo = $env.SLACK_SIGNING_SECRET;\n\nif (!segredo) {\n  throw new Error('SLACK_SIGNING_SECRET indisponível no ambiente.');\n}\nconst headers = Object.fromEntries(\n  Object.entries(entrada.json.headers ?? {})\n    .map(([nome, valor]) => [nome.toLowerCase(), valor])\n);\n\nconst timestamp = headers['x-slack-request-timestamp'];\nconst assinatura = headers['x-slack-signature'];\n\nif (\n  typeof timestamp !== 'string' ||\n  !/^\\d+$/.test(timestamp) ||\n  typeof assinatura !== 'string' ||\n  !/^v0=[0-9a-f]{64}$/.test(assinatura)\n) {\n  throw new Error('Cabeçalhos de assinatura ausentes ou inválidos.');\n}\n\nconst segundos = Number(timestamp);\n\nif (\n  !Number.isSafeInteger(segundos) ||\n  Math.abs(Date.now() / 1000 - segundos) > 300\n) {\n  throw new Error('Requisição fora da janela de cinco minutos.');\n}\n\nif (!entrada.binary?.data) {\n  throw new Error('Corpo bruto indisponível. Ative Raw Body no Webhook.');\n}\n\nconst corpoBruto = await this.helpers.getBinaryDataBuffer(0, 'data');\n\nconst esperada =\n  'v0=' +\n  crypto\n    .createHmac('sha256', segredo)\n    .update(`v0:${timestamp}:`)\n    .update(corpoBruto)\n    .digest('hex');\n\nconst recebidaBuffer = Buffer.from(assinatura, 'utf8');\nconst esperadaBuffer = Buffer.from(esperada, 'utf8');\n\nif (\n  recebidaBuffer.length !== esperadaBuffer.length ||\n  !crypto.timingSafeEqual(recebidaBuffer, esperadaBuffer)\n) {\n  throw new Error('Assinatura do Slack inválida.');\n}\n\n// O Webhook interpreta o formulário enviado pelo Slack.\n// O corpo bruto acima foi usado exclusivamente para verificar a assinatura.\nconst payloadTexto = entrada.json.body?.payload;\n\nif (typeof payloadTexto !== 'string') {\n  throw new Error('Campo payload ausente ou inválido.');\n}\n\nconst payload = JSON.parse(payloadTexto);\n\nif (\n  !payload ||\n  typeof payload !== 'object' ||\n  Array.isArray(payload) ||\n  !['block_actions', 'view_submission'].includes(payload.type) ||\n  typeof payload.user?.id !== 'string' ||\n  !payload.user.id\n) {\n  throw new Error('Interação sem tipo suportado ou usuário válido.');\n}\n\nreturn [\n  {\n    json: {\n      meta: {\n        assinatura_verificada: true,\n        recebido_em: new Date().toISOString(),\n      },\n      slack: payload,\n    },\n  },\n];"
+        "jsCode": "const crypto = require('crypto');\n\nconst entrada = $input.first();\nconst segredo = $env.SLACK_SIGNING_SECRET;\n\nif (!segredo) {\n  throw new Error('SLACK_SIGNING_SECRET indisponível no ambiente.');\n}\nconst headers = Object.fromEntries(\n  Object.entries(entrada.json.headers ?? {})\n    .map(([nome, valor]) => [nome.toLowerCase(), valor])\n);\n\nconst timestamp = headers['x-slack-request-timestamp'];\nconst assinatura = headers['x-slack-signature'];\n\nif (\n  typeof timestamp !== 'string' ||\n  !/^\\d+$/.test(timestamp) ||\n  typeof assinatura !== 'string' ||\n  !/^v0=[0-9a-f]{64}$/.test(assinatura)\n) {\n  throw new Error('Cabeçalhos de assinatura ausentes ou inválidos.');\n}\n\nconst segundos = Number(timestamp);\n\nif (\n  !Number.isSafeInteger(segundos) ||\n  Math.abs(Date.now() / 1000 - segundos) > 300\n) {\n  throw new Error('Requisição fora da janela de cinco minutos.');\n}\n\nif (!entrada.binary?.data) {\n  throw new Error('Corpo bruto indisponível. Ative Raw Body no Webhook.');\n}\n\nconst corpoBruto = await this.helpers.getBinaryDataBuffer(0, 'data');\n\nconst esperada =\n  'v0=' +\n  crypto\n    .createHmac('sha256', segredo)\n    .update(`v0:${timestamp}:`)\n    .update(corpoBruto)\n    .digest('hex');\n\nconst recebidaBuffer = Buffer.from(assinatura, 'utf8');\nconst esperadaBuffer = Buffer.from(esperada, 'utf8');\n\nif (\n  recebidaBuffer.length !== esperadaBuffer.length ||\n  !crypto.timingSafeEqual(recebidaBuffer, esperadaBuffer)\n) {\n  throw new Error('Assinatura do Slack inválida.');\n}\n\n// Extraia a interação dos mesmos bytes validados. Recuse payloads duplicados.\nconst valores = corpoBruto.toString('utf8').split('&').filter(par => par.startsWith('payload='));\nif (valores.length !== 1) throw new Error('Campo payload ausente ou duplicado.');\nconst payloadTexto = decodeURIComponent(valores[0].slice(8).replace(/\\+/g, ' '));\nconst payload = JSON.parse(payloadTexto);\n\nif (\n  !payload ||\n  typeof payload !== 'object' ||\n  Array.isArray(payload) ||\n  !['block_actions', 'view_submission'].includes(payload.type) ||\n  typeof payload.user?.id !== 'string' ||\n  !payload.user.id\n) {\n  throw new Error('Interação sem tipo suportado ou usuário válido.');\n}\n\nif (!/^T[A-Z0-9]+$/.test($env.APROVA_SLACK_TEAM_ID || '') ||\n    !/^A[A-Z0-9]+$/.test($env.APROVA_SLACK_APP_ID || '') ||\n    payload.team?.id !== $env.APROVA_SLACK_TEAM_ID || payload.api_app_id !== $env.APROVA_SLACK_APP_ID) {\n  throw new Error('Workspace ou aplicativo Slack incompatível.');\n}\nconst home = payload.view?.type === 'home' ||\n  payload.view?.callback_id?.startsWith('aprova_home') ||\n  payload.actions?.some(a => a.action_id?.startsWith('aprova_home_'));\nconst decisao = payload.type === 'view_submission' &&\n  ['aprova_aprovacao','aprova_aprovacao_motivo','aprova_revisao'].includes(payload.view?.callback_id);\nconst encaminhamento = { corpo: corpoBruto.toString('utf8'), timestamp, assinatura };\nreturn [\n  {\n    json: {\n      ...(home ? { home: encaminhamento } : {}),\n      ...(decisao ? { atualizacao_home: encaminhamento } : {}),\n      meta: {\n        assinatura_verificada: true,\n        recebido_em: new Date().toISOString(),\n      },\n      slack: payload,\n    },\n  },\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -397,7 +398,7 @@
         "nodeCredentialType": "slackApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ ({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_aprovacao\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"aprovar\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Justificar aprovação\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar justificativa\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Contexto OSV apresentado no alerta:\\n\" +\n            String(JSON.parse($json.slack.actions[0].value).osv_resumo ||\n              \"OSV: resultado não disponível para esta análise.\").slice(0, 1000)\n        }\n      },\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Explique por que você considera aceitável aprovar esta alteração. O núcleo verificará sua permissão antes de executar a ação.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Justificativa da aprovação\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Descreva sua avaliação do risco.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
+        "jsonBody": "={{ ({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: \"modal\",\n    callback_id: \"aprova_aprovacao_motivo\",\n    private_metadata: JSON.stringify({\n      ...JSON.parse($json.slack.actions[0].value),\n      tipo: \"aprovar\",\n      usuario_slack: $json.slack.user.id,\n      canal_slack: $json.slack.channel?.id || $json.slack.container?.channel_id\n    }),\n    title: {\n      type: \"plain_text\",\n      text: \"Justificar aprovação\"\n    },\n    submit: {\n      type: \"plain_text\",\n      text: \"Enviar aprovação\"\n    },\n    close: {\n      type: \"plain_text\",\n      text: \"Cancelar\"\n    },\n    blocks: [\n      {\"type\": \"input\", \"block_id\": \"motivo\", \"label\": {\"type\": \"plain_text\", \"text\": \"Motivo da aprovação\"}, \"element\": {\"type\": \"static_select\", \"action_id\": \"escolha\", \"options\": [{\"text\": {\"type\": \"plain_text\", \"text\": \"Regra conservadora\"}, \"value\": \"regra_conservadora\"}, {\"text\": {\"type\": \"plain_text\", \"text\": \"Risco aceito\"}, \"value\": \"risco_aceito\"}, {\"text\": {\"type\": \"plain_text\", \"text\": \"Falso positivo\"}, \"value\": \"falso_positivo\"}]}},\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"Contexto OSV apresentado no alerta:\\n\" +\n            String(JSON.parse($json.slack.actions[0].value).osv_resumo ||\n              \"OSV: resultado não disponível para esta análise.\").slice(0, 1000)\n        }\n      },\n      {\n        type: \"section\",\n        text: {\n          type: \"plain_text\",\n          text: \"O motivo e a justificativa serão incluídos na review do GitHub. O núcleo verificará sua permissão antes de executar a ação.\"\n        }\n      },\n      {\n        type: \"input\",\n        block_id: \"justificativa\",\n        optional: false,\n        label: {\n          type: \"plain_text\",\n          text: \"Justificativa da aprovação\"\n        },\n        element: {\n          type: \"plain_text_input\",\n          action_id: \"texto\",\n          multiline: true,\n          min_length: 1,\n          max_length: 3000,\n          placeholder: {\n            type: \"plain_text\",\n            text: \"Descreva sua avaliação do risco.\"\n          }\n        }\n      }\n    ]\n  }\n}) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -492,7 +493,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const slack = $json.slack;\n\nconst tiposPorFormulario = {\n  aprova_aprovacao: 'aprovar',\n  aprova_revisao: 'solicitar_alteracao',\n};\n\nconst callback = slack?.view?.callback_id;\n\nconst tipo = Object.prototype.hasOwnProperty.call(\n  tiposPorFormulario,\n  callback\n)\n  ? tiposPorFormulario[callback]\n  : null;\n\nif (\n  $json.meta?.assinatura_verificada !== true ||\n  slack?.type !== 'view_submission' ||\n  !tipo\n) {\n  throw new Error('Envio de formulário inválido.');\n}\n\nconst contexto = JSON.parse(slack.view.private_metadata);\n\nif (\n  contexto.tipo !== tipo ||\n  contexto.usuario_slack !== slack.user?.id\n) {\n  throw new Error('Ação ou identidade incompatível com o formulário.');\n}\n\nconst justificativa =\n  slack.view.state?.values?.justificativa?.texto?.value?.trim();\n\nif (\n  typeof justificativa !== 'string' ||\n  justificativa.length === 0 ||\n  justificativa.length > 3000\n) {\n  throw new Error('Informe uma justificativa entre 1 e 3000 caracteres.');\n}\n\nif (\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  typeof contexto.repositorio !== 'string' ||\n  !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\\/[A-Za-z0-9._-]{1,100}$/.test(\n    contexto.repositorio\n  ) ||\n  ['.', '..'].includes(contexto.repositorio.split('/')[1]) ||\n  !slack.team?.id ||\n  !slack.view.id\n) {\n  throw new Error('Contexto do PR incompleto ou inválido.');\n}\n\nconst pedido = {\n  id_acao: `slack:${slack.team.id}:${slack.view.id}`,\n  tipo: tipo,\n  usuario_slack: slack.user.id,\n  repositorio: contexto.repositorio,\n  numero_pr: contexto.numero_pr,\n  installation_id: contexto.installation_id,\n  ...(contexto.task_run_id ? { task_run_id: contexto.task_run_id } : {}),\n  justificativa,\n};\n\nreturn {\n  json: {\n    ...$json,\n    pedido_acao: pedido,\n    retorno_acao: {\n      origem: 'formulario',\n      formulario: callback,\n      canal_slack: contexto.canal_slack || null,\n      usuario_slack: slack.user.id,\n      justificativa,\n    },\n  },\n};"
+        "jsCode": "const slack = $json.slack;\n\nconst tiposPorFormulario = {\n  aprova_aprovacao_motivo: 'aprovar',\n  aprova_aprovacao: 'aprovar',\n  aprova_revisao: 'solicitar_alteracao',\n};\n\nconst callback = slack?.view?.callback_id;\n\nconst tipo = Object.prototype.hasOwnProperty.call(\n  tiposPorFormulario,\n  callback\n)\n  ? tiposPorFormulario[callback]\n  : null;\n\nif (\n  $json.meta?.assinatura_verificada !== true ||\n  slack?.type !== 'view_submission' ||\n  !tipo\n) {\n  throw new Error('Envio de formulário inválido.');\n}\n\nconst contexto = JSON.parse(slack.view.private_metadata);\n\nif (\n  contexto.tipo !== tipo ||\n  contexto.usuario_slack !== slack.user?.id\n) {\n  throw new Error('Ação ou identidade incompatível com o formulário.');\n}\n\nconst justificativa =\n  slack.view.state?.values?.justificativa?.texto?.value?.trim();\n\nif (\n  typeof justificativa !== 'string' ||\n  justificativa.length === 0 ||\n  justificativa.length > 3000\n) {\n  throw new Error('Informe uma justificativa entre 1 e 3000 caracteres.');\n}\n\nif (\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  typeof contexto.repositorio !== 'string' ||\n  !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\\/[A-Za-z0-9._-]{1,100}$/.test(\n    contexto.repositorio\n  ) ||\n  ['.', '..'].includes(contexto.repositorio.split('/')[1]) ||\n  !slack.team?.id ||\n  !slack.view.id\n) {\n  throw new Error('Contexto do PR incompleto ou inválido.');\n}\n\nlet justificativaDaReview = justificativa;\nif (callback === 'aprova_aprovacao_motivo') {\n  const motivos = {\"regra_conservadora\": \"Regra conservadora\", \"risco_aceito\": \"Risco aceito\", \"falso_positivo\": \"Falso positivo\"};\n  const motivo = slack.view.state?.values?.motivo?.escolha?.selected_option?.value;\n  if (!Object.hasOwn(motivos, motivo)) throw new Error('Selecione um motivo de aprovação válido.');\n  justificativaDaReview = 'Motivo: ' + motivos[motivo] + '\\n\\n' + justificativa;\n}\nconst pedido = {\n  id_acao: `slack:${slack.team.id}:${slack.view.id}`,\n  tipo: tipo,\n  usuario_slack: slack.user.id,\n  repositorio: contexto.repositorio,\n  numero_pr: contexto.numero_pr,\n  installation_id: contexto.installation_id,\n  ...(contexto.task_run_id ? { task_run_id: contexto.task_run_id } : {}),\n  justificativa: justificativaDaReview,\n};\n\nreturn {\n  json: {\n    ...$json,\n    pedido_acao: pedido,\n    retorno_acao: {\n      origem: 'formulario',\n      formulario: callback,\n      canal_slack: contexto.canal_slack || null,\n      usuario_slack: slack.user.id,\n      justificativa: justificativaDaReview,\n    },\n  },\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -505,22 +506,36 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const slack = $json.slack;\nconst acao = slack?.actions?.[0];\n\nif (\n  $json.meta?.assinatura_verificada !== true ||\n  slack?.type !== 'block_actions' ||\n  acao?.action_id !== 'reexecutar_analise' ||\n  typeof acao.value !== 'string'\n) {\n  throw new Error('Interação de reexecução inválida.');\n}\n\nconst contexto = JSON.parse(acao.value);\n\nif (\n  !contexto ||\n  typeof contexto !== 'object' ||\n  Array.isArray(contexto) ||\n  !Number.isSafeInteger(contexto.installation_id) ||\n  contexto.installation_id <= 0 ||\n  !Number.isSafeInteger(contexto.numero_pr) ||\n  contexto.numero_pr <= 0 ||\n  typeof contexto.repositorio !== 'string' ||\n  !/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\\/[A-Za-z0-9._-]{1,100}$/.test(\n    contexto.repositorio\n  ) ||\n  ['.', '..'].includes(contexto.repositorio.split('/')[1]) ||\n  typeof slack.team?.id !== 'string' ||\n  !slack.team.id ||\n  typeof slack.user?.id !== 'string' ||\n  !slack.user.id ||\n  typeof acao.action_ts !== 'string' ||\n  !/^\\d+\\.\\d+$/.test(acao.action_ts)\n) {\n  throw new Error('Contexto da reexecução incompleto ou inválido.');\n}\n\nconst pedido = {\n  id_acao:\n    `slack:reexecutar:${slack.team.id}:` +\n    `${slack.user.id}:${acao.action_ts}`,\n  tipo: 'reexecutar_analise',\n  usuario_slack: slack.user.id,\n  repositorio: contexto.repositorio,\n  numero_pr: contexto.numero_pr,\n  installation_id: contexto.installation_id,\n  ...(contexto.task_run_id ? { task_run_id: contexto.task_run_id } : {}),\n};\n\nif (pedido.id_acao.length > 200) {\n  throw new Error('Identificador da ação excede o limite da API.');\n}\n\nreturn {\n  json: {\n    ...$json,\n    pedido_acao: pedido,\n  },\n};"
+        "method": "POST",
+        "url": "https://slack.com/api/views.open",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ ({\n  trigger_id: $json.slack.trigger_id,\n  view: {\n    type: 'modal', title: {type:'plain_text',text:'Reexecução indisponível'},\n    close: {type:'plain_text',text:'Fechar'},\n    blocks: [{type:'section',text:{type:'plain_text',text:'O núcleo ainda não oferece um executor de reanálise. Nenhum pedido foi enviado.'}}]\n  }\n}) }}",
+        "options": {
+          "timeout": 2500,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          }
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
         1296,
         192
       ],
       "id": "3c1f5a38-ceb1-4642-9088-20b5b958f2ea",
-      "name": "11R | Preparar Pedido de Reexecução"
+      "name": "11R | Informar reexecução indisponível",
+      "retryOnFail": false
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// Com o nó 13 desativado, o pedido chega diretamente.\n// Quando ele estiver ativo, recuperamos o contexto pelo nó 12.\nconst origem = $json.pedido_acao\n  ? $json\n  : $('12 | Assinar Pedido ao Núcleo').item.json;\n\nconst pedido = origem.pedido_acao;\nconst slack = origem.slack;\nconst contexto = slack?.view?.private_metadata\n  ? JSON.parse(slack.view.private_metadata)\n  : {};\nconst canal = origem.retorno_acao?.canal_slack ||\n  slack?.channel?.id || slack?.container?.channel_id || contexto.canal_slack || null;\nconst formularioEnviado = slack?.type === 'view_submission';\nconst recebimento = formularioEnviado\n  ? (pedido?.tipo === 'aprovar'\n    ? 'Formulário de aprovação enviado.'\n    : 'Formulário de revisão enviado.')\n  : '';\n\nif (!pedido?.usuario_slack) {\n  throw new Error('Usuário do Slack não identificado para o retorno.');\n}\n\nconst status = Number.isInteger($json.statusCode)\n  ? $json.statusCode\n  : null;\n\nlet corpo = $json.body;\n\nif (typeof corpo === 'string') {\n  try {\n    corpo = JSON.parse(corpo);\n  } catch {\n    corpo = null;\n  }\n}\n\nconst nomes = {\n  aprovar: 'Aprovação',\n  solicitar_alteracao: 'Pedido de revisão',\n  reexecutar_analise: 'Reexecução da análise',\n};\n\nconst nome = nomes[pedido.tipo];\n\nif (!nome) {\n  throw new Error('Tipo de ação desconhecido.');\n}\n\nlet mensagem;\nlet confirmada = false;\n\nif (status === 202 && corpo?.status === 'aceito') {\n  confirmada = true;\n  const confirmacoes = {\n    aprovar: 'O núcleo confirmou a aprovação da PR.',\n    solicitar_alteracao: 'O núcleo confirmou o pedido de revisão da PR.',\n    reexecutar_analise: 'O núcleo confirmou a reexecução da análise.',\n  };\n  mensagem = confirmacoes[pedido.tipo];\n} else {\n  const mensagens = {\n    400: 'O núcleo recusou o pedido por dados inválidos.',\n    401: 'O núcleo recusou a autenticação do pedido.',\n    403: 'O núcleo não autorizou esta ação para seu usuário.',\n    409: 'O núcleo informou que este pedido já foi processado.',\n    500: 'O núcleo informou uma falha ao executar. Confira o resultado antes de tentar novamente.',\n  };\n\n  mensagem = mensagens[status] ??\n    'Não recebemos uma confirmação válida do núcleo. A execução da ação não está confirmada.';\n}\n\nconst simulacao = $json.simulacao === true || origem.simulacao === true;\nconst prefixo = simulacao ? '[SIMULAÇÃO — sem ação real]\\n' : '';\nconst justificativa = pedido.justificativa?.trim() ||\n  (pedido.tipo === 'reexecutar_analise'\n    ? 'Não solicitada para a reexecução da análise.'\n    : 'Não informada.');\nconst urlPr = `https://github.com/${pedido.repositorio}/pull/${pedido.numero_pr}`;\nconst autor = slack?.user?.real_name || slack?.user?.name || pedido.usuario_slack;\nconst rotuloAutor = formularioEnviado ? 'Autor do envio' : 'Autor do clique';\nconst resumo =\n  `${prefixo}${recebimento ? recebimento + '\\n' : ''}Ação: ${nome}\\n` +\n  `PR: ${pedido.repositorio} #${pedido.numero_pr}\\n${urlPr}`;\nconst blocks = [\n  { type: 'section', text: { type: 'plain_text', text: resumo } },\n  { type: 'section', text: { type: 'mrkdwn', text: `*${rotuloAutor}:* <@${pedido.usuario_slack}>` } },\n];\nconst textoJustificativa = (pedido.tipo === 'solicitar_alteracao'\n  ? 'Justificativa / alterações solicitadas:\\n'\n  : 'Justificativa:\\n') + justificativa;\nfor (let inicio = 0; inicio < textoJustificativa.length; inicio += 2900) {\n  blocks.push({\n    type: 'section',\n    text: { type: 'plain_text', text: textoJustificativa.slice(inicio, inicio + 2900) },\n  });\n}\nblocks.push({ type: 'section', text: { type: 'plain_text', text: mensagem } });\n\nreturn {\n  json: {\n    resultado_nucleo: {\n      status_http: status,\n      confirmada: confirmada && !simulacao,\n      simulacao,\n    },\n    slack_payload: {\n      channel: canal,\n      text: resumo + '\\n' + rotuloAutor + ': ' + autor + ' (' + pedido.usuario_slack + ')\\n' +\n        textoJustificativa + '\\n\\n' + mensagem,\n      blocks,\n      mrkdwn: false,\n      unfurl_links: false,\n      unfurl_media: false,\n    },\n  },\n};"
+        "jsCode": "// Com o nó 13 desativado, o pedido chega diretamente.\n// Quando ele estiver ativo, recuperamos o contexto pelo nó 12.\nconst origem = $json.pedido_acao\n  ? $json\n  : $('12 | Assinar Pedido ao Núcleo').item.json;\n\nconst pedido = origem.pedido_acao;\nconst slack = origem.slack;\nconst contexto = slack?.view?.private_metadata\n  ? JSON.parse(slack.view.private_metadata)\n  : {};\nconst canal = origem.retorno_acao?.canal_slack ||\n  slack?.channel?.id || slack?.container?.channel_id || contexto.canal_slack || null;\nconst formularioEnviado = slack?.type === 'view_submission';\nconst recebimento = formularioEnviado\n  ? (pedido?.tipo === 'aprovar'\n    ? 'Formulário de aprovação enviado.'\n    : 'Formulário de revisão enviado.')\n  : '';\n\nif (!pedido?.usuario_slack) {\n  throw new Error('Usuário do Slack não identificado para o retorno.');\n}\n\nconst status = Number.isInteger($json.statusCode)\n  ? $json.statusCode\n  : null;\n\nlet corpo = $json.body;\n\nif (typeof corpo === 'string') {\n  try {\n    corpo = JSON.parse(corpo);\n  } catch {\n    corpo = null;\n  }\n}\n\nconst nomes = {\n  aprovar: 'Aprovação',\n  solicitar_alteracao: 'Pedido de revisão',\n  reexecutar_analise: 'Reexecução da análise',\n};\n\nconst nome = nomes[pedido.tipo];\n\nif (!nome) {\n  throw new Error('Tipo de ação desconhecido.');\n}\n\nlet mensagem;\nlet confirmada = false;\n\nif (status === 202 && corpo?.status === 'aceito') {\n  confirmada = true;\n  const confirmacoes = {\n    aprovar: 'O núcleo confirmou a aprovação da PR.',\n    solicitar_alteracao: 'O núcleo confirmou o pedido de revisão da PR.',\n    reexecutar_analise: 'O núcleo confirmou a reexecução da análise.',\n  };\n  mensagem = confirmacoes[pedido.tipo];\n} else {\n  const mensagens = {\n    400: 'O núcleo recusou o pedido por dados inválidos.',\n    401: 'O núcleo recusou a autenticação do pedido.',\n    403: 'O núcleo não autorizou esta ação para seu usuário.',\n    409: 'O núcleo informou que este pedido já foi processado.',\n    500: 'O núcleo informou uma falha ao executar. Confira o resultado antes de tentar novamente.',\n  };\n\n  mensagem = mensagens[status] ??\n    'Não recebemos uma confirmação válida do núcleo. A execução da ação não está confirmada.';\n}\n\nconst simulacao = $json.simulacao === true || origem.simulacao === true;\nconst prefixo = simulacao ? '[SIMULAÇÃO — sem ação real]\\n' : '';\nconst justificativa = pedido.justificativa?.trim() ||\n  (pedido.tipo === 'reexecutar_analise'\n    ? 'Não solicitada para a reexecução da análise.'\n    : 'Não informada.');\nconst urlPr = `https://github.com/${pedido.repositorio}/pull/${pedido.numero_pr}`;\nconst autor = slack?.user?.real_name || slack?.user?.name || pedido.usuario_slack;\nconst rotuloAutor = formularioEnviado ? 'Autor do envio' : 'Autor do clique';\nconst resumo =\n  `${prefixo}${recebimento ? recebimento + '\\n' : ''}Ação: ${nome}\\n` +\n  `PR: ${pedido.repositorio} #${pedido.numero_pr}\\n${urlPr}`;\nconst blocks = [\n  { type: 'section', text: { type: 'plain_text', text: resumo } },\n  { type: 'section', text: { type: 'mrkdwn', text: `*${rotuloAutor}:* <@${pedido.usuario_slack}>` } },\n];\nconst textoJustificativa = (pedido.tipo === 'solicitar_alteracao'\n  ? 'Justificativa / alterações solicitadas:\\n'\n  : 'Justificativa:\\n') + justificativa;\nfor (let inicio = 0; inicio < textoJustificativa.length; inicio += 2900) {\n  blocks.push({\n    type: 'section',\n    text: { type: 'plain_text', text: textoJustificativa.slice(inicio, inicio + 2900) },\n  });\n}\nblocks.push({ type: 'section', text: { type: 'plain_text', text: mensagem } });\n\nreturn {\n  json: {\n    ...(confirmada && !simulacao && origem.atualizacao_home ? { atualizacao_home: origem.atualizacao_home } : {}),\n    resultado_nucleo: {\n      status_http: status,\n      confirmada: confirmada && !simulacao,\n      simulacao,\n    },\n    slack_payload: {\n      user: slack.user.id,\n      channel: canal,\n      text: resumo + '\\n' + rotuloAutor + ': ' + autor + ' (' + pedido.usuario_slack + ')\\n' +\n        textoJustificativa + '\\n\\n' + mensagem,\n      blocks,\n      mrkdwn: false,\n      unfurl_links: false,\n      unfurl_media: false,\n    },\n  },\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -534,14 +549,17 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.SLACK_INCOMING_WEBHOOK_URL }}",
+        "url": "https://slack.com/api/chat.postEphemeral",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "slackApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ text: $json.slack_payload.text, blocks: $json.slack_payload.blocks, mrkdwn: $json.slack_payload.mrkdwn, unfurl_links: false, unfurl_media: false }) }}",
+        "jsonBody": "={{ $json.slack_payload }}",
         "options": {
-          "response": {
-            "response": {
-              "responseFormat": "text"
+          "timeout": 5000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
             }
           }
         }
@@ -553,7 +571,8 @@
         448
       ],
       "id": "41be7f90-c052-41af-b934-57acc0e9a6bb",
-      "name": "HTTP Request1"
+      "name": "15 | Responder somente ao usuário",
+      "retryOnFail": false
     },
     {
       "parameters": {
@@ -1748,6 +1767,114 @@
         "mode": "runOnceForAllItems",
         "jsCode": "const evento=$json,s=evento.contexto_osv_snapshot;\nif($env.APROVA_SLACK_CORRELACAO_HABILITADA!=='true')return [];\nif($input.all().length!==1)throw new Error('Contexto OSV exige um evento por execução.');\nconst identidade=[evento.meta?.tenant_id,evento.meta?.execution_id,evento.repositorio?.full_name,evento.pr?.numero];\nconst agora=Date.now(),tempo=Date.parse(s?.consultado_em);\nif(evento.evento?.tipo!=='dependencia_nova'||evento.entrega_osv?.versao!==1||evento.entrega_osv?.fonte!=='workflow_osv'||\n evento.modo_osv==='contexto_aprovacao'||evento.meta?.origem_verificada!==true||evento.meta?.validacao?.valido!==true||\n !s||s.versao!==1||JSON.stringify(s.identidade)!==JSON.stringify(identidade)||\n !['concluida','incompleta','falha'].includes(s.status)||!Number.isFinite(tempo)||agora-tempo>86400000||tempo-agora>300000||\n typeof s.sha!=='string'||(s.sha&&!/^[0-9a-f]{40,64}$/i.test(s.sha))||\n (s.sha&&evento.pr?.sha&&s.sha!==evento.pr.sha)||\n !Number.isSafeInteger(s.total_dependencias)||s.total_dependencias<1||!Array.isArray(s.dependencias)||\n !s.dependencias.length||s.dependencias.length>50||s.total_dependencias<s.dependencias.length)\n throw new Error('Contexto OSV posterior inválido, vencido ou de outra análise.');\nconst pacotes=new Set();\nfor(const d of s.dependencias){\n if(!d||!['nome','versao','ecossistema'].every(k=>typeof d[k]==='string'&&d[k].trim()&&d[k].length<=300)||\n  !['concluida','incompleta','falha'].includes(d.status)||typeof d.resumo!=='string'||d.resumo.length>1500)\n  throw new Error('Resultado OSV por dependência inválido.');\n const chave=JSON.stringify([d.ecossistema,d.nome,d.versao]);\n if(pacotes.has(chave))throw new Error('Resultado OSV com dependência duplicada.');\n pacotes.add(chave);\n}\nif((s.status==='concluida'&&(s.total_dependencias!==s.dependencias.length||s.dependencias.some(d=>d.status!=='concluida')))||\n (s.status==='falha'&&s.dependencias.some(d=>d.status!=='falha'))||\n (Array.isArray(evento.dependencias)&&evento.dependencias.some(d=>!pacotes.has(JSON.stringify([d.ecossistema,d.nome,d.versao])))&&s.status==='concluida'))\n throw new Error('Completude do resultado OSV inconsistente.');\nconst prefixo=s.status==='concluida'?'Consulta OSV concluída':s.status==='falha'?'Consulta OSV indisponível':'Consulta OSV com resultados parciais';\nconst linhas=s.dependencias.slice(0,3).map(d=>d.nome+' @ '+d.versao+' ('+d.ecossistema+'): '+String(d.resumo||'Resultado indisponível.').slice(0,230));\nif(s.total_dependencias>3)linhas.push('Resumo limitado a 3 de '+s.total_dependencias+' dependências; este resumo não é exaustivo.');\nconst resumo=(prefixo+' em '+s.consultado_em+'.\\n\\n'+linhas.join('\\n\\n')).slice(0,1000);\nconst osv={status:s.status,consultado_em:s.consultado_em,resumo};\nosv.impressao=JSON.stringify([osv.status,osv.consultado_em,osv.resumo]);\nreturn [{json:{...evento,osv_atualizacao:osv,pr:{...evento.pr,sha:s.sha||evento.pr?.sha||''}}}];\n"
       }
+    },
+    {
+      "id": "c607f7e7-b1ab-464b-8d89-b8201f8896f6",
+      "name": "H01 | Separar App Home",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        650,
+        505
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "home-auth",
+              "leftValue": "={{ !!$json.home }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8dee2465-813e-4c8f-95bc-74cea07ec3e1",
+      "name": "H02 | Encaminhar à App Home",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        355
+      ],
+      "retryOnFail": false,
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.APROVA_SLACK_HOME_URL }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Slack-Request-Timestamp",
+              "value": "={{ $json.home.timestamp }}"
+            },
+            {
+              "name": "X-Slack-Signature",
+              "value": "={{ $json.home.assinatura }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/x-www-form-urlencoded",
+        "body": "={{ $json.home.corpo }}",
+        "options": {
+          "timeout": 20000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "1c8a93a8-616e-4043-ab0f-1868e0df28e1",
+      "name": "16 | Conferir entrega privada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        448
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "if ($json.ok !== true) {\n  throw new Error('O Slack não confirmou a resposta privada. Confira a decisão no núcleo antes de qualquer nova ação.');\n}\nreturn {json: {entrega_privada: 'confirmada'}};"
+      }
+    },
+    {
+      "id": "e2fcf13d-c2e8-487d-ad9c-56cee1cc9d75",
+      "name": "H03 | Atualizar Home após decisão confirmada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2448,
+        690
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const resultado = $('14 | Preparar Retorno ao Usuário').first().json;\nif (!resultado.resultado_nucleo?.confirmada || !resultado.atualizacao_home || !$env.APROVA_SLACK_HOME_URL) return [];\nreturn [{json: {home: resultado.atualizacao_home}}];"
+      }
     }
   ],
   "connections": {
@@ -1859,7 +1986,7 @@
         ],
         [
           {
-            "node": "11R | Preparar Pedido de Reexecução",
+            "node": "11R | Informar reexecução indisponível",
             "type": "main",
             "index": 0
           }
@@ -1888,17 +2015,6 @@
         ]
       ]
     },
-    "11R | Preparar Pedido de Reexecução": {
-      "main": [
-        [
-          {
-            "node": "12 | Assinar Pedido ao Núcleo",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "13 | Enviar Ação ao Núcleo": {
       "main": [
         [
@@ -1914,7 +2030,7 @@
       "main": [
         [
           {
-            "node": "HTTP Request1",
+            "node": "15 | Responder somente ao usuário",
             "type": "main",
             "index": 0
           }
@@ -1987,7 +2103,7 @@
       "main": [
         [
           {
-            "node": "07F | É Feedback de Aprovação",
+            "node": "H01 | Separar App Home",
             "type": "main",
             "index": 0
           }
@@ -2451,6 +2567,57 @@
         [
           {
             "node": "C01 | Preparar correlação do alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "H01 | Separar App Home": {
+      "main": [
+        [
+          {
+            "node": "H02 | Encaminhar à App Home",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "07F | É Feedback de Aprovação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "15 | Responder somente ao usuário": {
+      "main": [
+        [
+          {
+            "node": "16 | Conferir entrega privada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 | Conferir entrega privada": {
+      "main": [
+        [
+          {
+            "node": "H03 | Atualizar Home após decisão confirmada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "H03 | Atualizar Home após decisão confirmada": {
+      "main": [
+        [
+          {
+            "node": "H02 | Encaminhar à App Home",
             "type": "main",
             "index": 0
           }

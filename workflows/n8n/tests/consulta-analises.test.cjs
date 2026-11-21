@@ -51,12 +51,15 @@ test('ferramentas possuem apenas GET fixo e não expõem instalação ao modelo'
  const http=workflow.nodes.find(n=>n.type==='n8n-nodes-base.httpRequest');assert.equal(http.parameters.method,'GET');assert.equal(http.parameters.options.redirect.redirect.followRedirects,false);
  assert.ok(!workflow.nodes.some(n=>/postgres|agent|slack/i.test(n.type)));
  const names=Object.entries(assistant.connections).filter(([,c])=>c.ai_tool).map(([name])=>name).sort();
- assert.deepEqual(names,['comparar_relatorios_semanais','consultar_detalhe_execucao','consultar_execucoes','consultar_prontidao_api','consultar_relatorio_semanal','consultar_saude_api']);
- for(const name of ['consultar_execucoes','consultar_detalhe_execucao']){const n=assistant.nodes.find(n=>n.name===name);assert.match(n.parameters.workflowId.value,/\$env\.APROVA_CONSULTA_ANALISES_WORKFLOW_ID/);for(const forbidden of ['installation_id','url','method','headers'])assert.ok(!(forbidden in n.parameters.workflowInputs.value));}
+ assert.deepEqual(names,['consultar_prontidao_api', 'consultar_saude_api']);
+ for (const name of ['consultar_execucoes', 'consultar_detalhe_execucao']) {
+   assert.equal(assistant.nodes.some(n => n.name === name), false);
+ }
 });
-test('comparações exigem leituras atuais por semana e preservam nulidade da taxa', () => {
- const prompt=assistant.nodes.find(n=>n.name==='AI Agent').parameters.options.systemMessage;
- assert.match(prompt,/comparar_relatorios_semanais uma única vez/);assert.match(prompt,/pontos percentuais/);assert.match(prompt,/preservando null/);assert.match(prompt,/não conclua tendência/);assert.match(prompt,/não aceita filtro por repositório/);
+test('conversa indica o dashboard para consultas individuais sem contrato Slack', () => {
+ const prompt = assistant.nodes.find(n => n.name === 'AI Agent').parameters.options.systemMessage;
+ assert.match(prompt, /acesso individual/);
+ assert.match(prompt, /dashboard/);
 });
 
 test('links de repositório e PR derivam dos dados validados, ignorando URLs da resposta', () => {
