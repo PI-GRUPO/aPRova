@@ -100,8 +100,7 @@ func (s *Servidor) cookie(w http.ResponseWriter, nome, valor string, duracao tim
 	if duracao < 0 {
 		idade = -1
 	}
-	// #nosec G124 -- Secure só é false para HTTP em localhost, validado por origemValida.
-	http.SetCookie(w, &http.Cookie{Name: nome, Value: valor, Path: "/", HttpOnly: true, Secure: s.seguro, SameSite: http.SameSiteLaxMode, MaxAge: idade, Expires: s.agora().Add(duracao)})
+	http.SetCookie(w, &http.Cookie{Name: nome, Value: valor, Path: "/", HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode, MaxAge: idade, Expires: s.agora().Add(duracao)})
 }
 func aleatorio() string {
 	var b [32]byte

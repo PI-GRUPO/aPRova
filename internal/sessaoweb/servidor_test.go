@@ -159,6 +159,34 @@ func TestLoginStatePKCECookieESemCredenciaisNoJSON(t *testing.T) {
 		t.Fatal(w.Code, w.Body.String())
 	}
 }
+func TestCookiesSegurosNaEmissaoERemocao(t *testing.T) {
+	for _, origem := range []string{"https://aprova.test", "http://localhost:8080", "http://127.0.0.1:18080"} {
+		t.Run(origem, func(t *testing.T) {
+			_, m, p, _ := cenario(t)
+			s, err := Novo(Opcoes{Origem: origem, Provedor: p, Armazenamento: m})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, nome := range []string{s.nomeCookie(), s.nomeCookie() + "_oauth"} {
+				for _, duracao := range []time.Duration{time.Hour, -time.Hour} {
+					w := httptest.NewRecorder()
+					s.cookie(w, nome, "teste", duracao)
+					cookies := w.Result().Cookies()
+					if len(cookies) != 1 {
+						t.Fatalf("esperado um cookie, recebidos %d", len(cookies))
+					}
+					c := cookies[0]
+					if !c.Secure || !c.HttpOnly || c.SameSite != http.SameSiteLaxMode || c.Path != "/" || c.Domain != "" || c.Name != nome {
+						t.Fatal("atributos de segurança do cookie inválidos", c)
+					}
+					if (duracao < 0 && c.MaxAge != -1) || (duracao > 0 && c.MaxAge != int(duracao.Seconds())) {
+						t.Fatal("duração do cookie inválida", c)
+					}
+				}
+			}
+		})
+	}
+}
 func TestCallbackRecusaStateReutilizadoAusenteETrocado(t *testing.T) {
 	for _, caso := range []string{"ausente", "trocado", "replay", "expirado"} {
 		t.Run(caso, func(t *testing.T) {

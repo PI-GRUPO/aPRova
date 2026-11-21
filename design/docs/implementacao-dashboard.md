@@ -1001,3 +1001,9 @@ que incluía uma proposta de AGENTS.md versionado.
 - Em `web/e2e/`, os testes do mapa e das ações carregam módulos fixos do Vite. Os testes de recibo conferem os bytes do download pelo stream do Playwright. O teste de saída de análise compara o texto integral da fixture, a ausência de um elemento `script` e a ausência do efeito no navegador.
 - Instalação pelo lockfile, Biome, TypeScript e build de produção aprovados. A suíte completa passou nos 133 cenários, incluindo as integrações com os handlers Go isolados. O Vite avisou sobre o tamanho do bundle principal.
 - As 12 capturas dos recortes do mapa em `.capturas-mcp/mapa/` coincidiram pixel a pixel com as do commit de base nos dois temas e nas larguras de 1440, 390 e 360 px. A baixa dos alertas depende da análise do novo commit pelo Codacy.
+
+### Cookie de sessão com Secure — 20/11/2026
+
+- Em `internal/sessaoweb/servidor.go`, os cookies de sessão e OAuth passam a usar `Secure: true` na emissão e na remoção. A supressão G124 foi retirada. A validação da origem pública continua exigindo HTTPS, com HTTP permitido nos endereços locais já suportados.
+- `internal/sessaoweb/servidor_test.go` cobre Secure, HttpOnly, SameSite, caminho, domínio e duração na emissão e na remoção para HTTPS, localhost e 127.0.0.1.
+- Testes de `internal/sessaoweb` e `internal/api` aprovados com `-race -count=1`. GolangCI-Lint dos dois pacotes terminou com zero alertas. Os 32 cenários Playwright de sessão e análises passaram, incluindo login, CSRF e logout com handlers Go por HTTP em 127.0.0.1 no Chromium. A baixa do aviso remoto depende da nova análise do Codacy.
