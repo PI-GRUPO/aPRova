@@ -15,14 +15,15 @@ import (
 const subcomandoReverter = "reverter"
 
 const instrucoesDaReversao = `uso: verificar-recibo reverter -chave <chave pública em base64> -url-publica <URL do aPRova>
-       [-anterior recibo-anterior.json] [-merge-sha <sha> -head-final <sha> -tipo merge|squash|rebase -commits <n>]
+       [-anterior recibo-anterior.json]
+       [-base <branch> -merge-sha <sha> -head-final <sha> -tipo merge|squash|rebase -commits <n>]
        [arquivo.json]
 
 Confere o recibo e devolve o comando git e o texto do PR que revertem o que
-entrou na main por causa daquela análise. Não executa nada, não usa banco nem
-rede. Os dados do merge vêm do PR fechado no GitHub; sem -merge-sha, o PR é
-tratado como não mergeado. Sem -anterior, o elo com o recibo anterior não é
-conferido e a saída avisa.
+entrou na base do PR por causa daquela análise. Não executa nada, não usa
+banco nem rede. Os dados do merge vêm do PR fechado no GitHub; sem -merge-sha,
+o PR é tratado como não mergeado, e sem -base não há comando. Sem -anterior, o
+elo com o recibo anterior não é conferido e a saída avisa.
 
 Sai com 0 quando há instrução, 1 quando não há e 2 quando a entrada não pôde
 ser lida.
@@ -75,6 +76,7 @@ func lerPedidoDeReversao(argumentos []string, entrada io.Reader, erros io.Writer
 	chaveEmBase64 := opcoes.String("chave", "", "chave pública Ed25519 em base64")
 	urlPublica := opcoes.String("url-publica", "", "endereço público do aPRova, para o link de verificação")
 	caminhoAnterior := opcoes.String("anterior", "", "JSON do recibo anterior da cadeia")
+	base := opcoes.String("base", "", "branch em que o PR entrou")
 	shaDoMerge := opcoes.String("merge-sha", "", "merge_commit_sha do PR fechado")
 	headFinal := opcoes.String("head-final", "", "head do PR no fechamento")
 	tipo := opcoes.String("tipo", "", "merge, squash ou rebase")
@@ -104,7 +106,7 @@ func lerPedidoDeReversao(argumentos []string, entrada io.Reader, erros io.Writer
 		chaveiro: receipt.NovoChaveiro(chave), documento: documento, caminhoAnterior: *caminhoAnterior,
 		urlPublica: strings.TrimRight(*urlPublica, "/"),
 		merge: reversao.Merge{
-			Mergeado: *shaDoMerge != "", SHADoMerge: *shaDoMerge, SHAHeadFinal: *headFinal,
+			Mergeado: *shaDoMerge != "", Base: *base, SHADoMerge: *shaDoMerge, SHAHeadFinal: *headFinal,
 			Tipo: reversao.Tipo(*tipo), Commits: *commits,
 		},
 	}, nil
