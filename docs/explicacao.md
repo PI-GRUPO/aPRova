@@ -36,11 +36,12 @@ Um JSON montado em `internal/explicacao/entrada.go`, só com o que o gate gravou
 | `sandbox` | compilou, testes que passaram, testes que falharam, tipo de falha |
 | `nivel_pelas_regras` e `calibracao` | só quando a calibração reduziu o nível: o nível pelas regras e a razão |
 
-As evidências do gate são de três tipos:
-
-- caminhos de arquivo (`go/frete/frete.go`);
-- frases fixas sobre o sandbox (`1 de 11 testes falharam`);
-- `arquivo: não foi possível ler o diff`.
+As evidências do gate são caminhos de arquivo (`go/frete/frete.go`) ou
+`arquivo: não foi possível ler o diff`. A exceção é `falha_sandbox`: a
+evidência desse motivo é uma frase fixa (`1 de 11 testes falharam`), que o
+modelo copiava com erro de concordância. Por isso ela vai vazia, e o modelo
+escreve a partir dos números do campo `sandbox` ("1 dos 11 testes falhou"). O
+gate e o recibo continuam com a frase original.
 
 ## O que o modelo nunca recebe
 
@@ -60,22 +61,38 @@ Antes de publicar, `Validar` normaliza a resposta num parágrafo e a descarta
 se:
 
 1. **Tamanho:** tiver menos de 120 ou mais de 900 caracteres.
-2. **Só texto:** tiver link, `www.`, link em markdown, HTML, `@` (uma menção
+2. **Garantia:** afirmar o que o aPRova não sabe: qualquer forma de "segur…"
+   (seguro, segura, segurança), "sem riscos", "sem problemas", "nenhuma ação"
+   ou "pode seguir". Quando o motivo é `area_sensivel`, "de segurança" ou "da
+   segurança" é aceito, porque descreve o caminho ("uma área sensível de
+   segurança"), não uma garantia.
+3. **Só texto:** tiver link, `www.`, link em markdown, HTML, `@` (uma menção
    notificaria alguém de verdade), referência `#número`, bloco de código, `$(`
    ou comando de terminal (`git`, `curl`, `sudo`, `npm`, `pip`, `rm -`…).
-3. **Nível:** citar um nível diferente do decidido. Só conta quando "baixo",
+4. **Nível:** citar um nível diferente do decidido. Só conta quando "baixo",
    "médio" ou "alto" vem junto de "risco" ou "nível" ("risco alto", "o nível
    é baixo", "risco foi considerado médio"). "Um número alto de arquivos" não
    descarta. Com calibração aplicada, o nível pelas regras também é aceito.
-4. **Motivo:** citar um id de motivo (`palavra_palavra`) que não está no
+5. **Motivo:** citar um id de motivo (`palavra_palavra`) que não está no
    `rules_hit`.
-5. **Arquivo:** citar um arquivo (algo com `/` ou com extensão) que não está nas
+6. **Arquivo:** citar um arquivo (algo com `/` ou com extensão) que não está nas
    evidências. O nome curto de um arquivo das evidências vale.
 
-Limite conhecido: um motivo inventado e descrito só com palavras comuns, sem id
-nem arquivo, passa na validação. A regra 5 também segura boa parte da injeção
-de instrução por nome de arquivo: um texto que cite um caminho fora das
-evidências é descartado.
+A regra 6 também segura boa parte da injeção de instrução por nome de arquivo:
+um texto que cite um caminho fora das evidências é descartado.
+
+## Limitações conhecidas
+
+- **Estilo pouco natural às vezes:** o texto pode sair com fórmulas como
+  "conforme visto no arquivo go.mod" ou repetir a descrição do motivo palavra
+  por palavra. O prompt pede o contrário, mas o `gemini-3.5-flash-lite` nem
+  sempre segue. É questão de estilo, não de correção, então a validação não
+  descarta por isso.
+- **Frases no limite do proibido:** a validação procura palavras e trechos
+  fixos, não sentido. Uma frase como "não é preciso seguir passos adicionais
+  além da conferência padrão" chega perto de "nenhuma ação é necessária" e
+  passa. Também passa um motivo inventado descrito só com palavras comuns, sem
+  id nem arquivo.
 
 ## Falha, descarte e reuso
 
@@ -122,12 +139,14 @@ usados para treino, ou deixe a explicação desligada.
 
 ## Teste manual com o Gemini real
 
-Fica fora do CI. Ele chama o modelo cinco vezes para o caso do PR #6 do
-aPRova-TESTES (`falha_sandbox`) e cinco para uma dependência nova, e mostra o
-texto, a validação e a latência:
+Fica fora do CI. Ele chama o modelo cinco vezes em cada caso: o PR #6 do
+aPRova-TESTES (`falha_sandbox`), uma dependência nova e um risco baixo sem
+motivos. Mostra o texto, a validação e a latência. Entre as chamadas espera
+4,5s, para ficar abaixo da cota de 15 por minuto:
 
 ```sh
 APROVA_TESTE_GEMINI_REAL=1 GEMINI_API_KEY=... go test ./internal/explicacao -run GeminiReal -v
+APROVA_TESTE_GEMINI_REAL=1 GEMINI_API_KEY=... go test ./internal/explicacao -run 'GeminiReal/falha_sandbox' -v
 ```
 
 ## Variáveis
