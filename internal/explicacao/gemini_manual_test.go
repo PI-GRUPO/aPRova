@@ -23,7 +23,7 @@ type casoManual struct {
 func casosManuais() []casoManual {
 	return []casoManual{
 		{
-			nome: "PR #6 do aPRova-TESTES (falha_sandbox)",
+			nome: "falha_sandbox do PR 6",
 			gate: domain.GateDeRisco{
 				NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto,
 				Motivos: []domain.MotivoDeRisco{{ID: "falha_sandbox", Nivel: domain.RiscoAlto, Descricao: "os testes ou a compilação falharam no sandbox", Evidencias: []string{"1 de 11 testes falharam"}}},
@@ -31,7 +31,7 @@ func casosManuais() []casoManual {
 			resultado: sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 10, TestesFalharam: 1, TipoFalha: sandbox.FalhaTeste},
 		},
 		{
-			nome: "dependência nova",
+			nome: "dependencia_nova",
 			gate: domain.GateDeRisco{
 				NivelDeterministico: domain.RiscoAlto, Nivel: domain.RiscoAlto,
 				Motivos: []domain.MotivoDeRisco{{ID: "dependencia_nova", Nivel: domain.RiscoAlto, Descricao: "o PR acrescenta dependência nova, que precisa de revisão humana", Evidencias: []string{"go.mod"}}},
@@ -39,7 +39,7 @@ func casosManuais() []casoManual {
 			resultado: sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 12, TipoFalha: sandbox.FalhaNenhuma},
 		},
 		{
-			nome:      "risco baixo sem motivos",
+			nome:      "risco_baixo_sem_motivos",
 			gate:      domain.GateDeRisco{NivelDeterministico: domain.RiscoBaixo, Nivel: domain.RiscoBaixo},
 			resultado: sandbox.ResultadoSandbox{Compilou: true, TestesPassaram: 1, TipoFalha: sandbox.FalhaNenhuma},
 		},
@@ -60,23 +60,29 @@ func TestExplicacaoComOGeminiReal(t *testing.T) {
 	}
 
 	for _, caso := range casosManuais() {
-		entrada := NovaEntrada(caso.gate, caso.resultado)
-		conteudo, err := entrada.JSON()
+		t.Run(caso.nome, func(t *testing.T) {
+			chamarCincoVezes(t, gemini, caso)
+		})
+	}
+}
+
+func chamarCincoVezes(t *testing.T, gemini *Gemini, caso casoManual) {
+	entrada := NovaEntrada(caso.gate, caso.resultado)
+	conteudo, err := entrada.JSON()
+	if err != nil {
+		t.Fatalf("serializar a entrada: %v", err)
+	}
+	for repeticao := 1; repeticao <= repeticoesPorCaso; repeticao++ {
+		time.Sleep(intervaloEntreChamadas)
+		inicio := time.Now()
+		resposta, err := gemini.Gerar(t.Context(), instrucaoDoSistema, conteudo)
+		latencia := time.Since(inicio)
 		if err != nil {
-			t.Fatalf("serializar a entrada: %v", err)
+			t.Logf("#%d (%s): falha: %v", repeticao, latencia.Round(time.Millisecond), err)
+			continue
 		}
-		for repeticao := 1; repeticao <= repeticoesPorCaso; repeticao++ {
-			time.Sleep(intervaloEntreChamadas)
-			inicio := time.Now()
-			resposta, err := gemini.Gerar(t.Context(), instrucaoDoSistema, conteudo)
-			latencia := time.Since(inicio)
-			if err != nil {
-				t.Logf("%s #%d (%s): falha: %v", caso.nome, repeticao, latencia.Round(time.Millisecond), err)
-				continue
-			}
-			texto, err := Validar(resposta, entrada)
-			t.Logf("%s #%d (%s): validação %v\n%s", caso.nome, repeticao, latencia.Round(time.Millisecond), err, textoOuResposta(texto, resposta))
-		}
+		texto, err := Validar(resposta, entrada)
+		t.Logf("#%d (%s): validação %v\n%s", repeticao, latencia.Round(time.Millisecond), err, textoOuResposta(texto, resposta))
 	}
 }
 

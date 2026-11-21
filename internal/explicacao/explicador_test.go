@@ -184,7 +184,7 @@ func TestPedidoAoModeloNuncaLevaCodigoDiffAutorNemSegredo(t *testing.T) {
 			t.Errorf("o pedido ao modelo contém %q", proibido)
 		}
 	}
-	for _, esperado := range []string{"falha_sandbox", "codigo_sem_teste", "go/frete/frete.go", "1 de 11 testes falharam", "alto"} {
+	for _, esperado := range []string{"falha_sandbox", "codigo_sem_teste", "go/frete/frete.go", `"testes_falharam":1`, "alto"} {
 		if !strings.Contains(modelo.conteudos[0], esperado) {
 			t.Errorf("o pedido ao modelo não traz %q: %s", esperado, modelo.conteudos[0])
 		}
@@ -207,4 +207,17 @@ func entradaEmJSON(t *testing.T, entrada Entrada) string {
 		t.Fatalf("serializar a entrada: %v", err)
 	}
 	return conteudo
+}
+
+func TestFalhaNoSandboxVaiAoModeloSoComOsNumerosDoSandbox(t *testing.T) {
+	conteudo := entradaEmJSON(t, entradaDeRiscoAlto())
+
+	if strings.Contains(conteudo, "1 de 11 testes falharam") {
+		t.Errorf("a frase do gate para falha_sandbox não vai ao modelo, que escreve a partir dos números: %s", conteudo)
+	}
+	for _, esperado := range []string{`"id":"falha_sandbox"`, `"testes_passaram":10`, `"testes_falharam":1`, `"tipo_falha":"teste"`, "go/frete/frete.go"} {
+		if !strings.Contains(conteudo, esperado) {
+			t.Errorf("a entrada não traz %s: %s", esperado, conteudo)
+		}
+	}
 }
