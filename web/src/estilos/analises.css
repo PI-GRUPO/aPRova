@@ -143,6 +143,12 @@
 	padding: 12px;
 	overflow-wrap: anywhere;
 }
+.conteudo-analise .tabela-rolavel {
+	margin: 0 -12px;
+	border: 0;
+	border-block: 1px solid var(--borda-padrao);
+	border-radius: 0;
+}
 .conteudo-analise .botao {
 	align-self: start;
 }

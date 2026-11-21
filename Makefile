@@ -11,7 +11,7 @@ SQLC ?= sqlc
 # shell, para que aspas ou metacaracteres na senha não virem comando.
 export DATABASE_URL
 
-.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco run-api run-worker test lint keys seed-demo smoke-test verificar-token sandbox-azure consultar-permissao imagem-sandbox-go imagem-sandbox-python imagem-sandbox-java imagem-api imagem-worker
+.PHONY: up down migrate migrate-up migrate-down migrate-reset sqlc test-banco e2e run-api run-worker test lint keys seed-demo smoke-test verificar-token sandbox-azure consultar-permissao imagem-sandbox-go imagem-sandbox-python imagem-sandbox-java imagem-api imagem-worker
 
 up:
 	$(COMPOSE) up -d --wait
@@ -85,6 +85,9 @@ test:
 
 test-banco:
 	go test ./tests/integration/postgres/... -race -count=1 -v
+
+e2e:
+	E2E_LIGADO=true go test ./tests/e2e -count=1 -timeout 20m -v
 
 lint:
 	golangci-lint run

@@ -112,7 +112,13 @@ func (tokenDaPublicacao) TokenParaInstalacao(context.Context, int64) (string, er
 	return "ghs_token-de-teste", nil
 }
 
-func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisco) (*worker.Motor, *githubDaPublicacao) {
+func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisco, ajustes ...func(*worker.Opcoes)) (*worker.Motor, *githubDaPublicacao) {
+	t.Helper()
+	return motorQuePublicaComExplicador(t, banco, nivel, nil, ajustes...)
+}
+
+func motorQuePublicaComExplicador(t *testing.T, banco bancoDaFila, nivel domain.NivelRisco, explicador publicacao.Explicador,
+	ajustes ...func(*worker.Opcoes)) (*worker.Motor, *githubDaPublicacao) {
 	t.Helper()
 
 	github := &githubDaPublicacao{proximo: 7_000_000_000}
@@ -121,13 +127,13 @@ func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisc
 
 	cliente := platform.NovoCliente(platform.OpcoesCliente{Tokens: tokenDaPublicacao{}, URLBase: servidor.URL, ClienteHTTP: servidor.Client()})
 	publicador, err := publicacao.NovoPublicador(publicacao.OpcoesPublicador{
-		GitHub: cliente, Registro: banco.repo, SlugDoApp: "a-prova", URLPublica: "https://aprova.example.com",
+		GitHub: cliente, Registro: banco.repo, SlugDoApp: "a-prova", URLPublica: "https://aprova.example.com", Explicador: explicador,
 	})
 	if err != nil {
 		t.Fatalf("montar o publicador: %v", err)
 	}
 
-	motor, err := worker.NovoMotor(worker.Opcoes{
+	opcoes := worker.Opcoes{
 		Armazenamento: banco.repo,
 		LeitorDePR:    leitorDePRFixo{},
 		Permissoes:    permissaoDeAdmin{},
@@ -138,7 +144,11 @@ func motorQuePublicaNoPR(t *testing.T, banco bancoDaFila, nivel domain.NivelRisc
 		Eventos:       eventosDescartados{},
 		URLPublica:    "https://aprova.example.com",
 		EsperaBase:    time.Millisecond,
-	})
+	}
+	for _, ajustar := range ajustes {
+		ajustar(&opcoes)
+	}
+	motor, err := worker.NovoMotor(opcoes)
 	if err != nil {
 		t.Fatalf("montar o motor: %v", err)
 	}

@@ -8,7 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/metricas"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 	"github.com/PI-GRUPO/aPRova/internal/rastro"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
@@ -47,6 +50,7 @@ type Opcoes struct {
 	EsperaBase    time.Duration
 	Diario        *slog.Logger
 	Agora         func() time.Time
+	Metricas      *metricas.Motor
 }
 
 // Motor conduz task_runs pela máquina de estados de domain.EstadoTaskRun.
@@ -92,6 +96,10 @@ func NovoMotor(opcoes Opcoes) (*Motor, error) {
 	if opcoes.Agora == nil {
 		opcoes.Agora = time.Now
 	}
+	if opcoes.Metricas == nil {
+		opcoes.Metricas = metricas.NovoMotor(prometheus.NewRegistry())
+	}
+	opcoes.Publicador = publicadorMedido{PublicadorPR: opcoes.Publicador, metricas: opcoes.Metricas}
 	return &Motor{opcoes: opcoes}, nil
 }
 
@@ -128,10 +136,10 @@ func dependenciasAusentes(opcoes Opcoes) []string {
 func (m *Motor) Conduzir(ctx context.Context, trabalhador string, taskRun domain.TaskRun, parando <-chan struct{}) Desfecho {
 	c := &conducao{
 		Motor:       m,
-		ctx:         rastro.Com(ctx, "task_run_id", taskRun.ID),
+		ctx:         rastro.Com(ctx, atributosDoTaskRun(taskRun)...),
 		trabalhador: trabalhador,
 		taskRun:     taskRun,
-		diario:      m.opcoes.Diario.With("task_run_id", taskRun.ID, "trabalhador", trabalhador),
+		diario:      m.opcoes.Diario.With(atributosDoTaskRun(taskRun)...).With("trabalhador", trabalhador),
 	}
 
 	for !c.taskRun.Estado.Terminal() && !fechado(parando) {
@@ -146,6 +154,15 @@ func (m *Motor) Conduzir(ctx context.Context, trabalhador string, taskRun domain
 	return Desfecho{Liberar: true}
 }
 
+func atributosDoTaskRun(taskRun domain.TaskRun) []any {
+	return []any{
+		"task_run_id", taskRun.ID,
+		"tenant_id", taskRun.TenantID,
+		"repositorio", taskRun.Repositorio,
+		"numero_pr", taskRun.NumeroPR,
+	}
+}
+
 func fechado(sinal <-chan struct{}) bool {
 	select {
 	case <-sinal:
@@ -156,6 +173,9 @@ func fechado(sinal <-chan struct{}) bool {
 }
 
 func (c *conducao) avancar() (passo, error) {
+	etapa, inicio := c.taskRun.Estado, time.Now()
+	defer func() { c.opcoes.Metricas.DuracaoDaEtapa(string(etapa), time.Since(inicio)) }()
+
 	substituido, err := c.opcoes.Armazenamento.ExisteTaskRunMaisNovo(c.ctx, c.taskRun)
 	if err != nil {
 		return passo{}, err
@@ -184,6 +204,10 @@ func (c *conducao) avancar() (passo, error) {
 }
 
 func (c *conducao) transicionar(para domain.EstadoTaskRun, detalhe string) error {
+	return c.transicionarComResumo(para, detalhe, detalhe)
+}
+
+func (c *conducao) transicionarComResumo(para domain.EstadoTaskRun, detalhe, resumoNoDiario string) error {
 	atualizado, err := c.opcoes.Armazenamento.TransicionarReivindicado(c.ctx, c.trabalhador, domain.Transicao{
 		TaskRunID: c.taskRun.ID, De: c.taskRun.Estado, Para: para, Detalhe: detalhe,
 	})
@@ -191,9 +215,20 @@ func (c *conducao) transicionar(para domain.EstadoTaskRun, detalhe string) error
 		return err
 	}
 
-	c.diario.Info("task_run mudou de estado", "de", c.taskRun.Estado, "para", para, "detalhe", detalhe)
+	c.diario.Info("task_run mudou de estado", "de", c.taskRun.Estado, "para", para, "detalhe", resumoNoDiario)
 	c.taskRun = atualizado
+	if para.Terminal() {
+		c.opcoes.Metricas.AnaliseEncerrada(para, c.nivelDoGate())
+	}
 	return nil
+}
+
+func (c *conducao) nivelDoGate() domain.NivelRisco {
+	gravado, err := c.opcoes.Armazenamento.BuscarGateDeRisco(c.ctx, c.taskRun.ID)
+	if err != nil {
+		return ""
+	}
+	return gravado.Nivel
 }
 
 func (c *conducao) falhar(detalhe string) error {

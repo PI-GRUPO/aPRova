@@ -19,12 +19,16 @@ func (r *RepositorioPostgres) RegistrarFechamento(ctx context.Context, fechament
 	if err != nil {
 		return err
 	}
+	commits, err := commitsDoPR(fechamento.Commits)
+	if err != nil {
+		return err
+	}
 
 	return r.EmTransacao(ctx, func(tx *RepositorioPostgres) error {
 		err := tx.consultas.UpsertPullRequestOutcome(ctx, db.UpsertPullRequestOutcomeParams{
 			TenantID: fechamento.InstallationID, Repository: fechamento.Repositorio, PrNumber: numero,
-			Merged: fechamento.Mergeado, HeadSha: fechamento.SHAHead, MergeCommitSha: textoOuNulo(fechamento.SHADoMerge),
-			ClosedAt: fechamento.FechadoEm, DeliveryID: fechamento.DeliveryID,
+			Merged: fechamento.Mergeado, BaseRef: textoOuNulo(fechamento.Base), HeadSha: fechamento.SHAHead, MergeCommitSha: textoOuNulo(fechamento.SHADoMerge),
+			Commits: commits, ClosedAt: fechamento.FechadoEm, DeliveryID: fechamento.DeliveryID,
 		})
 		if err != nil {
 			return traduzir("gravar o desfecho do pull request", err)
@@ -43,4 +47,23 @@ func (r *RepositorioPostgres) RegistrarFechamento(ctx context.Context, fechament
 		})
 		return traduzir("gravar a reversão do pull request", err)
 	})
+}
+
+// DesfechoDoPR devolve o desfecho gravado do pull request do tenant, ou
+// domain.ErrNaoEncontrado quando ele ainda não foi fechado.
+func (r *RepositorioPostgres) DesfechoDoPR(ctx context.Context, tenantID int64, repositorio string, numeroPR int) (domain.DesfechoDePR, error) {
+	numero, err := numeroDePR(numeroPR)
+	if err != nil {
+		return domain.DesfechoDePR{}, err
+	}
+
+	linha, err := r.consultas.GetPullRequestOutcome(ctx, db.GetPullRequestOutcomeParams{
+		TenantID: tenantID, Repository: repositorio, PrNumber: numero,
+	})
+	if err != nil {
+		return domain.DesfechoDePR{}, traduzir("ler o desfecho do pull request", err)
+	}
+	return domain.DesfechoDePR{
+		Mergeado: linha.Merged, Base: valorOuVazio(linha.BaseRef), SHAHead: linha.HeadSha, SHADoMerge: valorOuVazio(linha.MergeCommitSha), Commits: int(linha.Commits),
+	}, nil
 }

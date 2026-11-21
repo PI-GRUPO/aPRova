@@ -75,10 +75,10 @@ func (s *Servidor) manipularRecibo(w http.ResponseWriter, r *http.Request) {
 
 	recibo, err := s.recibos.Buscar(r.Context(), id)
 	if err != nil {
-		responderFalhaDeRecibo(w, id, err)
+		responderFalhaDeRecibo(w, r, id, err)
 		return
 	}
-	responderJSON(w, http.StatusOK, receipt.Exportar(recibo))
+	responderJSON(w, r, http.StatusOK, receipt.Exportar(recibo))
 }
 
 func (s *Servidor) manipularVerificacaoDeRecibo(w http.ResponseWriter, r *http.Request) {
@@ -89,10 +89,14 @@ func (s *Servidor) manipularVerificacaoDeRecibo(w http.ResponseWriter, r *http.R
 
 	recibo, resultado, err := s.recibos.Verificar(r.Context(), id)
 	if err != nil {
-		responderFalhaDeRecibo(w, id, err)
+		responderFalhaDeRecibo(w, r, id, err)
 		return
 	}
-	responderJSON(w, http.StatusOK, respostaDaVerificacao{
+	responderJSON(w, r, http.StatusOK, verificacaoDoRecibo(recibo, resultado))
+}
+
+func verificacaoDoRecibo(recibo domain.Recibo, resultado receipt.Resultado) respostaDaVerificacao {
+	return respostaDaVerificacao{
 		ID:           recibo.ID,
 		Valido:       resultado.Valido,
 		Falha:        string(resultado.Falha),
@@ -100,12 +104,12 @@ func (s *Servidor) manipularVerificacaoDeRecibo(w http.ResponseWriter, r *http.R
 		Verificacoes: conferenciasDe(resultado),
 		HashSHA256:   receipt.HashEmHex([]byte(recibo.Conteudo)),
 		KeyID:        recibo.IDChave,
-	})
+	}
 }
 
-func (s *Servidor) manipularChavesDeRecibo(w http.ResponseWriter, _ *http.Request) {
+func (s *Servidor) manipularChavesDeRecibo(w http.ResponseWriter, r *http.Request) {
 	if s.recibos == nil {
-		responderRecibosIndisponiveis(w)
+		responderRecibosIndisponiveis(w, r)
 		return
 	}
 
@@ -115,18 +119,18 @@ func (s *Servidor) manipularChavesDeRecibo(w http.ResponseWriter, _ *http.Reques
 			KeyID: chave.KeyID, Algoritmo: algoritmoDaChave, ChavePublicaBase64: base64.StdEncoding.EncodeToString(chave.Chave),
 		})
 	}
-	responderJSON(w, http.StatusOK, respostaDasChaves{Chaves: chaves})
+	responderJSON(w, r, http.StatusOK, respostaDasChaves{Chaves: chaves})
 }
 
 func (s *Servidor) idDoRecibo(w http.ResponseWriter, r *http.Request) (string, bool) {
 	if s.recibos == nil {
-		responderRecibosIndisponiveis(w)
+		responderRecibosIndisponiveis(w, r)
 		return "", false
 	}
 
 	id, err := uuid.Parse(chi.URLParam(r, parametroDoRecibo))
 	if err != nil {
-		responderJSON(w, http.StatusNotFound, respostaSimples{Status: "recibo não encontrado"})
+		responderJSON(w, r, http.StatusNotFound, respostaSimples{Status: "recibo não encontrado"})
 		return "", false
 	}
 	return id.String(), true
@@ -145,15 +149,15 @@ func conferenciasDe(resultado receipt.Resultado) []conferencia {
 	return conferencias
 }
 
-func responderFalhaDeRecibo(w http.ResponseWriter, id string, err error) {
+func responderFalhaDeRecibo(w http.ResponseWriter, r *http.Request, id string, err error) {
 	if errors.Is(err, domain.ErrNaoEncontrado) {
-		responderJSON(w, http.StatusNotFound, respostaSimples{Status: "recibo não encontrado"})
+		responderJSON(w, r, http.StatusNotFound, respostaSimples{Status: "recibo não encontrado"})
 		return
 	}
-	slog.Error("falha ao ler recibo", "recibo", id, "erro", err)
-	responderJSON(w, http.StatusInternalServerError, respostaSimples{Status: "falha ao ler o recibo"})
+	slog.ErrorContext(r.Context(), "falha ao ler recibo", "recibo", id, "erro", err)
+	responderJSON(w, r, http.StatusInternalServerError, respostaSimples{Status: "falha ao ler o recibo"})
 }
 
-func responderRecibosIndisponiveis(w http.ResponseWriter) {
-	responderJSON(w, http.StatusServiceUnavailable, respostaSimples{Status: "recibos indisponíveis"})
+func responderRecibosIndisponiveis(w http.ResponseWriter, r *http.Request) {
+	responderJSON(w, r, http.StatusServiceUnavailable, respostaSimples{Status: "recibos indisponíveis"})
 }

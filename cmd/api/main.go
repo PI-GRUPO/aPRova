@@ -15,11 +15,12 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/api"
 	"github.com/PI-GRUPO/aPRova/internal/config"
+	"github.com/PI-GRUPO/aPRova/internal/observabilidade"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/publicacao"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -62,10 +63,16 @@ func executar() error {
 		}
 	}()
 
-	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{TetoDeAnalisesPorHora: configuracao.TetoDeAnalisesPorHora})
 	acoesRemotas, err := montarAcoesRemotas(configuracao, repositorio)
 	if err != nil {
 		return err
+	}
+
+	prontidao := dependencias(repositorio, clienteRedis)
+	if configuracao.EnderecoMetricas != "" {
+		parar := observabilidade.Iniciar(observabilidade.NovoServidor(configuracao.EnderecoMetricas, observabilidade.NovoRegistro(), prontidao))
+		defer desligar(parar)
 	}
 
 	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio)
@@ -75,16 +82,23 @@ func executar() error {
 	servidorHTTP := &http.Server{
 		Addr: configuracao.EnderecoHTTP(),
 		Handler: api.NovoServidor(api.Opcoes{
-			Dependencias:        dependencias(bancoDados, clienteRedis),
+			Dependencias:        prontidao,
 			SessaoWeb:           sessaoWeb,
 			SegredoWebhook:      []byte(configuracao.GitHubSegredoWebhook),
 			Execucoes:           repositorio,
+			AvisoDeFila:         avisoDeFila(configuracao, repositorio),
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
 			ConsultasAnalises:   repositorio,
 			Recibos:             receipt.NovoVerificador(chaveiroDosRecibos(configuracao), repositorio),
+			Desfechos:           repositorio,
+			Commits:             leitorDeCommits(configuracao),
+			URLPublica:          configuracao.URLPublica,
 			SlugDoApp:           configuracao.GitHubAppSlug,
+
+			TetoDeLeiturasPorMinuto: configuracao.TetoDeLeiturasPorMinuto,
+			ProxyConfiavel:          configuracao.ProxyConfiavel,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
 	}
@@ -149,9 +163,53 @@ func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.
 	})
 }
 
-func dependencias(bancoDados *pgxpool.Pool, clienteRedis *redis.Client) []api.Dependencia {
+func clienteDoApp(configuracao config.Configuracao) (*platform.Cliente, error) {
+	autenticador, err := platform.NovoAutenticador(platform.OpcoesAutenticador{
+		AppID:           configuracao.GitHubAppID,
+		ChavePrivadaPEM: configuracao.GitHubChavePrivada,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
+}
+
+func leitorDeCommits(configuracao config.Configuracao) api.LeitorDeCommits {
+	cliente, err := clienteDoApp(configuracao)
+	if err != nil {
+		slog.Warn("sem as credenciais do GitHub App, /receipts/{id}/revert responderá indisponível", "erro", err)
+		return nil
+	}
+	return cliente
+}
+
+func avisoDeFila(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) api.AvisoDeFila {
+	cliente, err := clienteDoApp(configuracao)
+	if err != nil {
+		slog.Warn("sem as credenciais do GitHub App, o pull request acima do teto não recebe o Check Run da fila", "erro", err)
+		return nil
+	}
+	publicador, err := publicacao.NovoPublicador(publicacao.OpcoesPublicador{
+		GitHub: cliente, Registro: repositorio, SlugDoApp: configuracao.GitHubAppSlug, URLPublica: configuracao.URLPublica,
+	})
+	if err != nil {
+		slog.Warn("o pull request acima do teto não recebe o Check Run da fila", "erro", err)
+		return nil
+	}
+	return publicacao.AvisoDeFila{Publicador: publicador, Contador: repositorio}
+}
+
+func desligar(parar func(context.Context) error) {
+	ctx, cancelar := context.WithTimeout(context.Background(), tempoLimiteDesligamento)
+	defer cancelar()
+	if err := parar(ctx); err != nil {
+		slog.Error("falha ao desligar o listener interno", "erro", err)
+	}
+}
+
+func dependencias(repositorio *repository.RepositorioPostgres, clienteRedis *redis.Client) []api.Dependencia {
 	return []api.Dependencia{
-		{Nome: "postgres", Verificar: bancoDados.Ping},
+		{Nome: "postgres", Verificar: repositorio.ConferirVersaoDoBanco},
 		{Nome: "redis", Verificar: func(ctx context.Context) error {
 			return clienteRedis.Ping(ctx).Err()
 		}},

@@ -19,6 +19,8 @@
 .faixa-overview {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 1px;
+	background: var(--borda-padrao);
 	overflow: hidden;
 	border: 1px solid var(--borda-padrao);
 	border-radius: 12px;
@@ -26,11 +28,9 @@
 .metrica-overview {
 	background: var(--fundo-superficie);
 	padding: 20px;
-	min-height: 200px;
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-	border: 1px solid var(--borda-padrao);
 }
 .metrica-overview h2 {
 	font-size: 12px;
@@ -47,7 +47,9 @@
 }
 .espaco-proporcao {
 	height: 12px;
-	padding: 3px 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 .barra-overview {
 	height: 6px;
@@ -81,7 +83,7 @@
 .contagem-fila {
 	width: 268px;
 	text-align: right;
-	padding-bottom: 2px;
+	line-height: 32px;
 }
 .tabela-fila-viewport {
 	overflow-x: auto;
@@ -246,8 +248,8 @@
 	padding-top: 2px;
 }
 .ultimo-recibo-overview {
-	border: 1px solid var(--borda-padrao);
-	padding: 16px;
+	border-top: 1px solid var(--borda-padrao);
+	padding: 12px 0 0;
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
@@ -315,9 +317,6 @@
 	.faixa-overview {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
-	.metrica-overview {
-		min-height: 200px;
-	}
 	.metrica-overview .apoio {
 		overflow-wrap: anywhere;
 	}
@@ -348,16 +347,22 @@
 	.cards-fila {
 		display: flex;
 		flex-direction: column;
-		gap: 16px;
-		padding: 12px;
+		padding: 0 12px;
 	}
 	.cards-fila article {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 4px;
+		padding: 8px 0 12px;
+	}
+	.cards-fila article + article {
+		border-top: 1px solid var(--borda-padrao);
 	}
 	.cards-fila .link-fila {
-		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		align-self: flex-start;
+		min-height: 44px;
 		text-decoration: none;
 		font-size: 12px;
 		font-weight: 510;

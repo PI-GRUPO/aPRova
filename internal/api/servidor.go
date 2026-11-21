@@ -3,10 +3,12 @@ package api
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/saude"
 	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
 	"github.com/PI-GRUPO/aPRova/web"
 
@@ -17,10 +19,7 @@ import (
 const tempoLimiteRequisicao = 30 * time.Second
 
 // Dependencia identifica um serviço externo consultado pela rota de prontidão.
-type Dependencia struct {
-	Nome      string
-	Verificar func(ctx context.Context) error
-}
+type Dependencia = saude.Dependencia
 
 // RegistroDeExecucoes descreve a persistência exigida pelo handler de webhook.
 type RegistroDeExecucoes interface {
@@ -35,6 +34,12 @@ type ProcessadorDeAcoesRemotas interface {
 	Processar(ctx context.Context, corpo []byte) acaoremota.Decisao
 }
 
+// AvisoDeFila mostra no pull request que a análise do task_run novo espera o
+// teto da instalação. Falha no aviso não impede o task_run de seguir na fila.
+type AvisoDeFila interface {
+	AvisarSeAcimaDoTeto(ctx context.Context, taskRun domain.TaskRun) error
+}
+
 type FonteDeRelatorios interface {
 	RelatorioSemanal(ctx context.Context, tenantID int64, inicio, fim time.Time) (domain.RelatorioSemanal, error)
 }
@@ -45,13 +50,20 @@ type Opcoes struct {
 	Dependencias        []Dependencia
 	SegredoWebhook      []byte
 	Execucoes           RegistroDeExecucoes
+	AvisoDeFila         AvisoDeFila
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
 	Relatorios          FonteDeRelatorios
 	ConsultasAnalises   FonteDeAnalises
 	Recibos             VerificadorDeRecibos
+	Desfechos           FonteDeDesfechos
+	Commits             LeitorDeCommits
+	URLPublica          string
 	SlugDoApp           string
 	Agora               func() time.Time
+
+	TetoDeLeiturasPorMinuto int
+	ProxyConfiavel          bool
 }
 
 // Servidor agrupa as dependências externas usadas pelos handlers HTTP.
@@ -60,13 +72,18 @@ type Servidor struct {
 	dependencias        []Dependencia
 	segredoWebhook      []byte
 	execucoes           RegistroDeExecucoes
+	avisoDeFila         AvisoDeFila
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
 	relatorios          FonteDeRelatorios
 	consultasAnalises   FonteDeAnalises
 	recibos             VerificadorDeRecibos
+	desfechos           FonteDeDesfechos
+	commits             LeitorDeCommits
+	urlPublica          string
 	slugDoApp           string
 	agora               func() time.Time
+	limiteDeLeituras    *limitePorIP
 }
 
 // NovoServidor constrói o servidor HTTP a partir das opções informadas.
@@ -81,13 +98,18 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		dependencias:        opcoes.Dependencias,
 		segredoWebhook:      opcoes.SegredoWebhook,
 		execucoes:           opcoes.Execucoes,
+		avisoDeFila:         opcoes.AvisoDeFila,
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
 		relatorios:          opcoes.Relatorios,
 		consultasAnalises:   opcoes.ConsultasAnalises,
 		recibos:             opcoes.Recibos,
+		desfechos:           opcoes.Desfechos,
+		commits:             opcoes.Commits,
+		urlPublica:          strings.TrimRight(opcoes.URLPublica, "/"),
 		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
+		limiteDeLeituras:    novoLimitePorIP(opcoes.TetoDeLeiturasPorMinuto, opcoes.ProxyConfiavel, agora),
 	}
 }
 
@@ -95,7 +117,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 func (s *Servidor) Rotas() http.Handler {
 	roteador := chi.NewRouter()
 
-	roteador.Use(middleware.RequestID)
+	roteador.Use(identificarRequisicao)
 	roteador.Use(registrarAcesso)
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))
@@ -103,16 +125,22 @@ func (s *Servidor) Rotas() http.Handler {
 	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal"} {
 		roteador.Handle(caminho, s.sessaoWeb)
 	}
-	roteador.Get("/health", s.manipularSaude)
-	roteador.Get("/ready", s.manipularProntidao)
+	roteador.Get("/health", saude.Viva)
+	roteador.Get("/health/live", saude.Viva)
+	roteador.Get("/ready", saude.Pronta(s.dependencias))
+	roteador.Get("/health/ready", saude.Pronta(s.dependencias))
 	roteador.Post("/webhooks/github", s.manipularWebhookGitHub)
 	roteador.Post("/acoes-remotas", s.manipularAcaoRemota)
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
 	roteador.Get("/api/analises", s.manipularListaAnalises)
 	roteador.Get("/api/analises/{id}", s.manipularConsultaAnalise)
-	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
-	roteador.Get("/receipts/{id}", s.manipularRecibo)
-	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)
+	roteador.Route("/receipts", func(recibos chi.Router) {
+		recibos.Use(s.limiteDeLeituras.segurar)
+		recibos.Get("/keys", s.manipularChavesDeRecibo)
+		recibos.Get("/{id}", s.manipularRecibo)
+		recibos.Get("/{id}/verify", s.manipularVerificacaoDeRecibo)
+		recibos.Get("/{id}/revert", s.manipularReversaoDeRecibo)
+	})
 
 	roteador.NotFound(web.Handler().ServeHTTP)
 

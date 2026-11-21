@@ -136,18 +136,18 @@ func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request
 	}
 	filtro, pagina, err := filtroListaAnalises(r.URL.Query())
 	if err != nil {
-		responderJSON(w, http.StatusBadRequest, respostaSimples{Status: "parâmetros de consulta inválidos"})
+		responderJSON(w, r, http.StatusBadRequest, respostaSimples{Status: "parâmetros de consulta inválidos"})
 		return
 	}
 	limite := filtro.Limite - 1
 	if s.consultasAnalises == nil {
-		responderJSON(w, http.StatusServiceUnavailable, respostaSimples{Status: "consulta indisponível"})
+		responderJSON(w, r, http.StatusServiceUnavailable, respostaSimples{Status: "consulta indisponível"})
 		return
 	}
 	itens, err := s.consultasAnalises.ListarAnalises(r.Context(), filtro)
 	if err != nil {
 		slog.ErrorContext(r.Context(), "falha ao consultar análises", "erro", err)
-		responderJSON(w, http.StatusInternalServerError, respostaSimples{Status: "falha ao consultar análises"})
+		responderJSON(w, r, http.StatusInternalServerError, respostaSimples{Status: "falha ao consultar análises"})
 		return
 	}
 	temMais := len(itens) > int(limite)
@@ -158,7 +158,7 @@ func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request
 	for _, item := range itens {
 		resumos = append(resumos, resumoDaAnalise(item))
 	}
-	responderJSON(w, http.StatusOK, paginaAnalises{filtro.TenantID, s.agora().UTC(), filtro.Estado, filtro.Repositorio, filtro.NumeroPR, pagina, limite, temMais, resumos})
+	responderJSON(w, r, http.StatusOK, paginaAnalises{filtro.TenantID, s.agora().UTC(), filtro.Estado, filtro.Repositorio, filtro.NumeroPR, pagina, limite, temMais, resumos})
 }
 
 func estadoConsultaValido(estado string) bool {
@@ -180,24 +180,24 @@ func (s *Servidor) manipularConsultaAnalise(w http.ResponseWriter, r *http.Reque
 	tenant, repo, err := escopoConsultaAnalises(r.URL.Query())
 	id := chi.URLParam(r, "id")
 	if _, e := uuid.Parse(id); err != nil || e != nil || !parametrosUnicos(r.URL.Query(), "installation_id", "repositorio") {
-		responderJSON(w, http.StatusBadRequest, respostaSimples{Status: "parâmetros de consulta inválidos"})
+		responderJSON(w, r, http.StatusBadRequest, respostaSimples{Status: "parâmetros de consulta inválidos"})
 		return
 	}
 	if s.consultasAnalises == nil {
-		responderJSON(w, http.StatusServiceUnavailable, respostaSimples{Status: "consulta indisponível"})
+		responderJSON(w, r, http.StatusServiceUnavailable, respostaSimples{Status: "consulta indisponível"})
 		return
 	}
 	item, err := s.consultasAnalises.ConsultarAnalise(r.Context(), tenant, repo, id)
 	if errors.Is(err, domain.ErrNaoEncontrado) {
-		responderJSON(w, http.StatusNotFound, respostaSimples{Status: "análise não encontrada neste escopo"})
+		responderJSON(w, r, http.StatusNotFound, respostaSimples{Status: "análise não encontrada neste escopo"})
 		return
 	}
 	if err != nil {
 		slog.ErrorContext(r.Context(), "falha ao consultar análise", "erro", err)
-		responderJSON(w, http.StatusInternalServerError, respostaSimples{Status: "falha ao consultar análise"})
+		responderJSON(w, r, http.StatusInternalServerError, respostaSimples{Status: "falha ao consultar análise"})
 		return
 	}
-	responderJSON(w, http.StatusOK, struct {
+	responderJSON(w, r, http.StatusOK, struct {
 		InstallationID int64         `json:"installation_id"`
 		ConsultadoEm   time.Time     `json:"consultado_em"`
 		Analise        resumoAnalise `json:"analise"`

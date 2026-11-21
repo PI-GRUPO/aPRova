@@ -66,6 +66,10 @@ const (
 	OrigemSlack  OrigemAprovacao = "slack"
 )
 
+// TamanhoMaximoDaJustificativa é o número máximo de caracteres da justificativa
+// de uma aprovação.
+const TamanhoMaximoDaJustificativa = 4000
+
 // MotivoFeedback é o motivo declarado por quem aprovou uma mudança de risco alto.
 type MotivoFeedback string
 
@@ -107,6 +111,8 @@ type TaskRun struct {
 	PrazoAte             *time.Time
 	TentativasDaEtapa    int
 	UltimaAprovacaoVista int64
+
+	RetomadoDePrazoVencido bool
 }
 
 // Transicao move um task_run de um estado para outro, deixando uma etapa

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -37,16 +38,26 @@ const (
 	etapaUnicaDaAzure etapa = "unica"
 )
 
+const variavelDoTaskRunID = "APROVA_TASK_RUN_ID"
+
 var errSubcomandoDesconhecido = errors.New("sandbox: subcomando desconhecido; use preparar, testar ou nenhum")
 
 func main() {
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
+	slog.SetDefault(loggerDoSandbox(os.Stderr, os.Getenv(variavelDoTaskRunID)))
 
 	ctx, encerrar := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	codigo := executar(ctx, os.Args[1:])
 	encerrar()
 
 	os.Exit(codigo)
+}
+
+func loggerDoSandbox(saida io.Writer, taskRunID string) *slog.Logger {
+	logger := slog.New(slog.NewJSONHandler(saida, nil))
+	if taskRunID == "" {
+		return logger
+	}
+	return logger.With("task_run_id", taskRunID)
 }
 
 func executar(ctx context.Context, argumentos []string) int {

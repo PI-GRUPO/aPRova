@@ -10,7 +10,7 @@ import (
 )
 
 const getScopedAnalysis = `-- name: GetScopedAnalysis :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at FROM task_runs
 WHERE id = $1 AND tenant_id = $2
   AND ($3::text = '' OR lower(repository) = lower($3))
 `
@@ -42,12 +42,13 @@ func (q *Queries) GetScopedAnalysis(ctx context.Context, arg GetScopedAnalysisPa
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
 
 const listAnalyses = `-- name: ListAnalyses :many
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at FROM task_runs
 WHERE tenant_id = $1
   AND ($2::text = '' OR lower(repository) = lower($2))
   AND ($3::integer = 0 OR pr_number = $3)
@@ -101,6 +102,7 @@ func (q *Queries) ListAnalyses(ctx context.Context, arg ListAnalysesParams) ([]T
 			&i.StepAttempts,
 			&i.LastApprovalSeen,
 			&i.CheckRunID,
+			&i.StartedAt,
 		); err != nil {
 			return nil, err
 		}

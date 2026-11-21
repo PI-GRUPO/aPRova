@@ -31,10 +31,9 @@ func (q *Queries) AdvanceApprovalCursor(ctx context.Context, arg AdvanceApproval
 }
 
 const claimNextTaskRun = `-- name: ClaimNextTaskRun :one
-UPDATE task_runs
-SET claimed_by = $1, lease_expires_at = now() + make_interval(secs => $2::double precision)
-WHERE id = (
-    SELECT tr.id FROM task_runs tr
+WITH alvo AS (
+    SELECT tr.id, tr.claimed_by IS NOT NULL AS retomado_de_prazo_vencido
+    FROM task_runs tr
     WHERE tr.state IN ('pendente', 'mapeando_contexto', 'testando_sandbox', 'avaliando_risco', 'aguardando_aprovacao', 'aplicando')
       AND (tr.lease_expires_at IS NULL OR tr.lease_expires_at <= now())
       AND (
@@ -45,48 +44,89 @@ WHERE id = (
               WHERE novo.tenant_id = tr.tenant_id AND novo.repository = tr.repository AND novo.pr_number = tr.pr_number
                 AND (novo.created_at, novo.id) > (tr.created_at, tr.id))
       )
+      AND (
+          tr.started_at IS NOT NULL
+          OR (SELECT count(*) FROM task_runs iniciado
+              WHERE iniciado.tenant_id = tr.tenant_id
+                AND iniciado.started_at > now() - interval '1 hour') < $3::bigint
+      )
     ORDER BY tr.created_at, tr.id
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
+UPDATE task_runs
+SET claimed_by = $1, lease_expires_at = now() + make_interval(secs => $2::double precision),
+    started_at = COALESCE(task_runs.started_at, now())
+FROM alvo
+WHERE task_runs.id = alvo.id
+RETURNING task_runs.id, task_runs.tenant_id, task_runs.delivery_id, task_runs.repository, task_runs.pr_number, task_runs.head_sha, task_runs.author, task_runs.event_action, task_runs.state, task_runs.received_at, task_runs.created_at, task_runs.updated_at, task_runs.claimed_by, task_runs.lease_expires_at, task_runs.step_attempts, task_runs.last_approval_seen, task_runs.check_run_id, task_runs.started_at, alvo.retomado_de_prazo_vencido::boolean AS retomado_de_prazo_vencido
 `
 
 type ClaimNextTaskRunParams struct {
 	Worker       *string `json:"worker"`
 	LeaseSeconds float64 `json:"lease_seconds"`
+	TetoPorHora  int64   `json:"teto_por_hora"`
 }
 
-func (q *Queries) ClaimNextTaskRun(ctx context.Context, arg ClaimNextTaskRunParams) (TaskRun, error) {
-	row := q.db.QueryRow(ctx, claimNextTaskRun, arg.Worker, arg.LeaseSeconds)
-	var i TaskRun
+type ClaimNextTaskRunRow struct {
+	TaskRun                TaskRun `json:"task_run"`
+	RetomadoDePrazoVencido bool    `json:"retomado_de_prazo_vencido"`
+}
+
+func (q *Queries) ClaimNextTaskRun(ctx context.Context, arg ClaimNextTaskRunParams) (ClaimNextTaskRunRow, error) {
+	row := q.db.QueryRow(ctx, claimNextTaskRun, arg.Worker, arg.LeaseSeconds, arg.TetoPorHora)
+	var i ClaimNextTaskRunRow
 	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.DeliveryID,
-		&i.Repository,
-		&i.PrNumber,
-		&i.HeadSha,
-		&i.Author,
-		&i.EventAction,
-		&i.State,
-		&i.ReceivedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ClaimedBy,
-		&i.LeaseExpiresAt,
-		&i.StepAttempts,
-		&i.LastApprovalSeen,
-		&i.CheckRunID,
+		&i.TaskRun.ID,
+		&i.TaskRun.TenantID,
+		&i.TaskRun.DeliveryID,
+		&i.TaskRun.Repository,
+		&i.TaskRun.PrNumber,
+		&i.TaskRun.HeadSha,
+		&i.TaskRun.Author,
+		&i.TaskRun.EventAction,
+		&i.TaskRun.State,
+		&i.TaskRun.ReceivedAt,
+		&i.TaskRun.CreatedAt,
+		&i.TaskRun.UpdatedAt,
+		&i.TaskRun.ClaimedBy,
+		&i.TaskRun.LeaseExpiresAt,
+		&i.TaskRun.StepAttempts,
+		&i.TaskRun.LastApprovalSeen,
+		&i.TaskRun.CheckRunID,
+		&i.TaskRun.StartedAt,
+		&i.RetomadoDePrazoVencido,
 	)
 	return i, err
+}
+
+const countPendingTaskRuns = `-- name: CountPendingTaskRuns :one
+SELECT count(*) FROM task_runs WHERE state = 'pendente'
+`
+
+func (q *Queries) CountPendingTaskRuns(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countPendingTaskRuns)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTaskRunsStartedInLastHour = `-- name: CountTaskRunsStartedInLastHour :one
+SELECT count(*) FROM task_runs WHERE tenant_id = $1 AND started_at > now() - interval '1 hour'
+`
+
+func (q *Queries) CountTaskRunsStartedInLastHour(ctx context.Context, tenantID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countTaskRunsStartedInLastHour, tenantID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const createTaskRun = `-- name: CreateTaskRun :one
 INSERT INTO task_runs (tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, received_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 ON CONFLICT (delivery_id) DO NOTHING
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at
 `
 
 type CreateTaskRunParams struct {
@@ -130,6 +170,7 @@ func (q *Queries) CreateTaskRun(ctx context.Context, arg CreateTaskRunParams) (T
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
@@ -146,7 +187,7 @@ func (q *Queries) GetCheckRunID(ctx context.Context, id string) (*int64, error) 
 }
 
 const getLatestTaskRunForPullRequest = `-- name: GetLatestTaskRunForPullRequest :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at FROM task_runs
 WHERE tenant_id = $1 AND repository = $2 AND pr_number = $3
 ORDER BY created_at DESC, id DESC
 LIMIT 1
@@ -179,12 +220,13 @@ func (q *Queries) GetLatestTaskRunForPullRequest(ctx context.Context, arg GetLat
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
 
 const getTaskRun = `-- name: GetTaskRun :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs WHERE id = $1
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at FROM task_runs WHERE id = $1
 `
 
 func (q *Queries) GetTaskRun(ctx context.Context, id string) (TaskRun, error) {
@@ -208,12 +250,13 @@ func (q *Queries) GetTaskRun(ctx context.Context, id string) (TaskRun, error) {
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
 
 const getTaskRunByDeliveryID = `-- name: GetTaskRunByDeliveryID :one
-SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id FROM task_runs WHERE delivery_id = $1
+SELECT id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at FROM task_runs WHERE delivery_id = $1
 `
 
 func (q *Queries) GetTaskRunByDeliveryID(ctx context.Context, deliveryID string) (TaskRun, error) {
@@ -237,6 +280,7 @@ func (q *Queries) GetTaskRunByDeliveryID(ctx context.Context, deliveryID string)
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
@@ -368,7 +412,7 @@ SET state = $1,
         ELSE last_approval_seen
     END
 WHERE task_runs.id = $2 AND task_runs.state = $3 AND task_runs.claimed_by = $4
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at
 `
 
 type TransitionClaimedTaskRunParams struct {
@@ -404,6 +448,7 @@ func (q *Queries) TransitionClaimedTaskRun(ctx context.Context, arg TransitionCl
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }
@@ -412,7 +457,7 @@ const transitionTaskRun = `-- name: TransitionTaskRun :one
 UPDATE task_runs
 SET state = $1, updated_at = now()
 WHERE id = $2 AND state = $3
-RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id
+RETURNING id, tenant_id, delivery_id, repository, pr_number, head_sha, author, event_action, state, received_at, created_at, updated_at, claimed_by, lease_expires_at, step_attempts, last_approval_seen, check_run_id, started_at
 `
 
 type TransitionTaskRunParams struct {
@@ -442,6 +487,7 @@ func (q *Queries) TransitionTaskRun(ctx context.Context, arg TransitionTaskRunPa
 		&i.StepAttempts,
 		&i.LastApprovalSeen,
 		&i.CheckRunID,
+		&i.StartedAt,
 	)
 	return i, err
 }

@@ -27,7 +27,7 @@ func TestWorkerMontaOAssinadorComASementeConfigurada(t *testing.T) {
 }
 
 func TestWorkerNaoSobeSemOSlugDoApp(t *testing.T) {
-	_, err := montarPublicador(config.Configuracao{URLPublica: "https://aprova.example.com"}, &platform.Cliente{}, &repository.RepositorioPostgres{})
+	_, err := montarPublicador(config.Configuracao{URLPublica: "https://aprova.example.com"}, &platform.Cliente{}, &repository.RepositorioPostgres{}, nil)
 
 	if err == nil || !strings.Contains(err.Error(), "GITHUB_APP_SLUG") {
 		t.Fatalf("esperava erro nomeando GITHUB_APP_SLUG, obtive %v", err)
@@ -35,7 +35,7 @@ func TestWorkerNaoSobeSemOSlugDoApp(t *testing.T) {
 }
 
 func TestWorkerPublicaNoPRComOPublicadorReal(t *testing.T) {
-	publicador, err := montarPublicador(config.Configuracao{GitHubAppSlug: "a-prova", URLPublica: "https://aprova.example.com"}, &platform.Cliente{}, &repository.RepositorioPostgres{})
+	publicador, err := montarPublicador(config.Configuracao{GitHubAppSlug: "a-prova", URLPublica: "https://aprova.example.com"}, &platform.Cliente{}, &repository.RepositorioPostgres{}, nil)
 
 	if err != nil || publicador == nil {
 		t.Fatalf("publicador = %v, erro = %v", publicador, err)

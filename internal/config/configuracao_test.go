@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/rastro"
 )
@@ -32,6 +33,8 @@ func ambienteLimpo(t *testing.T) {
 		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 		"CALIBRACAO_LIGADA", "CALIBRACAO_VIZINHOS", "CALIBRACAO_SIMILARIDADE_MINIMA",
 		"CALIBRACAO_MINIMO_DE_DESFECHOS", "CALIBRACAO_TIMEOUT", "GEMINI_API_KEY", "SARIF_LIGADO",
+		"METRICAS_ENDERECO", "APROVA_TETO_ANALISES_POR_HORA", "APROVA_TETO_LEITURAS_POR_MINUTO", "APROVA_PROXY_CONFIAVEL",
+		"EXPLICACAO_LIGADA", "EXPLICACAO_MODELO", "EXPLICACAO_TIMEOUT",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -404,6 +407,16 @@ func TestCarregarUsaOsPadroesDoWorker(t *testing.T) {
 	if configuracao.WorkerConcorrencia != 4 || configuracao.WorkerMaxTentativas != 3 {
 		t.Errorf("padrões do worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
 	}
+	if configuracao.TetoDeAnalisesPorHora != 60 {
+		t.Errorf("sem APROVA_TETO_ANALISES_POR_HORA o teto é 60, obtive %d", configuracao.TetoDeAnalisesPorHora)
+	}
+	if configuracao.ExplicacaoLigada || configuracao.ExplicacaoModelo != "gemini-3.5-flash-lite" || configuracao.ExplicacaoTimeout != 5*time.Second {
+		t.Errorf("padrões da explicação: ligada %v, modelo %q, timeout %s",
+			configuracao.ExplicacaoLigada, configuracao.ExplicacaoModelo, configuracao.ExplicacaoTimeout)
+	}
+	if configuracao.TetoDeLeiturasPorMinuto != 60 || configuracao.ProxyConfiavel {
+		t.Errorf("padrões das leituras: teto %d, proxy confiável %v", configuracao.TetoDeLeiturasPorMinuto, configuracao.ProxyConfiavel)
+	}
 	if configuracao.URLPublica != "https://aprova.example.com" {
 		t.Errorf("sem APROVA_URL_PUBLICA vale o endereço provisório, obtive %q", configuracao.URLPublica)
 	}
@@ -420,6 +433,12 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 	t.Setenv("APROVA_URL_PUBLICA", "https://api.aprova.test/")
 	t.Setenv("SANDBOX_DIRETORIOS", " Azulpasta/aPRova-TESTES=go , PI-GRUPO/outro=servicos/api ")
 	t.Setenv("GITHUB_APP_SLUG", "aprova-pi")
+	t.Setenv("APROVA_TETO_ANALISES_POR_HORA", "90")
+	t.Setenv("APROVA_TETO_LEITURAS_POR_MINUTO", "120")
+	t.Setenv("APROVA_PROXY_CONFIAVEL", "true")
+	t.Setenv("EXPLICACAO_LIGADA", "true")
+	t.Setenv("EXPLICACAO_MODELO", "gemini-3.5-flash")
+	t.Setenv("EXPLICACAO_TIMEOUT", "3s")
 
 	configuracao, err := Carregar()
 	if err != nil {
@@ -428,6 +447,14 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 
 	if configuracao.WorkerConcorrencia != 8 || configuracao.WorkerMaxTentativas != 5 {
 		t.Errorf("worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
+	}
+	if !configuracao.ExplicacaoLigada || configuracao.ExplicacaoModelo != "gemini-3.5-flash" || configuracao.ExplicacaoTimeout != 3*time.Second {
+		t.Errorf("explicação lida errado: ligada %v, modelo %q, timeout %s",
+			configuracao.ExplicacaoLigada, configuracao.ExplicacaoModelo, configuracao.ExplicacaoTimeout)
+	}
+	if configuracao.TetoDeAnalisesPorHora != 90 || configuracao.TetoDeLeiturasPorMinuto != 120 || !configuracao.ProxyConfiavel {
+		t.Errorf("limites lidos errado: análises %d, leituras %d, proxy %v",
+			configuracao.TetoDeAnalisesPorHora, configuracao.TetoDeLeiturasPorMinuto, configuracao.ProxyConfiavel)
 	}
 	if configuracao.N8NSegredoEventos != "segredo-dos-eventos" || configuracao.GitHubAppSlug != "aprova-pi" {
 		t.Errorf("segredo ou slug lidos errado: %q %q", configuracao.N8NSegredoEventos, configuracao.GitHubAppSlug)
@@ -447,6 +474,11 @@ func TestCarregarRecusaVariaveisDoWorkerInvalidas(t *testing.T) {
 		"WORKER_CONCORRENCIA=-2":                             "WORKER_CONCORRENCIA",
 		"WORKER_CONCORRENCIA=quatro":                         "WORKER_CONCORRENCIA",
 		"WORKER_MAX_TENTATIVAS=0":                            "WORKER_MAX_TENTATIVAS",
+		"APROVA_TETO_ANALISES_POR_HORA=0":                    "APROVA_TETO_ANALISES_POR_HORA",
+		"APROVA_TETO_LEITURAS_POR_MINUTO=0":                  "APROVA_TETO_LEITURAS_POR_MINUTO",
+		"APROVA_PROXY_CONFIAVEL=sim":                         "APROVA_PROXY_CONFIAVEL",
+		"EXPLICACAO_LIGADA=sim":                              "EXPLICACAO_LIGADA",
+		"EXPLICACAO_TIMEOUT=0s":                              "EXPLICACAO_TIMEOUT",
 		"APROVA_URL_PUBLICA=api.aprova.test":                 "APROVA_URL_PUBLICA",
 		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES":         "SANDBOX_DIRETORIOS",
 		"SANDBOX_DIRETORIOS==go":                             "SANDBOX_DIRETORIOS",
@@ -557,6 +589,38 @@ func TestCarregarRecusaLimitesDoGateInvalidos(t *testing.T) {
 				t.Errorf("esperava erro nomeando %s, obtive %v", variavel, err)
 			}
 		})
+	}
+}
+
+func TestEnderecoDasMetricasFicaDesligadoPorPadrao(t *testing.T) {
+	ambienteMinimoValido(t)
+
+	configuracao, err := Carregar()
+
+	if err != nil || configuracao.EnderecoMetricas != "" {
+		t.Errorf("sem METRICAS_ENDERECO o listener interno fica desligado, obtive %q (%v)", configuracao.EnderecoMetricas, err)
+	}
+}
+
+func TestEnderecoDasMetricasAceitaHostEPorta(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("METRICAS_ENDERECO", ":9090")
+
+	configuracao, err := Carregar()
+
+	if err != nil || configuracao.EnderecoMetricas != ":9090" {
+		t.Errorf("esperava :9090, obtive %q (%v)", configuracao.EnderecoMetricas, err)
+	}
+}
+
+func TestEnderecoDasMetricasRecusaValorSemPorta(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("METRICAS_ENDERECO", "metricas.internas")
+
+	_, err := Carregar()
+
+	if err == nil || !strings.Contains(err.Error(), "METRICAS_ENDERECO") {
+		t.Errorf("endereço sem porta precisa ser recusado nomeando a variável, obtive %v", err)
 	}
 }
 

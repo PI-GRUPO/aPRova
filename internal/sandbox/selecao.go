@@ -8,10 +8,11 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/sandbox/jobsazure"
 )
 
-const (
-	tipoExecutorLocal = "local"
-	tipoExecutorAzure = "azure"
-)
+// TipoExecutorLocal é o valor de SANDBOX_EXECUTOR que roda o sandbox no
+// docker da própria máquina.
+const TipoExecutorLocal = "local"
+
+const tipoExecutorAzure = "azure"
 
 // ErrConfiguracaoSandbox indica configuração de executor que impede o boot.
 var ErrConfiguracaoSandbox = errors.New("sandbox: configuração do executor inválida")
@@ -30,13 +31,13 @@ type ConfiguracaoExecutor struct {
 // ErrConfiguracaoSandbox.
 func NovoExecutor(configuracao ConfiguracaoExecutor) (Executor, error) {
 	switch configuracao.Tipo {
-	case tipoExecutorLocal:
+	case TipoExecutorLocal:
 		return NovoExecutorLocal(configuracao.Local), nil
 	case tipoExecutorAzure:
 		return NovoExecutorAzure(configuracao.Azure, configuracao.Coletor)
 	default:
 		return nil, fmt.Errorf("%w: SANDBOX_EXECUTOR aceita %s ou %s, obtive %q",
-			ErrConfiguracaoSandbox, tipoExecutorLocal, tipoExecutorAzure, configuracao.Tipo)
+			ErrConfiguracaoSandbox, TipoExecutorLocal, tipoExecutorAzure, configuracao.Tipo)
 	}
 }
 

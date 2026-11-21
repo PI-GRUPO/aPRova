@@ -1,0 +1,38 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-11-21T13:37:17.381Z",
+        "reason": "user confirmed: briefing da landing fixa Inter no corpo, igual ao DESIGN.md do dashboard"
+      },
+      {
+        "rule": "overused-font",
+        "value": "instrument serif",
+        "createdAt": "2026-11-21T13:37:17.422Z",
+        "reason": "user confirmed: briefing pede serifada itálica só em 'sem prova'; Instrument Serif aprovada na fase 0"
+      },
+      {
+        "rule": "italic-serif-display",
+        "value": "*",
+        "files": [
+          "design/landing/index.html"
+        ],
+        "createdAt": "2026-11-21T13:37:22.961Z",
+        "reason": "user confirmed: briefing pede 'sem prova' em serifada itálica cinza no título"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "design/landing/index.html"
+        ],
+        "createdAt": "2026-11-21T13:38:13.737Z",
+        "reason": "falso positivo do scan estático: são divisórias de 1px entre colunas (referência 03), não contêineres; o scan da página renderizada não acusa"
+      }
+    ]
+  }
+}

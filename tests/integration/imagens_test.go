@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -44,14 +45,18 @@ func (i *imagemDeIntegracao) exigir(t *testing.T) {
 			i.erro = err
 			return
 		}
-		construcao := exec.CommandContext(ctx, "docker", "build", "-q",
-			"-f", filepath.Join(raiz, "imagens", i.linguagem, "Dockerfile"), "-t", i.nome(), raiz)
-		i.saida, i.erro = construcao.CombinedOutput()
+		i.saida, i.erro = construirImagem(ctx, filepath.Join(raiz, "imagens", i.linguagem, "Dockerfile"), i.nome(), raiz)
 	})
 
 	if i.erro != nil {
 		t.Fatalf("construir a imagem do sandbox %s: %v\n%s", i.linguagem, i.erro, i.saida)
 	}
+}
+
+func construirImagem(ctx context.Context, dockerfile, nome, contexto string) ([]byte, error) {
+	construcao := exec.CommandContext(ctx, "docker", "build", "-f", dockerfile, "-t", nome, contexto)
+	construcao.Env = append(os.Environ(), "BUILDKIT_PROGRESS=plain")
+	return construcao.CombinedOutput()
 }
 
 func docker(t *testing.T, argumentos ...string) string {

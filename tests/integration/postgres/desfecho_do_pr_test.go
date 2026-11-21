@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -187,5 +188,49 @@ func TestWebhookDeFechamentoComRevertsMarcaOPROriginalComoRevertido(t *testing.T
 	}
 	if criados := contar(t, `SELECT count(*) FROM task_runs WHERE tenant_id = $1`, tenant); criados != 0 {
 		t.Errorf("fechar o PR não cria análise: %d", criados)
+	}
+}
+
+func TestDesfechoDoPRDevolveOQueOFechamentoGravou(t *testing.T) {
+	repo := exigirBanco(t)
+	tenant := novoTenant()
+	fechado := fechamento(tenant, 12, true, time.Date(2026, 11, 10, 9, 0, 0, 0, time.UTC))
+	fechado.Commits = 3
+	fechado.Base = "release/2026"
+	registrarFechamento(t, repo, fechado)
+
+	desfecho, err := repo.DesfechoDoPR(t.Context(), tenant, "Azulpasta/alvo", 12)
+	if err != nil {
+		t.Fatalf("ler o desfecho: %v", err)
+	}
+	esperado := domain.DesfechoDePR{Mergeado: true, Base: "release/2026", SHAHead: headDoPR, SHADoMerge: commitDeMerge, Commits: 3}
+	if desfecho != esperado {
+		t.Errorf("desfecho = %+v, esperava %+v", desfecho, esperado)
+	}
+}
+
+func TestDesfechoDoPRSemFechamentoNaoEEncontrado(t *testing.T) {
+	repo := exigirBanco(t)
+	tenant, vizinho := novoTenant(), novoTenant()
+	registrarFechamento(t, repo, fechamento(tenant, 12, true, time.Now().UTC()))
+
+	for _, caso := range []struct {
+		tenant int64
+		numero int
+	}{{tenant, 13}, {vizinho, 12}} {
+		if _, err := repo.DesfechoDoPR(t.Context(), caso.tenant, "Azulpasta/alvo", caso.numero); !errors.Is(err, domain.ErrNaoEncontrado) {
+			t.Errorf("tenant %d PR %d: esperava ErrNaoEncontrado, obtive %v", caso.tenant, caso.numero, err)
+		}
+	}
+}
+
+func TestDesfechoGravadoSemBaseVoltaComBaseVazia(t *testing.T) {
+	repo := exigirBanco(t)
+	tenant := novoTenant()
+	registrarFechamento(t, repo, fechamento(tenant, 12, true, time.Now().UTC()))
+
+	desfecho, err := repo.DesfechoDoPR(t.Context(), tenant, "Azulpasta/alvo", 12)
+	if err != nil || desfecho.Base != "" {
+		t.Errorf("fechamento sem base: %+v, erro %v", desfecho, err)
 	}
 }

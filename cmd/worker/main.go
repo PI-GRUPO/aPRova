@@ -15,13 +15,17 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/config"
 	"github.com/PI-GRUPO/aPRova/internal/embedding"
 	"github.com/PI-GRUPO/aPRova/internal/eventos"
+	"github.com/PI-GRUPO/aPRova/internal/explicacao"
 	"github.com/PI-GRUPO/aPRova/internal/gate"
+	"github.com/PI-GRUPO/aPRova/internal/metricas"
+	"github.com/PI-GRUPO/aPRova/internal/observabilidade"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
 	"github.com/PI-GRUPO/aPRova/internal/publicacao"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/PI-GRUPO/aPRova/internal/sarif"
+	"github.com/PI-GRUPO/aPRova/internal/saude"
 	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
@@ -75,8 +79,12 @@ func executar() error {
 		return err
 	}
 
-	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
-	publicador, err := montarPublicador(configuracao, clienteGitHub, repositorio)
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{TetoDeAnalisesPorHora: configuracao.TetoDeAnalisesPorHora})
+	registro := observabilidade.NovoRegistro()
+	metricasDoMotor := metricas.NovoMotor(registro)
+	metricas.RegistrarTamanhoDaFila(registro, repositorio.ContarPendentes)
+
+	publicador, err := montarPublicador(configuracao, clienteGitHub, repositorio, montarExplicador(configuracao, repositorio, metricasDoMotor))
 	if err != nil {
 		return err
 	}
@@ -86,7 +94,7 @@ func executar() error {
 	}
 	slog.Info("recibos assinados com Ed25519", "key_id", assinador.IDChave())
 
-	motor, enviadorSARIF, err := montarMotor(configuracao, repositorio, clienteGitHub, executorSandbox, emissorDeRecibos, publicador, emissorDeEventos)
+	motor, enviadorSARIF, err := montarMotor(configuracao, repositorio, clienteGitHub, executorSandbox, emissorDeRecibos, publicador, emissorDeEventos, metricasDoMotor)
 	if err != nil {
 		return err
 	}
@@ -96,9 +104,15 @@ func executar() error {
 		Motor:         motor,
 		Armazenamento: repositorio,
 		Concorrencia:  configuracao.WorkerConcorrencia,
+		Metricas:      metricasDoMotor,
 	})
 	if err != nil {
 		return err
+	}
+
+	if configuracao.EnderecoMetricas != "" {
+		parar := observabilidade.Iniciar(observabilidade.NovoServidor(configuracao.EnderecoMetricas, registro, dependenciasDeProntidao(configuracao, repositorio)))
+		defer desligarListenerInterno(parar)
 	}
 
 	rodando := make(chan struct{})
@@ -118,9 +132,25 @@ func executar() error {
 	return nil
 }
 
+func desligarListenerInterno(parar func(context.Context) error) {
+	ctx, cancelar := context.WithTimeout(context.Background(), limiteDoDesligamento)
+	defer cancelar()
+	if err := parar(ctx); err != nil {
+		slog.Error("falha ao desligar o listener interno", "erro", err)
+	}
+}
+
+func dependenciasDeProntidao(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) []saude.Dependencia {
+	dependencias := []saude.Dependencia{{Nome: "postgres", Verificar: repositorio.ConferirVersaoDoBanco}}
+	if configuracao.SandboxExecutor == sandbox.TipoExecutorLocal {
+		dependencias = append(dependencias, saude.Dependencia{Nome: "docker", Verificar: sandbox.ConferirDocker()})
+	}
+	return dependencias
+}
+
 func montarMotor(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, clienteGitHub *platform.Cliente,
 	executorSandbox sandbox.Executor, recibos *receipt.Emissor, publicador *publicacao.Publicador,
-	emissorDeEventos *eventos.Emissor) (*worker.Motor, *sarif.Enviador, error) {
+	emissorDeEventos *eventos.Emissor, metricasDoMotor *metricas.Motor) (*worker.Motor, *sarif.Enviador, error) {
 	calibrador, err := montarCalibrador(configuracao, repositorio)
 	if err != nil {
 		return nil, nil, err
@@ -140,6 +170,7 @@ func montarMotor(configuracao config.Configuracao, repositorio *repository.Repos
 		publicador:       publicador,
 		emissorDeEventos: emissorDeEventos,
 		enviadorSARIF:    enviadorSARIF,
+		metricas:         metricasDoMotor,
 	}))
 	if err != nil {
 		encerrarEnvioDeSARIF(enviadorSARIF)
@@ -206,6 +237,7 @@ type dependenciasDoMotor struct {
 	publicador       *publicacao.Publicador
 	emissorDeEventos *eventos.Emissor
 	enviadorSARIF    *sarif.Enviador
+	metricas         *metricas.Motor
 }
 
 func opcoesDoMotor(configuracao config.Configuracao, dependencias dependenciasDoMotor) worker.Opcoes {
@@ -223,6 +255,7 @@ func opcoesDoMotor(configuracao config.Configuracao, dependencias dependenciasDo
 		Linguagens:    linguagensDoSandbox(configuracao),
 		URLPublica:    configuracao.URLPublica,
 		MaxTentativas: configuracao.WorkerMaxTentativas,
+		Metricas:      dependencias.metricas,
 	}
 	if dependencias.enviadorSARIF != nil {
 		opcoes.SARIF = dependencias.enviadorSARIF
@@ -280,7 +313,29 @@ func montarClienteGitHub(configuracao config.Configuracao) (*platform.Cliente, e
 	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
 }
 
-func montarPublicador(configuracao config.Configuracao, clienteGitHub *platform.Cliente, repositorio *repository.RepositorioPostgres) (*publicacao.Publicador, error) {
+func montarExplicador(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres, metricasDoMotor *metricas.Motor) publicacao.Explicador {
+	if !configuracao.ExplicacaoLigada {
+		slog.Info("EXPLICACAO_LIGADA desligada, o comentário usa só o texto fixo")
+		return nil
+	}
+	gemini, err := explicacao.NovoGemini(explicacao.OpcoesGemini{Chave: configuracao.ChaveAPIGemini, Modelo: configuracao.ExplicacaoModelo})
+	if err != nil {
+		slog.Warn("EXPLICACAO_LIGADA sem o Gemini, o comentário usa só o texto fixo", "motivo", err)
+		return nil
+	}
+	explicador, err := explicacao.NovoExplicador(explicacao.Opcoes{
+		Modelo: gemini, NomeDoModelo: configuracao.ExplicacaoModelo, Registro: repositorio, Metricas: metricasDoMotor, Timeout: configuracao.ExplicacaoTimeout,
+	})
+	if err != nil {
+		slog.Warn("explicador não montado, o comentário usa só o texto fixo", "motivo", err)
+		return nil
+	}
+	slog.Info("explicação por IA ligada", "modelo", configuracao.ExplicacaoModelo, "timeout", configuracao.ExplicacaoTimeout)
+	return explicador
+}
+
+func montarPublicador(configuracao config.Configuracao, clienteGitHub *platform.Cliente, repositorio *repository.RepositorioPostgres,
+	explicador publicacao.Explicador) (*publicacao.Publicador, error) {
 	if configuracao.GitHubAppSlug == "" {
 		return nil, fmt.Errorf("o worker exige GITHUB_APP_SLUG, o slug do GitHub App, para reconhecer o próprio comentário no pull request")
 	}
@@ -289,6 +344,7 @@ func montarPublicador(configuracao config.Configuracao, clienteGitHub *platform.
 		Registro:   repositorio,
 		SlugDoApp:  configuracao.GitHubAppSlug,
 		URLPublica: configuracao.URLPublica,
+		Explicador: explicador,
 	})
 }
 

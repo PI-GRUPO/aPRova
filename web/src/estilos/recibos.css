@@ -19,6 +19,10 @@
 	min-height: 36px;
 	background: var(--fundo-elevado);
 }
+.pagina > h2 {
+	font-size: 14px;
+	line-height: 20px;
+}
 .painel-recibo h2 {
 	font-size: 14px;
 	line-height: 20px;

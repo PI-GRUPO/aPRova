@@ -21,6 +21,16 @@ func dependenciaQueDemora(nome string, duracao time.Duration) Dependencia {
 	}}
 }
 
+const (
+	situacaoDisponivel   = "ok"
+	situacaoIndisponivel = "indisponivel"
+)
+
+type respostaProntidao struct {
+	Status       string            `json:"status"`
+	Dependencias map[string]string `json:"dependencias"`
+}
+
 func executarProntidao(t *testing.T, dependencias ...Dependencia) (int, respostaProntidao) {
 	t.Helper()
 

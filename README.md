@@ -394,6 +394,8 @@ push novo cria outro `task_run`, e o anterior encerra em `falhou` com o motivo
 | `WORKER_CONCORRENCIA` | `4` | quantos `task_runs` o processo conduz ao mesmo tempo |
 | `WORKER_MAX_TENTATIVAS` | `3` | tentativas de uma falha transitória (infraestrutura do sandbox, 5xx ou limite do GitHub) antes de `falhou` e do evento `falha_recuperavel` |
 | `GITHUB_APP_SLUG` | vazio | nome do app no GitHub; o review que o próprio app publica a partir do Slack só vale quando o revisor é `<slug>[bot]` |
+| `EXPLICACAO_LIGADA` | `false` | acrescenta ao comentário uma explicação do risco escrita por IA, que só descreve a decisão; ver [explicação por IA](docs/explicacao.md) |
+| `APROVA_TETO_ANALISES_POR_HORA` | `60` | análises novas que cada instalação inicia por hora; acima disso o PR recebe o Check Run em `queued` e espera, ver [limites](docs/limites.md) |
 
 O worker publica Check Runs e comentários reais no GitHub, com retomada
 idempotente. Consulte [publicação no PR](docs/publicacao-no-pr.md).
@@ -451,10 +453,16 @@ não pode ser forjado.
 | `GET /receipts/{id}` | os bytes assinados em base64, a assinatura, o `key_id` e o conteúdo para leitura |
 | `GET /receipts/{id}/verify` | `valido` verdadeiro ou falso e, quando falso, qual verificação falhou |
 | `GET /receipts/keys` | as chaves públicas aceitas |
+| `GET /receipts/{id}/revert` | a verificação e, para PR mergeado, o comando `git` e o texto do PR de reversão |
 
-As três são públicas e só de leitura. O passo a passo para verificar com o
+Todas são públicas e só de leitura. Cada IP faz até
+`APROVA_TETO_LEITURAS_POR_MINUTO` leituras por minuto (padrão 60); acima disso
+a resposta é `429` com `Retry-After`. Atrás do ingress da Azure, ligue
+`APROVA_PROXY_CONFIAVEL=true`. Veja [limites](docs/limites.md). O passo a passo para verificar com o
 executável `cmd/verificar-recibo` e com `openssl` puro está em
-[docs/verificacao-recibo.md](docs/verificacao-recibo.md).
+[docs/verificacao-recibo.md](docs/verificacao-recibo.md). A reversão assistida,
+que nunca executa nada, está em
+[docs/reversao-assistida.md](docs/reversao-assistida.md).
 
 `GATE_CAMINHOS_SENSIVEIS` aceita, separados por vírgula, diretórios terminados em
 barra, que valem em qualquer profundidade, e padrões de nome de arquivo. O padrão
@@ -543,6 +551,29 @@ make test-banco
 make lint
 ```
 
+### Teste ponta a ponta
+
+`make e2e` abre um PR de verdade e confere o que o aPRova faz com ele. Fica
+fora do CI: sem `E2E_LIGADO=true` o teste é pulado. Ele precisa de:
+
+- a API e o worker no ar, recebendo os webhooks do app (smee no local);
+- `E2E_REPOSITORIO`, um repositório só para isso, com o app instalado e ao
+  menos um commit na `main` (o PR #6 do aPRova-TESTES e os repositórios do
+  benchmark nunca entram);
+- `E2E_URL_APROVA`, a base pública da API, a mesma de `APROVA_URL_PUBLICA`;
+- `gh auth login` feito, com permissão de escrita no repositório.
+
+O teste cria a branch `e2e-<unix>` com um módulo Go pequeno e o teste dele, e
+abre o PR para a `main`. Depois espera até 10 minutos pelo Check Run `aPRova`
+e confere a conclusão `success`, o comentário do aPRova citando o recibo e o
+`/receipts/{id}/verify` com `valido`. No fim, mesmo com falha, fecha o PR e
+apaga a branch. Se o `go test` estourar o prazo, a limpeza não roda; a rodada
+seguinte apaga as branches `e2e-*` com mais de uma hora.
+
+```sh
+E2E_REPOSITORIO=Azulpasta/aprova-e2e E2E_URL_APROVA=https://<url> make e2e
+```
+
 ## Banco de dados
 
 O modelo está em [docs/modelo-dados.html](docs/modelo-dados.html). São nove
@@ -556,6 +587,7 @@ fica de fora:
 | `task_steps` | cada transição de estado | apagadas junto (`CASCADE`) |
 | `sandbox_results` | resultado normalizado do sandbox, por tentativa | apagadas junto (`CASCADE`) |
 | `risk_gates` | nível e motivo nomeado do gate, um por análise | impede (`RESTRICT`) |
+| `risk_explanations` | a única tentativa de explicação por IA do comentário, fora do gate e do recibo | apagadas junto (`CASCADE`) |
 | `receipts` | recibo assinado, um por análise, **append-only** | impede (`RESTRICT`) |
 | `approvals` | decisão humana de revisão | impede (`RESTRICT`) |
 | `code_memory` | decisões passadas com embedding, para a calibração | ficam, com `task_run_id` nulo |
