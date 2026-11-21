@@ -14,7 +14,7 @@ func TestInstrucaoOrientaOQueFazerParaCadaMotivoDoGate(t *testing.T) {
 			t.Errorf("a instrução não diz o que fazer para %s", motivo)
 		}
 	}
-	for _, regra := range []string{"não são arquivos", "acentuação"} {
+	for _, regra := range []string{"a partir dos números do campo \"sandbox\"", "acentuação"} {
 		if !strings.Contains(instrucaoDoSistema, regra) {
 			t.Errorf("a instrução não traz a regra %q", regra)
 		}
