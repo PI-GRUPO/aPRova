@@ -61,6 +61,7 @@
   --terminal-saida: #7ee2a0;
   --altura-topo: 64px;
   --brilho-borda: rgb(235 240 245 / 0.7);
+  --luz-cursor-ativa: rgb(255 255 255 / 0.07);
   --faixa-fundo: #ffffff;
   --faixa-texto: #0b0c0e;
   --largura: 1200px;
@@ -101,6 +102,7 @@
     --secundario-brilho: rgb(255 255 255 / 0.9);
     --secundario-luz: rgb(255 255 255 / 0.9);
   --brilho-borda: rgb(20 22 26 / 0.55);
+  --luz-cursor-ativa: rgb(20 22 26 / 0.045);
   --faixa-fundo: #0b0c0e;
   --faixa-texto: #ffffff;
     color-scheme: light;
@@ -136,6 +138,7 @@
   --secundario-brilho: rgb(255 255 255 / 0.9);
   --secundario-luz: rgb(255 255 255 / 0.9);
   --brilho-borda: rgb(20 22 26 / 0.55);
+  --luz-cursor-ativa: rgb(20 22 26 / 0.045);
   --faixa-fundo: #0b0c0e;
   --faixa-texto: #ffffff;
   color-scheme: light;
@@ -903,53 +906,8 @@ h1 em {
   gap: 22px;
 }
 
-.diagrama {
-  position: relative;
-  margin: 0;
-  display: grid;
-  gap: 16px;
-  padding: clamp(16px, 3vw, 28px);
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  background: var(--superficie);
-}
-
-.diagrama svg {
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-.diagrama rect {
-  fill: var(--fundo);
-  stroke: var(--borda-forte);
-  stroke-width: 1;
-}
-
-.diagrama rect.destaque {
-  stroke: var(--lima-detalhe);
-  stroke-width: 1.5;
-}
-
-.diagrama .ligacao {
-  fill: none;
-  stroke: var(--secundario);
-  stroke-width: 1.25;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.diagrama .texto-no {
-  fill: var(--texto);
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 14px;
-}
-
-.diagrama-vertical {
-  display: none;
-}
-
-.diagrama figcaption,
+.fluxo-figura figcaption,
+.bench-print figcaption,
 .print figcaption {
   color: var(--secundario);
   font-size: 0.875rem;
@@ -1176,28 +1134,6 @@ h1 em {
   list-style: none;
 }
 
-.lista-tambem li {
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  padding: 20px 20px 8px;
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  background: var(--superficie);
-}
-
-.lista-tambem p {
-  max-width: 52ch;
-}
-
-.item-cabeca {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
 .icone-item {
   width: 28px;
   height: 28px;
@@ -1208,14 +1144,6 @@ h1 em {
   stroke-linejoin: round;
 }
 
-.selo-desligado {
-  padding: 2px 8px;
-  border: 1px solid var(--borda-forte);
-  border-radius: 999px;
-  color: var(--secundario);
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
 
 .painel {
   display: grid;
@@ -1569,26 +1497,6 @@ h1 em {
   list-style: none;
 }
 
-.lista-nunca li {
-  display: grid;
-  align-content: start;
-  gap: 12px;
-  padding: 24px;
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  background: var(--superficie);
-}
-
-.lista-nunca .icone-item {
-  margin-bottom: 8px;
-}
-
-.lista-nunca h3 {
-  font-size: clamp(1.375rem, 2.2vw, 1.75rem);
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
 .rodape {
   margin-top: clamp(96px, 12vw, 160px);
   border-top: 1px solid var(--borda);
@@ -1671,17 +1579,289 @@ h1 em {
   fill: currentColor;
 }
 
-.lista-tambem li,
-.lista-nunca li {
+@property --luz-cursor {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
+@property --angulo {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.cartao,
+.fluxo-passo {
   position: relative;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: radial-gradient(320px circle at var(--x, 50%) var(--y, 50%), var(--luz-cursor), transparent 70%), var(--superficie);
+}
+
+.cartao-cabeca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+}
+
+.cartao-rotulo {
+  margin: 0;
+  color: var(--secundario);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+
+.cartao-destaque {
+  margin: 0;
+  color: var(--titulo);
+  font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+p.cartao-destaque {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--texto);
+}
+
+.cartao-numero {
+  display: inline-block;
+  font-family: var(--pontos);
+  font-weight: 700;
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--titulo);
+}
+
+.cartao-detalhe {
+  color: var(--texto);
+  font-size: 0.9375rem;
+  max-width: 52ch;
+}
+
+.lista-nunca .cartao {
+  padding: 22px 24px 24px;
+  gap: 12px;
+}
+
+.codigo-pontos {
+  font-family: var(--pontos);
+  font-weight: 700;
+  font-size: 1.125em;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--titulo);
+}
+
+.visual-passo {
+  display: grid;
+  gap: 12px;
+}
+
+.botao-travado {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--borda-forte);
+  border-radius: 8px;
+  background: var(--elevado);
+  color: var(--secundario);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.botao-travado svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bench-print {
+  display: grid;
+  gap: 8px;
+}
+
+.fluxo-figura {
+  position: relative;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.fluxo-trilho {
+  position: relative;
+}
+
+.fluxo {
+  --vao-fluxo: 16px;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--vao-fluxo);
+  margin: 0;
+  padding: 32px 0 0;
+  list-style: none;
+}
+
+.fluxo-passo {
+  gap: 8px;
+  padding: 16px;
+}
+
+.fluxo-passo h3 {
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.25;
+}
+
+.fluxo-passo p {
+  color: var(--secundario);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.fluxo-numero {
+  display: inline-block;
+  font-family: var(--pontos);
+  font-weight: 700;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--titulo);
+}
+
+.fluxo-passo .cartao-cabeca::before {
+  content: "";
+  position: absolute;
+  top: -27px;
+  left: calc(50% - 3.5px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--borda-forte);
+}
+
+.fluxo-passo .cartao-cabeca::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 1px;
+  height: 19px;
+  background: var(--borda-forte);
+}
+
+.fluxo-linha {
+  position: absolute;
+  top: 8px;
+  left: calc((100% - 5 * 16px) / 12);
+  right: calc((100% - 5 * 16px) / 12);
+  height: 1px;
+  background: var(--borda-forte);
+}
+
+.fluxo-ponto {
+  display: none;
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lima-detalhe);
+}
+
+.fluxo-final {
+  border-color: var(--lima-detalhe);
+}
+
+.fluxo-final .cartao-cabeca::before {
+  background: var(--lima-detalhe);
+}
+
+@keyframes percorrer-horizontal {
+  from { left: 0; }
+  to { left: calc(100% - 7px); }
+}
+
+@keyframes percorrer-vertical {
+  from { top: 0; }
+  to { top: calc(100% - 7px); }
+}
+
+@keyframes girar-borda {
+  to { --angulo: 360deg; }
+}
+
+@media (max-width: 1099px) {
+  .fluxo {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 560px;
+    padding: 0 0 0 32px;
+  }
+
+  .fluxo-passo .cartao-cabeca::before {
+    top: 28px;
+    left: -27.5px;
+  }
+
+  .fluxo-passo .cartao-cabeca::after {
+    top: 31px;
+    left: -20px;
+    width: 20px;
+    height: 1px;
+  }
+
+  .fluxo-linha {
+    top: 31px;
+    bottom: 92px;
+    left: 8px;
+    right: auto;
+    width: 1px;
+    height: auto;
+  }
+
+  .fluxo-ponto {
+    top: 0;
+    left: -3px;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .cartao-vivo {
     transform: perspective(900px) rotateX(var(--giro-x, 0deg)) rotateY(var(--giro-y, 0deg));
     transform-style: preserve-3d;
-    transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform;
+    transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease-out, box-shadow 360ms ease-out, --luz-cursor 300ms ease-out;
+  }
+
+  .cartao-vivo:hover {
+    --luz-cursor: var(--luz-cursor-ativa);
+    border-color: var(--borda-forte);
+    box-shadow: 0 28px 48px -30px var(--sombra);
   }
 
   .cartao-vivo::before {
@@ -1690,7 +1870,7 @@ h1 em {
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
-    background: radial-gradient(240px circle at var(--luz-x, 50%) var(--luz-y, 50%), var(--brilho-borda), transparent 70%);
+    background: radial-gradient(200px circle at var(--x, 50%) var(--y, 50%), var(--brilho-borda), transparent 70%);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
@@ -1703,8 +1883,39 @@ h1 em {
     opacity: 1;
   }
 
-  .cartao-vivo .icone-item {
-    transform: translateZ(28px);
+  .cartao-vivo .icone-item,
+  .cartao-vivo .cartao-numero,
+  .cartao-vivo .fluxo-numero {
+    transform: translateZ(40px);
+  }
+
+  .cartao-vivo .cartao-destaque,
+  .cartao-vivo h3 {
+    transform: translateZ(20px);
+  }
+
+  .fluxo-ponto {
+    display: block;
+    animation: percorrer-horizontal 7s linear infinite;
+  }
+
+  .fluxo-final {
+    border-color: transparent;
+    background:
+      radial-gradient(320px circle at var(--x, 50%) var(--y, 50%), var(--luz-cursor), transparent 70%) padding-box,
+      linear-gradient(var(--superficie), var(--superficie)) padding-box,
+      conic-gradient(from var(--angulo), var(--borda-forte) 0deg 250deg, var(--lima-detalhe) 320deg, var(--borda-forte) 360deg) border-box;
+    animation: girar-borda 4s linear infinite;
+  }
+
+  .fluxo-final:hover {
+    border-color: transparent;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) and (max-width: 1099px) {
+  .fluxo-ponto {
+    animation-name: percorrer-vertical;
   }
 }
 
@@ -1759,16 +1970,6 @@ h1 em {
   }
 }
 
-@media (max-width: 760px) {
-  .diagrama-horizontal {
-    display: none;
-  }
-
-  .diagrama-vertical {
-    display: block;
-    max-width: 343px;
-  }
-}
 
 @media (max-width: 640px) {
   .topo nav li:nth-child(n + 3) {
@@ -1880,4 +2081,13 @@ h1 em {
   .conferir summary::before {
     transition: none;
   }
+}
+
+.rodape-faixa .codigo-pontos {
+  color: inherit;
+}
+
+.cena .navegador .ampliar {
+  padding: clamp(8px, 1.5vw, 18px);
+  background: #08090a;
 }
