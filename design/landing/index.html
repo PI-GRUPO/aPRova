@@ -176,11 +176,20 @@
       <p>Um agente de IA abre o PR no GitHub, onde o código fica guardado.</p>
       <p class="no-caso"><span>No PR #6</span> Um pedido que acrescenta um teste ao cálculo de frete.</p>
       <div class="visual-passo" data-visual="1">
-        <div class="mini mini-pr">
-          <p class="mini-rotulo">PI-GRUPO/aPRova-TESTES</p>
-          <p class="mini-titulo">Testa frete com peso zero <span>#6</span></p>
-          <p class="mini-meta">Azulpasta quer juntar 6 commits na <code>main</code></p>
-          <p class="mini-meta">1 arquivo alterado · +7 linhas</p>
+        <div class="mini mini-pr cartao-vivo">
+          <p class="mini-rotulo">PI-GRUPO/aPRova-TESTES · PR <span class="codigo-pontos">#6</span></p>
+          <p class="mini-titulo">Testa frete com peso zero</p>
+          <p class="mini-meta">Pede para juntar 6 commits à <code>main</code></p>
+          <div class="mini-diff">
+            <p class="mini-diff-cabeca"><code>go/frete/frete_test.go</code><span class="codigo-pontos mini-mais">+7</span></p>
+<pre tabindex="0" aria-label="Linhas acrescentadas em go/frete/frete_test.go"><code>+
++func TestPesoZeroRetornaErro(t *testing.T) {
++  valor, err := Calcular(0, 100)
++  if !errors.Is(err, ErrPesoInvalido) {
++    t.Errorf("peso zero e entrada invalida: esperado ErrPesoInvalido, obtido valor %v e erro %v", valor, err)
++  }
++}</code></pre>
+          </div>
         </div>
       </div>
       <details class="mais"><summary>Mais detalhes</summary><p>O GitHub avisa o aPRova por webhook, e cada versão do código (commit) ganha uma análise.</p></details>
@@ -190,7 +199,7 @@
       <p>Os testes rodam numa caixa fechada, com permissões mínimas.</p>
       <p class="no-caso"><span>No PR #6</span> 10 testes passaram, 1 falhou.</p>
       <div class="visual-passo" data-visual="2">
-        <div class="mini mini-sandbox">
+        <div class="mini mini-sandbox cartao-vivo">
           <p class="mini-rotulo">Sandbox · Go · sem internet</p>
           <div class="mini-placar">
             <p><span class="mini-numero">10</span> passaram</p>
@@ -198,6 +207,7 @@
           </div>
           <div class="mini-barra" aria-hidden="true"><span style="flex: 10"></span><span class="mini-barra-falha" style="flex: 1"></span></div>
           <p class="mini-meta">Falhou: <code>TestPesoZeroRetornaErro</code></p>
+          <p class="mini-meta mini-apagado">Compilou na tentativa <span class="codigo-pontos">1</span> · <span class="codigo-pontos">29,61</span> s</p>
         </div>
       </div>
       <details class="mais"><summary>Mais detalhes</summary><p>Sandbox em duas etapas: prepara com rede e testa com <code>--network none</code>, com usuário sem privilégio. Go, Python e Java.</p></details>
@@ -235,15 +245,14 @@
       <p>O <strong>recibo</strong> é o registro assinado da decisão, que qualquer pessoa pode conferir.</p>
       <p class="no-caso"><span>No PR #6</span> Recibo <span class="codigo-pontos">6eddb1ce</span>. <a href="#recibo">Conferir</a></p>
       <div class="visual-passo" data-visual="4">
-        <div class="mini mini-recibo">
+        <div class="mini mini-recibo cartao-vivo">
           <p class="mini-rotulo">Recibo assinado · Ed25519</p>
-          <dl>
-            <div><dt>Pedido</dt><dd>PR #6</dd></div>
-            <div><dt>Versão</dt><dd><span class="codigo-pontos">3263018</span></dd></div>
-            <div><dt>Risco</dt><dd><span class="risco-alto">alto</span></dd></div>
-            <div><dt>Recibo</dt><dd><span class="codigo-pontos">6eddb1ce</span></dd></div>
-            <div><dt>Anterior</dt><dd><span class="codigo-pontos">0af9e531</span></dd></div>
-          </dl>
+          <ol class="cadeia" aria-label="Cadeia de recibos">
+            <li><span class="cadeia-rotulo">Recibo anterior</span><span class="codigo-pontos">0af9e531</span></li>
+            <li class="cadeia-atual"><span class="cadeia-rotulo">Recibo do PR #6</span><span class="codigo-pontos">6eddb1ce</span></li>
+          </ol>
+          <p class="mini-meta">Versão <span class="codigo-pontos">3263018</span> · risco <span class="risco-alto">alto</span></p>
+          <p class="mini-verificado"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5 10 17.5 19 7"/></svg>Assinatura verificada</p>
         </div>
       </div>
       <details class="mais"><summary>Mais detalhes</summary><p>Cada recibo aponta para o anterior, como elos de uma corrente. Prova que a decisão foi essa e que ninguém a mudou depois. Não prova que estava certa, nem protege contra quem tiver a chave secreta. Assinatura Ed25519.</p></details>
@@ -253,19 +262,19 @@
       <p>Sem a verificação do aPRova, o botão fica travado. Um comentário explica o motivo.</p>
       <p class="no-caso"><span>No PR #6</span> Nem um administrador pula a trava.</p>
       <div class="visual-passo" data-visual="5">
-      <div class="mini mini-verificacao">
+      <div class="mini mini-verificacao cartao-vivo">
         <p class="mini-rotulo">Verificação aPRova · obrigatória</p>
         <p class="mini-numero mini-falha">ALTO</p>
         <div class="mini-barra" aria-hidden="true"><span class="mini-barra-falha" style="flex: 1"></span></div>
         <p class="mini-meta">Juntar: travado até aprovação</p>
       </div>
-      <div class="mini mini-comentario">
+      <div class="mini mini-comentario cartao-vivo">
         <p class="mini-rotulo">Comentário no pedido</p>
         <p><span class="mini-numero mini-falha">1 de 11</span> testes falharam</p>
         <div class="mini-barra" aria-hidden="true"><span style="flex: 10"></span><span class="mini-barra-falha" style="flex: 1"></span></div>
         <p class="mini-meta">Motivo: os testes falharam · recibo <span class="codigo-pontos">6eddb1ce</span></p>
       </div>
-      <div class="mini mini-juntar">
+      <div class="mini mini-juntar cartao-vivo">
         <p class="mini-rotulo">Botão de juntar</p>
         <button class="botao-travado" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Aguardando <span class="codigo-pontos">1</span> aprovação</button>
         <p class="mini-meta">Libera depois que uma pessoa aprova.</p>
@@ -394,7 +403,7 @@
     <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
   </div>
   <figure class="bench-print">
-    <div class="mini mini-bench">
+    <div class="mini mini-bench cartao-vivo">
       <p class="mini-rotulo">Rodada 2b · aprova-bench-python · PR <span class="codigo-pontos">#13</span></p>
       <p><span class="mini-numero mini-falha">5 de 10</span> testes falharam</p>
       <div class="mini-barra" aria-hidden="true"><span style="flex: 5"></span><span class="mini-barra-falha" style="flex: 5"></span></div>
