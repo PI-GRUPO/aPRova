@@ -28,6 +28,9 @@ func TestInstrucaoPedeOSignificadoUmaVezSemAprovacaoParaFalhaENaturalidade(t *te
 		`"1 dos 11 testes falhou"`,
 		`"o arquivo go.mod"`,
 		`"conforme evidenciado"`,
+		`"conforme apontado"`,
+		`"como visto em"`,
+		"Exemplo de estilo",
 	} {
 		if !strings.Contains(instrucaoDoSistema, regra) {
 			t.Errorf("a instrução não traz %q", regra)
