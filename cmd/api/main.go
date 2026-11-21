@@ -17,6 +17,7 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/config"
 	"github.com/PI-GRUPO/aPRova/internal/observabilidade"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/publicacao"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/redis/go-redis/v9"
@@ -79,6 +80,7 @@ func executar() error {
 			Dependencias:        prontidao,
 			SegredoWebhook:      []byte(configuracao.GitHubSegredoWebhook),
 			Execucoes:           repositorio,
+			AvisoDeFila:         avisoDeFila(configuracao, repositorio),
 			SegredoAcoesRemotas: []byte(configuracao.N8NSegredoAcoes),
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
@@ -152,16 +154,40 @@ func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.
 	})
 }
 
-func leitorDeCommits(configuracao config.Configuracao) api.LeitorDeCommits {
+func clienteDoApp(configuracao config.Configuracao) (*platform.Cliente, error) {
 	autenticador, err := platform.NovoAutenticador(platform.OpcoesAutenticador{
 		AppID:           configuracao.GitHubAppID,
 		ChavePrivadaPEM: configuracao.GitHubChavePrivada,
 	})
 	if err != nil {
+		return nil, err
+	}
+	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador}), nil
+}
+
+func leitorDeCommits(configuracao config.Configuracao) api.LeitorDeCommits {
+	cliente, err := clienteDoApp(configuracao)
+	if err != nil {
 		slog.Warn("sem as credenciais do GitHub App, /receipts/{id}/revert responderá indisponível", "erro", err)
 		return nil
 	}
-	return platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador})
+	return cliente
+}
+
+func avisoDeFila(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) api.AvisoDeFila {
+	cliente, err := clienteDoApp(configuracao)
+	if err != nil {
+		slog.Warn("sem as credenciais do GitHub App, o pull request acima do teto não recebe o Check Run da fila", "erro", err)
+		return nil
+	}
+	publicador, err := publicacao.NovoPublicador(publicacao.OpcoesPublicador{
+		GitHub: cliente, Registro: repositorio, SlugDoApp: configuracao.GitHubAppSlug, URLPublica: configuracao.URLPublica,
+	})
+	if err != nil {
+		slog.Warn("o pull request acima do teto não recebe o Check Run da fila", "erro", err)
+		return nil
+	}
+	return publicacao.AvisoDeFila{Publicador: publicador, Contador: repositorio}
 }
 
 func desligar(parar func(context.Context) error) {

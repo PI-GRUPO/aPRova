@@ -170,7 +170,23 @@ func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRece
 	entrega.diario.InfoContext(ctx, "pull request registrado",
 		"task_run_id", execucao.ID, "acao", carga.Acao, "reentrega", execucao.JaRegistrada)
 
+	if !execucao.JaRegistrada {
+		s.avisarSeAcimaDoTeto(ctx, entrega, domain.TaskRun{
+			ID: execucao.ID, TenantID: carga.Instalacao.ID, Repositorio: carga.Repositorio.NomeCompleto,
+			NumeroPR: carga.Numero, SHAHead: carga.PullRequest.Head.SHA,
+		})
+	}
+
 	return http.StatusAccepted, nil
+}
+
+func (s *Servidor) avisarSeAcimaDoTeto(ctx context.Context, entrega entregaRecebida, taskRun domain.TaskRun) {
+	if s.avisoDeFila == nil {
+		return
+	}
+	if err := s.avisoDeFila.AvisarSeAcimaDoTeto(ctx, taskRun); err != nil {
+		entrega.diario.WarnContext(ctx, "falha ao avisar a fila no pull request", "task_run_id", taskRun.ID, "erro", err)
+	}
 }
 
 func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaRecebida, carga cargaPullRequest) (int, error) {

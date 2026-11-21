@@ -32,6 +32,12 @@ type ProcessadorDeAcoesRemotas interface {
 	Processar(ctx context.Context, corpo []byte) acaoremota.Decisao
 }
 
+// AvisoDeFila mostra no pull request que a análise do task_run novo espera o
+// teto da instalação. Falha no aviso não impede o task_run de seguir na fila.
+type AvisoDeFila interface {
+	AvisarSeAcimaDoTeto(ctx context.Context, taskRun domain.TaskRun) error
+}
+
 type FonteDeRelatorios interface {
 	RelatorioSemanal(ctx context.Context, tenantID int64, inicio, fim time.Time) (domain.RelatorioSemanal, error)
 }
@@ -41,6 +47,7 @@ type Opcoes struct {
 	Dependencias        []Dependencia
 	SegredoWebhook      []byte
 	Execucoes           RegistroDeExecucoes
+	AvisoDeFila         AvisoDeFila
 	SegredoAcoesRemotas []byte
 	AcoesRemotas        ProcessadorDeAcoesRemotas
 	Relatorios          FonteDeRelatorios
@@ -58,6 +65,7 @@ type Servidor struct {
 	dependencias        []Dependencia
 	segredoWebhook      []byte
 	execucoes           RegistroDeExecucoes
+	avisoDeFila         AvisoDeFila
 	segredoAcoesRemotas []byte
 	acoesRemotas        ProcessadorDeAcoesRemotas
 	relatorios          FonteDeRelatorios
@@ -81,6 +89,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		dependencias:        opcoes.Dependencias,
 		segredoWebhook:      opcoes.SegredoWebhook,
 		execucoes:           opcoes.Execucoes,
+		avisoDeFila:         opcoes.AvisoDeFila,
 		segredoAcoesRemotas: opcoes.SegredoAcoesRemotas,
 		acoesRemotas:        opcoes.AcoesRemotas,
 		relatorios:          opcoes.Relatorios,
