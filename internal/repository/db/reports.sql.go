@@ -66,3 +66,68 @@ func (q *Queries) GetWeeklyReport(ctx context.Context, arg GetWeeklyReportParams
 	)
 	return i, err
 }
+
+const getWeeklyReportForRepositories = `-- name: GetWeeklyReportForRepositories :one
+SELECT
+    count(*) AS total,
+    count(*) FILTER (WHERE tr.state = 'concluido') AS succeeded,
+    count(*) FILTER (WHERE tr.state = 'rejeitado') AS rejected,
+    count(*) FILTER (WHERE tr.state = 'falhou') AS failed,
+    count(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM task_steps ts
+        WHERE ts.task_run_id = tr.id AND ts.to_state = 'aguardando_aprovacao'
+    )) AS needed_approval,
+    count(*) FILTER (WHERE EXISTS (
+        SELECT 1 FROM risk_gates rg
+        WHERE rg.task_run_id = tr.id AND rg.level = 'medio'
+    )) AS medium_risk,
+    (
+        SELECT count(*) FROM pull_request_reverts rv
+        WHERE rv.tenant_id = $1
+          AND rv.repository = ANY($2::text[])
+          AND rv.reverted_at >= $3
+          AND rv.reverted_at < $4
+    ) AS reverted
+FROM task_runs tr
+WHERE tr.tenant_id = $1
+  AND tr.repository = ANY($2::text[])
+  AND tr.received_at >= $3
+  AND tr.received_at < $4
+`
+
+type GetWeeklyReportForRepositoriesParams struct {
+	TenantID     int64     `json:"tenant_id"`
+	Repositories []string  `json:"repositories"`
+	StartsAt     time.Time `json:"starts_at"`
+	EndsAt       time.Time `json:"ends_at"`
+}
+
+type GetWeeklyReportForRepositoriesRow struct {
+	Total          int64 `json:"total"`
+	Succeeded      int64 `json:"succeeded"`
+	Rejected       int64 `json:"rejected"`
+	Failed         int64 `json:"failed"`
+	NeededApproval int64 `json:"needed_approval"`
+	MediumRisk     int64 `json:"medium_risk"`
+	Reverted       int64 `json:"reverted"`
+}
+
+func (q *Queries) GetWeeklyReportForRepositories(ctx context.Context, arg GetWeeklyReportForRepositoriesParams) (GetWeeklyReportForRepositoriesRow, error) {
+	row := q.db.QueryRow(ctx, getWeeklyReportForRepositories,
+		arg.TenantID,
+		arg.Repositories,
+		arg.StartsAt,
+		arg.EndsAt,
+	)
+	var i GetWeeklyReportForRepositoriesRow
+	err := row.Scan(
+		&i.Total,
+		&i.Succeeded,
+		&i.Rejected,
+		&i.Failed,
+		&i.NeededApproval,
+		&i.MediumRisk,
+		&i.Reverted,
+	)
+	return i, err
+}

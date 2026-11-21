@@ -572,6 +572,31 @@ func (r *RepositorioPostgres) RelatorioSemanal(ctx context.Context, tenantID int
 	}, nil
 }
 
+// RelatorioSemanalDosRepositorios restringe todas as contagens ao escopo autorizado.
+func (r *RepositorioPostgres) RelatorioSemanalDosRepositorios(ctx context.Context, tenantID int64, repositorios []string, inicio, fim time.Time) (domain.RelatorioSemanal, error) {
+	if tenantID <= 0 || len(repositorios) == 0 || !fim.After(inicio) {
+		return domain.RelatorioSemanal{}, fmt.Errorf("%w: tenant %d, janela %s a %s", domain.ErrDadosInvalidos, tenantID, inicio, fim)
+	}
+
+	linha, err := r.consultas.GetWeeklyReportForRepositories(ctx, db.GetWeeklyReportForRepositoriesParams{TenantID: tenantID, Repositories: repositorios, StartsAt: inicio, EndsAt: fim})
+	if err != nil {
+		return domain.RelatorioSemanal{}, traduzir("montar relatório semanal", err)
+	}
+
+	return domain.RelatorioSemanal{
+		TenantID:          tenantID,
+		Inicio:            inicio,
+		Fim:               fim,
+		Total:             linha.Total,
+		Concluidas:        linha.Succeeded,
+		Rejeitadas:        linha.Rejected,
+		Falhas:            linha.Failed,
+		ExigiramAprovacao: linha.NeededApproval,
+		RiscoMedio:        linha.MediumRisk,
+		Revertidas:        linha.Reverted,
+	}, nil
+}
+
 // VincularIdentidade associa o usuário do Slack ao login do GitHub no tenant,
 // substituindo um vínculo anterior.
 func (r *RepositorioPostgres) VincularIdentidade(ctx context.Context, tenantID int64, usuarioSlack, loginGitHub string) error {
