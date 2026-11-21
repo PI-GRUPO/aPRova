@@ -38,6 +38,22 @@ func exercitarTodas(m *Motor) {
 	m.ErroDoGitHub(fmt.Errorf("GET /repos/x: %w", platform.ErrGitHubIndisponivel))
 	m.ErroDoGitHub(platform.ErrSemPermissao)
 	m.ErroDoGitHub(platform.ErrRespostaInesperada)
+	m.Explicacao("gerada")
+}
+
+func TestExplicacoesSeContamPorResultado(t *testing.T) {
+	registro := prometheus.NewRegistry()
+	m := NovoMotor(registro)
+
+	for _, resultado := range []string{"gerada", "gerada", "descartada", "falha", "reusada"} {
+		m.Explicacao(resultado)
+	}
+
+	for resultado, esperado := range map[string]float64{"gerada": 2, "descartada": 1, "falha": 1, "reusada": 1} {
+		if obtido := valorDoContador(t, registro, "aprova_explicacoes_total", "resultado", resultado); obtido != esperado {
+			t.Errorf("aprova_explicacoes_total{resultado=%q} = %v, esperava %v", resultado, obtido, esperado)
+		}
+	}
 }
 
 func TestNenhumaMetricaTemRotuloDeAltaCardinalidade(t *testing.T) {
