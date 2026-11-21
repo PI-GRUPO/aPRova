@@ -317,9 +317,27 @@ code {
 }
 
 .abertura-texto {
+  position: relative;
   max-width: var(--largura);
   width: 100%;
   margin: 0 auto;
+}
+
+.abertura-texto::before {
+  content: "";
+  position: absolute;
+  inset: -72px -80px -32px;
+  z-index: -1;
+  background: var(--fundo);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 80px, #000 calc(100% - 80px), transparent),
+    linear-gradient(to bottom, transparent, #000 72px, #000 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, transparent, #000 80px, #000 calc(100% - 80px), transparent),
+    linear-gradient(to bottom, transparent, #000 72px, #000 100%);
+  mask-composite: intersect;
+  pointer-events: none;
 }
 
 .selo {
@@ -1015,6 +1033,21 @@ h1 em {
 
   .lista-nunca li:first-child {
     border-top: 0;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1100px) {
+  .abertura {
+    padding-top: 360px;
+  }
+
+  .trilhas {
+    top: 72px;
+    height: 300px;
+  }
+
+  .abertura::before {
+    background: linear-gradient(to bottom, transparent 320px, var(--fundo) 400px);
   }
 }
 
