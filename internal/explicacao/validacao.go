@@ -13,6 +13,9 @@ import (
 const (
 	tamanhoMinimo = 120
 	tamanhoMaximo = 900
+
+	motivoDeAreaSensivel = "area_sensivel"
+	raizDeSeguranca      = "segur"
 )
 
 // ErrDescartada indica uma resposta do modelo que não pode ser publicada. A
@@ -21,11 +24,14 @@ var ErrDescartada = errors.New("explicacao: resposta descartada")
 
 var trechosProibidos = []string{"http", "www.", "](", "<", ">", "@", "```", "$("}
 
+var garantiasProibidas = []string{"sem riscos", "sem problemas", "nenhuma ação", "pode seguir"}
+
 var (
 	referenciaDoGitHub = regexp.MustCompile(`#\d`)
 	comandoDeTerminal  = regexp.MustCompile(`(?i)\b(git|curl|wget|sudo|npm|npx|pip|chmod)\s+[a-z-]|\brm\s+-`)
 	nivelCitado        = regexp.MustCompile(`(?i)\b(?:risco|n[ií]vel)(?:\s+(?:é|e|foi|ficou|está|esta|de|do|como|considerado|classificado|reduzido|rebaixado|para|a|em))*\s+(baixo|m[eé]dio|alto)\b`)
 	idDeMotivo         = regexp.MustCompile(`\b[a-z]+(?:_[a-z]+)+\b`)
+	segurancaDaArea    = regexp.MustCompile(`(?i)\b(?:de|da)\s+segurança`)
 	caminhoDeArquivo   = regexp.MustCompile(`[A-Za-z0-9_][A-Za-z0-9_./-]*(?:/[A-Za-z0-9_.-]+|\.[A-Za-z][A-Za-z0-9]{0,7})`)
 )
 
@@ -36,7 +42,7 @@ var (
 func Validar(resposta string, entrada Entrada) (string, error) {
 	texto := strings.Join(strings.Fields(resposta), " ")
 	for _, conferir := range []func(string, Entrada) string{
-		conferirTamanho, conferirSoTexto, conferirNivel, conferirMotivos, conferirArquivos,
+		conferirTamanho, conferirSoTexto, conferirGarantia, conferirNivel, conferirMotivos, conferirArquivos,
 	} {
 		if problema := conferir(texto, entrada); problema != "" {
 			return "", fmt.Errorf("%w: %s", ErrDescartada, problema)
@@ -67,6 +73,26 @@ func conferirSoTexto(texto string, _ Entrada) string {
 		return "contém comando de terminal"
 	}
 	return ""
+}
+
+func conferirGarantia(texto string, entrada Entrada) string {
+	minusculo := strings.ToLower(texto)
+	for _, garantia := range garantiasProibidas {
+		if strings.Contains(minusculo, garantia) {
+			return fmt.Sprintf("afirma %q, uma garantia que o aPRova não dá", garantia)
+		}
+	}
+	if temMotivo(entrada, motivoDeAreaSensivel) {
+		minusculo = segurancaDaArea.ReplaceAllString(minusculo, " ")
+	}
+	if strings.Contains(minusculo, raizDeSeguranca) {
+		return "afirma segurança, uma garantia que o aPRova não dá"
+	}
+	return ""
+}
+
+func temMotivo(entrada Entrada, id string) bool {
+	return slices.ContainsFunc(entrada.Motivos, func(motivo Motivo) bool { return motivo.ID == id })
 }
 
 func conferirNivel(texto string, entrada Entrada) string {
