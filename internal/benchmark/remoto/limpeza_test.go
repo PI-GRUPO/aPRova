@@ -16,7 +16,8 @@ func TestUltimoCommitDaBranchTrazOSHAEAArvore(t *testing.T) {
 
 	if err != nil || ultimo != base {
 		t.Errorf("último commit da main = %+v, %v; esperava %+v", ultimo, err, base)
-	}}
+	}
+}
 
 func TestFecharPRMudaOEstadoParaClosed(t *testing.T) {
 	cliente, falso := clienteDeTeste(t)
