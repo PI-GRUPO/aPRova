@@ -20,3 +20,20 @@ func TestInstrucaoOrientaOQueFazerParaCadaMotivoDoGate(t *testing.T) {
 		}
 	}
 }
+
+func TestInstrucaoPedeOSignificadoUmaVezSemAprovacaoParaFalhaENaturalidade(t *testing.T) {
+	for _, regra := range []string{
+		"uma única vez",
+		"falha_sandbox: corrigir o teste ou a compilação que falhou e enviar um commit novo; não mencione a aprovação como saída.",
+		`"1 dos 11 testes falhou"`,
+		`"o arquivo go.mod"`,
+		`"conforme evidenciado"`,
+	} {
+		if !strings.Contains(instrucaoDoSistema, regra) {
+			t.Errorf("a instrução não traz %q", regra)
+		}
+	}
+	if strings.Contains(instrucaoDoSistema, "diga também que a aprovação") {
+		t.Error("a instrução não pode pedir para repetir que a aprovação libera o merge")
+	}
+}
