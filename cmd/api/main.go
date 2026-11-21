@@ -90,6 +90,9 @@ func executar() error {
 			Commits:             leitorDeCommits(configuracao),
 			URLPublica:          configuracao.URLPublica,
 			SlugDoApp:           configuracao.GitHubAppSlug,
+
+			TetoDeLeiturasPorMinuto: configuracao.TetoDeLeiturasPorMinuto,
+			ProxyConfiavel:          configuracao.ProxyConfiavel,
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
 	}

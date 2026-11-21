@@ -30,6 +30,7 @@ const (
 	concorrenciaPadrao       = 4
 	maximoDeTentativasPadrao = 3
 	tetoDeAnalisesPadrao     = 60
+	tetoDeLeiturasPadrao     = 60
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
@@ -101,7 +102,9 @@ type Configuracao struct {
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
 
-	TetoDeAnalisesPorHora int
+	TetoDeAnalisesPorHora   int
+	TetoDeLeiturasPorMinuto int
+	ProxyConfiavel          bool
 
 	GateMaxArquivos       int
 	GateCaminhosSensiveis []string
@@ -170,7 +173,9 @@ func Carregar() (Configuracao, error) {
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
 
-		TetoDeAnalisesPorHora: leitura.inteiroPositivo("APROVA_TETO_ANALISES_POR_HORA", tetoDeAnalisesPadrao),
+		TetoDeAnalisesPorHora:   leitura.inteiroPositivo("APROVA_TETO_ANALISES_POR_HORA", tetoDeAnalisesPadrao),
+		TetoDeLeiturasPorMinuto: leitura.inteiroPositivo("APROVA_TETO_LEITURAS_POR_MINUTO", tetoDeLeiturasPadrao),
+		ProxyConfiavel:          leitura.booleano("APROVA_PROXY_CONFIAVEL"),
 
 		GateMaxArquivos:       leitura.inteiroPositivoOpcional("GATE_MAX_ARQUIVOS"),
 		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),

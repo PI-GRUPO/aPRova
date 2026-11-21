@@ -58,6 +58,9 @@ type Opcoes struct {
 	URLPublica          string
 	SlugDoApp           string
 	Agora               func() time.Time
+
+	TetoDeLeiturasPorMinuto int
+	ProxyConfiavel          bool
 }
 
 // Servidor agrupa as dependências externas usadas pelos handlers HTTP.
@@ -76,6 +79,7 @@ type Servidor struct {
 	urlPublica          string
 	slugDoApp           string
 	agora               func() time.Time
+	limiteDeLeituras    *limitePorIP
 }
 
 // NovoServidor constrói o servidor HTTP a partir das opções informadas.
@@ -100,6 +104,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 		urlPublica:          strings.TrimRight(opcoes.URLPublica, "/"),
 		slugDoApp:           opcoes.SlugDoApp,
 		agora:               agora,
+		limiteDeLeituras:    novoLimitePorIP(opcoes.TetoDeLeiturasPorMinuto, opcoes.ProxyConfiavel, agora),
 	}
 }
 
@@ -121,10 +126,13 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
 	roteador.Get("/api/analises", s.manipularListaAnalises)
 	roteador.Get("/api/analises/{id}", s.manipularConsultaAnalise)
-	roteador.Get("/receipts/keys", s.manipularChavesDeRecibo)
-	roteador.Get("/receipts/{id}", s.manipularRecibo)
-	roteador.Get("/receipts/{id}/verify", s.manipularVerificacaoDeRecibo)
-	roteador.Get("/receipts/{id}/revert", s.manipularReversaoDeRecibo)
+	roteador.Route("/receipts", func(recibos chi.Router) {
+		recibos.Use(s.limiteDeLeituras.segurar)
+		recibos.Get("/keys", s.manipularChavesDeRecibo)
+		recibos.Get("/{id}", s.manipularRecibo)
+		recibos.Get("/{id}/verify", s.manipularVerificacaoDeRecibo)
+		recibos.Get("/{id}/revert", s.manipularReversaoDeRecibo)
+	})
 
 	return roteador
 }
