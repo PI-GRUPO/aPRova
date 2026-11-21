@@ -55,6 +55,10 @@ type cargaPullRequest struct {
 		SHADoMerge string    `json:"merge_commit_sha"`
 		FechadoEm  time.Time `json:"closed_at"`
 		Corpo      string    `json:"body"`
+		Commits    int       `json:"commits"`
+		Base       struct {
+			Ref string `json:"ref"`
+		} `json:"base"`
 	} `json:"pull_request"`
 	Repositorio struct {
 		NomeCompleto string `json:"full_name"`
@@ -91,13 +95,13 @@ func (s *Servidor) manipularWebhookGitHub(w http.ResponseWriter, r *http.Request
 
 	corpoBruto, err := io.ReadAll(http.MaxBytesReader(w, r.Body, tamanhoMaximoDoCorpo))
 	if err != nil {
-		diario.Warn("corpo do webhook não pôde ser lido")
+		diario.WarnContext(r.Context(), "corpo do webhook não pôde ser lido")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if !assinaturaConfere(s.segredoWebhook, corpoBruto, r.Header.Get(cabecalhoAssinatura)) {
-		diario.Warn("assinatura do webhook não confere")
+		diario.WarnContext(r.Context(), "assinatura do webhook não confere")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -111,18 +115,18 @@ func (s *Servidor) manipularWebhookGitHub(w http.ResponseWriter, r *http.Request
 	case eventoPullRequestReview:
 		status, err = s.processarRevisao(r.Context(), entrega)
 	default:
-		diario.Debug("tipo de evento não tratado")
+		diario.DebugContext(r.Context(), "tipo de evento não tratado")
 		status = http.StatusNoContent
 	}
 
 	if err != nil {
-		diario.Error("falha ao processar webhook", "erro", err)
+		diario.ErrorContext(r.Context(), "falha ao processar webhook", "erro", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if status == http.StatusAccepted {
-		responderJSON(w, status, respostaSimples{Status: "aceito"})
+		responderJSON(w, r, status, respostaSimples{Status: "aceito"})
 		return
 	}
 	w.WriteHeader(status)
@@ -131,17 +135,17 @@ func (s *Servidor) manipularWebhookGitHub(w http.ResponseWriter, r *http.Request
 func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRecebida) (int, error) {
 	var carga cargaPullRequest
 	if err := json.Unmarshal(entrega.corpoBruto, &carga); err != nil {
-		entrega.diario.Warn("corpo do webhook não é JSON válido")
+		entrega.diario.WarnContext(ctx, "corpo do webhook não é JSON válido")
 		return http.StatusBadRequest, nil
 	}
 
 	if carga.Acao != acaoDeFechamento && !slices.Contains(acoesDePullRequestAceitas, carga.Acao) {
-		entrega.diario.Debug("ação de pull request ignorada", "acao", carga.Acao)
+		entrega.diario.DebugContext(ctx, "ação de pull request ignorada", "acao", carga.Acao)
 		return http.StatusNoContent, nil
 	}
 
 	if carga.Instalacao.ID <= 0 {
-		entrega.diario.Warn("webhook de pull request sem installation.id")
+		entrega.diario.WarnContext(ctx, "webhook de pull request sem installation.id")
 		return http.StatusBadRequest, nil
 	}
 
@@ -163,10 +167,26 @@ func (s *Servidor) processarPullRequest(ctx context.Context, entrega entregaRece
 		return 0, err
 	}
 
-	entrega.diario.Info("pull request registrado",
+	entrega.diario.InfoContext(ctx, "pull request registrado",
 		"task_run_id", execucao.ID, "acao", carga.Acao, "reentrega", execucao.JaRegistrada)
 
+	if !execucao.JaRegistrada {
+		s.avisarSeAcimaDoTeto(ctx, entrega, domain.TaskRun{
+			ID: execucao.ID, TenantID: carga.Instalacao.ID, Repositorio: carga.Repositorio.NomeCompleto,
+			NumeroPR: carga.Numero, SHAHead: carga.PullRequest.Head.SHA,
+		})
+	}
+
 	return http.StatusAccepted, nil
+}
+
+func (s *Servidor) avisarSeAcimaDoTeto(ctx context.Context, entrega entregaRecebida, taskRun domain.TaskRun) {
+	if s.avisoDeFila == nil {
+		return
+	}
+	if err := s.avisoDeFila.AvisarSeAcimaDoTeto(ctx, taskRun); err != nil {
+		entrega.diario.WarnContext(ctx, "falha ao avisar a fila no pull request", "task_run_id", taskRun.ID, "erro", err)
+	}
 }
 
 func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaRecebida, carga cargaPullRequest) (int, error) {
@@ -178,6 +198,8 @@ func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaReceb
 		Mergeado:       carga.PullRequest.Mergeado,
 		SHAHead:        carga.PullRequest.Head.SHA,
 		FechadoEm:      carga.PullRequest.FechadoEm,
+		Commits:        carga.PullRequest.Commits,
+		Base:           carga.PullRequest.Base.Ref,
 	}
 	if fechamento.Mergeado {
 		fechamento.SHADoMerge = carga.PullRequest.SHADoMerge
@@ -188,7 +210,7 @@ func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaReceb
 		return 0, err
 	}
 
-	entrega.diario.Info("fechamento de pull request registrado",
+	entrega.diario.InfoContext(ctx, "fechamento de pull request registrado",
 		"numero_pr", carga.Numero, "mergeado", fechamento.Mergeado, "reverte", fechamento.Reverte)
 	return http.StatusAccepted, nil
 }
@@ -209,23 +231,23 @@ func pullRequestRevertido(corpo, repositorio string) int {
 func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida) (int, error) {
 	var carga cargaReview
 	if err := json.Unmarshal(entrega.corpoBruto, &carga); err != nil {
-		entrega.diario.Warn("corpo do webhook não é JSON válido")
+		entrega.diario.WarnContext(ctx, "corpo do webhook não é JSON válido")
 		return http.StatusBadRequest, nil
 	}
 
 	if !slices.Contains(estadosDeReviewQueDecidem, carga.Review.Estado) {
-		entrega.diario.Debug("revisão sem decisão ignorada", "estado", carga.Review.Estado)
+		entrega.diario.DebugContext(ctx, "revisão sem decisão ignorada", "estado", carga.Review.Estado)
 		return http.StatusNoContent, nil
 	}
 
 	if carga.Instalacao.ID <= 0 {
-		entrega.diario.Warn("webhook de revisão sem installation.id")
+		entrega.diario.WarnContext(ctx, "webhook de revisão sem installation.id")
 		return http.StatusBadRequest, nil
 	}
 
 	revisor, origem, justificativa, valida := s.quemDecidiu(carga.Review.Usuario.Login, carga.Review.Corpo)
 	if !valida {
-		entrega.diario.Warn("revisão de bot sem prova de vir do Slack ignorada", "revisor", carga.Review.Usuario.Login)
+		entrega.diario.WarnContext(ctx, "revisão de bot sem prova de vir do Slack ignorada", "revisor", carga.Review.Usuario.Login)
 		return http.StatusNoContent, nil
 	}
 
@@ -242,7 +264,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		Justificativa:  justificativaNoLimite(justificativa),
 	})
 	if errors.Is(err, domain.ErrNaoEncontrado) {
-		entrega.diario.Warn("revisão de pull request sem task_run ignorada",
+		entrega.diario.WarnContext(ctx, "revisão de pull request sem task_run ignorada",
 			"repositorio", carga.Repositorio.NomeCompleto, "numero_pr", carga.PullRequest.Numero)
 		return http.StatusNoContent, nil
 	}
@@ -250,7 +272,7 @@ func (s *Servidor) processarRevisao(ctx context.Context, entrega entregaRecebida
 		return 0, err
 	}
 
-	entrega.diario.Info("decisão de revisão registrada",
+	entrega.diario.InfoContext(ctx, "decisão de revisão registrada",
 		"numero_pr", carga.PullRequest.Numero, "estado", carga.Review.Estado)
 
 	return http.StatusAccepted, nil

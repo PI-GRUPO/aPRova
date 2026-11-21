@@ -31,6 +31,8 @@ entrada padrão. A chave pública vem de GET /receipts/keys.
 
 Sai com 0 quando o recibo é válido, 1 quando é inválido e 2 quando a chave ou
 a entrada não puderam ser lidas.
+
+verificar-recibo reverter -h mostra a reversão assistida.
 `
 
 var errUso = errors.New("uso incorreto")
@@ -40,6 +42,10 @@ func main() {
 }
 
 func executar(argumentos []string, entrada io.Reader, saida, erros io.Writer) int {
+	if len(argumentos) > 0 && argumentos[0] == subcomandoReverter {
+		return executarReversao(argumentos[1:], entrada, saida, erros)
+	}
+
 	chaveiro, documento, err := lerEntradas(argumentos, entrada, erros)
 	if err != nil {
 		escrever(erros, "verificar-recibo: %v\n", err)

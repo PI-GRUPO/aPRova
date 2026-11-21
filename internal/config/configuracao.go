@@ -29,6 +29,10 @@ const (
 	urlPublicaProvisoria     = "https://aprova.example.com"
 	concorrenciaPadrao       = 4
 	maximoDeTentativasPadrao = 3
+	tetoDeAnalisesPadrao     = 60
+	tetoDeLeiturasPadrao     = 60
+	modeloDaExplicacaoPadrao = "gemini-3.5-flash-lite"
+	timeoutDaExplicacao      = 5 * time.Second
 )
 
 const origemDocker = "padrão do docker-compose local, ver .env.example"
@@ -92,12 +96,21 @@ type Configuracao struct {
 	N8NSegredoAcoes   string
 	N8NSegredoEventos string
 	URLPublica        string
+	EnderecoMetricas  string
 
 	GitHubAppSlug       string
 	SandboxDiretorios   map[string]string
 	SandboxLinguagens   map[string]string
 	WorkerConcorrencia  int
 	WorkerMaxTentativas int
+
+	TetoDeAnalisesPorHora   int
+	TetoDeLeiturasPorMinuto int
+	ProxyConfiavel          bool
+
+	ExplicacaoLigada  bool
+	ExplicacaoModelo  string
+	ExplicacaoTimeout time.Duration
 
 	GateMaxArquivos       int
 	GateCaminhosSensiveis []string
@@ -158,12 +171,21 @@ func Carregar() (Configuracao, error) {
 		N8NSegredoAcoes:   leitura.opcional("N8N_SEGREDO_ACOES", ""),
 		N8NSegredoEventos: leitura.opcional("N8N_SEGREDO_EVENTOS", ""),
 		URLPublica:        leitura.urlHTTP("APROVA_URL_PUBLICA", urlPublicaProvisoria),
+		EnderecoMetricas:  leitura.enderecoOpcional("METRICAS_ENDERECO"),
 
 		GitHubAppSlug:       leitura.opcional("GITHUB_APP_SLUG", ""),
 		SandboxDiretorios:   leitura.diretoriosDoSandbox("SANDBOX_DIRETORIOS"),
 		SandboxLinguagens:   leitura.linguagensDoSandbox("SANDBOX_LINGUAGENS"),
 		WorkerConcorrencia:  leitura.inteiroPositivo("WORKER_CONCORRENCIA", concorrenciaPadrao),
 		WorkerMaxTentativas: leitura.inteiroPositivo("WORKER_MAX_TENTATIVAS", maximoDeTentativasPadrao),
+
+		TetoDeAnalisesPorHora:   leitura.inteiroPositivo("APROVA_TETO_ANALISES_POR_HORA", tetoDeAnalisesPadrao),
+		TetoDeLeiturasPorMinuto: leitura.inteiroPositivo("APROVA_TETO_LEITURAS_POR_MINUTO", tetoDeLeiturasPadrao),
+		ProxyConfiavel:          leitura.booleano("APROVA_PROXY_CONFIAVEL"),
+
+		ExplicacaoLigada:  leitura.booleano("EXPLICACAO_LIGADA"),
+		ExplicacaoModelo:  leitura.opcional("EXPLICACAO_MODELO", modeloDaExplicacaoPadrao),
+		ExplicacaoTimeout: leitura.duracaoPositiva("EXPLICACAO_TIMEOUT", timeoutDaExplicacao),
 
 		GateMaxArquivos:       leitura.inteiroPositivoOpcional("GATE_MAX_ARQUIVOS"),
 		GateCaminhosSensiveis: leitura.caminhosDoGate("GATE_CAMINHOS_SENSIVEIS"),
@@ -387,6 +409,17 @@ func (l *leitor) urlHTTP(nome, padrao string) string {
 	endereco, err := url.Parse(valor)
 	if err != nil || (endereco.Scheme != "http" && endereco.Scheme != "https") || endereco.Host == "" {
 		l.registrarPendencia("%s espera uma URL começando com http:// ou https://, obtive %q", nome, valor)
+	}
+	return valor
+}
+
+func (l *leitor) enderecoOpcional(nome string) string {
+	valor := l.opcional(nome, "")
+	if valor == "" {
+		return ""
+	}
+	if _, porta, err := net.SplitHostPort(valor); err != nil || porta == "" {
+		l.registrarPendencia("%s espera host:porta, como :9090, obtive %q", nome, valor)
 	}
 	return valor
 }

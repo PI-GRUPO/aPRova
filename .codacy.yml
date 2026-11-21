@@ -5,6 +5,9 @@ exclude_paths:
   - "bench/resultados/**"
   - "design/**"
 engines:
+  agentlinter:
+    exclude_paths:
+      - "CLAUDE.md"
   tsqllint:
     exclude_paths:
       - "**/*.sql"

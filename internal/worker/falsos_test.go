@@ -115,7 +115,9 @@ func (a *armazenamentoFalso) Reivindicar(_ context.Context, trabalhador string, 
 		taskRun := a.taskRuns[id]
 		if a.reivindicavel(taskRun) {
 			taskRun.ReivindicadoPor = trabalhador
-			return *taskRun, true, nil
+			reivindicado := *taskRun
+			taskRun.RetomadoDePrazoVencido = false
+			return reivindicado, true, nil
 		}
 	}
 	return domain.TaskRun{}, false, nil
@@ -129,6 +131,18 @@ func (a *armazenamentoFalso) RenovarPrazo(_ context.Context, taskRunID, trabalha
 		return domain.ErrPrazoPerdido
 	}
 	return nil
+}
+
+func (a *armazenamentoFalso) marcarLeaseVencido(taskRunID string) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.taskRuns[taskRunID].RetomadoDePrazoVencido = true
+}
+
+func (a *armazenamentoFalso) tomarPrazo(taskRunID, trabalhador string) {
+	a.mutex.Lock()
+	defer a.mutex.Unlock()
+	a.taskRuns[taskRunID].ReivindicadoPor = trabalhador
 }
 
 func (a *armazenamentoFalso) Liberar(_ context.Context, taskRunID, trabalhador string, espera time.Duration) error {
@@ -359,6 +373,8 @@ func (r *registroDeChamadas) quantas(chamada string) int {
 type leitorFalso struct {
 	erros    []error
 	leituras int
+	diff     string
+	patch    string
 }
 
 func (l *leitorFalso) ContextoDoPullRequest(context.Context, int64, string, string, int) (platform.ContextoPR, error) {
@@ -368,9 +384,13 @@ func (l *leitorFalso) ContextoDoPullRequest(context.Context, int64, string, stri
 		l.erros = l.erros[1:]
 		return platform.ContextoPR{}, erro
 	}
+	diff := l.diff
+	if diff == "" {
+		diff = "diff --git a/go/frete/frete.go b/go/frete/frete.go"
+	}
 	return platform.ContextoPR{
-		Arquivos: []platform.ArquivoAlterado{{Nome: "go/frete/frete.go", Situacao: "modified", Adicoes: 1, Remocoes: 1}},
-		Diff:     "diff --git a/go/frete/frete.go b/go/frete/frete.go",
+		Arquivos: []platform.ArquivoAlterado{{Nome: "go/frete/frete.go", Situacao: "modified", Adicoes: 1, Remocoes: 1, Patch: l.patch}},
+		Diff:     diff,
 	}, nil
 }
 

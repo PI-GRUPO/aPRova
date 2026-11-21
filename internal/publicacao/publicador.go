@@ -13,6 +13,7 @@ import (
 
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/platform"
+	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 	"github.com/PI-GRUPO/aPRova/internal/worker"
 )
 
@@ -46,15 +47,23 @@ type Registro interface {
 	GravarComentario(ctx context.Context, tenantID int64, repositorio string, numeroPR int, comentarioID int64) error
 }
 
+// Explicador devolve a explicação por IA da decisão já tomada, ou vazio para
+// o comentário usar só o texto fixo. Ele nunca muda a decisão.
+type Explicador interface {
+	Explicar(ctx context.Context, taskRunID string, gate domain.GateDeRisco, resultado sandbox.ResultadoSandbox) string
+}
+
 // OpcoesPublicador reúne o que o publicador precisa. SlugDoApp identifica o
 // comentário do próprio app na conversa do pull request. URLPublica é a base
-// do link de verificação do recibo.
+// do link de verificação do recibo. Explicador é opcional: sem ele, o
+// comentário só tem o texto fixo.
 type OpcoesPublicador struct {
 	GitHub     GitHub
 	Registro   Registro
 	SlugDoApp  string
 	URLPublica string
 	Agora      func() time.Time
+	Explicador Explicador
 }
 
 // Publicador publica o resultado de cada task_run no pull request. Toda
@@ -90,24 +99,30 @@ func NovoPublicador(opcoes OpcoesPublicador) (*Publicador, error) {
 	return &Publicador{opcoes: opcoes}, nil
 }
 
-// Iniciar cria o Check Run em andamento, para o pull request mostrar que a
-// análise começou. Se o task_run já tem Check Run, nada muda.
+// Iniciar deixa o Check Run do task_run em andamento, para o pull request
+// mostrar que a análise começou. Se o task_run já tem Check Run, por exemplo o
+// da fila, ele é atualizado em vez de criado outro.
 func (p *Publicador) Iniciar(ctx context.Context, taskRun domain.TaskRun) error {
-	id, err := p.checkRunConhecido(ctx, taskRun)
-	if err != nil || id != 0 {
-		return explicar(err)
-	}
-	return explicar(p.criarCheckRun(ctx, taskRun, p.checkRunEmAndamento(taskRun)))
+	return explicar(p.gravarCheckRun(ctx, taskRun, p.checkRunEmAndamento(taskRun)))
 }
 
 // Publicar conclui o Check Run do task_run e escreve o resultado no
-// comentário do pull request.
+// comentário do pull request. A explicação por IA, se houver, só é pedida
+// depois do Check Run e só entra no comentário.
 func (p *Publicador) Publicar(ctx context.Context, publicacao worker.Publicacao) error {
 	resultado := p.resultado(publicacao)
 	if err := p.gravarCheckRun(ctx, publicacao.TaskRun, resultado.checkRun()); err != nil {
 		return explicar(err)
 	}
+	resultado.explicacaoPorIA = p.explicacaoPorIA(ctx, publicacao)
 	return explicar(p.gravarComentario(ctx, publicacao.TaskRun, resultado.comentario()))
+}
+
+func (p *Publicador) explicacaoPorIA(ctx context.Context, publicacao worker.Publicacao) string {
+	if p.opcoes.Explicador == nil {
+		return ""
+	}
+	return p.opcoes.Explicador.Explicar(ctx, publicacao.TaskRun.ID, publicacao.Gate, publicacao.Sandbox)
 }
 
 // PublicarFalha conclui o Check Run do task_run como failure, com o

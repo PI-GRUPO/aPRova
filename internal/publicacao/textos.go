@@ -45,6 +45,7 @@ type resultado struct {
 	worker.Publicacao
 	urlDeVerificacao string
 	concluidoEm      time.Time
+	explicacaoPorIA  string
 }
 
 func (p *Publicador) resultado(publicacao worker.Publicacao) resultado {
@@ -133,15 +134,31 @@ func (r resultado) comentario() string {
 		cabecalho += ", aprovado por @" + r.AprovadoPor
 	}
 
-	partes := []string{
-		marcaDoComentario,
-		cabecalho,
-		r.explicacao(),
-		"**Commit analisado:** " + codigo(shaCurto(r.TaskRun.SHAHead)),
+	partes := []string{marcaDoComentario, cabecalho, r.explicacao()}
+	partes = append(partes, r.partesDaExplicacaoPorIA()...)
+	partes = append(partes,
+		"**Commit analisado:** "+codigo(shaCurto(r.TaskRun.SHAHead)),
 		r.secoes(),
-		"<sub>O aPRova nunca faz merge. Ele publica este resultado e o check **" + NomeDoCheckRun + "**; quem decide se o merge pode acontecer é a proteção de branch do repositório. A explicação acima é montada a partir das regras do gate, sem modelo de IA.</sub>",
-	}
+		"<sub>O aPRova nunca faz merge. Ele publica este resultado e o check **"+NomeDoCheckRun+"**; quem decide se o merge pode acontecer é a proteção de branch do repositório."+r.origemDaExplicacao()+"</sub>",
+	)
 	return strings.Join(partes, "\n\n")
+}
+
+func (r resultado) partesDaExplicacaoPorIA() []string {
+	if r.explicacaoPorIA == "" {
+		return nil
+	}
+	return []string{
+		r.explicacaoPorIA,
+		"<sub>Explicação gerada por IA a partir da decisão já tomada. A decisão vem das regras do aPRova e está no [recibo assinado](" + r.urlDeVerificacao + ").</sub>",
+	}
+}
+
+func (r resultado) origemDaExplicacao() string {
+	if r.explicacaoPorIA != "" {
+		return ""
+	}
+	return " A explicação acima é montada a partir das regras do gate, sem modelo de IA."
 }
 
 func (r resultado) secoes() string {

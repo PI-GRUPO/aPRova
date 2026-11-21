@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/PI-GRUPO/aPRova/internal/rastro"
 )
 
 func capturarLogJSON(t *testing.T) *bytes.Buffer {
@@ -15,7 +17,7 @@ func capturarLogJSON(t *testing.T) *bytes.Buffer {
 
 	var saida bytes.Buffer
 	anterior := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&saida, &slog.HandlerOptions{Level: slog.LevelDebug})))
+	slog.SetDefault(slog.New(rastro.NovoHandler(slog.NewJSONHandler(&saida, &slog.HandlerOptions{Level: slog.LevelDebug}))))
 	t.Cleanup(func() { slog.SetDefault(anterior) })
 
 	return &saida

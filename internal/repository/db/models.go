@@ -63,6 +63,8 @@ type PullRequestOutcome struct {
 	DeliveryID     string    `json:"delivery_id"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+	Commits        int32     `json:"commits"`
+	BaseRef        *string   `json:"base_ref"`
 }
 
 type PullRequestRevert struct {
@@ -103,6 +105,15 @@ type RemoteActionAttempt struct {
 	CreatedAt     time.Time `json:"created_at"`
 	ID            int64     `json:"id"`
 	Justification string    `json:"justification"`
+}
+
+type RiskExplanation struct {
+	TaskRunID string    `json:"task_run_id"`
+	Result    string    `json:"result"`
+	Text      string    `json:"text"`
+	Model     string    `json:"model"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type RiskGate struct {
@@ -169,6 +180,7 @@ type TaskRun struct {
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
 	CheckRunID       *int64     `json:"check_run_id"`
+	StartedAt        *time.Time `json:"started_at"`
 }
 
 type TaskStep struct {

@@ -16,6 +16,7 @@ type SituacaoCheckRun string
 
 // Andamentos de Check Run usados pelo aPRova.
 const (
+	CheckRunNaFila      SituacaoCheckRun = "queued"
 	CheckRunEmAndamento SituacaoCheckRun = "in_progress"
 	CheckRunConcluido   SituacaoCheckRun = "completed"
 )

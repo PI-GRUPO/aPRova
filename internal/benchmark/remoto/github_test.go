@@ -13,20 +13,21 @@ import (
 )
 
 type githubFalso struct {
-	mu       sync.Mutex
-	blobs    map[string]string
-	arvores  map[string]map[string]any
-	commits  map[string]map[string]any
-	refs     map[string]string
-	prs      []map[string]any
-	checks   map[string]map[string]any
-	contador int
-	pedidos  []string
+	mu          sync.Mutex
+	blobs       map[string]string
+	arvores     map[string]map[string]any
+	commits     map[string]map[string]any
+	refs        map[string]string
+	prs         []map[string]any
+	checks      map[string]map[string]any
+	comentarios map[int][]string
+	contador    int
+	pedidos     []string
 }
 
 func novoGitHubFalso() *githubFalso {
 	return &githubFalso{blobs: map[string]string{}, arvores: map[string]map[string]any{}, commits: map[string]map[string]any{},
-		refs: map[string]string{}, checks: map[string]map[string]any{}}
+		refs: map[string]string{}, checks: map[string]map[string]any{}, comentarios: map[int][]string{}}
 }
 
 func (g *githubFalso) novoSHA() string {
@@ -99,6 +100,37 @@ func (g *githubFalso) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			runs = append(runs, check)
 		}
 		responder(http.StatusOK, map[string]any{"total_count": len(runs), "check_runs": runs})
+	case r.Method == http.MethodGet && strings.HasPrefix(caminho, "/git/ref/heads/"):
+		ref := "refs/heads/" + strings.TrimPrefix(caminho, "/git/ref/heads/")
+		responder(http.StatusOK, map[string]any{"ref": ref, "object": map[string]any{"sha": g.refs[ref]}})
+	case r.Method == http.MethodGet && strings.HasPrefix(caminho, "/git/commits/"):
+		sha := strings.TrimPrefix(caminho, "/git/commits/")
+		responder(http.StatusOK, map[string]any{"sha": sha, "tree": map[string]any{"sha": g.commits[sha]["tree"]}})
+	case r.Method == http.MethodGet && strings.HasPrefix(caminho, "/git/matching-refs/heads/"):
+		prefixo := "refs/heads/" + strings.TrimPrefix(caminho, "/git/matching-refs/heads/")
+		var refs []map[string]any
+		for ref := range g.refs {
+			if strings.HasPrefix(ref, prefixo) {
+				refs = append(refs, map[string]any{"ref": ref})
+			}
+		}
+		responder(http.StatusOK, refs)
+	case r.Method == http.MethodDelete && strings.HasPrefix(caminho, "/git/refs/heads/"):
+		delete(g.refs, "refs/heads/"+strings.TrimPrefix(caminho, "/git/refs/heads/"))
+		w.WriteHeader(http.StatusNoContent)
+	case r.Method == http.MethodPatch && strings.HasPrefix(caminho, "/pulls/"):
+		var numero int
+		_, _ = fmt.Sscanf(strings.TrimPrefix(caminho, "/pulls/"), "%d", &numero)
+		g.prs[numero-1]["state"] = corpo["state"]
+		responder(http.StatusOK, g.prs[numero-1])
+	case r.Method == http.MethodGet && strings.HasPrefix(caminho, "/issues/") && strings.HasSuffix(caminho, "/comments"):
+		var numero int
+		_, _ = fmt.Sscanf(strings.TrimPrefix(caminho, "/issues/"), "%d", &numero)
+		var comentarios []map[string]any
+		for _, corpoDoComentario := range g.comentarios[numero] {
+			comentarios = append(comentarios, map[string]any{"body": corpoDoComentario})
+		}
+		responder(http.StatusOK, comentarios)
 	default:
 		http.Error(w, "rota desconhecida "+r.Method+" "+r.URL.Path, http.StatusNotFound)
 	}

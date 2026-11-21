@@ -21,6 +21,7 @@ import (
 
 const (
 	intervaloConsultaPadrao  = 500 * time.Millisecond
+	tetoDeAnalisesPadrao     = 60
 	primeiraTentativa        = 1
 	maximoDeTentativas       = 1000
 	indiceDeUmaAceitaPorAcao = "remote_action_attempts_uma_aceita_por_acao"
@@ -50,10 +51,13 @@ type conexao interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-// OpcoesPostgres ajusta o repositório. Intervalo vazio assume o padrão.
+// OpcoesPostgres ajusta o repositório. Valor vazio assume o padrão.
 type OpcoesPostgres struct {
 	// IntervaloConsulta é a espera entre consultas de Aguardar.
 	IntervaloConsulta time.Duration
+	// TetoDeAnalisesPorHora é quantas análises novas cada instalação inicia
+	// por hora. O padrão é 60.
+	TetoDeAnalisesPorHora int
 }
 
 // RepositorioPostgres persiste o núcleo do aPRova em PostgreSQL. Implementa
@@ -63,6 +67,7 @@ type RepositorioPostgres struct {
 	conexao           conexao
 	consultas         *db.Queries
 	intervaloConsulta time.Duration
+	tetoDeAnalises    int64
 }
 
 // NovoRepositorioPostgres constrói o repositório sobre o pool informado.
@@ -70,7 +75,12 @@ func NovoRepositorioPostgres(pool *pgxpool.Pool, opcoes OpcoesPostgres) *Reposit
 	if opcoes.IntervaloConsulta <= 0 {
 		opcoes.IntervaloConsulta = intervaloConsultaPadrao
 	}
-	return &RepositorioPostgres{conexao: pool, consultas: db.New(pool), intervaloConsulta: opcoes.IntervaloConsulta}
+	if opcoes.TetoDeAnalisesPorHora <= 0 {
+		opcoes.TetoDeAnalisesPorHora = tetoDeAnalisesPadrao
+	}
+	return &RepositorioPostgres{
+		conexao: pool, consultas: db.New(pool), intervaloConsulta: opcoes.IntervaloConsulta, tetoDeAnalises: int64(opcoes.TetoDeAnalisesPorHora),
+	}
 }
 
 // EmTransacao roda fn com um repositório preso a uma transação. Erro ou panic
@@ -87,7 +97,7 @@ func (r *RepositorioPostgres) EmTransacao(ctx context.Context, fn func(tx *Repos
 		}
 	}()
 
-	if err := fn(&RepositorioPostgres{conexao: transacao, consultas: r.consultas.WithTx(transacao), intervaloConsulta: r.intervaloConsulta}); err != nil {
+	if err := fn(&RepositorioPostgres{conexao: transacao, consultas: r.consultas.WithTx(transacao), intervaloConsulta: r.intervaloConsulta, tetoDeAnalises: r.tetoDeAnalises}); err != nil {
 		return err
 	}
 
@@ -693,6 +703,13 @@ func numeroDePR(numero int) (int32, error) {
 		return 0, fmt.Errorf("%w: número de PR %d fora de 1..%d", domain.ErrDadosInvalidos, numero, math.MaxInt32)
 	}
 	return int32(numero), nil
+}
+
+func commitsDoPR(commits int) (int32, error) {
+	if commits < 0 || commits > math.MaxInt32 {
+		return 0, fmt.Errorf("%w: %d commits fora de 0..%d", domain.ErrDadosInvalidos, commits, math.MaxInt32)
+	}
+	return int32(commits), nil
 }
 
 func validar(valor any) error {

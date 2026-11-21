@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -411,5 +412,25 @@ func TestProgramaRecusaDiretorioDoProjetoQueELinkParaDentroDoRepositorio(t *test
 				t.Error("nenhum projeto pode ser testado pelo caminho de um link")
 			}
 		})
+	}
+}
+
+func TestProgramaNaoRepeteOTaskRunIDQueOLoggerJaLeva(t *testing.T) {
+	var saida bytes.Buffer
+	anterior := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&saida, nil)).With("task_run_id", "c41d7e9a-2f3b-4c8d-a5e6-0b1c2d3e4f5a"))
+	t.Cleanup(func() { slog.SetDefault(anterior) })
+
+	c := novoCenarioDoPrograma()
+	c.executar(t)
+
+	linhas := strings.Split(strings.TrimSpace(saida.String()), "\n")
+	if len(linhas) == 0 || linhas[0] == "" {
+		t.Fatal("o programa não registrou nada")
+	}
+	for _, linha := range linhas {
+		if vezes := strings.Count(linha, `"task_run_id"`); vezes != 1 {
+			t.Errorf("a linha leva o task_run_id %d vezes, esperava 1: %s", vezes, linha)
+		}
 	}
 }
