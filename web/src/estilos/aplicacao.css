@@ -21,7 +21,7 @@ button:disabled {
 	inset: 0 auto 0 0;
 	width: 240px;
 	padding: 28px 16px 20px;
-	border: 1px solid var(--borda-padrao);
+	border-right: 1px solid var(--borda-padrao);
 	background: var(--fundo-superficie);
 	display: flex;
 	flex-direction: column;
