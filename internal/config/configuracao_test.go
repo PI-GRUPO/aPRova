@@ -31,7 +31,7 @@ func ambienteLimpo(t *testing.T) {
 		"GATE_MAX_ARQUIVOS", "GATE_CAMINHOS_SENSIVEIS",
 		"CALIBRACAO_LIGADA", "CALIBRACAO_VIZINHOS", "CALIBRACAO_SIMILARIDADE_MINIMA",
 		"CALIBRACAO_MINIMO_DE_DESFECHOS", "CALIBRACAO_TIMEOUT", "GEMINI_API_KEY", "SARIF_LIGADO",
-		"METRICAS_ENDERECO", "APROVA_TETO_ANALISES_POR_HORA",
+		"METRICAS_ENDERECO", "APROVA_TETO_ANALISES_POR_HORA", "APROVA_TETO_LEITURAS_POR_MINUTO", "APROVA_PROXY_CONFIAVEL",
 	} {
 		t.Setenv(variavel, "")
 	}
@@ -407,6 +407,9 @@ func TestCarregarUsaOsPadroesDoWorker(t *testing.T) {
 	if configuracao.TetoDeAnalisesPorHora != 60 {
 		t.Errorf("sem APROVA_TETO_ANALISES_POR_HORA o teto é 60, obtive %d", configuracao.TetoDeAnalisesPorHora)
 	}
+	if configuracao.TetoDeLeiturasPorMinuto != 60 || configuracao.ProxyConfiavel {
+		t.Errorf("padrões das leituras: teto %d, proxy confiável %v", configuracao.TetoDeLeiturasPorMinuto, configuracao.ProxyConfiavel)
+	}
 	if configuracao.URLPublica != "https://aprova.example.com" {
 		t.Errorf("sem APROVA_URL_PUBLICA vale o endereço provisório, obtive %q", configuracao.URLPublica)
 	}
@@ -424,6 +427,8 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 	t.Setenv("SANDBOX_DIRETORIOS", " Azulpasta/aPRova-TESTES=go , PI-GRUPO/outro=servicos/api ")
 	t.Setenv("GITHUB_APP_SLUG", "aprova-pi")
 	t.Setenv("APROVA_TETO_ANALISES_POR_HORA", "90")
+	t.Setenv("APROVA_TETO_LEITURAS_POR_MINUTO", "120")
+	t.Setenv("APROVA_PROXY_CONFIAVEL", "true")
 
 	configuracao, err := Carregar()
 	if err != nil {
@@ -433,8 +438,9 @@ func TestCarregarLeAsVariaveisDoWorker(t *testing.T) {
 	if configuracao.WorkerConcorrencia != 8 || configuracao.WorkerMaxTentativas != 5 {
 		t.Errorf("worker: concorrência %d, tentativas %d", configuracao.WorkerConcorrencia, configuracao.WorkerMaxTentativas)
 	}
-	if configuracao.TetoDeAnalisesPorHora != 90 {
-		t.Errorf("teto de análises lido errado: %d", configuracao.TetoDeAnalisesPorHora)
+	if configuracao.TetoDeAnalisesPorHora != 90 || configuracao.TetoDeLeiturasPorMinuto != 120 || !configuracao.ProxyConfiavel {
+		t.Errorf("limites lidos errado: análises %d, leituras %d, proxy %v",
+			configuracao.TetoDeAnalisesPorHora, configuracao.TetoDeLeiturasPorMinuto, configuracao.ProxyConfiavel)
 	}
 	if configuracao.N8NSegredoEventos != "segredo-dos-eventos" || configuracao.GitHubAppSlug != "aprova-pi" {
 		t.Errorf("segredo ou slug lidos errado: %q %q", configuracao.N8NSegredoEventos, configuracao.GitHubAppSlug)
@@ -455,6 +461,8 @@ func TestCarregarRecusaVariaveisDoWorkerInvalidas(t *testing.T) {
 		"WORKER_CONCORRENCIA=quatro":                         "WORKER_CONCORRENCIA",
 		"WORKER_MAX_TENTATIVAS=0":                            "WORKER_MAX_TENTATIVAS",
 		"APROVA_TETO_ANALISES_POR_HORA=0":                    "APROVA_TETO_ANALISES_POR_HORA",
+		"APROVA_TETO_LEITURAS_POR_MINUTO=0":                  "APROVA_TETO_LEITURAS_POR_MINUTO",
+		"APROVA_PROXY_CONFIAVEL=sim":                         "APROVA_PROXY_CONFIAVEL",
 		"APROVA_URL_PUBLICA=api.aprova.test":                 "APROVA_URL_PUBLICA",
 		"SANDBOX_DIRETORIOS=Azulpasta/aPRova-TESTES":         "SANDBOX_DIRETORIOS",
 		"SANDBOX_DIRETORIOS==go":                             "SANDBOX_DIRETORIOS",
