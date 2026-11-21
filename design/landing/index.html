@@ -345,12 +345,19 @@
   </div>
 </section>
 
-<section class="secao" id="benchmark" aria-labelledby="titulo-bench">
+<section class="secao bench" id="benchmark" aria-labelledby="titulo-bench">
   <div class="bench-intro">
     <h2 id="titulo-bench">O aPRova barra o código quebrado e deixa passar o certo?</h2>
     <p class="lead">Uma IA resolveu 21 exercícios, e cada solução passou pelo aPRova. Os testes originais diziam quais estavam certas.</p>
     <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
   </div>
+  <figure class="print bench-print">
+    <div class="navegador">
+      <div class="navegador-barra" aria-hidden="true"><span class="navegador-pontos"><i></i><i></i><i></i></span><span class="navegador-url">github.com/Azulpasta/aprova-bench-python/pull/13</span></div>
+      <a class="ampliar" href="imagens/bench-python-13-check.webp"><img src="imagens/bench-python-13-check.webp" width="650" height="400" loading="lazy" decoding="async" alt="Verificação do aPRova no PR #13 do repositório aprova-bench-python, tarefa python-food-chain da rodada 2b: «Risco alto: merge bloqueado até aprovação humana», com os motivos código sem teste e «5 de 10 testes falharam»."></a>
+    </div>
+    <figcaption>Uma das 4 soluções quebradas da rodada 2b, barrada: 5 de 10 testes falharam.</figcaption>
+  </figure>
 
   <div class="tabela-bench">
     <table>
@@ -373,6 +380,24 @@
     <p>Na rodada 2b, as 4 quebradas foram barradas; em 6 casos de risco montados, 6 de 6 acertaram o nível.</p>
     <p class="limites"><strong>Limites:</strong> uma rodada por tarefa, só 4 quebradas, e a 2b mudou modelo e execução juntos. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo</a></p>
   </div>
+  <figure class="bench-grafico">
+    <svg viewBox="0 0 360 204" role="img" aria-labelledby="grafico-titulo">
+      <title id="grafico-titulo">Rodada 2b: 21 soluções entregues, 4 quebradas, 4 barradas pelo aPRova e 0 quebradas que passaram.</title>
+      <text class="grafico-rotulo" x="0" y="14">Soluções entregues</text>
+      <rect class="grafico-barra" x="0" y="22" width="300" height="16" rx="3"/>
+      <text class="grafico-numero" x="310" y="37">21</text>
+      <text class="grafico-rotulo" x="0" y="66">Quebradas</text>
+      <rect class="grafico-barra" x="0" y="74" width="57" height="16" rx="3"/>
+      <text class="grafico-numero" x="67" y="89">4</text>
+      <text class="grafico-rotulo" x="0" y="118">Barradas pelo aPRova</text>
+      <rect class="grafico-barra" x="0" y="126" width="57" height="16" rx="3"/>
+      <text class="grafico-numero" x="67" y="141">4</text>
+      <text class="grafico-rotulo" x="0" y="170">Quebradas que passaram</text>
+      <rect class="grafico-zero" x="0" y="178" width="2" height="16"/>
+      <text class="grafico-numero destaque" x="10" y="193">0</text>
+    </svg>
+    <figcaption>Rodada 2b do estudo-piloto.</figcaption>
+  </figure>
 </section>
 
 <section class="secao nunca" aria-labelledby="titulo-nunca">

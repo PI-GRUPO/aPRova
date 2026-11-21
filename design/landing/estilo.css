@@ -1165,6 +1165,110 @@ h1 em {
   font-size: 0.875rem !important;
 }
 
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 40px clamp(32px, 5vw, 72px);
+  align-items: start;
+}
+
+.tabela-bench {
+  grid-column: 1 / -1;
+}
+
+.bench-print {
+  margin: 0;
+}
+
+.navegador {
+  border: 1px solid var(--borda-forte);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--superficie);
+  box-shadow: 0 24px 48px -28px var(--sombra);
+}
+
+.navegador-barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borda);
+  background: var(--elevado);
+}
+
+.navegador-pontos {
+  display: flex;
+  gap: 6px;
+}
+
+.navegador-pontos i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--borda-forte);
+}
+
+.navegador-url {
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: var(--superficie);
+  color: var(--secundario);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.navegador .ampliar {
+  border: 0;
+  border-radius: 0;
+}
+
+.bench-grafico {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.bench-grafico svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+
+.grafico-rotulo {
+  fill: var(--texto);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 13px;
+}
+
+.grafico-barra {
+  fill: var(--secundario);
+}
+
+.grafico-zero {
+  fill: var(--borda-forte);
+}
+
+.grafico-numero {
+  fill: var(--titulo);
+  font-family: var(--pontos);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.grafico-numero.destaque {
+  fill: var(--lima-detalhe);
+}
+
+.bench-grafico figcaption {
+  color: var(--secundario);
+  font-size: 0.875rem;
+}
+
 .bench-intro {
   display: grid;
   gap: 18px;
@@ -1181,7 +1285,7 @@ h1 em {
 }
 
 .tabela-bench {
-  margin-top: 44px;
+  margin-top: 0;
 }
 
 .tabela-bench table {
@@ -1241,7 +1345,6 @@ h1 em {
 .bench-leitura {
   display: grid;
   gap: 14px;
-  margin-top: 36px;
   max-width: 58ch;
 }
 
@@ -1328,6 +1431,10 @@ h1 em {
   }
 
     .lista-tambem {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bench {
     grid-template-columns: minmax(0, 1fr);
   }
 
