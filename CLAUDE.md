@@ -19,6 +19,7 @@ Faça uso máximo das skills disponíveis no ambiente para qualquer tarefa aplic
 Nomes de arquivos devem seguir o padrão idiomático já usado no projeto (ex: convenção do Go, convenção do React/TypeScript), porém **em português**, exceto quando isso quebrar a compilação ou violar uma convenção obrigatória da linguagem/framework (ex: nomes reservados, arquivos que precisam de nome fixo como `main.go`, `index.tsx`, `package.json`).
 
 Exemplos:
+
 - Correto: `execucao_tarefa.go`, `PainelExecucoes.tsx`
 - Evitar apenas se quebrar build/import: nomes que colidem com convenções obrigatórias da ferramenta
 
@@ -29,6 +30,7 @@ Exemplos:
 ## Código limpo
 
 Siga estritamente as regras de código limpo (Clean Code) em todo o projeto:
+
 - Funções pequenas, com responsabilidade única
 - Nomes descritivos e sem abreviações desnecessárias
 - Evitar duplicação de código
@@ -55,6 +57,7 @@ Siga esta estrutura de pastas para o backend:
 ## Exceção obrigatória: documentação de exports em Go
 
 A única exceção à regra de "nunca comentar" é a documentação de identificadores exportados em Go (funções, tipos, structs, constantes públicas), exigida pela convenção `godoc` da linguagem. Nesse caso específico, e somente nesse caso:
+
 - O comentário deve ser em **português**
 - Deve seguir o formato padrão do Go (começar com o nome do identificador)
 - Deve ser estritamente descritivo do contrato (o que a função faz, parâmetros, retorno) — nunca explicativo de lógica interna ou justificativa de decisão de implementação
