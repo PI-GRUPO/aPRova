@@ -695,6 +695,13 @@ func numeroDePR(numero int) (int32, error) {
 	return int32(numero), nil
 }
 
+func commitsDoPR(commits int) (int32, error) {
+	if commits < 0 || commits > math.MaxInt32 {
+		return 0, fmt.Errorf("%w: %d commits fora de 0..%d", domain.ErrDadosInvalidos, commits, math.MaxInt32)
+	}
+	return int32(commits), nil
+}
+
 func validar(valor any) error {
 	if err := validador.Struct(valor); err != nil {
 		return fmt.Errorf("%w: %w", domain.ErrDadosInvalidos, err)

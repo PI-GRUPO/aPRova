@@ -55,6 +55,7 @@ type cargaPullRequest struct {
 		SHADoMerge string    `json:"merge_commit_sha"`
 		FechadoEm  time.Time `json:"closed_at"`
 		Corpo      string    `json:"body"`
+		Commits    int       `json:"commits"`
 	} `json:"pull_request"`
 	Repositorio struct {
 		NomeCompleto string `json:"full_name"`
@@ -178,6 +179,7 @@ func (s *Servidor) registrarFechamento(ctx context.Context, entrega entregaReceb
 		Mergeado:       carga.PullRequest.Mergeado,
 		SHAHead:        carga.PullRequest.Head.SHA,
 		FechadoEm:      carga.PullRequest.FechadoEm,
+		Commits:        carga.PullRequest.Commits,
 	}
 	if fechamento.Mergeado {
 		fechamento.SHADoMerge = carga.PullRequest.SHADoMerge

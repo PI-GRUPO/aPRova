@@ -63,6 +63,7 @@ type PullRequestOutcome struct {
 	DeliveryID     string    `json:"delivery_id"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
+	Commits        int32     `json:"commits"`
 }
 
 type PullRequestRevert struct {
