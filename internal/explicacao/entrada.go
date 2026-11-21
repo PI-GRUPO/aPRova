@@ -12,7 +12,10 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/sandbox"
 )
 
-const maximoDeEvidenciasPorMotivo = 20
+const (
+	maximoDeEvidenciasPorMotivo = 20
+	motivoDeFalhaNoSandbox      = "falha_sandbox"
+)
 
 var nomeDoNivel = map[domain.NivelRisco]string{
 	domain.RiscoBaixo: "baixo",
@@ -39,7 +42,8 @@ type Entrada struct {
 }
 
 // Motivo é um motivo de risco do rules_hit, com as evidências que o gate
-// gravou: caminhos de arquivo ou frases fixas sobre o sandbox.
+// gravou. Em falha_sandbox as evidências vão vazias: o modelo escreve a partir
+// dos números do campo sandbox.
 type Motivo struct {
 	ID         string   `json:"id"`
 	Nivel      string   `json:"nivel"`
@@ -96,11 +100,17 @@ func motivosDeRisco(motivos []domain.MotivoDeRisco) []Motivo {
 			continue
 		}
 		deRisco = append(deRisco, Motivo{
-			ID: motivo.ID, Nivel: nomeDoNivel[motivo.Nivel], Descricao: motivo.Descricao,
-			Evidencias: motivo.Evidencias[:min(len(motivo.Evidencias), maximoDeEvidenciasPorMotivo)],
+			ID: motivo.ID, Nivel: nomeDoNivel[motivo.Nivel], Descricao: motivo.Descricao, Evidencias: evidenciasParaOModelo(motivo),
 		})
 	}
 	return deRisco
+}
+
+func evidenciasParaOModelo(motivo domain.MotivoDeRisco) []string {
+	if motivo.ID == motivoDeFalhaNoSandbox {
+		return []string{}
+	}
+	return motivo.Evidencias[:min(len(motivo.Evidencias), maximoDeEvidenciasPorMotivo)]
 }
 
 func tipoDeFalha(tipo sandbox.TipoFalha) string {
