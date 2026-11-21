@@ -451,10 +451,13 @@ não pode ser forjado.
 | `GET /receipts/{id}` | os bytes assinados em base64, a assinatura, o `key_id` e o conteúdo para leitura |
 | `GET /receipts/{id}/verify` | `valido` verdadeiro ou falso e, quando falso, qual verificação falhou |
 | `GET /receipts/keys` | as chaves públicas aceitas |
+| `GET /receipts/{id}/revert` | a verificação e, para PR mergeado, o comando `git` e o texto do PR de reversão |
 
-As três são públicas e só de leitura. O passo a passo para verificar com o
+Todas são públicas e só de leitura. O passo a passo para verificar com o
 executável `cmd/verificar-recibo` e com `openssl` puro está em
-[docs/verificacao-recibo.md](docs/verificacao-recibo.md).
+[docs/verificacao-recibo.md](docs/verificacao-recibo.md). A reversão assistida,
+que nunca executa nada, está em
+[docs/reversao-assistida.md](docs/reversao-assistida.md).
 
 `GATE_CAMINHOS_SENSIVEIS` aceita, separados por vírgula, diretórios terminados em
 barra, que valem em qualquer profundidade, e padrões de nome de arquivo. O padrão
