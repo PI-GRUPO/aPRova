@@ -39,15 +39,25 @@ WITH alvo AS (
               WHERE novo.tenant_id = tr.tenant_id AND novo.repository = tr.repository AND novo.pr_number = tr.pr_number
                 AND (novo.created_at, novo.id) > (tr.created_at, tr.id))
       )
+      AND (
+          tr.started_at IS NOT NULL
+          OR (SELECT count(*) FROM task_runs iniciado
+              WHERE iniciado.tenant_id = tr.tenant_id
+                AND iniciado.started_at > now() - interval '1 hour') < sqlc.arg(teto_por_hora)::bigint
+      )
     ORDER BY tr.created_at, tr.id
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
 UPDATE task_runs
-SET claimed_by = sqlc.arg(worker), lease_expires_at = now() + make_interval(secs => sqlc.arg(lease_seconds)::double precision)
+SET claimed_by = sqlc.arg(worker), lease_expires_at = now() + make_interval(secs => sqlc.arg(lease_seconds)::double precision),
+    started_at = COALESCE(task_runs.started_at, now())
 FROM alvo
 WHERE task_runs.id = alvo.id
 RETURNING sqlc.embed(task_runs), alvo.retomado_de_prazo_vencido::boolean AS retomado_de_prazo_vencido;
+
+-- name: CountTaskRunsStartedInLastHour :one
+SELECT count(*) FROM task_runs WHERE tenant_id = $1 AND started_at > now() - interval '1 hour';
 
 -- name: CountPendingTaskRuns :one
 SELECT count(*) FROM task_runs WHERE state = 'pendente';

@@ -16,9 +16,13 @@ import (
 // Reivindicar entrega ao trabalhador o task_run não terminal mais antigo que
 // está livre, gravando quem o assumiu e até quando. Um task_run em
 // aguardando_aprovacao só é entregue com review novo ou com push mais novo no
-// mesmo PR. Sem trabalho disponível, devolve encontrado igual a false.
+// mesmo PR. Um task_run pendente que nunca começou só é entregue se a
+// instalação iniciou menos análises na última hora que o teto; acima dele, ele
+// espera na fila. Sem trabalho disponível, devolve encontrado igual a false.
 func (r *RepositorioPostgres) Reivindicar(ctx context.Context, trabalhador string, prazo time.Duration) (domain.TaskRun, bool, error) {
-	linha, err := r.consultas.ClaimNextTaskRun(ctx, db.ClaimNextTaskRunParams{Worker: &trabalhador, LeaseSeconds: prazo.Seconds()})
+	linha, err := r.consultas.ClaimNextTaskRun(ctx, db.ClaimNextTaskRunParams{
+		Worker: &trabalhador, LeaseSeconds: prazo.Seconds(), TetoPorHora: r.tetoDeAnalises,
+	})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.TaskRun{}, false, nil
 	}
@@ -28,6 +32,21 @@ func (r *RepositorioPostgres) Reivindicar(ctx context.Context, trabalhador strin
 	taskRun := paraTaskRun(linha.TaskRun)
 	taskRun.RetomadoDePrazoVencido = linha.RetomadoDePrazoVencido
 	return taskRun, true, nil
+}
+
+// AnalisesIniciadasNaUltimaHora devolve quantas análises a instalação iniciou
+// na última hora, a mesma contagem que o teto de Reivindicar usa.
+func (r *RepositorioPostgres) AnalisesIniciadasNaUltimaHora(ctx context.Context, tenantID int64) (int, error) {
+	total, err := r.consultas.CountTaskRunsStartedInLastHour(ctx, tenantID)
+	if err != nil {
+		return 0, traduzir("contar análises iniciadas na última hora", err)
+	}
+	return int(total), nil
+}
+
+// TetoDeAnalisesPorHora devolve o teto de análises novas por instalação.
+func (r *RepositorioPostgres) TetoDeAnalisesPorHora() int {
+	return int(r.tetoDeAnalises)
 }
 
 // ContarPendentes devolve quantos task_runs estão no estado pendente.

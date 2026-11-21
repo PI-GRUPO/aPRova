@@ -78,7 +78,7 @@ func executar() error {
 		return err
 	}
 
-	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{})
+	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{TetoDeAnalisesPorHora: configuracao.TetoDeAnalisesPorHora})
 	publicador, err := montarPublicador(configuracao, clienteGitHub, repositorio)
 	if err != nil {
 		return err

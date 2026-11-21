@@ -171,6 +171,7 @@ type TaskRun struct {
 	StepAttempts     int32      `json:"step_attempts"`
 	LastApprovalSeen int64      `json:"last_approval_seen"`
 	CheckRunID       *int64     `json:"check_run_id"`
+	StartedAt        *time.Time `json:"started_at"`
 }
 
 type TaskStep struct {
