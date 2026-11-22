@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { useMobile } from "@/app/responsivo";
+import { comInstalacao } from "@/app/rotas";
 import { Ativo } from "@/componentes/Ativo";
 import { ColecaoRecibos } from "@/componentes/ColecaoRecibos";
 import { Botao, Campo, Modal, PainelDeEstado } from "@/componentes/Primitivos";
@@ -59,6 +60,7 @@ function Painel({
 function Localizar() {
 	const [id, setId] = useState("");
 	const [erro, setErro] = useState("");
+	const [q] = useSearchParams();
 	const navegar = useNavigate();
 	return (
 		<form
@@ -70,7 +72,7 @@ function Localizar() {
 					setErro("Informe um UUID válido.");
 					return;
 				}
-				navegar(`/recibos/${valor}`);
+				navegar(comInstalacao(`/recibos/${valor}`, q.get("installation_id")));
 			}}
 		>
 			<Campo
@@ -110,6 +112,7 @@ function ChavesPublicas({ chaves }: { chaves: Chave[] }) {
 	);
 }
 export function Recibos() {
+	const [q] = useSearchParams();
 	const [chaves, setChaves] = useState<Chave[]>();
 	const [erro, setErro] = useState("");
 	const [tentativa, setTentativa] = useState(0);
@@ -129,7 +132,7 @@ export function Recibos() {
 	}, [tentativa]);
 	return (
 		<div className="pagina pagina-recibos">
-			<Link className="voltar voltar-recibos-mobile" to="/">
+			<Link className="voltar voltar-recibos-mobile" to={comInstalacao("/", q.get("installation_id"))}>
 				<Ativo nome="voltar" />
 				Voltar à visão geral
 			</Link>
@@ -183,6 +186,8 @@ type ConsultaVerificacao = { resposta: Verificacao; instante: string };
 
 function ConsultaDoRecibo({ id }: { id: string }) {
 	const mobile = useMobile();
+	const [q] = useSearchParams();
+	const instalacao = q.get("installation_id");
 	const [mostrarVerificacao, setMostrarVerificacao] = useState(false);
 	const tituloVerificacao = useRef<HTMLHeadingElement>(null);
 	const [recibo, setRecibo] = useState<Recibo>();
@@ -286,7 +291,7 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 
 	return (
 		<div className="pagina">
-			<Link className="voltar" to="/recibos">
+			<Link className="voltar" to={comInstalacao("/recibos", instalacao)}>
 				<Ativo nome="voltar" />
 				Voltar para recibos
 			</Link>
@@ -353,7 +358,7 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 								<p>anterior.hash: {texto(anterior?.hash)}</p>
 							</div>
 							{recibo.recibo_anterior_id && uuidValido(recibo.recibo_anterior_id) && (
-								<Link to={`/recibos/${recibo.recibo_anterior_id}`}>Consultar recibo anterior</Link>
+								<Link to={comInstalacao(`/recibos/${recibo.recibo_anterior_id}`, instalacao)}>Consultar recibo anterior</Link>
 							)}
 							<p className="apoio">A verificação deste recibo não valida toda a cadeia.</p>
 							<Botao disabled>Verificar cadeia da instalação</Botao>

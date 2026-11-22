@@ -7,7 +7,14 @@ nanosegundos e reconhece diferentes fusos e representações da fração. O valo
 original da API segue na URL de paginação.
 
 A Visão geral usa **Proporção de risco alto** para a divisão de análises de
-risco alto pelo total avaliado.
+risco alto pelo total avaliado. Os links da Visão geral e da coleção levam
+`installation_id` ao recibo, que preserva a instalação ao voltar ou abrir o
+elo anterior. O contrato público do recibo continua por UUID.
+
+Biome, TypeScript/build e 86 cenários Playwright passaram. A suíte verificou a
+equivalência entre fusos, a rejeição de diferença de um nanosegundo, a métrica
+de risco alto e o contexto de instalação nos links e no retorno. Capturas em
+`.capturas-mcp/dashboard/leituras-overview-*` para desktop e mobile nos dois temas.
 
 ## Parâmetro SQL da paginação de auditoria e recibos
 

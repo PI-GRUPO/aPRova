@@ -10,3 +10,7 @@ export const secoes = [
 	{ caminho: "/conta", titulo: "Conta e integrações", icone: "link", fase: "F3/F7A" },
 	{ caminho: "/sla", titulo: "Limites de SLA", icone: "clock", fase: "F7B" },
 ] as const;
+
+export function comInstalacao(caminho: string, instalacao: string | null) {
+	return instalacao ? `${caminho}?${new URLSearchParams({ installation_id: instalacao })}` : caminho;
+}

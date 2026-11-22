@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from "react-router";
+import { comInstalacao } from "@/app/rotas";
 import { useSessao } from "@/app/sessao";
 import { Ativo } from "@/componentes/Ativo";
 import { useEscopo, useLeitura } from "@/componentes/ConsultaPrivada";
@@ -139,7 +140,7 @@ function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
 									{dados.ultimoRecibo.hash} {dados.ultimoRecibo.anterior && ` · Ed25519, encadeado a ${dados.ultimoRecibo.anterior}`} ·{" "}
 									{dados.ultimoRecibo.data}
 								</p>
-								<Link to={dados.ultimoRecibo.id ? `/recibos/${dados.ultimoRecibo.id}` : `/recibos?${q}`}>
+								<Link to={dados.ultimoRecibo.id ? comInstalacao(`/recibos/${dados.ultimoRecibo.id}`, instalacao) : `/recibos?${q}`}>
 									<Ativo nome="external" />
 									{dados.ultimoRecibo.id ? "Ver recibo" : "Ver os recibos"}
 								</Link>

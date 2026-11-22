@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, type Route, test } from "@playwright/test";
 
 const origem = "http://127.0.0.1:18080";
+const recibo = "00000000-0000-4000-8000-000000000002";
 for (const largura of [1440, 390]) {
 	test(`visão geral mantém a instalação ao navegar e permite trocá-la em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: 900 });
@@ -47,6 +48,10 @@ for (const largura of [1440, 390]) {
 			await page.goto(`${origem}/?installation_id=42`);
 			await expect(page.getByText(/Dados da API · 30 dias/)).toBeVisible();
 			await expect(page.getByRole("heading", { name: "Falhas por tipo" })).toBeVisible();
+			await expect(page.getByRole("link", { name: "Ver recibo", exact: true })).toHaveAttribute(
+				"href",
+				`/recibos/${recibo}?installation_id=42`,
+			);
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			await page.screenshot({ path: `../.capturas-mcp/dashboard/leituras-overview-${largura}-${tema}.png`, fullPage: true });
 			await page.locator("button.celula-mapa").first().click();
@@ -70,6 +75,12 @@ for (const largura of [1440, 390]) {
 			expect(caminho).toBeTruthy();
 			expect(await readFile(caminho as string, "utf8")).toContain("equipe-e2e/projeto");
 		}
+		const previa = largura < 500 ? `Ver prévia do recibo ${recibo}` : "00000000…";
+		await page.getByRole("button", { name: previa, exact: true }).click();
+		await page.getByRole("link", { name: "Consultar recibo assinado" }).click();
+		await expect(page).toHaveURL(`${origem}/recibos/${recibo}?installation_id=42`);
+		await page.getByRole("link", { name: "Voltar para recibos" }).click();
+		await expect(page).toHaveURL(`${origem}/recibos?installation_id=42`);
 		for (const [rota, titulo] of [
 			["regras", "Regras do gate"],
 			["auditoria", "Auditoria de ações"],

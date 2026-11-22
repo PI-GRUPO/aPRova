@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { secoes } from "@/app/rotas";
+import { comInstalacao, secoes } from "@/app/rotas";
 import { useSessao } from "@/app/sessao";
 import { useTema } from "@/app/tema";
 import { Sair } from "@/paginas/Acesso";
@@ -27,7 +27,7 @@ export function Casca() {
 	const { pathname, search } = useLocation();
 	const instalacao = new URLSearchParams(search).get("installation_id");
 	function destino(caminho: string) {
-		return instalacao ? `${caminho}?${new URLSearchParams({ installation_id: instalacao })}` : caminho;
+		return comInstalacao(caminho, instalacao);
 	}
 	const [menu, definirMenu] = useState(false);
 	const anterior = useRef(pathname);

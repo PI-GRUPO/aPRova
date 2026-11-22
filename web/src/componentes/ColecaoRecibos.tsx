@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useMobile } from "@/app/responsivo";
+import { comInstalacao } from "@/app/rotas";
 import { consultarColecao, exportarColecao, type RegistroRecibo, verificarCadeia } from "@/servicos/colecao-recibos";
 import { baixar } from "@/servicos/recibos";
 import { ConsultaPrivada, useEscopo } from "./ConsultaPrivada";
@@ -107,7 +108,11 @@ function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapsh
 									{r.repo} #{r.pr}
 								</p>
 								<p className="apoio">{__MOCKS__ ? "Prévia simulada · assinatura não verificada" : "Assinatura não verificada"}</p>
-								<PreviaDoRecibo recibo={r} gatilho={<Botao aria-label={`Ver prévia do recibo ${r.id}`}>Ver prévia do recibo</Botao>} />
+								<PreviaDoRecibo
+									recibo={r}
+									instalacao={escopo.instalacao}
+									gatilho={<Botao aria-label={`Ver prévia do recibo ${r.id}`}>Ver prévia do recibo</Botao>}
+								/>
 							</div>
 						</li>
 					))}
@@ -128,6 +133,7 @@ function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapsh
 								<PreviaDoRecibo
 									key="recibo"
 									recibo={r}
+									instalacao={escopo.instalacao}
 									gatilho={
 										<button className="link-fila" type="button">
 											{r.id.slice(0, 8)}…
@@ -160,7 +166,7 @@ function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapsh
 	);
 }
 
-function PreviaDoRecibo({ recibo: r, gatilho }: { recibo: RegistroRecibo; gatilho: ReactNode }) {
+function PreviaDoRecibo({ recibo: r, instalacao, gatilho }: { recibo: RegistroRecibo; instalacao: string; gatilho: ReactNode }) {
 	return (
 		<Modal
 			titulo="Prévia do recibo"
@@ -173,7 +179,7 @@ function PreviaDoRecibo({ recibo: r, gatilho }: { recibo: RegistroRecibo; gatilh
 			{__MOCKS__ ? (
 				<p>A verificação individual exige um recibo assinado.</p>
 			) : (
-				<Link to={`/recibos/${r.id}`}>Consultar recibo assinado</Link>
+				<Link to={comInstalacao(`/recibos/${r.id}`, instalacao)}>Consultar recibo assinado</Link>
 			)}
 		</Modal>
 	);

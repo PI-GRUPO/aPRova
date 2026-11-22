@@ -122,7 +122,7 @@ for (const status of [404, 500, 503])
 	});
 test("troca de UUID cancela consulta e limpa a verificação anterior", async ({ page }) => {
 	await simular(page);
-	await page.goto(`/recibos/${id}`);
+	await page.goto(`/recibos/${id}?installation_id=43`);
 	await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 	await page.route(`**/receipts/${anterior}`, async (route) => {
@@ -130,8 +130,10 @@ test("troca de UUID cancela consulta e limpa a verificação anterior", async ({
 		await route.fulfill({ json: { ...documento, id: anterior, recibo_anterior_id: null } });
 	});
 	await page.getByRole("link", { name: "Consultar recibo anterior" }).click();
+	await expect(page).toHaveURL(`/recibos/${anterior}?installation_id=43`);
 	await expect(page.getByText("Recibo válido.", { exact: true })).toHaveCount(0);
 	await page.getByRole("link", { name: "Voltar para recibos" }).click();
+	await expect(page).toHaveURL("/recibos?installation_id=43");
 	await expect(page.getByRole("heading", { name: "Recibos e auditoria", exact: true })).toBeVisible();
 	await page.unrouteAll({ behavior: "wait" });
 });
