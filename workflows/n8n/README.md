@@ -817,3 +817,58 @@ No reteste integrado da mesma pergunta, o agente principal consultou as duas
 semanas corretas e enviou uma resposta Slack confirmada, sem duplicata. Esse
 reteste não acionou a recuperação; o teste manual forçou o primeiro erro e
 validou o segundo agente com modelo/API reais. Não confundir as evidências.
+
+### Teste com webhook GitHub real — PR 4
+
+A PR [PI-GRUPO/aPRova-TESTES #4](https://github.com/PI-GRUPO/aPRova-TESTES/pull/4)
+adicionou `github.com/google/uuid v1.6.0`; dez testes Go passaram localmente e
+no sandbox. O webhook real entrou via Smee restrito, com assinatura conferida
+pela API. Core encaminhou os eventos reais: OSV respondeu HTTP 200 sem avisos
+conhecidos, Central confirmou recibo válido/risco ALTO e Slack aceitou os avisos.
+
+O card [Teste de integração Trello e Slack](https://trello.com/c/kURLrZdr/1-teste-de-integra%C3%A7%C3%A3o-trello-e-slack)
+recebeu a URL completa da PR na descrição. A primeira análise chegou antes da
+confirmação desse vínculo e precisou de reprocessamento exclusivo do Trello.
+Um commit vazio posterior gerou nova análise, agora com card já vinculado:
+comentário no Trello e aviso Slack ocorreram automaticamente nessa rodada.
+O card permaneceu em Backlog e a PR em rascunho/aberta, sem merge ou aprovação.
+
+Nenhum workflow funcional foi alterado ou exportado por esse teste. As duas
+operações manuais auxiliares ficaram inativas no projeto pessoal, com escrita
+ou reprocessamento desabilitados ao terminar. Relay temporário encerrado:
+novas PRs locais precisam de encaminhamento GitHub → API ativo. Correlação
+continua desligada, portanto alerta de aprovação e resultado OSV são separados.
+
+### Sessão de demonstração local — 2026-11-16
+
+API, worker, banco, Redis e n8n foram conferidos ativos. O relay Smee da
+demonstração foi iniciado em segundo plano para novas PRs/reviews de
+`PI-GRUPO/aPRova-TESTES`, sem filtro por PR/branch/SHA e preservando a instalação
+permitida e a verificação HMAC da API. Não foi necessário reiniciar serviços.
+Ele permanece até ser encerrado ou o computador desligar, sem autostart.
+
+Na raiz do repositório, `python3 tmp/demonstracao/controle.py status` consulta
+saúde/conexão; os argumentos `parar` e `iniciar` controlam somente esse relay.
+Scripts, URL Smee, logs e entregas ficam locais/ignorados. Os caminhos temporários
+usados pelo cliente precisam continuar disponíveis durante a demonstração.
+Trello exige a URL da nova PR no card antes da análise ser consumida; o relay
+não cria o vínculo automaticamente. Flags e workflows funcionais preservados.
+
+Exemplo adicional criado a pedido do usuário: [PR 5](https://github.com/PI-GRUPO/aPRova-TESTES/pull/5)
+e [novo card](https://trello.com/c/3sCdjsML/2-demonstra%C3%A7%C3%A3o-pr-com-depend%C3%AAncia-nova-e-osv),
+com links recíprocos. Dez testes passaram localmente e no sandbox. Webhook
+real, risco ALTO, recibo válido, OSV sem avisos e Slack foram confirmados;
+Trello adicionou um comentário automático, sem mover o card. O evento ficou
+retido apenas até confirmar o vínculo. Relay foi liberado e permanece ligado.
+Auxiliar de criação/vínculo ficou inativo no projeto pessoal, com escrita
+desabilitada. Nenhum workflow funcional foi alterado/exportado.
+
+### Retomada para teste da API — 2026-11-19
+
+n8n foi iniciado a partir do container existente; PostgreSQL e Redis já estavam
+saudáveis. API e worker foram recompilados do código atual e recarregados com
+backup dos binários anteriores. Nenhuma migration/configuração foi alterada.
+`/health` e `/ready` retornaram 200 e a consulta HMAC de análises confirmou
+HTTP 200/instalação correta. API: `http://localhost:8080`; n8n:
+`http://localhost:5978`. Relay Smee de demonstração conectado, com o escopo
+anterior do repositório de testes. Não foram criadas PRs/mensagens de teste.

@@ -1,6 +1,6 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-15**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-16**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
@@ -326,6 +326,110 @@ anterior do contexto não eliminaram a recorrência. Sem evidência de cota 429.
 
 A recuperação não garante disponibilidade do provedor. Se também falhar,
 o destino autenticado recebe o aviso seguro, sem métricas inventadas.
+
+#### Teste integrado real — PR 4, OSV, Slack e Trello — concluído
+
+Validação em `PI-GRUPO/aPRova-TESTES`, PR 4, sem merge ou aprovação. Card
+confirmado pelo usuário: [Teste de integração Trello e Slack](https://trello.com/c/kURLrZdr/1-teste-de-integra%C3%A7%C3%A3o-trello-e-slack), no quadro de testes.
+
+- [x] Criar branch exclusiva a partir da main e PR de rascunho com autoria
+  humana autenticada; commits e descrição em português brasileiro. Adicionar
+  somente `github.com/google/uuid v1.6.0` e seus checksums. Dez testes Go locais
+  passaram; o sandbox real também confirmou dez testes e nenhuma falha.
+- [x] Restabelecer relay Smee temporário, filtrado por instalação, repositório,
+  branch e SHA, preservando os bytes/assinatura entregues pelo cliente oficial.
+  GitHub enviou `opened` e depois `synchronize`; a API verificou/aceitou os
+  eventos reais, sem payload GitHub forjado ou disparo manual na API.
+- [x] Confirmar worker → Core → OSV e Central: consulta OSV HTTP 200, sem avisos
+  conhecidos para a versão; recibo válido, risco ALTO por dependência nova e
+  avisos de aprovação/dependência aceitos pelo Slack. OSV não reduziu o risco.
+- [x] Vincular a URL completa da PR à descrição do card, preservando seu
+  conteúdo anterior e a lista Backlog. O conector Trello recusou a escrita;
+  o vínculo foi confirmado por operação manual limitada no n8n.
+- [x] Recuperar o primeiro evento Trello real após o vínculo tardio, por
+  reprocessamento exclusivo do consumidor, sem repetir núcleo ou OSV.
+- [x] Com o card já vinculado, enviar commit vazio de validação na mesma PR.
+  Novo webhook real gerou outra análise; comentário Trello e aviso Slack foram
+  disparados automaticamente pelo fluxo existente, sem replay nessa rodada.
+  Commit final: `3e6cc08b2cf80536bff3e01c2429b95b9f81c4ce`.
+- [x] Conferir correlação da análise/SHA e comentário no card; a análise antiga
+  foi substituída pelo novo commit. Há um comentário por análise distinta,
+  incluindo a recuperação da primeira; não são duas cópias do mesmo evento.
+- [x] Encerrar relay temporário; manter API/worker/n8n, main, card e estado de
+  aprovação. Workflows auxiliares ficam inativos no projeto pessoal, com as
+  operações de escrita/reprocessamento desabilitadas após o uso.
+- [x] Preservar os workflows funcionais publicados, sem alterações/exportação
+  por consequência do teste; atualizar documentação e evidências privadas.
+
+A primeira rodada não comprovou Trello automático, pois o evento foi liberado
+antes de confirmar a escrita do vínculo. A rodada do commit final comprovou
+GitHub → relay → API → worker → Core → OSV/Slack e Trello/Slack automaticamente.
+Correlação global permanece desligada: os alertas são separados, sem provar
+atualização OSV da mesma mensagem. Digest, SLA e o caso adiado da 6C mantêm
+suas condições. Para novos testes automáticos locais, o relay precisa estar
+ativo; o cliente usado aqui foi restrito à PR/SHA e encerrado ao concluir.
+Evidências em `tmp/teste-integrado-osv/`, ignorado pelo Git.
+
+#### Demonstração local ligada — 2026-11-16
+
+- [x] Conferir API/worker ativos, `/health` e `/ready` HTTP 200, PostgreSQL e
+  Redis prontos. n8n respondeu ao healthcheck e os cinco workflows de Core,
+  OSV, Central, Trello e assistente permanecem publicados.
+- [x] Ligar relay Smee em segundo plano para `PI-GRUPO/aPRova-TESTES`, limitado
+  à instalação configurada e aos eventos `pull_request`/`pull_request_review`,
+  sem restrição por PR, branch ou SHA. Assinatura continua verificada pela API.
+- [x] Confirmar conexão Smee ativa, sem reiniciar serviços que já funcionavam
+  nem criar nova PR/mensagem por consequência da ativação.
+- [x] Registrar controles locais de iniciar/status/parar em
+  `tmp/demonstracao/controle.py` e instruções na mesma pasta, ignorada pelo Git.
+
+Esse relay substitui o filtro temporário da PR 4 para a demonstração. Fica
+ligado até encerramento ou desligamento do computador; não inicia sozinho
+com o sistema. O vínculo Trello continua por URL completa da nova PR na
+descrição de um único card antes do consumo do evento. Flags de Digest,
+SLA, correlação e regras de autorização não foram alteradas. Workflows
+funcionais não foram modificados; não há exportação nova nesta ativação.
+
+#### Novo exemplo com PR e card próprios — concluído em 2026-11-16
+
+- [x] Abrir [PR 5](https://github.com/PI-GRUPO/aPRova-TESTES/pull/5), em branch
+  exclusiva, com `github.com/google/uuid v1.6.0`, checksums e autoria humana.
+  Dez testes Go locais e dez testes do sandbox real passaram. PR em rascunho,
+  sem merge ou aprovação; títulos/commit/descrição em português brasileiro.
+- [x] Criar novo [card de demonstração](https://trello.com/c/3sCdjsML/2-demonstra%C3%A7%C3%A3o-pr-com-depend%C3%AAncia-nova-e-osv)
+  no Backlog e confirmar links nos dois sentidos: card na descrição da PR e
+  PR na descrição do card. Operações n8n manuais limitadas ao novo card, no
+  projeto pessoal; escrita desabilitada ao concluir, sem publicação/exportação.
+- [x] Reter brevemente o encaminhamento enquanto o vínculo era confirmado e
+  depois liberar o webhook `opened` real. API validou assinatura; núcleo, Core,
+  OSV, Central e Trello processaram dados reais sem replay manual do consumidor.
+- [x] Confirmar risco ALTO por dependência nova, recibo válido, consulta OSV
+  concluída sem avisos conhecidos e avisos Slack aceitos. Novo card recebeu
+  exatamente um comentário automático dessa análise e o aviso Trello no Slack.
+- [x] Conferir demonstração ainda ativa: API/n8n saudáveis, relay conectado e
+  liberado para novas PRs/reviews do repositório de testes, sem filtro por SHA.
+
+Workflows funcionais e flags preservados; somente dados de demonstração e
+auxiliar manual foram criados. Evidências em `tmp/exemplo-pr-card/`, ignorado.
+
+#### Ambiente religado para teste da API — 2026-11-19
+
+- [x] Conferir PostgreSQL/Redis saudáveis e preservar os volumes existentes.
+- [x] Iniciar o container n8n parado e conferir a reativação dos workflows
+  publicados pelos logs, sem alterar definições, credenciais ou flags.
+- [x] Compilar API e worker do checkout atual (base `214cad4`) e substituir
+  os binários locais antigos, com backup e recarga controlada; sem migrations
+  ou mudanças em dados/configuração. Relay retido apenas durante a recarga.
+- [x] Confirmar `/health` e `/ready` HTTP 200, worker ativo e chaves públicas
+  de recibo preservadas. Consulta assinada `GET /api/analises` retornou 200 e
+  instalação correspondente, sem expor dados/segredos no resultado da conferência.
+- [x] Confirmar n8n em `http://localhost:5978` e relay de demonstração conectado
+  para novas PRs/reviews do repositório de testes, sem filtro por PR/SHA.
+
+API disponível em `http://localhost:8080`. A ativação não criou PRs ou enviou
+mensagens de teste. Digest/SLA e autorização mantêm as condições anteriores.
+Nenhum workflow funcional foi modificado/exportado. Helpers de operação e
+validação permanecem em `tmp/demonstracao/`, ignorado pelo Git.
 
 ### Etapa S — Simplificação da persistência do n8n
 

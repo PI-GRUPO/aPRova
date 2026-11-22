@@ -695,3 +695,15 @@ e `url_pr`, derivados dos dados validados no domínio fixo GitHub. Esses dois
 campos são de apresentação no n8n, não novos campos dos DTOs HTTP do núcleo.
 URLs completas nas respostas do assistente dão acesso ao repositório/PR; não
 provam o estado aberto/fechado atual do PR.
+
+### Evidência integrada com origem GitHub real — PR 4
+
+No teste de 15–16/11/2026, o GitHub App entregou `opened`/`synchronize` ao Smee;
+cliente temporário filtrado por alvo encaminhou o conteúdo assinado à API.
+O worker analisou a PR 4 de PI-GRUPO/aPRova-TESTES, publicou recibo/risco ALTO e
+emitiu os eventos autenticados ao Core. OSV e alertas Slack usaram dados reais.
+Depois de vincular previamente o card, o `synchronize` do commit final também
+gerou comentário Trello e aviso Slack sem replay. O primeiro evento Trello,
+anterior ao vínculo, foi recuperado separadamente e não comprova essa parte
+automática. Relay foi encerrado; a evidência não equivale a hospedagem pública
+permanente nem habilita correlação global, Digest, SLA ou aprovação automática.
