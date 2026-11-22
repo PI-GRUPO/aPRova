@@ -83,10 +83,25 @@ func (g *GitHub) Trocar(ctx context.Context, code, verifier string) (Token, erro
 	}
 	return Token{v.AccessToken, duracao}, nil
 }
-func (g *GitHub) get(ctx context.Context, token, caminho string, destino any) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com"+caminho, nil)
+func requisicaoGitHub(ctx context.Context, caminho string) (*http.Request, error) {
+	rota, err := url.ParseRequestURI(caminho)
+	if err != nil || rota.IsAbs() || rota.Host != "" || !strings.HasPrefix(rota.Path, "/") || strings.HasPrefix(rota.Path, "//") {
+		return nil, ErrGitHubIndisponivel
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com", nil)
 	if err != nil {
-		return ErrGitHubIndisponivel
+		return nil, ErrGitHubIndisponivel
+	}
+	// Copie somente o caminho e a consulta. A origem é fixa.
+	req.URL.Path, req.URL.RawPath = rota.Path, rota.RawPath
+	req.URL.RawQuery, req.URL.ForceQuery = rota.RawQuery, rota.ForceQuery
+	return req, nil
+}
+
+func (g *GitHub) get(ctx context.Context, token, caminho string, destino any) error {
+	req, err := requisicaoGitHub(ctx, caminho)
+	if err != nil {
+		return err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
