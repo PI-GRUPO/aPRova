@@ -1,5 +1,12 @@
 # Implementação do dashboard aPRova
 
+## Parâmetro SQL da paginação de auditoria e recibos
+
+Base `ded799a`. As consultas incorporadas à API usam `@deslocamento` no `OFFSET`
+para que o nome do parâmetro seja aceito pelo analisador SQL. O repositório
+mantém o cálculo `(página - 1) × limite`. O teste `TestLeiturasDoPainelNoPostgres`
+conferiu páginas distintas da auditoria e dos recibos em PostgreSQL descartável.
+
 ## Reaproveitamento de leituras na navegação
 
 Base `a461be7`, cards #66–#68. A Visão geral (métricas, fila e catálogo), a lista

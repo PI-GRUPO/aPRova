@@ -89,6 +89,15 @@ func TestLeiturasDoPainelNoPostgres(t *testing.T) {
 	}
 	f.Origem = ""
 	f.Decisao = ""
+	f.Limite = 1
+	auditoria := ler("auditoria")
+	f.Pagina = 2
+	auditoria2 := ler("auditoria")
+	if auditoria.Total != 2 || auditoria2.Total != 2 || len(auditoria.Itens) != 1 || len(auditoria2.Itens) != 1 || auditoria.Itens[0].ID == auditoria2.Itens[0].ID {
+		t.Fatalf("paginação da auditoria: primeira página %+v, segunda página %+v", auditoria, auditoria2)
+	}
+	f.Pagina = 1
+	f.Limite = 2
 	ultimas, err := r.UltimasAnalisesWeb(t.Context(), tenant, []string{repositorioDaDemo, "inexistente"})
 	if err != nil || len(ultimas) != 1 || ultimas[repositorioDaDemo].IsZero() {
 		t.Fatal(ultimas, err)

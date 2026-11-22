@@ -34,7 +34,7 @@ func (r *RepositorioPostgres) LerPainel(ctx context.Context, recurso string, f d
 		return nil, domain.ErrDadosInvalidos
 	}
 	var dados json.RawMessage
-	err := r.conexao.QueryRow(ctx, sql, pgx.NamedArgs{"tenant": f.TenantID, "repos": f.Repositorios, "inicio": f.Inicio, "fim": f.Fim, "snapshot": f.Snapshot, "limite": f.Limite, "offset": (f.Pagina - 1) * f.Limite, "decisao": f.Decisao, "origem": f.Origem}).Scan(&dados)
+	err := r.conexao.QueryRow(ctx, sql, pgx.NamedArgs{"tenant": f.TenantID, "repos": f.Repositorios, "inicio": f.Inicio, "fim": f.Fim, "snapshot": f.Snapshot, "limite": f.Limite, "deslocamento": (f.Pagina - 1) * f.Limite, "decisao": f.Decisao, "origem": f.Origem}).Scan(&dados)
 	return dados, err
 }
 

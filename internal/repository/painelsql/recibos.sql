@@ -9,7 +9,7 @@ WITH filtrados AS (
 ), pagina AS (
     SELECT * FROM filtrados
     ORDER BY emissao DESC, id DESC
-    LIMIT @limite OFFSET @offset
+    LIMIT @limite OFFSET @deslocamento
 )
 SELECT jsonb_build_object(
     'total', (SELECT count(*) FROM filtrados),
