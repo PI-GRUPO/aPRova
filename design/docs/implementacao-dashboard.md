@@ -1,5 +1,18 @@
 # Implementação do dashboard aPRova
 
+## Formato da espera na Visão geral
+
+Base `145247c`, cards #67–#68, nós `9:22` e `15:1789`. O indicador de espera
+mais antiga e a fila de pendências exibem minutos completos. A partir de 60
+minutos o formato inclui horas, como `1h 0m`, e a partir de 24 horas inclui
+dias, como `1d 0h 0m`. O indicador usa `GET /api/metricas` e a fila usa
+`GET /api/analises`. A tabela desktop e os cartões mobile usam a mesma
+formatação.
+
+Biome, TypeScript/build e 24 cenários Playwright passaram, incluindo a
+virada de hora e de dia e a exibição de `5d 3h 25m` em desktop e mobile.
+Capturas dos dois temas em `.capturas-mcp/dashboard/local-overview-*`.
+
 ## Ajustes da revisão de métricas, paginação e recibos
 
 Base `8339adb`, cards #66–#68 e #70. A validação do corte compara o instante em

@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { useMobile } from "@/app/responsivo";
 import { type Analise, consultarFila, consultarRepos, type PaginaAnalises } from "@/servicos/analises";
+import { formatarEspera } from "@/servicos/duracao";
 import { dataUTC } from "./Analise";
 import { ConsultaPrivada, useEscopo } from "./ConsultaPrivada";
 import { ControlesDaLista } from "./ControlesDaLista";
@@ -82,7 +83,9 @@ export function FilaDePendencias() {
 function Resultados({ dados }: { dados: PaginaAnalises }) {
 	const [q, setQ] = useSearchParams();
 	const busca = (q.get("fila") ?? "").trim().toLocaleLowerCase("pt-BR");
-	const itens = dados.itens.filter((i) => `${i.repositorio} #${i.numero_pr} ${i.sha_head}`.toLocaleLowerCase("pt-BR").includes(busca));
+	const itens = dados.itens
+		.filter((i) => `${i.repositorio} #${i.numero_pr} ${i.sha_head}`.toLocaleLowerCase("pt-BR").includes(busca))
+		.map((item) => ({ item, espera: item.espera_segundos === undefined ? null : formatarEspera(item.espera_segundos) }));
 	function paginar(pagina: number) {
 		setQ(() => {
 			const nova = new URLSearchParams(window.location.search);
@@ -108,9 +111,9 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 						</tr>
 					</thead>
 					<tbody>
-						{itens.map((i) => (
+						{itens.map(({ item: i, espera }) => (
 							<tr key={i.id}>
-								<td>{i.espera_segundos === undefined ? "Indisponível" : `${Math.floor(i.espera_segundos / 60)} min`}</td>
+								<td>{espera ?? "Indisponível"}</td>
 								<td>{dataUTC(i.recebido_em)}</td>
 								<td>
 									<LinkDaAnalise item={i} />
@@ -123,10 +126,10 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 				</table>
 			</div>
 			<div className="cards-fila">
-				{itens.map((i) => (
+				{itens.map(({ item: i, espera }) => (
 					<article key={i.id}>
 						<LinkDaAnalise item={i} />
-						<p className="apoio">Espera {i.espera_segundos === undefined ? "indisponível" : `${Math.floor(i.espera_segundos / 60)} min`}</p>
+						<p className="apoio">Espera {espera ?? "indisponível"}</p>
 						<p className="mono">Commit {i.sha_head.slice(0, 7) || "não informado"}</p>
 						<p className="apoio">Recebida em {dataUTC(i.recebido_em)}</p>
 					</article>

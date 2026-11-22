@@ -135,6 +135,55 @@ test("proporção de risco alto usa análises avaliadas como denominador", async
 	await expect(metrica.locator(".contexto-metrica-desktop")).toHaveText("1 de 4 avaliadas");
 });
 
+test("esperas da visão geral e da fila passam de minutos para horas e dias", async ({ page }) => {
+	const esperaMaisAntiga = (5 * 24 * 60 + 3 * 60 + 25) * 60;
+	const casos = [
+		{ segundos: esperaMaisAntiga, texto: "5d 3h 25m" },
+		{ segundos: 86_400, texto: "1d 0h 0m" },
+		{ segundos: 86_399, texto: "23h 59m" },
+		{ segundos: 3_600, texto: "1h 0m" },
+		{ segundos: 3_599, texto: "59m" },
+		{ segundos: 59, texto: "0m" },
+	];
+	await page.goto(`${origem}/entrar`);
+	await page.route("**/api/metricas?*", async (rota) => {
+		const resposta = await rota.fetch();
+		const corpo = await resposta.json();
+		const desde = new Date(Date.parse(corpo.snapshot) - esperaMaisAntiga * 1000).toISOString();
+		const dados = { ...corpo.dados, pendentes: casos.length, desde };
+		await rota.fulfill({ response: resposta, json: { ...corpo, dados } });
+	});
+	await page.route(
+		(url) => url.pathname === "/api/analises" && url.searchParams.get("estado") === "aguardando_aprovacao",
+		async (rota) => {
+			const resposta = await rota.fetch();
+			const corpo = await resposta.json();
+			const itens = casos.map(({ segundos }, indice) => ({
+				id: `00000000-0000-4000-8000-${String(indice + 1).padStart(12, "0")}`,
+				repositorio: "equipe-e2e/projeto",
+				numero_pr: indice + 1,
+				sha_head: "abc1234",
+				autor: "revisora",
+				estado: "aguardando_aprovacao",
+				nivel: "alto",
+				recebido_em: corpo.snapshot,
+				criado_em: corpo.snapshot,
+				atualizado_em: corpo.snapshot,
+				espera_segundos: segundos,
+			}));
+			await rota.fulfill({ response: resposta, json: { ...corpo, total: itens.length, itens } });
+		},
+	);
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	const metrica = page.locator(".metrica-overview").filter({ has: page.getByRole("heading", { name: "Espera mais antiga" }) });
+	const fila = page.getByRole("region", { name: "Fila de pendências" });
+	await expect(metrica.locator(".valor-overview")).toHaveText("5d 3h 25m");
+	for (const { texto } of casos) await expect(fila.getByRole("cell", { name: texto, exact: true })).toBeVisible();
+	await page.setViewportSize({ width: 390, height: 900 });
+	await expect(metrica.getByText("5d 3h 25m", { exact: true })).toBeVisible();
+	for (const { texto } of casos) await expect(fila.getByText(`Espera ${texto}`, { exact: true })).toBeVisible();
+});
+
 test("falha real das métricas preserva a fila e permite nova consulta", async ({ page }) => {
 	await page.goto(`${origem}/entrar`);
 	await page.route("**/api/metricas?*", (r) => r.fulfill({ status: 503, json: {} }));

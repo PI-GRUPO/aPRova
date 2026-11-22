@@ -16,7 +16,7 @@ export const visaoGeralMock: VisaoGeralDados = {
 	atualizadoEm: "14:00",
 	periodo: "13 out a 11 nov 2026",
 	metricas: [
-		{ rotulo: "Espera mais antiga", valor: "2 d 1 h", unidade: "aguardando aprovação", contexto: "aPRova-TESTES #1 · 1 de 5 na fila" },
+		{ rotulo: "Espera mais antiga", valor: "2d 1h 0m", unidade: "aguardando aprovação", contexto: "aPRova-TESTES #1 · 1 de 5 na fila" },
 		{
 			rotulo: "Taxa de bloqueio",
 			valor: "47%",

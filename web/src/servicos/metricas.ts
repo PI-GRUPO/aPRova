@@ -1,3 +1,4 @@
+import { formatarEspera } from "./duracao";
 import type { Consulta } from "./fonte";
 import { data, inteiro, invalido, lerPainel, lista, registro, texto } from "./painel";
 import { uuidValido } from "./recibos";
@@ -19,7 +20,7 @@ export const metricasReais: Consulta<VisaoGeralDados> = async (escopo, _filtros,
 	if (alto > avaliadas || avaliadas > recebidas || totalFalhas > tentativas) return invalido();
 	const pendentes = inteiro(dados.pendentes),
 		semInicio = inteiro(dados.pendentes_sem_inicio);
-	const desde = dados.desde === null ? null : data(dados.desde);
+	const espera = dados.desde === null ? null : (Date.parse(snapshot) - Date.parse(data(dados.desde))) / 1000;
 	const media = dados.tempo_medio_segundos;
 	if (media !== null && (typeof media !== "number" || media < 0 || !Number.isFinite(media))) return invalido();
 	const dias = lista(dados.mapa, (d) => ({
@@ -61,11 +62,7 @@ export const metricasReais: Consulta<VisaoGeralDados> = async (escopo, _filtros,
 		metricas: [
 			{
 				rotulo: "Espera mais antiga",
-				valor: !pendentes
-					? "Sem pendências"
-					: semInicio || !desde
-						? "Indisponível"
-						: `${Math.floor((Date.parse(snapshot) - Date.parse(desde)) / 60000)} min`,
+				valor: !pendentes ? "Sem pendências" : semInicio || espera === null || espera < 0 ? "Indisponível" : formatarEspera(espera),
 				unidade: "aguardando aprovação",
 				contexto: `${pendentes} pendências atuais · ${semInicio} sem transição registrada`,
 			},
