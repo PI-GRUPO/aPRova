@@ -256,12 +256,15 @@ export async function saudeRepositorios(id: string, pagina: number, signal: Abor
 		v.itens.length !== Math.max(0, Math.min(10, v.total - (pagina - 1) * 10))
 	)
 		return invalida();
-	const permissoes = v.permissoes;
-	const acessos = ["checks", "contents", "pull_requests"].flatMap((k) => {
-		const nivel = permissoes[k];
+	const permissoesConhecidas = [
+		["checks", v.permissoes.checks],
+		["contents", v.permissoes.contents],
+		["pull_requests", v.permissoes.pull_requests],
+	] as const;
+	const acessos = permissoesConhecidas.flatMap(([chave, nivel]) => {
 		if (nivel === undefined) return [];
 		if (typeof nivel !== "string" || !["read", "write", "admin", "none"].includes(nivel)) return invalida();
-		return [`${k}: ${nivel}`];
+		return [`${chave}: ${nivel}`];
 	});
 	const itens = v.itens.map((r) => {
 		if (

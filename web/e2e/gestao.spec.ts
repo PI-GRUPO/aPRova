@@ -123,7 +123,7 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 								pagina: 1,
 								limite: 10,
 								total: 1,
-								permissoes: {},
+								permissoes: { checks: "write", contents: "read", pull_requests: "write", metadata: "read" },
 								itens: [{ nome: "equipe/real", branch: "main", ultima_analise: null, check_obrigatorio: null }],
 							}
 						: { installation_id: 42, repositorios: ["equipe/real"] },
@@ -135,6 +135,7 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 	falhar = false;
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
 	await expect(page.getByRole("cell", { name: "equipe/real", exact: true })).toBeVisible();
+	await expect(page.getByRole("cell", { name: "checks: write · contents: read · pull_requests: write", exact: true })).toBeVisible();
 	await expect(page.getByRole("cell", { name: "Não confirmado", exact: true })).toBeVisible();
 	await expect(page.getByRole("button", { name: "Configurar cobranca-api no GitHub" })).toHaveCount(0);
 	await page.getByRole("link", { name: "equipe/real", exact: true }).click();
