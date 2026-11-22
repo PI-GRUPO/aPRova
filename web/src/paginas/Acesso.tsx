@@ -41,27 +41,22 @@ export function Entrar() {
 				</h1>
 				<p className="secundario">Entre com sua conta GitHub para acessar os repositórios autorizados.</p>
 				{q.has("erro") && <p role="alert">Não foi possível concluir a autenticação. Inicie uma nova tentativa.</p>}
-				{erro ? (
-					<>
-						<p role="alert">{erro}</p>
-						<Botao onClick={carregar}>Tentar novamente</Botao>
-					</>
-				) : !sessao ? (
-					<p role="status">Confirmando disponibilidade…</p>
-				) : sessao.autenticado ? (
+				{erro && <p role="alert">{erro}</p>}
+				{sessao?.autenticado ? (
 					<Link className="botao botao-primario" to="/">
 						Continuar para o dashboard
 					</Link>
-				) : sessao.login_disponivel ? (
+				) : sessao?.login_disponivel === false ? (
+					<PainelDeEstado titulo="Login indisponível">
+						<p>O acesso com GitHub ainda não está configurado neste ambiente.</p>
+					</PainelDeEstado>
+				) : (
 					<a className="botao botao-primario" href="/auth/github">
 						<Ativo nome="github-login" />
 						Continuar com GitHub
 					</a>
-				) : (
-					<PainelDeEstado titulo="Login indisponível">
-						<p>O acesso com GitHub ainda não está configurado neste ambiente.</p>
-					</PainelDeEstado>
 				)}
+				{erro && <Botao onClick={carregar}>Tentar novamente</Botao>}
 				<p className="apoio">Você autoriza o acesso no GitHub. O aPRova não pede sua senha.</p>
 			</section>
 		</main>

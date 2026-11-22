@@ -1,61 +1,95 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useEffectEvent, useRef, useState } from "react";
+import { Navigate, useLocation } from "react-router";
 import { ErroHTTP } from "@/servicos/http";
-
 import { consultarSessao, encerrarSessao, type Sessao } from "@/servicos/sessao";
 
 const Contexto = createContext<{ sessao?: Sessao; erro: string; carregar: () => void; sair: () => Promise<void> } | null>(null);
+type EstadoDaSessao = { sessao?: Sessao; erro: string; carregando?: boolean; encerrada?: boolean };
+
 export function ProvedorDeSessao({ children }: { children: ReactNode }) {
-	const [sessao, setSessao] = useState<Sessao>();
-	const [erro, setErro] = useState("");
+	const [estado, definirEstado] = useState<EstadoDaSessao>({ erro: "" });
+	const { pathname } = useLocation();
 	const controlador = useRef<AbortController | null>(null);
-	const carregar = useCallback(() => {
+	const cancelarConsulta = useCallback(() => {
 		controlador.current?.abort();
+		controlador.current = null;
+	}, []);
+	const encerrarLocalmente = useCallback(() => {
+		cancelarConsulta();
+		definirEstado({ sessao: { autenticado: false, login_disponivel: true }, erro: "", encerrada: true });
+	}, [cancelarConsulta]);
+
+	const carregar = useCallback(() => {
+		if (controlador.current) return;
 		const c = new AbortController();
 		controlador.current = c;
-		setSessao(undefined);
-		setErro("");
+		definirEstado((anterior) => (anterior.erro ? { ...anterior, carregando: true, erro: "" } : anterior));
 		consultarSessao(c.signal)
-			.then((v) => {
-				if (!c.signal.aborted) setSessao(v);
+			.then((sessao) => {
+				if (c.signal.aborted) return;
+				if (sessao.autenticado && Date.parse(sessao.expira_em) <= Date.now()) {
+					encerrarLocalmente();
+					return;
+				}
+				definirEstado((anterior) => {
+					if (anterior.encerrada) return anterior;
+					return { sessao, erro: "", encerrada: anterior.sessao?.autenticado && !sessao.autenticado };
+				});
 			})
 			.catch((e) => {
-				if (!c.signal.aborted) {
-					if (e instanceof ErroHTTP && e.status === 401) setSessao({ autenticado: false, login_disponivel: true });
-					else setErro(e instanceof ErroHTTP ? e.message : "Não foi possível consultar a sessão.");
+				if (c.signal.aborted) return;
+				if (e instanceof ErroHTTP && e.status === 401) {
+					encerrarLocalmente();
+					return;
 				}
+				definirEstado((anterior) => {
+					if (anterior.encerrada) return anterior;
+					return {
+						...anterior,
+						carregando: false,
+						erro: e instanceof ErroHTTP ? e.message : "Não foi possível consultar a sessão.",
+					};
+				});
+			})
+			.finally(() => {
+				if (controlador.current === c) controlador.current = null;
 			});
-	}, []);
+	}, [encerrarLocalmente]);
+	const revalidarSessao = useEffectEvent(() => {
+		if (!estado.encerrada && (pathname !== "/entrar" || estado.sessao?.autenticado)) carregar();
+	});
 	useEffect(() => {
 		carregar();
-		const expirar = () => {
-			controlador.current?.abort();
-			setSessao({ autenticado: false, login_disponivel: true });
-		};
 		const canal = typeof BroadcastChannel === "function" ? new BroadcastChannel("aprova:sessao") : null;
-		if (canal) canal.onmessage = expirar;
-		window.addEventListener("focus", carregar);
-		window.addEventListener("pageshow", carregar);
-		window.addEventListener("aprova:sessao-expirada", expirar);
-		return () => {
-			controlador.current?.abort();
-			canal?.close();
-			window.removeEventListener("focus", carregar);
-			window.removeEventListener("pageshow", carregar);
-			window.removeEventListener("aprova:sessao-expirada", expirar);
+		if (canal)
+			canal.onmessage = (evento) => {
+				if (evento.data === "sair") encerrarLocalmente();
+			};
+		const aoRecuperarFoco = () => revalidarSessao();
+		const aoRestaurarPagina = (evento: PageTransitionEvent) => {
+			if (evento.persisted) revalidarSessao();
 		};
-	}, [carregar]);
+		window.addEventListener("focus", aoRecuperarFoco);
+		window.addEventListener("pageshow", aoRestaurarPagina);
+		window.addEventListener("aprova:sessao-expirada", encerrarLocalmente);
+		return () => {
+			cancelarConsulta();
+			canal?.close();
+			window.removeEventListener("focus", aoRecuperarFoco);
+			window.removeEventListener("pageshow", aoRestaurarPagina);
+			window.removeEventListener("aprova:sessao-expirada", encerrarLocalmente);
+		};
+	}, [cancelarConsulta, carregar, encerrarLocalmente]);
 	useEffect(() => {
-		if (!sessao?.autenticado) return;
-		const timer = setTimeout(
-			() => {
-				setSessao({ autenticado: false, login_disponivel: true });
-			},
-			Math.max(0, Date.parse(sessao.expira_em) - Date.now()),
-		);
+		if (!estado.sessao?.autenticado) return;
+		const timer = setTimeout(encerrarLocalmente, Math.max(0, Date.parse(estado.sessao.expira_em) - Date.now()));
 		return () => {
 			clearTimeout(timer);
 		};
-	}, [sessao]);
+	}, [estado.sessao, encerrarLocalmente]);
+
+	const { erro } = estado;
+	const sessao = estado.carregando || erro ? undefined : estado.sessao;
 	const logout = useRef<Promise<void> | null>(null);
 	function sair() {
 		logout.current ??= encerrar().finally(() => {
@@ -70,14 +104,14 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 		} catch (e) {
 			if (!(e instanceof ErroHTTP && e.status === 401)) throw e;
 		}
-		controlador.current?.abort();
-		setSessao({ autenticado: false, login_disponivel: true });
+		encerrarLocalmente();
 		if (typeof BroadcastChannel === "function") {
 			const canal = new BroadcastChannel("aprova:sessao");
 			canal.postMessage("sair");
 			canal.close();
 		}
 	}
+	if (estado.encerrada && pathname !== "/entrar") return <Navigate to="/entrar" replace />;
 	return <Contexto value={{ sessao, erro, carregar, sair }}>{children}</Contexto>;
 }
 export function useSessao() {

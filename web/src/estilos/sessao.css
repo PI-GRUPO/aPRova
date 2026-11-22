@@ -37,7 +37,7 @@
 	height: 28px;
 }
 
-.cartao-entrar > .botao {
+.cartao-entrar > .botao-primario {
 	width: 100%;
 	background: var(--texto-primario);
 }

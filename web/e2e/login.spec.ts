@@ -44,6 +44,24 @@ for (const largura of [1440, 390, 360, 320])
 			await expect(login).toBeFocused();
 		});
 	}
+
+test("opção de login aparece enquanto a sessão demora e aguarda o clique", async ({ page }) => {
+	let tentativas = 0;
+	await page.route("**/api/sessao", () => {});
+	await page.route("**/auth/github", (r) => {
+		tentativas++;
+		return r.fulfill({ body: "Autorização GitHub de teste" });
+	});
+	await page.goto("/entrar");
+	const login = page.getByRole("link", { name: "Continuar com GitHub" });
+	await expect(login).toBeVisible();
+	await expect(page.getByText("Confirmando disponibilidade…")).toHaveCount(0);
+	expect(tentativas).toBe(0);
+	await login.click();
+	await expect(page).toHaveURL(/\/auth\/github$/);
+	expect(tentativas).toBe(1);
+});
+
 test("login mantém erro recuperável, indisponibilidade e sessão autenticada", async ({ page }) => {
 	let falhar = true;
 	await page.route("**/api/sessao", (r) =>
@@ -52,10 +70,10 @@ test("login mantém erro recuperável, indisponibilidade e sessão autenticada",
 	await page.goto("/entrar?erro=autenticacao");
 	await expect(page.getByText("Não foi possível concluir a autenticação. Inicie uma nova tentativa.")).toBeVisible();
 	await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
-	await expect(page.getByRole("link", { name: "Continuar com GitHub" })).toHaveCount(0);
+	await expect(page.getByRole("link", { name: "Continuar com GitHub" })).toBeVisible();
 	falhar = false;
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
-	await expect(page.getByRole("link", { name: "Continuar com GitHub" })).toBeVisible();
+	await expect(page.getByText("Serviço temporariamente indisponível.")).toHaveCount(0);
 	await page.unroute("**/api/sessao");
 	await page.route("**/api/sessao", (r) => r.fulfill({ json: { autenticado: false, login_disponivel: false } }));
 	await page.reload();

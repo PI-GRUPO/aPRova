@@ -1,5 +1,50 @@
 # Implementação do dashboard aPRova
 
+## Redirecionamento após expiração da sessão GitHub
+
+Base `432b527`, F3B, card #65. O provedor de sessão do dashboard abre `/entrar`
+quando chega o prazo de `expira_em`, quando uma consulta autenticada recebe HTTP
+401 ou quando a revalidação ao recuperar o foco detecta a perda da sessão. O
+redirecionamento substitui a página atual no histórico e a tela de login
+oferece uma nova entrada pelo GitHub. Erros temporários continuam recuperáveis na
+página atual. A interface usa a tela existente (`9:2` e `15:1769`) e o contrato
+de sessão documentado em [F3](dashboard-f3.md).
+
+A lógica está em `web/src/app/sessao.tsx` e `web/src/servicos/http.ts`. A
+regressão em `web/e2e/sessao.spec.ts` cobre o vencimento com a página aberta,
+o retorno à aba com respostas HTTP 200 sem autenticação ou 401 e o tratamento
+de falhas temporárias. As capturas locais em `.capturas-mcp/login/local-*`
+conferem a tela em desktop e mobile, nos temas claro e escuro. As referências
+Figma incluem um aviso de protótipo que a tela de produção já omitia.
+
+Instalação pelo lockfile, Biome, TypeScript e build aprovados. No Chromium,
+143 cenários passaram na suíte completa. Os três cenários restantes passaram
+na reexecução após isolar a consulta de vínculo Slack nos testes de Conta. A
+validação usou respostas controladas e handlers Go com provedor de teste.
+
+### Revalidação em segundo plano
+
+O cookie mantém o login ao recarregar a página dentro do prazo de `expira_em`
+(até oito horas, limitado pela validade do token). Ao voltar para a aba, o
+provedor confere a sessão em segundo plano e mantém os dados exibidos enquanto
+aguarda. Eventos simultâneos de foco e restauração da página compartilham a
+consulta pendente. Os testes cobrem a resposta demorada, o relatório já exibido
+durante a revalidação e a persistência após recarregar a página com os handlers
+Go de teste. Biome, build e 51 cenários Playwright de sessão, login, navegação
+e leituras passaram.
+
+### Entrada manual após sair ou expirar
+
+Ao vencer a sessão ou confirmar **Sair**, o dashboard encerra a sessão da aba e
+abre `/entrar`. O logout confirmado também retorna as outras abas à tela de
+login. A tela oferece **Continuar com GitHub** enquanto a disponibilidade é
+consultada e em falhas transitórias. A autorização começa quando a pessoa
+aciona esse link. Depois de encerrar a sessão, os eventos de foco e restauração
+da página deixam de revalidá-la. Biome e build aprovados. A regressão completa
+passou com 148 testes e a última execução focada de login e sessão passou com
+26 testes, incluindo cancelamento no vencimento, saída em duas abas e nova
+autenticação com o provedor de teste.
+
 ## Instalação selecionada na Visão Geral em 22/11/2026
 
 Os links do menu e da marca descartavam `installation_id`. Ao voltar para a Visão Geral, as consultas usavam a primeira instalação autorizada da sessão. Isso podia mostrar métricas de outra conta, com valores diferentes dos repositórios que a pessoa estava acompanhando.

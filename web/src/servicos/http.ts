@@ -43,9 +43,8 @@ export async function consultarJSON(
 			redirect: "error",
 		});
 		if (!resposta.ok) {
-			if (resposta.status === 401 && opcoes.privada) {
+			if (resposta.status === 401 && opcoes.privada && !controlador.signal.aborted) {
 				window.dispatchEvent(new Event("aprova:sessao-expirada"));
-				window.location.assign("/entrar");
 			}
 			throw new ErroHTTP(
 				"http",
