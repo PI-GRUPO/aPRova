@@ -108,6 +108,22 @@ test("auditoria aceita o mesmo corte em outro fuso e recusa diferença de um nan
 	await expect(page.getByRole("cell", { name: "permissao_insuficiente" })).toHaveCount(0);
 });
 
+test("proporção de risco alto usa análises avaliadas como denominador", async ({ page }) => {
+	await page.goto(`${origem}/entrar`);
+	await page.route("**/api/metricas?*", async (rota) => {
+		const resposta = await rota.fetch();
+		const corpo = await resposta.json();
+		const mapa = [{ data: corpo.snapshot.slice(0, 10), alto: 1, medio: 1, baixo: 2, nao_avaliado: 0 }];
+		const dados = { ...corpo.dados, recebidas: 4, avaliadas: 4, alto: 1, mapa };
+		await rota.fulfill({ response: resposta, json: { ...corpo, dados } });
+	});
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	const indicador = page.getByRole("region", { name: "Métricas dos últimos 30 dias" });
+	const metrica = indicador.locator(".metrica-overview").filter({ hasText: "Proporção de risco alto" });
+	await expect(metrica.getByText("25%", { exact: true })).toBeVisible();
+	await expect(metrica.locator(".contexto-metrica-desktop")).toHaveText("1 de 4 avaliadas");
+});
+
 test("falha real das métricas preserva a fila e permite nova consulta", async ({ page }) => {
 	await page.goto(`${origem}/entrar`);
 	await page.route("**/api/metricas?*", (r) => r.fulfill({ status: 503, json: {} }));

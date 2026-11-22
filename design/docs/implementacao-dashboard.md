@@ -6,6 +6,9 @@ Base `8339adb`, cards #66–#68 e #70. A validação do corte compara o instante
 nanosegundos e reconhece diferentes fusos e representações da fração. O valor
 original da API segue na URL de paginação.
 
+A Visão geral usa **Proporção de risco alto** para a divisão de análises de
+risco alto pelo total avaliado.
+
 ## Parâmetro SQL da paginação de auditoria e recibos
 
 Base `ded799a`. As consultas incorporadas à API usam `@deslocamento` no `OFFSET`
