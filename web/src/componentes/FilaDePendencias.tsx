@@ -57,7 +57,7 @@ export function FilaDePendencias() {
 						value={q.get("fila") ?? ""}
 						onChange={(e) => filtrar("fila", e.target.value)}
 					/>
-					<ConsultaPrivada titulo="Repositórios" secao consultar={consultarRepos} filtrosDaConsulta={[]}>
+					<ConsultaPrivada titulo="Repositórios" secao consultar={consultarRepos} filtrosDaConsulta={[]} reutilizar>
 						{(repos) => (
 							<div className="campo">
 								<span className="rotulo-campo">Repositório</span>
@@ -72,7 +72,7 @@ export function FilaDePendencias() {
 					</ConsultaPrivada>
 				</div>
 			</ControlesDaLista>
-			<ConsultaPrivada titulo="Pendências" secao consultar={consultarFila} filtrosDaConsulta={parametros}>
+			<ConsultaPrivada titulo="Pendências" secao consultar={consultarFila} filtrosDaConsulta={parametros} reutilizar>
 				{(dados) => <Resultados dados={dados} />}
 			</ConsultaPrivada>
 		</section>

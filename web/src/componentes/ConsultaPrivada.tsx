@@ -1,9 +1,11 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
+import type { CacheDeLeituras } from "@/app/cache-de-leituras";
 import { useSessao } from "@/app/sessao";
 import { Protegida } from "@/paginas/Acesso";
 import { erroDeAnalise } from "@/servicos/analises";
 import { type Consulta, RecursoIndisponivel } from "@/servicos/fonte";
+import { ErroHTTP } from "@/servicos/http";
 import { Botao, PainelDeEstado } from "./Primitivos";
 
 type Props<T> = {
@@ -13,6 +15,7 @@ type Props<T> = {
 	secao?: boolean;
 	filtrosDaConsulta?: string[];
 	ajuda?: ReactNode;
+	reutilizar?: boolean;
 };
 export function ConsultaPrivada<T>(props: Props<T>) {
 	const { sessao, erro } = useSessao();
@@ -40,25 +43,51 @@ export function ConsultaPrivada<T>(props: Props<T>) {
 function EspacoDaConsulta({ secao, children }: { secao?: boolean; children: ReactNode }) {
 	return secao ? children : <div className="pagina">{children}</div>;
 }
-export function useLeitura<T>(consultar: Consulta<T>, instalacao: string, filtros: string) {
-	const [estado, definir] = useState<{ dados: T } | { erro: string } | { indisponivel: true }>();
+type EstadoDaLeitura<T> = { dados: T } | { erro: string } | { indisponivel: true };
+type ResultadoDaLeitura<T> = {
+	consultar: Consulta<T>;
+	chave: string;
+	cache?: CacheDeLeituras;
+	estado?: EstadoDaLeitura<T>;
+};
+
+export function useLeitura<T>(
+	consultar: Consulta<T>,
+	instalacao: string,
+	filtros: string,
+	{ reutilizar = false, habilitada = true }: { reutilizar?: boolean; habilitada?: boolean } = {},
+) {
+	const { cacheDeLeituras } = useSessao();
+	const cache = reutilizar ? cacheDeLeituras : undefined;
+	const chave = JSON.stringify([instalacao, filtros]);
+	const [resultado, definir] = useState<ResultadoDaLeitura<T>>();
 	const [tentativa, repetir] = useState(0);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: tentativa repete a consulta após erro.
 	useEffect(() => {
+		if (!habilitada) return;
 		const c = new AbortController();
 		const q = new URLSearchParams(filtros);
-		definir(undefined);
+		const geracao = cache?.geracao;
+		const registrar = (estado?: EstadoDaLeitura<T>) => definir({ consultar, chave, cache, estado });
+		registrar(cache?.buscar(consultar, chave));
 		consultar({ instalacao, repositorio: q.get("repositorio") ?? "" }, q, c.signal)
 			.then((dados) => {
-				if (!c.signal.aborted) definir({ dados });
+				if (c.signal.aborted) return;
+				if (cache && cache.geracao === geracao) cache.guardar(consultar, chave, dados);
+				registrar({ dados });
 			})
 			.catch((e) => {
-				if (!c.signal.aborted) definir(e instanceof RecursoIndisponivel ? { indisponivel: true } : { erro: erroDeAnalise(e) });
+				if (c.signal.aborted) return;
+				if (e instanceof ErroHTTP && (e.status === 401 || e.status === 403)) cache?.limpar();
+				else cache?.descartar(consultar, chave);
+				registrar(e instanceof RecursoIndisponivel ? { indisponivel: true } : { erro: erroDeAnalise(e) });
 			});
 		return () => {
 			c.abort();
 		};
-	}, [consultar, instalacao, filtros, tentativa]);
+	}, [consultar, instalacao, filtros, tentativa, cache, chave, habilitada]);
+	const mesmaConsulta = resultado?.consultar === consultar && resultado.chave === chave && resultado.cache === cache;
+	const estado = habilitada ? (mesmaConsulta ? resultado.estado : cache?.buscar(consultar, chave)) : undefined;
 	return { estado, repetir: () => repetir((n) => n + 1) };
 }
 function Resultado<T>({
@@ -69,8 +98,9 @@ function Resultado<T>({
 	ajuda,
 	instalacao,
 	filtros,
+	reutilizar,
 }: Props<T> & { instalacao: string; filtros: string }) {
-	const { estado, repetir } = useLeitura(consultar, instalacao, filtros);
+	const { estado, repetir } = useLeitura(consultar, instalacao, filtros, { reutilizar });
 	if (estado && "dados" in estado) return children(estado.dados);
 	const Titulo = secao ? "h2" : "h1";
 	return (

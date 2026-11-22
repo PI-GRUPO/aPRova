@@ -3,11 +3,13 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMobile } from "@/app/responsivo";
 import { useSessao } from "@/app/sessao";
 import { dataUTC, Estado, Risco } from "@/componentes/Analise";
+import { useLeitura } from "@/componentes/ConsultaPrivada";
 import { ControlesDaLista } from "@/componentes/ControlesDaLista";
 import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import { Selecao } from "@/componentes/Selecao";
 import { CabecalhoDaTabela, Celula, Coluna, ColunaOrdenavel, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
-import { erroDeAnalise, estados, listarAnalises, listarRepositorios, type PaginaAnalises } from "@/servicos/analises";
+import { consultarRepos, estados, listarAnalises, type PaginaAnalises } from "@/servicos/analises";
+import type { Consulta } from "@/servicos/fonte";
 import { Protegida } from "./Acesso";
 import "@/estilos/analises.css";
 export function Analises() {
@@ -46,17 +48,17 @@ function consultaDaLista(q: URLSearchParams, id: string) {
 	const inicio = new Date(fim);
 	if (periodo === "todos") inicio.setTime(Date.UTC(1970, 0, 1));
 	else if (["7", "30", "90"].includes(periodo)) inicio.setUTCDate(inicio.getUTCDate() - Number(periodo));
-	else throw new Error("Período inválido.");
+	else return null;
 	c.set("inicio", inicio.toISOString().slice(0, 10));
 	c.set("fim", fim.toISOString().slice(0, 10));
 	return c;
 }
+const consultarLista: Consulta<PaginaAnalises> = (_escopo, consulta, signal) => listarAnalises(consulta, signal);
+
 function ListaDaInstalacao({ id }: { id: string }) {
 	const mobile = useMobile();
 	const { sessao } = useSessao();
 	const [q, setQ] = useSearchParams();
-	const [repos, setRepos] = useState<string[]>();
-	const [erroRepos, setErroRepos] = useState("");
 	const [atualizacao, setAtualizacao] = useState(0);
 	const [busca, setBusca] = useState(q.get("numero_pr") ?? "");
 	const [erroBusca, setErroBusca] = useState("");
@@ -65,20 +67,9 @@ function ListaDaInstalacao({ id }: { id: string }) {
 		setBusca(numeroPR);
 	}, [numeroPR]);
 	const autorizado = !!sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === id);
-	useEffect(() => {
-		if (!autorizado) return;
-		const c = new AbortController();
-		listarRepositorios(id, c.signal)
-			.then((v) => {
-				if (!c.signal.aborted) setRepos(v);
-			})
-			.catch((e) => {
-				if (!c.signal.aborted) setErroRepos(erroDeAnalise(e));
-			});
-		return () => {
-			c.abort();
-		};
-	}, [id, autorizado]);
+	const { estado: catalogo } = useLeitura(consultarRepos, id, "", { reutilizar: true, habilitada: autorizado });
+	const repos = catalogo && "dados" in catalogo ? catalogo.dados : undefined;
+	const erroRepos = catalogo && "erro" in catalogo ? catalogo.erro : "";
 	function filtro(nome: string, valor: string) {
 		setQ(() => {
 			const nova = new URLSearchParams(window.location.search);
@@ -259,41 +250,15 @@ function Resultados({
 	aoOrdenar: () => void;
 }) {
 	const navegar = useNavigate();
-	const [dados, setDados] = useState<PaginaAnalises>();
-	const [erro, setErro] = useState("");
-	const [tentativa, setTentativa] = useState(0);
-	const chave = q.toString();
-	// biome-ignore lint/correctness/useExhaustiveDependencies: chave representa os filtros e tentativa permite repetição explícita.
-	useEffect(() => {
-		const c = new AbortController();
-		setDados(undefined);
-		setErro("");
-		try {
-			listarAnalises(consultaDaLista(new URLSearchParams(chave), id), c.signal)
-				.then((v) => {
-					if (!c.signal.aborted) setDados(v);
-				})
-				.catch((e) => {
-					if (!c.signal.aborted) setErro(erroDeAnalise(e));
-				});
-		} catch (e) {
-			setErro(e instanceof Error ? e.message : "Filtros inválidos.");
-		}
-		return () => {
-			c.abort();
-		};
-	}, [chave, id, tentativa]);
+	const consulta = consultaDaLista(q, id);
+	const { estado, repetir } = useLeitura(consultarLista, id, consulta?.toString() ?? "", { reutilizar: true, habilitada: !!consulta });
+	const dados = estado && "dados" in estado ? estado.dados : undefined;
+	const erro = consulta ? (estado && "erro" in estado ? estado.erro : "") : "Período inválido.";
 	if (erro)
 		return (
 			<PainelDeEstado titulo="Não foi possível consultar análises" erro>
 				<p>{erro}</p>
-				<Botao
-					onClick={() => {
-						setTentativa((v) => v + 1);
-					}}
-				>
-					Tentar novamente
-				</Botao>
+				<Botao onClick={repetir}>Tentar novamente</Botao>
 			</PainelDeEstado>
 		);
 	if (!dados) return <p role="status">Carregando análises…</p>;

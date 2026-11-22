@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, type Route, test } from "@playwright/test";
 
 import tentativaComHtml from "./fixtures/tentativa-com-html.json" with { type: "json" };
 
@@ -191,6 +191,62 @@ test("filtros, ordenação, paginação e retorno preservam URL e snapshot", asy
 	await page.getByRole("button", { name: "Limpar filtros" }).click();
 	await expect(page).toHaveURL(/\/analises\?installation_id=42$/);
 });
+
+test("retorno do detalhe mantém a lista visível até atualizar em segundo plano", async ({ page }) => {
+	await simular(page);
+	await page.goto("http://127.0.0.1:18080/analises");
+	const itemAnterior = page.getByRole("link", { name: "equipe/projeto #12", exact: true });
+	await itemAnterior.click();
+	await expect(page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true })).toBeVisible();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route("**/api/analises?*", capturar, { times: 1 });
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	const consulta = await pendente;
+	await expect(itemAnterior).toBeVisible();
+	await expect(page.getByText("Carregando análises…")).toHaveCount(0);
+	await consulta.fulfill({
+		json: {
+			installation_id: 42,
+			snapshot: instante,
+			pagina: 1,
+			limite: 2,
+			total: 1,
+			tem_mais: false,
+			itens: [{ ...analise, numero_pr: 17 }],
+		},
+	});
+	await expect(page.getByRole("link", { name: "equipe/projeto #17", exact: true })).toBeVisible();
+	await expect(itemAnterior).toHaveCount(0);
+});
+
+test("revalidação negada descarta as leituras guardadas da sessão", async ({ page }) => {
+	await simular(page);
+	await page.goto("http://127.0.0.1:18080/analises?installation_id=42");
+	const item = page.getByRole("link", { name: "equipe/projeto #12", exact: true });
+	const titulo = page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true });
+	await item.click();
+	await expect(titulo).toBeVisible();
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route("**/api/analises/*?*", capturar, { times: 1 });
+	await item.click();
+	const consulta = await pendente;
+	await expect(titulo).toBeVisible();
+	await consulta.fulfill({ status: 403, json: {} });
+	await expect(page.getByText("Você não tem acesso a esta instalação ou repositório.")).toBeVisible();
+	await expect(titulo).toHaveCount(0);
+	await page.route("**/api/analises?*", () => {});
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	await expect(page.getByText("Carregando análises…")).toBeVisible();
+	await expect(item).toHaveCount(0);
+});
+
 test("análise substituída sem gate, histórico ou recibo não inventa evidências", async ({ page }) => {
 	await simular(page, {
 		...detalhe,

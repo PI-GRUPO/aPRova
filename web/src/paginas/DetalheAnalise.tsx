@@ -5,10 +5,12 @@ import { useSessao } from "@/app/sessao";
 import { AcoesSimuladas } from "@/componentes/AcoesSimuladas";
 import { dataUTC, Estado, PainelAnalise, Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
+import { useLeitura } from "@/componentes/ConsultaPrivada";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
-import { type Detalhe, detalharAnalise, erroDeAnalise, estados, urlGitHub } from "@/servicos/analises";
+import { type Detalhe, detalharAnalise, estados, urlGitHub } from "@/servicos/analises";
 import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
+import type { Consulta } from "@/servicos/fonte";
 import { buscarRecibo, type Verificacao, verificarRecibo } from "@/servicos/recibos";
 import { Protegida } from "./Acesso";
 import "@/estilos/analises.css";
@@ -38,25 +40,15 @@ export function DetalheAnalise() {
 		</div>
 	);
 }
+const consultarDetalhe: Consulta<Detalhe> = ({ instalacao, repositorio }, filtros, signal) =>
+	detalharAnalise(filtros.get("id") ?? "", instalacao, signal, repositorio);
+
 function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalacao: string; repositorio: string }) {
-	const [dados, setDados] = useState<Detalhe>();
-	const [erro, setErro] = useState("");
-	const [tentativa, setTentativa] = useState(0);
 	const [q] = useSearchParams();
-	// biome-ignore lint/correctness/useExhaustiveDependencies: tentativa permite repetir uma consulta por ação explícita.
-	useEffect(() => {
-		const c = new AbortController();
-		setDados(undefined);
-		setErro("");
-		detalharAnalise(id, instalacao, c.signal, repositorio)
-			.then((v) => {
-				if (!c.signal.aborted) setDados(v);
-			})
-			.catch((e) => {
-				if (!c.signal.aborted) setErro(erroDeAnalise(e));
-			});
-		return () => c.abort();
-	}, [id, instalacao, repositorio, tentativa]);
+	const filtros = new URLSearchParams({ id, repositorio });
+	const { estado, repetir } = useLeitura(consultarDetalhe, instalacao, filtros.toString(), { reutilizar: true });
+	const dados = estado && "dados" in estado ? estado.dados : undefined;
+	const erro = estado && "erro" in estado ? estado.erro : "";
 	const retorno = new URLSearchParams(q.get("retorno") ?? "");
 	retorno.set("installation_id", instalacao);
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
@@ -71,7 +63,7 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 					<h1>Detalhe da análise</h1>
 					<PainelDeEstado titulo="Não foi possível abrir a análise" erro>
 						<p>{erro}</p>
-						<Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao>
+						<Botao onClick={repetir}>Tentar novamente</Botao>
 					</PainelDeEstado>
 				</>
 			) : !dados ? (

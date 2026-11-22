@@ -1,9 +1,16 @@
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useEffectEvent, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import { ErroHTTP } from "@/servicos/http";
 import { consultarSessao, encerrarSessao, type Sessao } from "@/servicos/sessao";
+import { CacheDeLeituras } from "./cache-de-leituras";
 
-const Contexto = createContext<{ sessao?: Sessao; erro: string; carregar: () => void; sair: () => Promise<void> } | null>(null);
+const Contexto = createContext<{
+	sessao?: Sessao;
+	cacheDeLeituras?: CacheDeLeituras;
+	erro: string;
+	carregar: () => void;
+	sair: () => Promise<void>;
+} | null>(null);
 type EstadoDaSessao = { sessao?: Sessao; erro: string; carregando?: boolean; encerrada?: boolean };
 
 export function ProvedorDeSessao({ children }: { children: ReactNode }) {
@@ -90,6 +97,10 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 
 	const { erro } = estado;
 	const sessao = estado.carregando || erro ? undefined : estado.sessao;
+	const escopoDaSessao = sessao?.autenticado
+		? JSON.stringify([sessao.usuario.id, sessao.csrf_token, sessao.expira_em, sessao.instalacoes.map((i) => i.id).sort((a, b) => a - b)])
+		: "";
+	const cacheDeLeituras = useMemo(() => (escopoDaSessao ? new CacheDeLeituras() : undefined), [escopoDaSessao]);
 	const logout = useRef<Promise<void> | null>(null);
 	function sair() {
 		logout.current ??= encerrar().finally(() => {
@@ -112,7 +123,7 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 		}
 	}
 	if (estado.encerrada && pathname !== "/entrar") return <Navigate to="/entrar" replace />;
-	return <Contexto value={{ sessao, erro, carregar, sair }}>{children}</Contexto>;
+	return <Contexto value={{ sessao, cacheDeLeituras, erro, carregar, sair }}>{children}</Contexto>;
 }
 export function useSessao() {
 	const v = useContext(Contexto);

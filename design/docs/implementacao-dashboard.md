@@ -1,5 +1,27 @@
 # Implementação do dashboard aPRova
 
+## Reaproveitamento de leituras na navegação
+
+Base `a461be7`, cards #66–#68. A Visão geral (métricas, fila e catálogo), a lista
+de Análises e o detalhe reaproveitam a última resposta validada da mesma
+consulta enquanto fazem uma nova leitura da API. O primeiro acesso e consultas
+sem resposta recente exibem carregamento. O cache fica em memória, com até
+40 entradas por consulta e validade de dois minutos. Instalação, repositório,
+filtros, página e corte de paginação fazem parte das chaves aplicáveis.
+
+O provedor de sessão substitui o cache ao encerrar a sessão ou mudar a
+identidade ou as instalações autorizadas. Uma rejeição de acesso durante a
+revalidação descarta as leituras guardadas. A API continua validando o acesso
+em cada atualização. A lógica fica em `web/src/app/cache-de-leituras.ts` e no
+hook `useLeitura`. As telas e os contratos HTTP existentes são reutilizados.
+
+Biome e build passaram. A regressão Chromium aprovou 149 cenários e os dois
+cenários de Análises restantes passaram após ajustar a interceptação das
+consultas ao build de produção. Os testes cobrem o retorno com resposta
+pendente, a atualização dos resultados e o descarte após HTTP 403. Capturas
+em desktop e mobile nos dois temas em `.capturas-mcp/f4a/local-*` e
+`.capturas-mcp/dashboard/leituras-overview-*`.
+
 ## Redirecionamento após expiração da sessão GitHub
 
 Base `432b527`, F3B, card #65. O provedor de sessão do dashboard abre `/entrar`

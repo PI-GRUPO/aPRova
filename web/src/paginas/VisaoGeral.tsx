@@ -74,7 +74,7 @@ export function VisaoGeral() {
 function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
 	const q = new URLSearchParams({ installation_id: instalacao });
 	if (repo) q.set("repositorio", repo);
-	const { estado, repetir } = useLeitura(consultarVisaoGeral, instalacao, q.toString());
+	const { estado, repetir } = useLeitura(consultarVisaoGeral, instalacao, q.toString(), { reutilizar: true });
 	const dados = estado && "dados" in estado ? estado.dados : null;
 	return (
 		<>

@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
+import { expect, type Route, test } from "@playwright/test";
 
 const origem = "http://127.0.0.1:18080";
 for (const largura of [1440, 390]) {
@@ -96,6 +96,28 @@ test("falha real das métricas preserva a fila e permite nova consulta", async (
 	await page.unroute("**/api/metricas?*");
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
 	await expect(page.getByText(/Dados da API · 30 dias/)).toBeVisible();
+});
+
+test("visão geral reaparece enquanto as métricas do mesmo escopo são revalidadas", async ({ page }) => {
+	await page.goto(`${origem}/entrar`);
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	await expect(page.getByText(/Dados da API · 30 dias/)).toBeVisible();
+
+	const menu = page.getByRole("navigation", { name: "Principal", exact: true });
+	await menu.getByRole("link", { name: "Análises", exact: true }).click();
+	await expect(page.getByRole("heading", { name: "Análises", exact: true })).toBeVisible();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route("**/api/metricas?*", capturar, { times: 1 });
+	await menu.getByRole("link", { name: "Visão geral", exact: true }).click();
+	const consulta = await pendente;
+	await expect(page.getByText(/Dados da API · 30 dias/)).toBeVisible();
+	await expect(page.getByText("Carregando métricas…")).toHaveCount(0);
+	const atualizada = page.waitForResponse((r) => r.url() === consulta.request().url());
+	await consulta.continue();
+	expect((await atualizada).ok()).toBeTruthy();
 });
 
 test("a página do recorte do mapa pode ser compartilhada e recarregada", async ({ page }) => {
