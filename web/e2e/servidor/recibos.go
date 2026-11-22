@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"log"
-	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/receipt"
@@ -28,7 +27,7 @@ func recibosDeTeste() *receipt.Verificador {
 	if err != nil {
 		log.Fatal(err)
 	}
-	conteudo := receipt.Conteudo{Versao: receipt.VersaoDoFormato, ID: "00000000-0000-4000-8000-000000000002", TaskRunID: "00000000-0000-4000-8000-000000000003", TenantID: 1, Repositorio: repositorioDoCenario, NumeroPR: 1, SHAHead: "abc123", Nivel: domain.RiscoBaixo, NivelDeterministico: domain.RiscoBaixo, EmitidoEm: time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC), KeyID: assinador.IDChave()}
+	conteudo := receipt.Conteudo{Versao: receipt.VersaoDoFormato, ID: reciboDoCenario, TaskRunID: analiseDoCenario, TenantID: 42, Repositorio: repositorioDoCenario, NumeroPR: 1, SHAHead: shaDoCenario, Nivel: domain.RiscoBaixo, NivelDeterministico: domain.RiscoBaixo, EmitidoEm: instanteDoCenario, KeyID: assinador.IDChave()}
 	bytes, err := conteudo.Serializar()
 	if err != nil {
 		log.Fatal(err)

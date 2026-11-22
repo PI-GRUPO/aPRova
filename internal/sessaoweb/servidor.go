@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"slices"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ type Relatorios interface {
 	RelatorioSemanalDosRepositorios(context.Context, int64, []string, time.Time, time.Time) (domain.RelatorioSemanal, error)
 }
 type Opcoes struct {
+	Leituras      LeiturasPainel
+	Vinculos      map[string]string
 	Origem        string
 	Provedor      Provedor
 	Armazenamento Armazenamento
@@ -30,6 +33,8 @@ type Opcoes struct {
 	Agora         func() time.Time
 }
 type Servidor struct {
+	leituras      LeiturasPainel
+	vinculos      map[string]string
 	origem        string
 	seguro        bool
 	provedor      Provedor
@@ -57,7 +62,7 @@ func Novo(op Opcoes) (*Servidor, error) {
 	if op.Agora == nil {
 		op.Agora = time.Now
 	}
-	return &Servidor{origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
+	return &Servidor{leituras: op.Leituras, vinculos: op.Vinculos, origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
 }
 func origemValida(origem string) (*url.URL, error) {
 	erro := errors.New("WEB_URL_PUBLICA deve ser uma origem HTTPS, ou HTTP em localhost")
@@ -145,6 +150,10 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.consultar(w, r)
 	case "POST /api/sessao/sair":
 		s.sair(w, r)
+	case "GET /api/metricas", "GET /api/web/recibos", "GET /api/web/auditoria", "GET /api/web/regras":
+		s.leituraPainel(w, r, path.Base(r.URL.Path))
+	case "GET /api/web/vinculo-slack":
+		s.vinculoPessoal(w, r)
 	case "GET /api/repositorios":
 		s.repositorios(w, r)
 	case "GET /api/web/relatorio-semanal":

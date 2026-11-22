@@ -20,6 +20,7 @@ export const niveis = new Map<string, string>([
 	["nao_avaliado", "Não avaliado"],
 ]);
 export type Analise = {
+	espera_segundos?: number;
 	id: string;
 	repositorio: string;
 	numero_pr: number;
@@ -100,6 +101,7 @@ function analise(v: unknown): v is Analise {
 		objeto(v) &&
 		["id", "repositorio", "sha_head", "autor"].every((k) => typeof v[k] === "string") &&
 		numero(v.numero_pr) &&
+		(v.espera_segundos === undefined || numero(v.espera_segundos)) &&
 		typeof v.estado === "string" &&
 		estados.has(v.estado) &&
 		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
@@ -237,3 +239,38 @@ export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, fi
 		throw new ErroHTTP("resposta", "A resposta não corresponde aos filtros da fila.");
 	return dados;
 };
+
+export async function saudeRepositorios(id: string, pagina: number, signal: AbortSignal) {
+	const q = new URLSearchParams({ installation_id: id, detalhes: "1", pagina: String(pagina) });
+	const v = await consultarJSON(`/api/repositorios?${q}`, { privada: true, signal });
+	if (
+		!objeto(v) ||
+		v.installation_id !== Number(id) ||
+		v.pagina !== pagina ||
+		v.limite !== 10 ||
+		!numero(v.total) ||
+		!objeto(v.permissoes) ||
+		!Array.isArray(v.itens) ||
+		v.itens.length !== Math.max(0, Math.min(10, v.total - (pagina - 1) * 10))
+	)
+		return invalida();
+	const permissoes = v.permissoes;
+	const acessos = ["checks", "contents", "pull_requests"].flatMap((k) => {
+		const nivel = permissoes[k];
+		if (nivel === undefined) return [];
+		if (typeof nivel !== "string" || !["read", "write", "admin", "none"].includes(nivel)) return invalida();
+		return [`${k}: ${nivel}`];
+	});
+	const itens = v.itens.map((r) => {
+		if (
+			!objeto(r) ||
+			typeof r.nome !== "string" ||
+			typeof r.branch !== "string" ||
+			!(r.ultima_analise === null || (typeof r.ultima_analise === "string" && data(r.ultima_analise))) ||
+			!(r.check_obrigatorio === null || typeof r.check_obrigatorio === "boolean")
+		)
+			return invalida();
+		return { nome: r.nome, branch: r.branch, ultima: r.ultima_analise, check: r.check_obrigatorio };
+	});
+	return { itens, permissoes: acessos.join(" · "), total: v.total };
+}

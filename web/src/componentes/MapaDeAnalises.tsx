@@ -10,10 +10,23 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 	const { instalacao } = useEscopo("");
 	const [recorte, setRecorte] = useState<RecorteMapa>();
 	const [erro, setErro] = useState(false);
-	const [q] = useSearchParams();
+	const [q, setQ] = useSearchParams();
+	const repo = q.get("repositorio") ?? "";
+	const pagina = __MOCKS__ ? 1 : Number(q.get("mapa_pagina") ?? 1);
+	const snapshot = __MOCKS__ ? "" : (q.get("mapa_snapshot") ?? "");
+	function paginar(numero: number, corte: string) {
+		setQ((anterior) => {
+			const nova = new URLSearchParams(anterior);
+			nova.set("mapa_pagina", String(numero));
+			nova.set("mapa_snapshot", corte);
+			return nova;
+		});
+	}
 	useEffect(() => {
 		const c = new AbortController();
-		void consultarRecorteMapa(instalacao, data, nivel, c.signal)
+		setRecorte(undefined);
+		setErro(false);
+		void consultarRecorteMapa(instalacao, data, nivel, c.signal, repo, pagina, snapshot)
 			.then((v) => {
 				if (!c.signal.aborted) setRecorte(v);
 			})
@@ -23,9 +36,19 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 		return () => {
 			c.abort();
 		};
-	}, [instalacao, data, nivel]);
+	}, [instalacao, data, nivel, repo, pagina, snapshot]);
 	const retorno = new URLSearchParams();
-	for (const nome of ["installation_id", "fila", "repositorio", "mapa_dia", "mapa_nivel", "pagina", "snapshot"]) {
+	for (const nome of [
+		"installation_id",
+		"fila",
+		"repositorio",
+		"mapa_dia",
+		"mapa_nivel",
+		"mapa_pagina",
+		"mapa_snapshot",
+		"pagina",
+		"snapshot",
+	]) {
 		const v = q.get(nome);
 		if (v) retorno.set(nome, v);
 	}
@@ -43,11 +66,19 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 			</div>
 		);
 	if (!recorte) return <p role="status">Carregando análises…</p>;
-	if (!recorte.itens.length) return <p role="status">Nenhuma análise neste recorte.</p>;
+	if (!recorte.itens.length && pagina === 1) return <p role="status">Nenhuma análise neste recorte.</p>;
 	return (
 		<nav className="lista-recorte-mapa" aria-label="Análises deste dia e nível">
 			{recorte.itens.map((item) => (
-				<Link className="botao" key={item.id} to={destinoAnalise(item.id, recorte.origem, instalacao, retorno)}>
+				<Link
+					className="botao"
+					key={item.id}
+					to={
+						recorte.origem === "mock"
+							? destinoAnalise(item.id, recorte.origem, instalacao, retorno)
+							: `/analises/${encodeURIComponent(item.id)}?${new URLSearchParams({ installation_id: instalacao, repositorio: item.repositorio, origem: "fila", retorno: retorno.toString() })}`
+					}
+				>
 					<span>
 						{item.repositorio} #{item.pr}
 						<span className="horario-recorte">
@@ -58,6 +89,16 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 					</span>
 				</Link>
 			))}
+			{(pagina > 1 || recorte.temMais) && (
+				<div className="controles">
+					<Botao disabled={pagina === 1} onClick={() => paginar(pagina - 1, recorte.snapshot ?? "")}>
+						Anterior
+					</Botao>
+					<Botao disabled={!recorte.temMais || pagina >= 201} onClick={() => paginar(pagina + 1, recorte.snapshot ?? "")}>
+						Próxima
+					</Botao>
+				</div>
+			)}
 		</nav>
 	);
 }
@@ -82,7 +123,7 @@ function CelulaMapa({
 			aberto={aberto}
 			aoMudar={aoMudar}
 			titulo={`${rotuloDiaMapa(data)} · risco ${nivel === "medio" ? "médio" : nivel}`}
-			descricao={`Dados simulados · ${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível`}
+			descricao={`${__MOCKS__ ? "Dados simulados" : "Dados da API"} · ${quantidade} ${quantidade === 1 ? "análise" : "análises"} neste dia e nível`}
 			gatilho={
 				<button
 					type="button"
@@ -122,6 +163,8 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 		setQ(
 			(anterior) => {
 				const novo = new URLSearchParams(anterior);
+				novo.delete("mapa_pagina");
+				novo.delete("mapa_snapshot");
 				if (recorte) {
 					novo.set("mapa_dia", recorte.data);
 					novo.set("mapa_nivel", recorte.nivel);
@@ -151,7 +194,7 @@ export function MapaDeAnalises({ dias }: { dias: VisaoGeralDados["mapa"] }) {
 					</div>
 				)}
 				<div className="legenda-mapa apoio">
-					Dados simulados · por dia{" "}
+					{__MOCKS__ ? "Dados simulados" : "Recebidas em UTC"} · por dia{" "}
 					{["0", "1", "2", "3+"].map((v, i) => (
 						<span key={v}>
 							<i style={{ opacity: i ? 0.5 + i / 6 : 0.12 }} />

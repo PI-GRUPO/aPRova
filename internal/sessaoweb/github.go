@@ -99,6 +99,12 @@ func (g *GitHub) get(ctx context.Context, token, caminho string, destino any) er
 	if res.StatusCode == 401 {
 		return ErrSemSessao
 	}
+	if res.StatusCode == 403 && (res.Header.Get("X-RateLimit-Remaining") == "0" || res.Header.Get("Retry-After") != "") {
+		return ErrGitHubIndisponivel
+	}
+	if res.StatusCode == 403 || res.StatusCode == 404 {
+		return erroAcessoMetadata{}
+	}
 	if res.StatusCode != 200 {
 		return ErrGitHubIndisponivel
 	}
@@ -115,15 +121,17 @@ func (g *GitHub) Usuario(ctx context.Context, token string) (Usuario, error) {
 	}
 	return u, err
 }
-func (g *GitHub) Instalacoes(ctx context.Context, token string) ([]Instalacao, error) {
-	lista := []Instalacao{}
+func (g *GitHub) instalacoesGitHub(ctx context.Context, token string) ([]instalacaoGitHub, error) {
+	lista := []instalacaoGitHub{}
 	for pagina := 1; pagina <= 100; pagina++ {
 		var v struct {
 			Total       int `json:"total_count"`
 			Instalacoes []struct {
-				ID       int64   `json:"id"`
-				Suspensa *string `json:"suspended_at"`
-				Conta    struct {
+				AppID      int64            `json:"app_id"`
+				Permissoes permissoesGitHub `json:"permissions"`
+				ID         int64            `json:"id"`
+				Suspensa   *string          `json:"suspended_at"`
+				Conta      struct {
 					Login string `json:"login"`
 				} `json:"account"`
 			} `json:"installations"`
@@ -136,7 +144,7 @@ func (g *GitHub) Instalacoes(ctx context.Context, token string) ([]Instalacao, e
 				return nil, ErrGitHubIndisponivel
 			}
 			if i.Suspensa == nil {
-				lista = append(lista, Instalacao{i.ID, i.Conta.Login})
+				lista = append(lista, instalacaoGitHub{Instalacao{i.ID, i.Conta.Login}, i.AppID, i.Permissoes})
 			}
 		}
 		if pagina*100 >= v.Total {
@@ -148,14 +156,12 @@ func (g *GitHub) Instalacoes(ctx context.Context, token string) ([]Instalacao, e
 	}
 	return nil, fmt.Errorf("%w: limite de paginação", ErrGitHubIndisponivel)
 }
-func (g *GitHub) Repositorios(ctx context.Context, token string, id int64) ([]string, error) {
-	lista := []string{}
+func (g *GitHub) repositoriosGitHub(ctx context.Context, token string, id int64) ([]repositorioGitHub, error) {
+	lista := []repositorioGitHub{}
 	for pagina := 1; pagina <= 100; pagina++ {
 		var v struct {
-			Total int `json:"total_count"`
-			Repos []struct {
-				Nome string `json:"full_name"`
-			} `json:"repositories"`
+			Total int                 `json:"total_count"`
+			Repos []repositorioGitHub `json:"repositories"`
 		}
 		if err := g.get(ctx, token, fmt.Sprintf("/user/installations/%d/repositories?per_page=100&page=%d", id, pagina), &v); err != nil {
 			return nil, err
@@ -164,7 +170,7 @@ func (g *GitHub) Repositorios(ctx context.Context, token string, id int64) ([]st
 			if strings.Count(r.Nome, "/") != 1 {
 				return nil, ErrGitHubIndisponivel
 			}
-			lista = append(lista, r.Nome)
+			lista = append(lista, r)
 		}
 		if pagina*100 >= v.Total {
 			return lista, nil
@@ -174,4 +180,27 @@ func (g *GitHub) Repositorios(ctx context.Context, token string, id int64) ([]st
 		}
 	}
 	return nil, ErrGitHubIndisponivel
+}
+
+func (g *GitHub) Instalacoes(ctx context.Context, token string) ([]Instalacao, error) {
+	itens, e := g.instalacoesGitHub(ctx, token)
+	if e != nil {
+		return nil, e
+	}
+	lista := make([]Instalacao, 0, len(itens))
+	for _, i := range itens {
+		lista = append(lista, i.Instalacao)
+	}
+	return lista, nil
+}
+func (g *GitHub) Repositorios(ctx context.Context, token string, id int64) ([]string, error) {
+	itens, e := g.repositoriosGitHub(ctx, token, id)
+	if e != nil {
+		return nil, e
+	}
+	lista := make([]string, 0, len(itens))
+	for _, i := range itens {
+		lista = append(lista, i.Nome)
+	}
+	return lista, nil
 }

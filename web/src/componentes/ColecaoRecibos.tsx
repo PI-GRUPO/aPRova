@@ -1,9 +1,10 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { useMobile } from "@/app/responsivo";
 import { consultarColecao, exportarColecao, type RegistroRecibo, verificarCadeia } from "@/servicos/colecao-recibos";
 import { baixar } from "@/servicos/recibos";
 import { ConsultaPrivada, useEscopo } from "./ConsultaPrivada";
-import { opcoesPeriodo, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "./Gestao";
+import { opcoesDoPeriodo, PaginacaoPainel, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "./Gestao";
 import { Botao, Modal } from "./Primitivos";
 
 export function ColecaoRecibos() {
@@ -18,11 +19,11 @@ export function ColecaoRecibos() {
 		</ConsultaPrivada>
 	);
 }
-function Lista({ repositorios, itens }: { repositorios: string[]; itens: RegistroRecibo[] }) {
+function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapshot }: Awaited<ReturnType<typeof consultarColecao>>) {
 	const mobile = useMobile();
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? "";
-	const dias = ["7", "30", "90"].includes(q.get("periodo") ?? "") ? Number(q.get("periodo")) : 30;
+	const dias = Number(q.get("periodo") ?? 30);
 	const opcoesRepos = repositorios.map((nome) => ({ valor: nome, rotulo: nome }));
 	const escopo = useEscopo(repo);
 	const [resultado, definir] = useState("");
@@ -43,11 +44,11 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 				if (!c.signal.aborted)
 					definir(v.valida ? "Cadeia verificada." : `Falha na verificação da cadeia. ${v.primeiroReciboInvalido ?? ""}`);
 			} else {
-				const arquivo = await exportarColecao.executar(escopo, dias, acao, c.signal);
+				const arquivo = await exportarColecao.executar(escopo, dias, acao, c.signal, snapshot ?? "");
 				if (!c.signal.aborted) baixar(`recibos.${acao}`, arquivo);
 			}
-		} catch {
-			if (!c.signal.aborted) setErro("Não foi possível concluir a operação.");
+		} catch (e) {
+			if (!c.signal.aborted) setErro(e instanceof Error ? e.message : "Não foi possível concluir a operação.");
 		} finally {
 			consulta.current = null;
 			if (!c.signal.aborted) setOcupado(false);
@@ -55,13 +56,18 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 	}
 	const ferramentas = (
 		<>
-			<SeletorGestao rotulo="Período" valor={String(dias)} aoMudar={(v) => atualizar("periodo", v)} opcoes={opcoesPeriodo} />
+			<SeletorGestao
+				rotulo="Período"
+				valor={String(dias)}
+				aoMudar={(v) => atualizar("periodo", v)}
+				opcoes={opcoesDoPeriodo(String(dias))}
+			/>
 			<div className="acoes-colecao">
 				<Botao disabled={!verificarCadeia.disponivel || ocupado} onClick={() => void executar("cadeia")}>
 					Verificar cadeia
 				</Botao>
 				{(["json", "csv"] as const).map((f) => (
-					<Botao key={f} disabled={!exportarColecao.disponivel || ocupado} onClick={() => void executar(f)}>
+					<Botao key={f} disabled={!exportarColecao.disponivel || ocupado || total > 500} onClick={() => void executar(f)}>
 						Exportar {f.toUpperCase()}
 					</Botao>
 				))}
@@ -69,6 +75,13 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 			{!verificarCadeia.disponivel && !exportarColecao.disponivel && (
 				<p className="apoio">Verificação da cadeia e exportação da coleção indisponíveis.</p>
 			)}
+			{!verificarCadeia.disponivel && exportarColecao.disponivel && (
+				<p className="apoio">
+					JSON e CSV exportam os metadados, incluindo o identificador da chave e o hash. Os bytes assinados e a verificação estão no recibo
+					individual. A completude da cadeia está indisponível.
+				</p>
+			)}
+			{total > 500 && <p className="apoio">Restrinja o período ou o repositório para exportar até 500 recibos.</p>}
 			{resultado && <p role="status">{resultado}</p>}
 			{erro && <p role="alert">{erro}</p>}
 		</>
@@ -93,7 +106,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 								<p>
 									{r.repo} #{r.pr}
 								</p>
-								<p className="apoio">Prévia simulada · assinatura não verificada</p>
+								<p className="apoio">{__MOCKS__ ? "Prévia simulada · assinatura não verificada" : "Assinatura não verificada"}</p>
 								<PreviaDoRecibo recibo={r} gatilho={<Botao aria-label={`Ver prévia do recibo ${r.id}`}>Ver prévia do recibo</Botao>} />
 							</div>
 						</li>
@@ -101,7 +114,10 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 					{!itens.length && <li className="apoio">Nenhum recibo para os filtros selecionados.</li>}
 				</ul>
 			) : (
-				<SecaoGestao titulo="Recibos por repositório · dados simulados" ajuda="Consulte um recibo pelo UUID para verificar sua assinatura.">
+				<SecaoGestao
+					titulo={__MOCKS__ ? "Recibos por repositório · dados simulados" : "Recibos por repositório"}
+					ajuda="Consulte um recibo pelo UUID para verificar sua assinatura."
+				>
 					<TabelaGestao
 						legenda="Recibos por repositório"
 						colunas={["Recibo", "Análise", "Commit", "Emissão", "Verificação"]}
@@ -133,6 +149,7 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 					/>
 				</SecaoGestao>
 			)}
+			{snapshot && <PaginacaoPainel pagina={pagina} limite={limite} total={total} snapshot={snapshot} />}
 			{mobile && (
 				<details className="ferramentas-recibos-mobile">
 					<summary>Período, cadeia e exportação</summary>
@@ -145,11 +162,19 @@ function Lista({ repositorios, itens }: { repositorios: string[]; itens: Registr
 
 function PreviaDoRecibo({ recibo: r, gatilho }: { recibo: RegistroRecibo; gatilho: ReactNode }) {
 	return (
-		<Modal titulo="Prévia do recibo" descricao="Identificação do recibo · dados simulados" gatilho={gatilho}>
+		<Modal
+			titulo="Prévia do recibo"
+			descricao={__MOCKS__ ? "Identificação do recibo · dados simulados" : "Metadados do recibo assinado"}
+			gatilho={gatilho}
+		>
 			<p>
 				{r.repo} #{r.pr} · commit {r.sha}
 			</p>
-			<p>A verificação individual exige um recibo assinado.</p>
+			{__MOCKS__ ? (
+				<p>A verificação individual exige um recibo assinado.</p>
+			) : (
+				<Link to={`/recibos/${r.id}`}>Consultar recibo assinado</Link>
+			)}
 		</Modal>
 	);
 }

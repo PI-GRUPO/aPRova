@@ -18,7 +18,7 @@ consulta `GET /api/analises` para a instalação selecionada e abre o detalhe em
 `/analises/:id`. O filtro de repositório abrange a fila inteira. A busca textual
 por PR, repositório ou commit abrange a página exibida. Os filtros e a paginação
 ficam na URL. O relatório semanal usa `GET /api/web/relatorio-semanal` e cobre
-sete dias UTC.
+sete dias UTC. As métricas de 30 dias e o mapa usam `/api/metricas`. Recibos, regras, auditoria e vínculo pessoal usam as leituras de sessão em `/api/web/`.
 
 Para visualizar as seções simuladas em desenvolvimento, defina
 `APROVA_DASHBOARD_MOCKS=1` em `web/.env.local` e reinicie o Vite. As métricas
@@ -30,7 +30,7 @@ exclui essas fixtures.
 
 Sessão, repositórios, análises, relatório semanal, recibos por UUID, chaves e
 verificação individual usam a API mesmo com as simulações ativadas.
-Aprovação, pedido de alterações, reexecução, gravações de gestão, vínculo Slack
+Aprovação, pedido de alterações, reexecução, gravações de gestão, edição do vínculo Slack
 e operações sobre a cadeia completa permanecem indisponíveis no painel.
 
 ```sh

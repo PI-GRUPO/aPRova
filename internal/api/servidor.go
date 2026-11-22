@@ -122,7 +122,7 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))
 
-	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal"} {
+	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal", "/api/metricas", "/api/web/recibos", "/api/web/auditoria", "/api/web/regras", "/api/web/vinculo-slack"} {
 		roteador.Handle(caminho, s.sessaoWeb)
 	}
 	roteador.Get("/health", saude.Viva)

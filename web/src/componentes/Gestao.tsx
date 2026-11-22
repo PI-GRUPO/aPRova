@@ -21,7 +21,7 @@ export function PaginaGestao({
 	children: ReactNode;
 	voltar?: boolean;
 }) {
-	const simulada = !!useContext(Contexto);
+	const simulada = !!useContext(Contexto) && __MOCKS__;
 	return (
 		<div className={`pagina pagina-gestao${voltar ? " pagina-regras" : ""}`}>
 			{voltar && (
@@ -141,12 +141,17 @@ export const opcoesPeriodo = [
 	{ valor: "30", rotulo: "Últimos 30 dias" },
 	{ valor: "90", rotulo: "Últimos 90 dias" },
 ];
+export function opcoesDoPeriodo(valor: string) {
+	return opcoesPeriodo.some((p) => p.valor === valor) ? opcoesPeriodo : [...opcoesPeriodo, { valor, rotulo: `Últimos ${valor} dias` }];
+}
 export function useFiltrosGestao() {
 	const [q, setQ] = useSearchParams();
 	const atualizar = (nome: string, valor: string) =>
 		setQ(
 			(anterior) => {
 				const novo = new URLSearchParams(anterior);
+				novo.delete("pagina");
+				novo.delete("snapshot");
 				if (valor) novo.set(nome, valor);
 				else novo.delete(nome);
 				return novo;
@@ -154,4 +159,29 @@ export function useFiltrosGestao() {
 			{ replace: true },
 		);
 	return { q, atualizar };
+}
+
+export function PaginacaoPainel({ pagina, limite, total, snapshot }: { pagina: number; limite: number; total: number; snapshot: string }) {
+	const [, setQ] = useSearchParams();
+	function paginar(p: number) {
+		setQ((q) => {
+			const v = new URLSearchParams(q);
+			v.set("pagina", String(p));
+			v.set("snapshot", snapshot);
+			return v;
+		});
+	}
+	return (
+		<div className="controles">
+			<span className="apoio" role="status">
+				{total} registros · página {pagina}
+			</span>
+			<Botao disabled={pagina <= 1} onClick={() => paginar(pagina - 1)}>
+				Anterior
+			</Botao>
+			<Botao disabled={pagina >= 201 || pagina * limite >= total} onClick={() => paginar(pagina + 1)}>
+				Próxima
+			</Botao>
+		</div>
+	);
 }

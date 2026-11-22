@@ -39,6 +39,7 @@
 	color: var(--texto-secundario);
 }
 .valor-overview {
+	overflow-wrap: anywhere;
 	font-size: 32px;
 	font-weight: 590;
 	line-height: 40px;
@@ -253,6 +254,9 @@
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
+}
+.ultimo-recibo-overview .mono {
+	overflow-wrap: anywhere;
 }
 .ultimo-recibo-overview h2 {
 	font-size: 14px;

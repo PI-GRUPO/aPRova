@@ -1,7 +1,15 @@
-import { indisponivel } from "./fonte";
+import { listarAnalises } from "./analises";
 export type NivelMapa = "alto" | "medio" | "baixo";
 export type ItemMapa = { id: string; repositorio: string; pr: number; avaliadoEm: string };
-export type RecorteMapa = { origem: "mock" | "api"; data: string; nivel: NivelMapa; itens: ItemMapa[] };
+export type RecorteMapa = {
+	origem: "mock" | "api";
+	data: string;
+	nivel: NivelMapa;
+	itens: ItemMapa[];
+	pagina?: number;
+	temMais?: boolean;
+	snapshot?: string;
+};
 export function nivelMapaValido(valor: string | null): valor is NivelMapa {
 	return valor === "alto" || valor === "medio" || valor === "baixo";
 }
@@ -16,10 +24,39 @@ export function rotuloDiaMapa(valor: string) {
 	);
 	return `${partes.find((p) => p.type === "day")?.value} ${partes.find((p) => p.type === "month")?.value.replace(/\.$/, "")}`;
 }
-export async function consultarRecorteMapa(_instalacao: string, data: string, nivel: NivelMapa, signal: AbortSignal): Promise<RecorteMapa> {
-	if (!__MOCKS__) return indisponivel();
+export async function consultarRecorteMapa(
+	instalacao: string,
+	data: string,
+	nivel: NivelMapa,
+	signal: AbortSignal,
+	repositorio = "",
+	pagina = 1,
+	snapshot = "",
+): Promise<RecorteMapa> {
 	signal.throwIfAborted();
 	if (!dataMapaValida(data) || !nivelMapaValido(nivel)) throw new Error("Recorte inválido.");
+	if (!__MOCKS__) {
+		const fim = new Date(Date.parse(data) + 86400000).toISOString().slice(0, 10);
+		const q = new URLSearchParams({ installation_id: instalacao, inicio: data, fim, nivel, pagina: String(pagina) });
+		if (repositorio) q.set("repositorio", repositorio);
+		if (snapshot) q.set("snapshot", snapshot);
+		const v = await listarAnalises(q, signal);
+		if (
+			(snapshot && snapshot !== v.snapshot) ||
+			v.pagina !== pagina ||
+			v.itens.some((i) => i.nivel !== nivel || new Date(i.recebido_em).toISOString().slice(0, 10) !== data)
+		)
+			throw new Error("Recorte inválido.");
+		return {
+			origem: "api",
+			data,
+			nivel,
+			pagina: v.pagina,
+			temMais: v.tem_mais,
+			snapshot: v.snapshot,
+			itens: v.itens.map((i) => ({ id: i.id, repositorio: i.repositorio, pr: i.numero_pr, avaliadoEm: i.recebido_em })),
+		};
+	}
 	const { referenciasMapaMock, diasMapaMock } = await import("@/mocks/mapa");
 	signal.throwIfAborted();
 	if (!diasMapaMock.includes(data)) throw new Error("Dia fora da janela.");

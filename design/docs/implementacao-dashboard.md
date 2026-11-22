@@ -1,6 +1,52 @@
 # Implementação do dashboard aPRova
 
-## Escopo atual — orientação da usuária em 16/11/2026
+## Leituras do dashboard em 21/11/2026
+
+Branch `feat/web-dashboard`, base `dea7211`. Este lote autoriza consultas de backend para as telas existentes. Os registros das fases abaixo descrevem o estado das respectivas datas. Os parâmetros, DTOs, limites, unidades e critérios de contagem estão no [OpenAPI do dashboard](dashboard-openapi.json).
+
+| Tela | Fonte de produção e alcance |
+| --- | --- |
+| Visão geral, mapa e fila (#67–68) | `GET /api/metricas` agrega recebimentos, níveis finais, falhas por tentativa, desfechos das bloqueadas, duração média observável e série diária. O estoque em aprovação e o último recibo consideram todo o escopo autorizado. A fila e o detalhe do dia usam a lista canônica de análises. A espera em segundos só aparece quando há transição registrada. O relatório semanal permanece em `GET /api/web/relatorio-semanal`. |
+| Coleção privada de recibos (#70) | `GET /api/web/recibos` pagina por emissão e UUID, com período, repositório e corte de inserção. O painel exporta UUID, repositório, PR, SHA, emissão, identificador da chave e hash SHA-256 em JSON ou CSV, até 500 por arquivo. Consulta pública por UUID, download dos bytes assinados, chaves e verificação individual permanecem nos contratos de recibos. |
+| Regras e calibração | `GET /api/web/regras` consulta motivos acionados por identificador e nível, aprovações registradas para o SHA e até 50 avaliações com nível determinístico, nível final e estado da calibração. Regras sem ocorrências não têm registro no agregado. |
+| Auditoria | `GET /api/web/auditoria` consulta tentativas remotas persistidas, inclusive recusadas, com filtros e total no escopo. A fonte atual registra ações originadas no Slack. A ordenação usa instante e ID. A decisão de uma tentativa já existente pode passar de aceita a falha entre consultas. |
+| Conta (#77) | `GET /api/web/vinculo-slack` informa à própria pessoa se o login GitHub revalidado consta no mapa usado pela API. Identificadores do Slack ficam no servidor. |
+| Repositórios | `GET /api/repositorios` preserva o catálogo e aceita `detalhes=1` para consultar dez repositórios por página. Mostra o último recebimento e as permissões declaradas pela instalação. A proteção considera o check aPRova da mesma App na branch padrão, por proteção clássica ou regra efetiva. Dados ocultos, ambíguos ou incompletos aparecem como não confirmados. |
+
+**Limites das fontes.** Versão, histórico e configuração efetivamente usada pelo worker carecem de registro consultável por repositório. Propostas e seus estados carecem de fonte persistida no núcleo. Os limites de SLA pertencem aos timers do n8n. O recorte de recibos acessíveis pode omitir elos de outros repositórios e o núcleo não publica um inventário assinado da cadeia inteira. Essas leituras permanecem indisponíveis em produção. Demonstrações de gestão e métricas continuam identificadas em desenvolvimento com `APROVA_DASHBOARD_MOCKS=1`. O catálogo e a fila exigem autorização mesmo com a demonstração ativa.
+
+**Arquivos do lote.** Rotas e composição em `cmd/api`, `internal/api` e `internal/sessaoweb`. Consultas em `internal/repository/painelsql`, `queries/painel_analises.sql`, `internal/repository` e modelo em `internal/domain`. Adapters, componentes e páginas em `web/src`. Cobertura em `internal/sessaoweb`, `tests/integration/postgres` e `web/e2e`. As telas utilizam os frames já inventariados da página desktop `5:2` e variantes mobile/claro.
+
+<details>
+<summary>Arquivos alterados nesta rodada</summary>
+
+- `cmd/api/` — `main.go`.
+- `design/docs/` — `dashboard-openapi.json`, `implementacao-dashboard.md`.
+- `internal/api/` — `servidor.go`.
+- `internal/domain/` — `leitura_painel.go`, `painel_analises.go`.
+- `internal/repository/db/` — `painel_analises.sql.go`.
+- `internal/repository/` — `leitura_painel.go`, `painel_analises.go`.
+- `internal/repository/painelsql/` — `auditoria.sql`, `metricas.sql`, `recibos.sql`, `regras.sql`.
+- `internal/sessaoweb/` — `analises.go`, `github.go`, `leitura_painel.go`, `leitura_painel_test.go`, `saude_repositorios.go`, `servidor.go`.
+- `queries/` — `painel_analises.sql`.
+- `tests/integration/postgres/` — `leitura_painel_test.go`.
+- `web/` — `README.md`.
+- `web/e2e/` — `gestao.spec.ts`, `leituras-painel.spec.ts`, `sessao.spec.ts`, `validacao-interface.spec.ts`.
+- `web/e2e/servidor/` — `analises.go`, `leituras.go`, `main.go`, `recibos.go`, `sessao.go`.
+- `web/src/componentes/` — `ColecaoRecibos.tsx`, `ConsultaPrivada.tsx`, `FilaDePendencias.tsx`, `Gestao.tsx`, `MapaDeAnalises.tsx`, `VinculoSlack.tsx`.
+- `web/src/estilos/` — `visao-geral.css`.
+- `web/src/paginas/` — `Acesso.tsx`, `LeiturasGestao.tsx`, `VisaoGeral.tsx`.
+- `web/src/servicos/` — `analises.ts`, `colecao-recibos.ts`, `gestao.ts`, `mapa.ts`, `metricas.ts`, `painel.ts`, `vinculo-slack.ts`, `visao-geral.ts`.
+
+</details>
+
+**Validação local.** Instalação pelo lockfile (`npm ci --offline`), Biome, TypeScript, build Vite, geração sqlc e lint Go do diff. Testes com `-race` dos pacotes de sessão web, API, repositório, recibos, composição da API e web. Quatro testes de integração usaram PostgreSQL 16 com pgvector em contêiner descartável, com fixtures de dois tenants. Conferiram filtros, totais, paginação com inserção posterior ao corte, UUID fora do escopo, relações autorizadas e coincidência dos metadados de exportação com o recibo armazenado.
+
+Os 140 testes Playwright passaram em Chromium. A suíte cobre HTML malicioso, sessão expirada, isolamento, cancelamento, erro e recuperação, download e verificação de assinatura e recorte paginado reaberto pela URL. O Playwright exercita os handlers de sessão no build de produção com identidades e fontes de teste, além das demonstrações explícitas do Vite. As capturas em `.capturas-mcp/dashboard/leituras-overview-*` cobrem 1440 e 390 px nos temas claro e escuro. A matriz transversal do projeto também cobre 1024, 768 e 360 px. O build emite o aviso de tamanho do bundle principal.
+
+**Homologação.** Requer a API e o worker da instalação, sessão GitHub App com callback e armazenamento de sessão configurados, PostgreSQL com os dados existentes e permissões GitHub para as leituras de proteção. A consulta pessoal reflete `SLACK_GITHUB_VINCULOS` do processo da API. A mesma origem e o proxy existentes atendem às novas leituras.
+
+## Escopo histórico — orientação da usuária em 16/11/2026
 
 Implementar somente o front na branch `feat/web-dashboard`, consumindo a API
 existente. Não alterar API, endpoints, SQL, migrations ou código Go. Para

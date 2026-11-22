@@ -129,7 +129,7 @@ export function Conta() {
 								)}
 							</div>
 						</section>
-						<VinculoSlack key={sessao.usuario.id} />
+						<VinculoSlack usuario={sessao.usuario.id} key={sessao.usuario.id} />
 					</>
 				)}
 			</Protegida>

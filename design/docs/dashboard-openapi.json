@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "aPRova — leitura de análises F4A",
-    "version": "0.4.0",
-    "description": "Contrato implementado em 16/11/2026. Sessão GitHub App da F3; homologação OAuth real pendente. Apenas GETs. Não inclui APIs planejadas de métricas/gestão. Consulte dashboard-f4a.md e dashboard-f3.md para configuração e limites."
+    "title": "aPRova — leituras do dashboard",
+    "version": "0.5.0",
+    "description": "Consultas de sessão em mesma origem. O servidor confirma no GitHub a instalação e os repositórios acessíveis a cada consulta. As análises preservam também o contrato HMAC de serviço. Respostas privadas usam Cache-Control: no-store."
   },
   "servers": [
     {
@@ -384,88 +384,534 @@
         ],
         "parameters": [
           {
-            "name": "installation_id",
+            "$ref": "#/components/parameters/InstalacaoAutorizada"
+          },
+          {
+            "name": "detalhes",
             "in": "query",
-            "required": true,
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1"
+              ]
+            },
+            "description": "Habilita o contrato paginado de saúde."
+          },
+          {
+            "name": "pagina",
+            "in": "query",
+            "required": false,
             "schema": {
               "type": "integer",
-              "format": "int64",
-              "minimum": 1
+              "minimum": 1,
+              "maximum": 10000,
+              "default": 1
             },
-            "description": "A sessão precisa ter acesso confirmado pelo GitHub a esta instalação; o parâmetro não concede autorização."
+            "description": "Somente com detalhes=1."
           }
         ],
-        "description": "Consulta todas as páginas de repositórios autorizados. Não afirma saúde, check obrigatório ou permissões administrativas. Instalação sem repositórios acessíveis retorna 403.",
+        "description": "Sem detalhes, lista os nomes autorizados como antes. Com detalhes=1, consulta a saúde da página, por nome crescente (10 por página). O catálogo GitHub é consultado a cada requisição e pode mudar entre páginas. Sem repositórios acessíveis retorna 403.",
         "responses": {
           "200": {
             "description": "Consulta autorizada, sem cache.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Repositorios"
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/Repositorios"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SaudeRepositorios"
+                    }
+                  ]
                 }
               }
             }
           },
           "400": {
-            "description": "Parâmetros inválidos ou repetidos.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Erro"
-                }
-              }
-            }
+            "$ref": "#/components/responses/FiltrosInvalidos"
           },
           "401": {
-            "description": "Sessão ausente/expirada ou HMAC inválido; o serviço pode retornar corpo vazio.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Erro"
-                }
-              }
-            }
+            "$ref": "#/components/responses/SessaoInvalida"
           },
           "403": {
-            "description": "Instalação/repositório fora do escopo web.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Erro"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "UUID inexistente ou fora dos repositórios/tenant autorizados.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Erro"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Falha de leitura.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Erro"
-                }
-              }
-            }
+            "$ref": "#/components/responses/EscopoNegado"
           },
           "503": {
-            "description": "Fonte ou autorização indisponível.",
+            "$ref": "#/components/responses/LeituraIndisponivel"
+          }
+        }
+      }
+    },
+    "/api/metricas": {
+      "get": {
+        "operationId": "consultarMetricas",
+        "summary": "Visão geral por instalação",
+        "description": "Uma leitura consistente por consulta. A população do período usa received_at. Avaliações, transições e tentativas representam os registros existentes no momento da leitura. Percentuais sem denominador são indisponíveis.",
+        "security": [
+          {
+            "sessao": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstalacaoAutorizada"
+          },
+          {
+            "$ref": "#/components/parameters/RepositorioAutorizado"
+          },
+          {
+            "$ref": "#/components/parameters/PeriodoPainel"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autorizada, sem cache.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Erro"
+                  "type": "object",
+                  "required": [
+                    "installation_id",
+                    "repositorio",
+                    "inicio",
+                    "fim",
+                    "snapshot",
+                    "pagina",
+                    "limite",
+                    "dados"
+                  ],
+                  "properties": {
+                    "installation_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "repositorio": {
+                      "type": "string",
+                      "description": "Nome autorizado solicitado ou string vazia para todos os autorizados."
+                    },
+                    "inicio": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "fim": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "snapshot": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pagina": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "dados": {
+                      "$ref": "#/components/schemas/MetricasPainel"
+                    }
+                  }
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/FiltrosInvalidos"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessaoInvalida"
+          },
+          "403": {
+            "$ref": "#/components/responses/EscopoNegado"
+          },
+          "503": {
+            "$ref": "#/components/responses/LeituraIndisponivel"
+          }
+        }
+      }
+    },
+    "/api/web/recibos": {
+      "get": {
+        "operationId": "listarRecibosPrivados",
+        "summary": "Coleção privada de recibos",
+        "description": "Ordenação por emissão e UUID decrescentes. A exportação JSON/CSV dos metadados consulta esta mesma coleção com limite 500, na mesma janela e corte. A exportação individual assinada continua em /receipts/{id}.",
+        "security": [
+          {
+            "sessao": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstalacaoAutorizada"
+          },
+          {
+            "$ref": "#/components/parameters/RepositorioAutorizado"
+          },
+          {
+            "$ref": "#/components/parameters/PeriodoPainel"
+          },
+          {
+            "$ref": "#/components/parameters/PaginaColecao"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20
+            },
+            "description": "Máximo de itens retornados por página."
+          },
+          {
+            "$ref": "#/components/parameters/CorteColecao"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autorizada, sem cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "installation_id",
+                    "repositorio",
+                    "inicio",
+                    "fim",
+                    "snapshot",
+                    "pagina",
+                    "limite",
+                    "dados"
+                  ],
+                  "properties": {
+                    "installation_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "repositorio": {
+                      "type": "string",
+                      "description": "Nome autorizado solicitado ou string vazia para todos os autorizados."
+                    },
+                    "inicio": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "fim": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "snapshot": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pagina": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "dados": {
+                      "$ref": "#/components/schemas/ColecaoRecibos"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/FiltrosInvalidos"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessaoInvalida"
+          },
+          "403": {
+            "$ref": "#/components/responses/EscopoNegado"
+          },
+          "503": {
+            "$ref": "#/components/responses/LeituraIndisponivel"
+          }
+        }
+      }
+    },
+    "/api/web/auditoria": {
+      "get": {
+        "operationId": "listarAuditoria",
+        "summary": "Histórico de tentativas remotas",
+        "description": "Eventos existentes de remote_action_attempts, por attempted_at e id decrescentes. O motivo é o resultado registrado. O histórico atual tem origem Slack. Filtro Painel retorna coleção vazia. O corte exclui novos registros posteriores. Uma tentativa existente pode mudar de aceita a falha, alterando o total e as páginas filtradas por decisão.",
+        "security": [
+          {
+            "sessao": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstalacaoAutorizada"
+          },
+          {
+            "$ref": "#/components/parameters/RepositorioAutorizado"
+          },
+          {
+            "$ref": "#/components/parameters/PeriodoPainel"
+          },
+          {
+            "$ref": "#/components/parameters/PaginaColecao"
+          },
+          {
+            "name": "limite",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "description": "Máximo de itens retornados por página."
+          },
+          {
+            "$ref": "#/components/parameters/CorteColecao"
+          },
+          {
+            "name": "decisao",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "aceita",
+                "recusada",
+                "falha",
+                "repetida"
+              ]
+            },
+            "description": "Resultado registrado."
+          },
+          {
+            "name": "origem",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Slack",
+                "Painel"
+              ]
+            },
+            "description": "Origem da tentativa."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autorizada, sem cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "installation_id",
+                    "repositorio",
+                    "inicio",
+                    "fim",
+                    "snapshot",
+                    "pagina",
+                    "limite",
+                    "dados"
+                  ],
+                  "properties": {
+                    "installation_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "repositorio": {
+                      "type": "string",
+                      "description": "Nome autorizado solicitado ou string vazia para todos os autorizados."
+                    },
+                    "inicio": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "fim": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "snapshot": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pagina": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "dados": {
+                      "$ref": "#/components/schemas/AuditoriaPainel"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/FiltrosInvalidos"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessaoInvalida"
+          },
+          "403": {
+            "$ref": "#/components/responses/EscopoNegado"
+          },
+          "503": {
+            "$ref": "#/components/responses/LeituraIndisponivel"
+          }
+        }
+      }
+    },
+    "/api/web/regras": {
+      "get": {
+        "operationId": "consultarRegras",
+        "summary": "Regras acionadas e calibrações observadas",
+        "description": "Agrupamento por identificador e nível dos motivos persistidos no gate. Janela pela criação do gate. Calibrações das últimas 50 avaliações, por criação e identificador decrescentes.",
+        "security": [
+          {
+            "sessao": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/InstalacaoAutorizada"
+          },
+          {
+            "$ref": "#/components/parameters/RepositorioAutorizado"
+          },
+          {
+            "$ref": "#/components/parameters/PeriodoPainel"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autorizada, sem cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "installation_id",
+                    "repositorio",
+                    "inicio",
+                    "fim",
+                    "snapshot",
+                    "pagina",
+                    "limite",
+                    "dados"
+                  ],
+                  "properties": {
+                    "installation_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "repositorio": {
+                      "type": "string",
+                      "description": "Nome autorizado solicitado ou string vazia para todos os autorizados."
+                    },
+                    "inicio": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "fim": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "snapshot": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "pagina": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "limite": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "dados": {
+                      "$ref": "#/components/schemas/RegrasPainel"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/FiltrosInvalidos"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessaoInvalida"
+          },
+          "403": {
+            "$ref": "#/components/responses/EscopoNegado"
+          },
+          "503": {
+            "$ref": "#/components/responses/LeituraIndisponivel"
+          }
+        }
+      }
+    },
+    "/api/web/vinculo-slack": {
+      "get": {
+        "operationId": "consultarVinculoPessoal",
+        "summary": "Vínculo Slack do próprio login GitHub",
+        "description": "Revalida o usuário da sessão. Consulta a configuração de vínculos usada pelo resolvedor de ações da API. O resultado indica se o login possui vínculo configurado. Outros usuários, tokens e identificadores Slack são privados.",
+        "security": [
+          {
+            "sessao": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Consulta autorizada, sem cache.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "usuario_id",
+                    "vinculado"
+                  ],
+                  "properties": {
+                    "usuario_id": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "vinculado": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/FiltrosInvalidos"
+          },
+          "401": {
+            "$ref": "#/components/responses/SessaoInvalida"
+          },
+          "503": {
+            "$ref": "#/components/responses/LeituraIndisponivel"
           }
         }
       }
@@ -565,6 +1011,11 @@
                 "type": "null"
               }
             ]
+          },
+          "espera_segundos": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Somente listagem web. Tempo inteiro em segundos desde a entrada registrada mais recente em aguardando_aprovacao até a leitura. Ausente se a análise não aguarda ou a transição não está registrada."
           }
         },
         "required": [
@@ -1122,6 +1573,651 @@
           "testes_estruturados_disponiveis",
           "rede_isolada"
         ]
+      },
+      "MetricasPainel": {
+        "type": "object",
+        "required": [
+          "recebidas",
+          "avaliadas",
+          "alto",
+          "pendentes",
+          "desde",
+          "pendentes_sem_inicio",
+          "tempo_medio_segundos",
+          "tentativas",
+          "falhas",
+          "bloqueios",
+          "mapa",
+          "ultimo_recibo"
+        ],
+        "properties": {
+          "recebidas": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "avaliadas": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Recebidas com gate registrado."
+          },
+          "alto": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Recebidas com nível final alto. Denominador da proporção de alto: avaliadas."
+          },
+          "pendentes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Estoque atual em aguardando_aprovacao em todo o escopo, inclusive anteriores ao período."
+          },
+          "desde": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Entrada mais antiga conhecida entre as pendentes, após selecionar a última entrada de cada execução."
+          },
+          "pendentes_sem_inicio": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tempo_medio_segundos": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Média aritmética em segundos de started_at à primeira transição registrada para o estado terminal atual. Ausente como null quando não há pares válidos."
+          },
+          "tentativas": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Resultados do sandbox associados às análises recebidas no período."
+          },
+          "falhas": {
+            "type": "object",
+            "required": [
+              "infraestrutura",
+              "teste",
+              "compilacao"
+            ],
+            "properties": {
+              "infraestrutura": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "teste": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "compilacao": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "bloqueios": {
+            "type": "object",
+            "required": [
+              "aguardando",
+              "aprovadas",
+              "alteracoes",
+              "sem_decisao"
+            ],
+            "properties": {
+              "aguardando": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "aprovadas": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "alteracoes": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sem_decisao": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "description": "Recebidas com entrada registrada em aprovação. Estado atual em espera tem prioridade, demais classificadas pela última decisão sobre o SHA da execução."
+          },
+          "mapa": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "data",
+                "alto",
+                "medio",
+                "baixo",
+                "nao_avaliado"
+              ],
+              "properties": {
+                "data": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "alto": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "medio": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "baixo": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "nao_avaliado": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "description": "Dias com recebimentos, por data UTC e nível final. Dia omitido tem zero recebimentos. Execuções sem gate têm categoria própria."
+          },
+          "ultimo_recibo": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "repo",
+                  "pr",
+                  "hash",
+                  "emissao"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "repo": {
+                    "type": "string"
+                  },
+                  "pr": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "hash": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "emissao": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Último recibo emitido em todo o escopo autorizado, inclusive fora do período. Referência sem verificação de assinatura."
+          }
+        }
+      },
+      "ColecaoRecibos": {
+        "type": "object",
+        "required": [
+          "total",
+          "itens"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "repo",
+                "pr",
+                "sha",
+                "emissao",
+                "key_id",
+                "hash_sha256"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "pr": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "sha": {
+                  "type": "string"
+                },
+                "emissao": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "key_id": {
+                  "type": "string"
+                },
+                "hash_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AuditoriaPainel": {
+        "type": "object",
+        "required": [
+          "total",
+          "itens"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "repo",
+                "pr",
+                "data",
+                "pessoa",
+                "acao",
+                "decisao",
+                "motivo"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Identificador decimal do registro."
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "pr": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "data": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "pessoa": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "acao": {
+                  "type": "string",
+                  "enum": [
+                    "aprovar",
+                    "solicitar_alteracao",
+                    "reexecutar_analise"
+                  ]
+                },
+                "decisao": {
+                  "type": "string",
+                  "enum": [
+                    "aceita",
+                    "recusada",
+                    "falha",
+                    "repetida"
+                  ]
+                },
+                "motivo": {
+                  "type": "string",
+                  "maxLength": 500
+                }
+              }
+            }
+          }
+        }
+      },
+      "RegrasPainel": {
+        "type": "object",
+        "required": [
+          "regras",
+          "calibracoes"
+        ],
+        "properties": {
+          "regras": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "nivel",
+                "descricao",
+                "acionamentos",
+                "aprovadas",
+                "avaliadas_altas"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "nivel": {
+                  "type": "string",
+                  "enum": [
+                    "baixo",
+                    "medio",
+                    "alto"
+                  ]
+                },
+                "descricao": {
+                  "type": "string",
+                  "maxLength": 300,
+                  "description": "Uma descrição gravada nas ocorrências do período, limitada a 300 caracteres."
+                },
+                "acionamentos": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Gates distintos em que o motivo e nível aparecem."
+                },
+                "aprovadas": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Gates com nível final alto e aprovação registrada no mesmo SHA."
+                },
+                "avaliadas_altas": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Gates acionados com nível final alto, denominador da taxa de aprovação apesar do alto."
+                }
+              }
+            }
+          },
+          "calibracoes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "repo",
+                "pr",
+                "inicial",
+                "final",
+                "resultado"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "repo": {
+                  "type": "string"
+                },
+                "pr": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "inicial": {
+                  "type": "string",
+                  "enum": [
+                    "baixo",
+                    "medio",
+                    "alto"
+                  ]
+                },
+                "final": {
+                  "type": "string",
+                  "enum": [
+                    "baixo",
+                    "medio",
+                    "alto"
+                  ]
+                },
+                "resultado": {
+                  "type": "string",
+                  "enum": [
+                    "desligada",
+                    "sem_motivo_a_calibrar",
+                    "motivo_nao_calibravel",
+                    "embedding_indisponivel",
+                    "historico_indisponivel",
+                    "historico_insuficiente",
+                    "vizinho_negativo",
+                    "calibrada"
+                  ]
+                }
+              }
+            },
+            "maxItems": 50
+          }
+        }
+      },
+      "SaudeRepositorios": {
+        "type": "object",
+        "required": [
+          "installation_id",
+          "pagina",
+          "limite",
+          "total",
+          "permissoes",
+          "itens"
+        ],
+        "properties": {
+          "installation_id": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "pagina": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limite": {
+            "const": 10
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "permissoes": {
+            "type": "object",
+            "properties": {
+              "checks": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "read",
+                  "write",
+                  "admin"
+                ]
+              },
+              "contents": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "read",
+                  "write",
+                  "admin"
+                ]
+              },
+              "pull_requests": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "read",
+                  "write",
+                  "admin"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "description": "Permissões declaradas pela instalação. Campo ausente indica nível não informado."
+          },
+          "itens": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "nome",
+                "branch",
+                "ultima_analise",
+                "check_obrigatorio"
+              ],
+              "properties": {
+                "nome": {
+                  "type": "string"
+                },
+                "branch": {
+                  "type": "string",
+                  "description": "Branch padrão do catálogo, vazia quando desconhecida."
+                },
+                "ultima_analise": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Último recebimento registrado, em qualquer período."
+                },
+                "check_obrigatorio": {
+                  "anyOf": [
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "true quando confirmado por contexto e App na proteção clássica ou em regra efetiva. false quando ambas as consultas completas permitem concluir ausência. null quando o resultado é inconclusivo, inclusive se a permissão é insuficiente."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "FiltrosInvalidos": {
+        "description": "Parâmetros inválidos ou repetidos.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "SessaoInvalida": {
+        "description": "Sessão ausente, expirada ou revogada.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "EscopoNegado": {
+        "description": "Instalação/repositório fora do escopo web.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      },
+      "LeituraIndisponivel": {
+        "description": "Fonte ou autorização indisponível.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Erro"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "InstalacaoAutorizada": {
+        "name": "installation_id",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "minimum": 1
+        },
+        "description": "A sessão precisa ter acesso confirmado pelo GitHub a esta instalação; o parâmetro não concede autorização."
+      },
+      "RepositorioAutorizado": {
+        "name": "repositorio",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Restrição opcional dentro dos repositórios autorizados. Fora do escopo devolve 403 no modo web."
+      },
+      "PeriodoPainel": {
+        "name": "periodo",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90,
+          "default": 30
+        },
+        "description": "Dias civis UTC, incluindo o dia de referência. Início inclusivo e fim exclusivo à meia-noite UTC."
+      },
+      "PaginaColecao": {
+        "name": "pagina",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 201,
+          "default": 1
+        },
+        "description": "Página baseada em 1. Use os mesmos filtros e snapshot nas páginas seguintes."
+      },
+      "CorteColecao": {
+        "name": "snapshot",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "description": "Corte por instante de emissão/tentativa e criação. Obrigatório após a primeira página. Reutilize o valor retornado. O acesso é revalidado inclusive na exportação."
       }
     }
   }

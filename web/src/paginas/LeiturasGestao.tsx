@@ -4,7 +4,8 @@ import { useSessao } from "@/app/sessao";
 import { Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
 import {
-	opcoesPeriodo,
+	opcoesDoPeriodo,
+	PaginacaoPainel,
 	PaginaGestao,
 	SecaoGestao,
 	SeletorGestao,
@@ -14,35 +15,45 @@ import {
 	useOpcoesRepos,
 } from "@/componentes/Gestao";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
-import { erroDeAnalise, listarRepositorios } from "@/servicos/analises";
+import { erroDeAnalise, saudeRepositorios } from "@/servicos/analises";
 import { Protegida } from "./Acesso";
 
 import "@/estilos/analises.css";
 
-function periodoValido(v: string | null) {
-	return opcoesPeriodo.some((p) => p.valor === v) ? (v as string) : "30";
+function resumoAprovacoes(r: ReturnType<typeof useGestao>["regras"][number]) {
+	if (r.avaliadasAltas === undefined && r.nivel === "medio") return "Não se aplica";
+	const total = r.avaliadasAltas ?? r.acionamentos;
+	return total > 0 ? `${r.aprovadas} de ${total} · ${Math.round((r.aprovadas * 100) / total)}%` : "Sem avaliações de risco alto";
 }
+
 export function Regras() {
 	const todosRepos = [{ valor: "todos", rotulo: "Todos autorizados" }, ...useOpcoesRepos()];
 	const dados = useGestao();
 	const [detalhes, setDetalhes] = useState(false);
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? "";
-	const periodo = periodoValido(q.get("periodo"));
+	const periodo = q.get("periodo") ?? "30";
 	const regras = dados.regras;
 	return (
-		<PaginaGestao titulo="Regras do gate" subtitulo="Regras determinísticas em vigor · consulta somente leitura" voltar>
+		<PaginaGestao
+			titulo="Regras do gate"
+			subtitulo={__MOCKS__ ? "Regras determinísticas em vigor · consulta somente leitura" : "Acionamentos registrados pelo gate no período"}
+			voltar
+		>
 			<div className="regras-mobile">
-				{[
-					["falha_sandbox", "Testes ou compilação falharam"],
-					["dependencia_nova", "Dependência nova identificada"],
-					["area_sensivel", "Alteração em área sensível"],
-					["muitos_arquivos", "Limite de arquivos excedido"],
-				].map(([id, descricao]) => {
+				{(__MOCKS__
+					? [
+							["falha_sandbox", "Testes ou compilação falharam"],
+							["dependencia_nova", "Dependência nova identificada"],
+							["area_sensivel", "Alteração em área sensível"],
+							["muitos_arquivos", "Limite de arquivos excedido"],
+						]
+					: regras.map((r) => [r.id, r.descricao, r.nivel])
+				).map(([id, descricao, nivel]) => {
 					const r = regras.find((r) => r.id === id);
 					return (
 						r && (
-							<SecaoGestao key={id} titulo={id} caixa>
+							<SecaoGestao key={id + (nivel ?? "")} titulo={id} caixa>
 								<p>{descricao}</p>
 							</SecaoGestao>
 						)
@@ -66,7 +77,7 @@ export function Regras() {
 						aoMudar={(v) => {
 							atualizar("periodo", v);
 						}}
-						opcoes={opcoesPeriodo}
+						opcoes={opcoesDoPeriodo(periodo)}
 					/>
 					<SeletorGestao
 						rotulo="Repositório"
@@ -76,7 +87,10 @@ export function Regras() {
 						}}
 						opcoes={todosRepos}
 					/>
-					<Link className="botao botao-primario" to={`/configuracao${repo ? `?repositorio=${encodeURIComponent(repo)}` : ""}`}>
+					<Link
+						className="botao botao-primario"
+						to={`/configuracao?${new URLSearchParams([...q].filter(([k]) => ["installation_id", "repositorio"].includes(k)))}`}
+					>
 						<Ativo nome="settings-primario" />
 						Configurar regras
 					</Link>
@@ -90,16 +104,14 @@ export function Regras() {
 						colunas={["Identificador / descrição", "Risco", "Acionamentos", "Aprovação apesar do alto"]}
 						larguras={["446px", "96px", "176px", "298px"]}
 						linhas={regras.map((r) => ({
-							id: r.id,
+							id: r.id + r.nivel,
 							celulas: [
 								<span className="mono" key="regra">
 									{r.id} · {r.descricao}
 								</span>,
 								<Risco key="nivel" nivel={r.nivel} />,
 								`${r.acionamentos} no período`,
-								r.nivel === "medio"
-									? "Não se aplica"
-									: `${r.aprovadas} de ${r.acionamentos} · ${r.acionamentos ? Math.round((r.aprovadas / r.acionamentos) * 100) : 0}%`,
+								resumoAprovacoes(r),
 							],
 						}))}
 					/>
@@ -108,7 +120,9 @@ export function Regras() {
 					titulo="Calibração por histórico"
 					ajuda="A calibração só suaviza risco com evidência suficiente e nunca altera uma análise já registrada."
 				>
-					<p className="contexto-tabela">Como o histórico influenciou as análises</p>
+					<p className="contexto-tabela">
+						{__MOCKS__ ? "Como o histórico influenciou as análises" : "Até 50 avaliações mais recentes no período"}
+					</p>
 					<TabelaGestao
 						legenda="Calibração por histórico"
 						colunas={["Análise", "Risco inicial → final", "Resultado"]}
@@ -144,7 +158,7 @@ export function Auditoria() {
 	const dados = useGestao();
 	const { q, atualizar } = useFiltrosGestao();
 	const repo = q.get("repositorio") ?? "";
-	const periodo = periodoValido(q.get("periodo"));
+	const periodo = q.get("periodo") ?? "30";
 	const decisao = q.get("resultado") ?? "";
 	const origem = q.get("origem") ?? "";
 	const recusadas = q.get("recusadas") === "1";
@@ -160,7 +174,7 @@ export function Auditoria() {
 					}}
 					opcoes={[
 						{ valor: "todos", rotulo: "Todas as tentativas" },
-						...["Aceita", "Recusada", "Falhou"].map((v) => ({ valor: v, rotulo: v })),
+						...["Aceita", "Recusada", ...(__MOCKS__ ? ["Falhou"] : ["Falha", "Repetida"])].map((v) => ({ valor: v, rotulo: v })),
 					]}
 				/>
 				<SeletorGestao
@@ -189,7 +203,7 @@ export function Auditoria() {
 					aoMudar={(v) => {
 						atualizar("periodo", v);
 					}}
-					opcoes={opcoesPeriodo}
+					opcoes={opcoesDoPeriodo(periodo)}
 				/>
 			</div>
 			<SecaoGestao
@@ -224,6 +238,7 @@ export function Auditoria() {
 					}))}
 				/>
 			</SecaoGestao>
+			{dados.paginacao && <PaginacaoPainel {...dados.paginacao} />}
 		</PaginaGestao>
 	);
 }
@@ -235,7 +250,7 @@ export function Repositorios() {
 	if (!erro && sessao?.autenticado && sessao.instalacoes.length)
 		return (
 			<ConteudoRepositorios
-				key={JSON.stringify([sessao.usuario.id, instalacao, consulta])}
+				key={JSON.stringify([sessao.usuario.id, instalacao, consulta, q.get("pagina")])}
 				instalacao={instalacao}
 				aoAtualizar={() => {
 					setConsulta((n) => n + 1);
@@ -255,8 +270,9 @@ export function Repositorios() {
 }
 function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string; aoAtualizar: () => void }) {
 	const { sessao } = useSessao();
-	const { atualizar } = useFiltrosGestao();
-	const [dados, setDados] = useState<string[]>();
+	const { q, atualizar } = useFiltrosGestao();
+	const pagina = Number(q.get("pagina") ?? 1);
+	const [dados, setDados] = useState<Awaited<ReturnType<typeof saudeRepositorios>>>();
 	const [erro, setErro] = useState("");
 	const autorizada = sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao);
 	useEffect(() => {
@@ -267,7 +283,7 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 			return;
 		}
 		const c = new AbortController();
-		void listarRepositorios(instalacao, c.signal)
+		void saudeRepositorios(instalacao, pagina, c.signal)
 			.then((v) => {
 				if (!c.signal.aborted) setDados(v);
 			})
@@ -277,10 +293,10 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 		return () => {
 			c.abort();
 		};
-	}, [instalacao, autorizada]);
+	}, [instalacao, autorizada, pagina]);
 
 	return (
-		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.length ?? "—"} repositórios conectados`}>
+		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.total ?? "—"} repositórios conectados`}>
 			{sessao?.autenticado && (
 				<SeletorGestao
 					rotulo="Instalação"
@@ -308,15 +324,15 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 							legenda="Saúde por repositório"
 							colunas={["Repositório", "Check obrigatório", "Última análise", "Permissões"]}
 							larguras={["276px", "226px", "196px", "318px"]}
-							linhas={dados.map((nome) => ({
+							linhas={dados.itens.map(({ nome, branch, ultima, check }) => ({
 								id: nome,
 								celulas: [
 									<Link key="repo" to={`/analises?${new URLSearchParams({ installation_id: instalacao ?? "", repositorio: nome })}`}>
 										{nome}
 									</Link>,
-									"Não confirmado",
-									"Não disponível",
-									"Não confirmadas",
+									check === null ? "Não confirmado" : check ? `Obrigatório em ${branch}` : `Não obrigatório em ${branch}`,
+									ultima ? `${new Date(ultima).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC` : "Sem análises",
+									dados.permissoes || "Não confirmadas",
 								],
 							}))}
 						/>
@@ -326,7 +342,18 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 							</Botao>
 						</div>
 					</SecaoGestao>
-					<p className="apoio">Proteção de branch, última análise e permissões detalhadas indisponíveis.</p>
+					<p className="apoio">Proteção consultada na branch padrão · permissões declaradas pela instalação.</p>
+					{dados.total > 10 && (
+						<div className="controles">
+							<Botao disabled={pagina <= 1} onClick={() => atualizar("pagina", String(pagina - 1))}>
+								Anterior
+							</Botao>
+							<span>Página {pagina}</span>
+							<Botao disabled={pagina * 10 >= dados.total} onClick={() => atualizar("pagina", String(pagina + 1))}>
+								Próxima
+							</Botao>
+						</div>
+					)}
 				</>
 			)}
 		</PaginaGestao>

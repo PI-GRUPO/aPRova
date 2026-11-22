@@ -34,6 +34,8 @@ export function FilaDePendencias() {
 				if (valor) nova.set(nome, valor);
 				else nova.delete(nome);
 				if (nome === "repositorio") {
+					nova.delete("mapa_pagina");
+					nova.delete("mapa_snapshot");
 					nova.delete("pagina");
 					nova.delete("snapshot");
 				}
@@ -45,7 +47,7 @@ export function FilaDePendencias() {
 	return (
 		<section className="fila-overview" aria-label="Fila de pendências">
 			<h2>Aguardando aprovação · risco alto</h2>
-			<p className="apoio">Dados da API · a listagem não informa tempo de espera, branch, motivos ou evidências.</p>
+			<p className="apoio">Dados da API · a listagem não informa branch, motivos ou evidências.</p>
 			<ControlesDaLista mobile={mobile} titulo="Filtros da fila">
 				<div className="filtros-fila">
 					<Campo
@@ -98,7 +100,7 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 				<table className="tabela-fila">
 					<thead>
 						<tr>
-							{["Recebida em (UTC)", "Pull request", "Commit", "Autor"].map((t) => (
+							{["Espera", "Recebida em (UTC)", "Pull request", "Commit", "Autor"].map((t) => (
 								<th scope="col" key={t}>
 									{t}
 								</th>
@@ -108,6 +110,7 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 					<tbody>
 						{itens.map((i) => (
 							<tr key={i.id}>
+								<td>{i.espera_segundos === undefined ? "Indisponível" : `${Math.floor(i.espera_segundos / 60)} min`}</td>
 								<td>{dataUTC(i.recebido_em)}</td>
 								<td>
 									<LinkDaAnalise item={i} />
@@ -123,6 +126,7 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 				{itens.map((i) => (
 					<article key={i.id}>
 						<LinkDaAnalise item={i} />
+						<p className="apoio">Espera {i.espera_segundos === undefined ? "indisponível" : `${Math.floor(i.espera_segundos / 60)} min`}</p>
 						<p className="mono">Commit {i.sha_head.slice(0, 7) || "não informado"}</p>
 						<p className="apoio">Recebida em {dataUTC(i.recebido_em)}</p>
 					</article>

@@ -11,7 +11,19 @@ const telas = [
 	["recibos", "Recibos e auditoria"],
 ];
 test.beforeEach(async ({ page }) => {
-	await page.route("**/api/repositorios?*", (r) => r.fulfill({ json: { installation_id: 42, repositorios: [] } }));
+	await page.route("**/api/repositorios?*", (r) =>
+		r.fulfill({
+			json: new URL(r.request().url()).searchParams.has("detalhes")
+				? { installation_id: 42, pagina: 1, limite: 10, total: 0, itens: [], permissoes: {} }
+				: { installation_id: 42, repositorios: [] },
+		}),
+	);
+	await page.route("**/api/analises?*", (r) =>
+		r.fulfill({
+			json: { installation_id: 42, pagina: 1, limite: 20, total: 0, tem_mais: false, snapshot: new Date().toISOString(), itens: [] },
+		}),
+	);
+	await page.route("**/api/web/vinculo-slack", (r) => r.fulfill({ status: 503, json: {} }));
 	await autenticarFixture(page);
 });
 for (const largura of [1440, 390, 360]) {
@@ -102,7 +114,20 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 	const instalacoes: string[] = [];
 	await page.route("**/api/repositorios?*", (r) => {
 		instalacoes.push(new URL(r.request().url()).searchParams.get("installation_id") ?? "");
-		return falhar ? r.fulfill({ status: 503, json: {} }) : r.fulfill({ json: { installation_id: 42, repositorios: ["equipe/real"] } });
+		return falhar
+			? r.fulfill({ status: 503, json: {} })
+			: r.fulfill({
+					json: new URL(r.request().url()).searchParams.has("detalhes")
+						? {
+								installation_id: 42,
+								pagina: 1,
+								limite: 10,
+								total: 1,
+								permissoes: {},
+								itens: [{ nome: "equipe/real", branch: "main", ultima_analise: null, check_obrigatorio: null }],
+							}
+						: { installation_id: 42, repositorios: ["equipe/real"] },
+				});
 	});
 	await page.goto("/repositorios");
 	await expect(page.getByRole("heading", { name: "Consulta de repositórios indisponível" })).toBeVisible();

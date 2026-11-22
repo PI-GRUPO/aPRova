@@ -224,5 +224,5 @@ func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios *r
 	if err != nil {
 		return nil, err
 	}
-	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios, Analises: relatorios})
+	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios, Analises: relatorios, Leituras: relatorios, Vinculos: c.VinculosSlackGitHub})
 }

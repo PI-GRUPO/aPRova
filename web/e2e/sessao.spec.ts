@@ -117,12 +117,9 @@ test("fluxo HTTP com handlers reais de login, CSRF, relatório e logout", async 
 	await page.goto("http://127.0.0.1:18080/entrar");
 	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
 	await expect(page).toHaveURL("http://127.0.0.1:18080/");
-	await expect(page.getByRole("heading", { name: "Recurso indisponível" })).toBeVisible();
-	await expect(page.getByRole("link", { name: "Consultar análises aguardando aprovação" })).toHaveAttribute(
-		"href",
-		/installation_id=42.*estado=aguardando_aprovacao/,
-	);
-	for (const rota of ["regras", "auditoria", "configuracao", "sugestoes", "sla"]) {
+	await expect(page.getByRole("region", { name: "Métricas dos últimos 30 dias" })).toBeVisible();
+	await expect(page.getByText("0 nesta página · 0 no total · página 1")).toBeVisible();
+	for (const rota of ["configuracao", "sugestoes", "sla"]) {
 		await page.goto(`http://127.0.0.1:18080/${rota}`);
 		await expect(page.getByRole("heading", { name: "Recurso indisponível" })).toBeVisible();
 	}

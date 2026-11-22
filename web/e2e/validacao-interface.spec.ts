@@ -111,7 +111,20 @@ for (const largura of [1440, 1024, 768, 390, 320])
 						: { autenticado: false, login_disponivel: true },
 				}),
 			);
-			await page.route("**/api/repositorios?*", (r) => r.fulfill({ json: { installation_id: 42, repositorios: ["equipe/projeto"] } }));
+			await page.route("**/api/repositorios?*", (r) =>
+				r.fulfill({
+					json: new URL(r.request().url()).searchParams.has("detalhes")
+						? {
+								installation_id: 42,
+								pagina: 1,
+								limite: 10,
+								total: 1,
+								permissoes: {},
+								itens: [{ nome: "equipe/projeto", branch: "main", ultima_analise: null, check_obrigatorio: null }],
+							}
+						: { installation_id: 42, repositorios: ["equipe/projeto"] },
+				}),
+			);
 			await page.route("**/api/analises**", (r) =>
 				r.fulfill({
 					json:

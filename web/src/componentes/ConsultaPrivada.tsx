@@ -40,15 +40,7 @@ export function ConsultaPrivada<T>(props: Props<T>) {
 function EspacoDaConsulta({ secao, children }: { secao?: boolean; children: ReactNode }) {
 	return secao ? children : <div className="pagina">{children}</div>;
 }
-function Resultado<T>({
-	secao,
-	titulo,
-	consultar,
-	children,
-	ajuda,
-	instalacao,
-	filtros,
-}: Props<T> & { instalacao: string; filtros: string }) {
+export function useLeitura<T>(consultar: Consulta<T>, instalacao: string, filtros: string) {
 	const [estado, definir] = useState<{ dados: T } | { erro: string } | { indisponivel: true }>();
 	const [tentativa, repetir] = useState(0);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: tentativa repete a consulta após erro.
@@ -67,6 +59,18 @@ function Resultado<T>({
 			c.abort();
 		};
 	}, [consultar, instalacao, filtros, tentativa]);
+	return { estado, repetir: () => repetir((n) => n + 1) };
+}
+function Resultado<T>({
+	secao,
+	titulo,
+	consultar,
+	children,
+	ajuda,
+	instalacao,
+	filtros,
+}: Props<T> & { instalacao: string; filtros: string }) {
+	const { estado, repetir } = useLeitura(consultar, instalacao, filtros);
 	if (estado && "dados" in estado) return children(estado.dados);
 	const Titulo = secao ? "h2" : "h1";
 	return (
@@ -79,7 +83,7 @@ function Resultado<T>({
 					<p>{estado.erro}</p>
 					<Botao
 						onClick={() => {
-							repetir((n) => n + 1);
+							repetir();
 						}}
 					>
 						Tentar novamente
