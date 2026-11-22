@@ -91,10 +91,20 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 			))}
 			{(pagina > 1 || recorte.temMais) && (
 				<div className="controles">
-					<Botao disabled={pagina === 1} onClick={() => paginar(pagina - 1, recorte.snapshot ?? "")}>
+					<Botao
+						disabled={pagina === 1}
+						onClick={() => {
+							paginar(pagina - 1, recorte.snapshot ?? "");
+						}}
+					>
 						Anterior
 					</Botao>
-					<Botao disabled={!recorte.temMais || pagina >= 201} onClick={() => paginar(pagina + 1, recorte.snapshot ?? "")}>
+					<Botao
+						disabled={!recorte.temMais || pagina >= 201}
+						onClick={() => {
+							paginar(pagina + 1, recorte.snapshot ?? "");
+						}}
+					>
 						Próxima
 					</Botao>
 				</div>

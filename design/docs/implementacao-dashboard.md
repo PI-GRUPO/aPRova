@@ -12,12 +12,15 @@ risco alto pelo total avaliado. Os links da Visão geral e da coleção levam
 elo anterior. O contrato público do recibo continua por UUID.
 
 O catálogo lê diretamente `checks`, `contents` e `pull_requests`. A fila
-serializa os parâmetros do link de análise com `URLSearchParams.toString()`.
+serializa os parâmetros do link de análise com `URLSearchParams.toString()`
+e o mapa chama a paginação dentro dos callbacks de clique.
 
 Biome, TypeScript/build e 86 cenários Playwright passaram. A suíte verificou a
 equivalência entre fusos, a rejeição de diferença de um nanosegundo, a métrica
 de risco alto e o contexto de instalação nos links e no retorno. Capturas em
 `.capturas-mcp/dashboard/leituras-overview-*` para desktop e mobile nos dois temas.
+Após os ajustes de catálogo, fila e mapa, Biome, build e 45 cenários Playwright
+passaram, incluindo a exibição exclusiva das permissões conhecidas do catálogo.
 
 ## Parâmetro SQL da paginação de auditoria e recibos
 
