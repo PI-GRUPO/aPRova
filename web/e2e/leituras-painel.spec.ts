@@ -4,6 +4,54 @@ import { expect, type Route, test } from "@playwright/test";
 const origem = "http://127.0.0.1:18080";
 const recibo = "00000000-0000-4000-8000-000000000002";
 for (const largura of [1440, 390]) {
+	test(`relatório semanal mantém Visão geral ativa e permite voltar pela trilha em ${largura}px`, async ({ page }) => {
+		await page.setViewportSize({ width: largura, height: 900 });
+		await page.goto(`${origem}/entrar`);
+		await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+		await expect(page).toHaveURL(`${origem}/`);
+		const escopo = "installation_id=42&repositorio=equipe-e2e%2Fprojeto";
+		const visaoGeral = `/?${escopo}`;
+		await page.goto(`${origem}${visaoGeral}`);
+		const consultar = page.getByRole("link", { name: "Consultar relatório semanal", exact: true });
+		const instalacao = page.getByRole("combobox", { name: "Instalação", exact: true });
+		await expect(consultar).toBeInViewport();
+		await expect(consultar).toHaveCSS("background-color", "rgb(255, 255, 255)");
+		await expect(consultar.locator("svg")).toBeVisible();
+		await expect(instalacao).toBeVisible();
+		await page.evaluate(() => document.fonts.ready);
+		const [campo, botao] = await Promise.all([instalacao.boundingBox(), consultar.boundingBox()]);
+		expect(botao?.y).toBe(campo?.y);
+		expect(botao?.x ?? 0).toBeGreaterThan(campo?.x ?? 0);
+		await page.getByRole("button", { name: "Usar tema claro" }).click();
+		await expect(consultar).toHaveClass(/\bbotao-secundario\b/);
+		await consultar.click();
+		await expect(page).toHaveURL(`${origem}/relatorio-semanal?${escopo}`);
+		await expect(page.getByText("75%", { exact: true })).toBeVisible();
+
+		const menu = page.getByRole("navigation", { name: largura === 1440 ? "Principal" : "Principal no celular", exact: true });
+		const itemVisaoGeral = menu.getByRole("link", { name: "Visão geral", exact: true });
+		await expect(itemVisaoGeral).toHaveClass(/\bactive\b/);
+		await expect(itemVisaoGeral).toHaveAttribute("aria-current", "location");
+		if (largura < 768) {
+			await page.getByRole("button", { name: "Menu completo" }).click();
+			const completo = page.getByRole("navigation", { name: "Todas as telas", exact: true });
+			await expect(completo.getByRole("link", { name: "Visão geral", exact: true })).toHaveClass(/\bactive\b/);
+			await page.keyboard.press("Escape");
+		}
+
+		const trilha = page.getByRole("navigation", { name: "Trilha de navegação" });
+		const inicioDaTrilha = trilha.getByRole("link", { name: "Visão geral", exact: true });
+		await expect(trilha.locator('[aria-current="page"]')).toHaveText("Relatório semanal");
+		await expect(trilha).toBeInViewport();
+		await expect(inicioDaTrilha).toHaveAttribute("href", visaoGeral);
+		await expect(page.getByRole("link", { name: "Voltar", exact: true })).toHaveCount(0);
+		await inicioDaTrilha.click();
+		await expect(page).toHaveURL(`${origem}${visaoGeral}`);
+		await expect(itemVisaoGeral).toHaveAttribute("aria-current", "page");
+	});
+}
+
+for (const largura of [1440, 390]) {
 	test(`visão geral mantém a instalação ao navegar e permite trocá-la em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: 900 });
 		await page.goto(`${origem}/entrar`);

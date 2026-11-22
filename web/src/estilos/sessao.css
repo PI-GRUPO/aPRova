@@ -41,6 +41,12 @@
 	width: 100%;
 	background: var(--texto-primario);
 }
+.trilha-relatorio,
+.trilha-relatorio li {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
 .painel-sessao {
 	border: 1px solid var(--borda-padrao);
 	background: var(--fundo-superficie);

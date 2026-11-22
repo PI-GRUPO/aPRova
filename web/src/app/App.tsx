@@ -15,7 +15,7 @@ import { Sugestoes } from "@/paginas/Sugestoes";
 import { VisaoGeral } from "@/paginas/VisaoGeral";
 import { consultasGestao } from "@/servicos/gestao";
 import { NaoEncontrada } from "./NaoEncontrada";
-import { secoes } from "./rotas";
+import { caminhoRelatorioSemanal, secoes } from "./rotas";
 import { ProvedorDeSessao } from "./sessao";
 
 const Harness = __HARNESS__ ? lazy(() => import("../../e2e/Harness")) : null;
@@ -23,7 +23,7 @@ function Titulo() {
 	const { pathname } = useLocation();
 	useEffect(() => {
 		const secao = secoes.find((s) => s.caminho === pathname || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`)));
-		document.title = `${secao?.titulo ?? (pathname === "/entrar" ? "Entrar" : pathname === "/relatorio-semanal" ? "Relatório semanal" : "Página não encontrada")} · aPRova`;
+		document.title = `${secao?.titulo ?? (pathname === "/entrar" ? "Entrar" : pathname === caminhoRelatorioSemanal ? "Relatório semanal" : "Página não encontrada")} · aPRova`;
 	}, [pathname]);
 	return null;
 }
@@ -91,7 +91,7 @@ export function App() {
 								}
 							/>
 						))}
-						<Route path="/relatorio-semanal" element={<RelatorioSemanalPagina />} />
+						<Route path={caminhoRelatorioSemanal} element={<RelatorioSemanalPagina />} />
 						<Route
 							path="/analises/demonstracao/:id?"
 							element={

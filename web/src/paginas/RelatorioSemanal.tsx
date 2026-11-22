@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import { Selecao } from "@/componentes/Selecao";
@@ -8,8 +8,26 @@ import { ErroHTTP } from "@/servicos/http";
 import { consultarRelatorio, type Relatorio } from "@/servicos/sessao";
 import { Protegida } from "./Acesso";
 export function RelatorioSemanalPagina() {
+	const [q] = useSearchParams();
+	const escopo = new URLSearchParams();
+	for (const nome of ["installation_id", "repositorio"]) {
+		const valor = q.get(nome);
+		if (valor) escopo.set(nome, valor);
+	}
+	const visaoGeral = escopo.size ? `/?${escopo.toString()}` : "/";
 	return (
 		<div className="pagina">
+			<nav aria-label="Trilha de navegação">
+				<ol className="trilha-relatorio apoio">
+					<li>
+						<Link to={visaoGeral}>Visão geral</Link>
+					</li>
+					<li>
+						<span aria-hidden="true">/</span>
+						<span aria-current="page">Relatório semanal</span>
+					</li>
+				</ol>
+			</nav>
 			<div className="titulo-contexto">
 				<h1>Relatório semanal</h1>
 				<p className="apoio">Relatório semanal · sete dias em UTC · somente repositórios autorizados</p>

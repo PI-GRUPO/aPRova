@@ -1,6 +1,8 @@
+import { CalendarDays } from "lucide-react";
 import { Link, useSearchParams } from "react-router";
-import { comInstalacao } from "@/app/rotas";
+import { caminhoRelatorioSemanal, comInstalacao } from "@/app/rotas";
 import { useSessao } from "@/app/sessao";
+import { useTema } from "@/app/tema";
 import { Ativo } from "@/componentes/Ativo";
 import { useEscopo, useLeitura } from "@/componentes/ConsultaPrivada";
 import { FilaDePendencias } from "@/componentes/FilaDePendencias";
@@ -40,28 +42,44 @@ function Distribuicao({ titulo, apoio, itens }: { titulo: string; apoio: string;
 export function VisaoGeral() {
 	const { instalacao } = useEscopo("");
 	const { sessao } = useSessao();
+	const { tema } = useTema();
 	const [filtros, setFiltros] = useSearchParams();
+	const repositorio = filtros.get("repositorio");
+	const mostrarInstalacao = sessao?.autenticado && sessao.instalacoes.length > 1;
+	const autorizada = sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao);
+	const escopo = new URLSearchParams({ installation_id: instalacao });
+	if (repositorio) escopo.set("repositorio", repositorio);
+	const consulta = escopo.toString();
 	return (
 		<div className="pagina pagina-overview">
 			<h1>Visão geral</h1>
 			<Protegida>
-				{sessao?.autenticado && sessao.instalacoes.length > 1 && (
-					<div className="campo seletor-instalacao-overview">
-						<span className="rotulo-campo">Instalação</span>
-						<Selecao
-							rotulo="Instalação"
-							valor={instalacao}
-							aoMudar={(id) => setFiltros(new URLSearchParams({ installation_id: id }))}
-							opcoes={sessao.instalacoes.map((i) => ({ valor: String(i.id), rotulo: i.conta }))}
-						/>
+				{(mostrarInstalacao || autorizada) && (
+					<div className="controles">
+						{mostrarInstalacao && (
+							<div className="campo seletor-instalacao-overview">
+								<span className="rotulo-campo">Instalação</span>
+								<Selecao
+									rotulo="Instalação"
+									valor={instalacao}
+									aoMudar={(id) => setFiltros(new URLSearchParams({ installation_id: id }))}
+									opcoes={sessao.instalacoes.map((i) => ({ valor: String(i.id), rotulo: i.conta }))}
+								/>
+							</div>
+						)}
+						{autorizada && (
+							<Link
+								className={`botao botao-${tema === "escuro" ? "primario" : "secundario"} botao-relatorio-overview`}
+								to={`${caminhoRelatorioSemanal}?${consulta}`}
+							>
+								<CalendarDays aria-hidden="true" size={16} strokeWidth={1.75} />
+								Consultar relatório semanal
+							</Link>
+						)}
 					</div>
 				)}
-				{sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao) ? (
-					<Conteudo
-						key={JSON.stringify([sessao.usuario.id, instalacao, filtros.get("repositorio")])}
-						instalacao={instalacao}
-						repo={filtros.get("repositorio") ?? ""}
-					/>
+				{autorizada ? (
+					<Conteudo key={JSON.stringify([sessao.usuario.id, instalacao, repositorio])} instalacao={instalacao} consulta={consulta} />
 				) : (
 					<PainelDeEstado titulo={instalacao ? "Instalação não autorizada" : "Nenhuma instalação autorizada"}>
 						<p>Confira as instalações disponíveis na sua conta.</p>
@@ -72,10 +90,8 @@ export function VisaoGeral() {
 	);
 }
 
-function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
-	const q = new URLSearchParams({ installation_id: instalacao });
-	if (repo) q.set("repositorio", repo);
-	const { estado, repetir } = useLeitura(consultarVisaoGeral, instalacao, q.toString(), { reutilizar: true });
+function Conteudo({ instalacao, consulta }: { instalacao: string; consulta: string }) {
+	const { estado, repetir } = useLeitura(consultarVisaoGeral, instalacao, consulta, { reutilizar: true });
 	const dados = estado && "dados" in estado ? estado.dados : null;
 	return (
 		<>
@@ -110,7 +126,7 @@ function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
 				<PainelDeEstado titulo="Métricas indisponíveis" erro>
 					<p>{"erro" in estado ? estado.erro : "Consulta indisponível."}</p>
 					<Botao onClick={repetir}>Tentar novamente</Botao>
-					<Link to={`/analises?${q}&estado=aguardando_aprovacao&periodo=todos`}>Consultar análises aguardando aprovação</Link>
+					<Link to={`/analises?${consulta}&estado=aguardando_aprovacao&periodo=todos`}>Consultar análises aguardando aprovação</Link>
 				</PainelDeEstado>
 			)}
 			<FilaDePendencias />
@@ -140,7 +156,7 @@ function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
 									{dados.ultimoRecibo.hash} {dados.ultimoRecibo.anterior && ` · Ed25519, encadeado a ${dados.ultimoRecibo.anterior}`} ·{" "}
 									{dados.ultimoRecibo.data}
 								</p>
-								<Link to={dados.ultimoRecibo.id ? comInstalacao(`/recibos/${dados.ultimoRecibo.id}`, instalacao) : `/recibos?${q}`}>
+								<Link to={dados.ultimoRecibo.id ? comInstalacao(`/recibos/${dados.ultimoRecibo.id}`, instalacao) : `/recibos?${consulta}`}>
 									<Ativo nome="external" />
 									{dados.ultimoRecibo.id ? "Ver recibo" : "Ver os recibos"}
 								</Link>
@@ -151,9 +167,6 @@ function Conteudo({ instalacao, repo }: { instalacao: string; repo: string }) {
 					)}
 				</>
 			)}
-			<footer className="rodape-overview apoio">
-				<Link to={`/relatorio-semanal?${q}`}>Consultar relatório semanal</Link>
-			</footer>
 		</>
 	);
 }

@@ -1,5 +1,18 @@
 # Implementação do dashboard aPRova
 
+## Navegação do relatório semanal
+
+Base `7b151e4`, card #67. O botão Consultar relatório semanal fica à direita
+do seletor de instalação, com ícone de calendário e fundo branco no tema
+escuro. A rota `/relatorio-semanal` mantém a Visão geral ativa no menu. O
+link Visão geral da trilha preserva a instalação e o repositório ao retornar.
+O relatório consulta `GET /api/web/relatorio-semanal`.
+
+Biome, TypeScript/build e 42 cenários Playwright passaram. A suíte conferiu
+o alinhamento, o ícone, a cor no tema escuro, a seleção no menu e o retorno
+pela trilha em desktop e mobile. Capturas dos dois temas em
+`.capturas-mcp/dashboard/instalacao-overview-*` e `.capturas-mcp/f3/local-semanal-*`.
+
 ## Formato da espera na Visão geral
 
 Base `145247c`, cards #67–#68, nós `9:22` e `15:1789`. O indicador de espera

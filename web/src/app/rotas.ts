@@ -1,3 +1,5 @@
+export const caminhoRelatorioSemanal = "/relatorio-semanal";
+
 export const secoes = [
 	{ caminho: "/", titulo: "Visão geral", icone: "activity", fase: "F3/F4B" },
 	{ caminho: "/analises", titulo: "Análises", icone: "list", fase: "F4A" },

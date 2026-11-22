@@ -17,7 +17,10 @@
 	}
 }
 .seletor-instalacao-overview {
-	max-width: 320px;
+	max-width: min(320px, 100%);
+}
+.botao-relatorio-overview {
+	margin-inline-start: auto;
 }
 .faixa-overview {
 	display: grid;
@@ -282,12 +285,6 @@
 .ultimo-recibo-overview img {
 	width: 16px;
 	height: 16px;
-}
-.rodape-overview {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	gap: 12px;
 }
 .detalhes-fila {
 	display: grid;

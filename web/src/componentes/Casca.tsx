@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { comInstalacao, secoes } from "@/app/rotas";
+import { Link, matchPath, NavLink, Outlet, useLocation } from "react-router";
+import { caminhoRelatorioSemanal, comInstalacao, secoes } from "@/app/rotas";
 import { useSessao } from "@/app/sessao";
 import { useTema } from "@/app/tema";
 import { Sair } from "@/paginas/Acesso";
@@ -25,6 +25,7 @@ function Tema() {
 export function Casca() {
 	const { sessao } = useSessao();
 	const { pathname, search } = useLocation();
+	const noRelatorio = matchPath(caminhoRelatorioSemanal, pathname) !== null;
 	const instalacao = new URLSearchParams(search).get("installation_id");
 	function destino(caminho: string) {
 		return comInstalacao(caminho, instalacao);
@@ -39,12 +40,22 @@ export function Casca() {
 		definirMenu(false);
 	}
 	const links = (de = 0, ate: number = secoes.length) =>
-		secoes.slice(de, ate).map((s) => (
-			<NavLink key={s.caminho} to={destino(s.caminho)} end={s.caminho === "/"} className="item-nav" onClick={fecharMenu}>
-				<Ativo nome={s.icone} ativo={pathname === s.caminho || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`))} />
-				<span>{s.titulo}</span>
-			</NavLink>
-		));
+		secoes.slice(de, ate).map((s) => {
+			const naSecao = matchPath({ path: s.caminho, end: s.caminho === "/" }, pathname) !== null;
+			const ativa = naSecao || (s.caminho === "/" && noRelatorio);
+			return (
+				<Link
+					key={s.caminho}
+					to={destino(s.caminho)}
+					className={ativa ? "item-nav active" : "item-nav"}
+					aria-current={naSecao ? "page" : ativa ? "location" : undefined}
+					onClick={fecharMenu}
+				>
+					<Ativo nome={s.icone} ativo={ativa} />
+					<span>{s.titulo}</span>
+				</Link>
+			);
+		});
 	return (
 		<div className="aplicacao">
 			<a className="pular" href="#conteudo">
