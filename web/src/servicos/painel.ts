@@ -1,5 +1,6 @@
 import type { Escopo } from "./fonte";
 import { consultarJSON, ErroHTTP } from "./http";
+import { mesmoInstante } from "./instante";
 import { objeto } from "./recibos";
 
 export function invalido(): never {
@@ -32,12 +33,13 @@ export async function lerPainel(caminho: string, escopo: Escopo, filtros: URLSea
 	if (escopo.repositorio) q.set("repositorio", escopo.repositorio);
 	const v = registro(await consultarJSON(`${caminho}?${q}`, { privada: true, signal }));
 	const snapshot = data(v.snapshot);
+	const corteSolicitado = q.get("snapshot");
 	if (
 		v.installation_id !== Number(escopo.instalacao) ||
 		v.repositorio !== escopo.repositorio ||
 		v.pagina !== Number(q.get("pagina") ?? 1) ||
 		v.limite !== Number(q.get("limite") ?? 20) ||
-		(q.has("snapshot") && snapshot !== q.get("snapshot"))
+		(corteSolicitado !== null && !mesmoInstante(snapshot, corteSolicitado))
 	)
 		return invalido();
 	const inicio = data(v.inicio),

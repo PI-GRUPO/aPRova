@@ -87,6 +87,27 @@ for (const largura of [1440, 390]) {
 		}
 	});
 }
+test("auditoria aceita o mesmo corte em outro fuso e recusa diferença de um nanosegundo", async ({ page }) => {
+	await page.goto(`${origem}/entrar`);
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	await expect(page).toHaveURL(`${origem}/`);
+	const instante = Date.now() - 60_000;
+	const utc = new Date(instante).toISOString().slice(0, 19);
+	const local = new Date(instante - 3 * 3_600_000).toISOString().slice(0, 19);
+	const filtros = new URLSearchParams({ installation_id: "42", snapshot: `${local}.1234567809-03:00` });
+	await page.goto(`${origem}/auditoria?${filtros}`);
+	await expect(page.getByRole("cell", { name: "permissao_insuficiente" })).toBeVisible();
+
+	await page.route("**/api/web/auditoria?*", async (rota) => {
+		const resposta = await rota.fetch();
+		const corpo = await resposta.json();
+		await rota.fulfill({ response: resposta, json: { ...corpo, snapshot: `${utc}.123456781Z` } });
+	});
+	await page.reload();
+	await expect(page.getByText("Resposta do painel fora do contrato esperado.")).toBeVisible();
+	await expect(page.getByRole("cell", { name: "permissao_insuficiente" })).toHaveCount(0);
+});
+
 test("falha real das métricas preserva a fila e permite nova consulta", async ({ page }) => {
 	await page.goto(`${origem}/entrar`);
 	await page.route("**/api/metricas?*", (r) => r.fulfill({ status: 503, json: {} }));
@@ -124,7 +145,7 @@ test("a página do recorte do mapa pode ser compartilhada e recarregada", async 
 	await page.goto(`${origem}/entrar`);
 	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
 	const escopo = { installation_id: "42", repositorio: "equipe-e2e/projeto" };
-	const corte = new Date(Date.now() - 60000).toISOString().replace(/\.\d{3}Z$/, "Z");
+	const corte = new Date(Date.now() - 60000).toISOString().replace(/\.\d{3}Z$/, ".123456780Z");
 	const data = corte.slice(0, 10);
 	const url = new URLSearchParams({ ...escopo, mapa_pagina: "2", mapa_snapshot: corte, mapa_dia: data, mapa_nivel: "alto" });
 	const resposta = page.waitForResponse(

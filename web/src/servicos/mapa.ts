@@ -1,4 +1,5 @@
 import { listarAnalises } from "./analises";
+import { mesmoInstante } from "./instante";
 export type NivelMapa = "alto" | "medio" | "baixo";
 export type ItemMapa = { id: string; repositorio: string; pr: number; avaliadoEm: string };
 export type RecorteMapa = {
@@ -42,7 +43,7 @@ export async function consultarRecorteMapa(
 		if (snapshot) q.set("snapshot", snapshot);
 		const v = await listarAnalises(q, signal);
 		if (
-			(snapshot && snapshot !== v.snapshot) ||
+			(snapshot && !mesmoInstante(snapshot, v.snapshot)) ||
 			v.pagina !== pagina ||
 			v.itens.some((i) => i.nivel !== nivel || new Date(i.recebido_em).toISOString().slice(0, 10) !== data)
 		)

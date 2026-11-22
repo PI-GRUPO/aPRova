@@ -1,5 +1,11 @@
 # Implementação do dashboard aPRova
 
+## Ajustes da revisão de métricas, paginação e recibos
+
+Base `8339adb`, cards #66–#68 e #70. A validação do corte compara o instante em
+nanosegundos e reconhece diferentes fusos e representações da fração. O valor
+original da API segue na URL de paginação.
+
 ## Parâmetro SQL da paginação de auditoria e recibos
 
 Base `ded799a`. As consultas incorporadas à API usam `@deslocamento` no `OFFSET`

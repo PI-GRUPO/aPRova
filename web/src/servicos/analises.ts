@@ -1,5 +1,6 @@
 import type { Consulta } from "./fonte";
 import { consultarJSON, ErroHTTP } from "./http";
+import { mesmoInstante } from "./instante";
 import { objeto, uuidValido } from "./recibos";
 export const estados = new Map<string, string>([
 	["pendente", "Pendente"],
@@ -232,9 +233,10 @@ export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, fi
 	q.set("inicio", "1970-01-01");
 	q.set("ordem", "antigas");
 	const dados = await listarAnalises(q, signal);
+	const corteSolicitado = q.get("snapshot");
 	if (
 		dados.itens.some((i) => !uuidValido(i.id) || i.estado !== "aguardando_aprovacao" || i.nivel !== "alto") ||
-		(q.has("snapshot") && dados.snapshot !== q.get("snapshot"))
+		(corteSolicitado !== null && !mesmoInstante(dados.snapshot, corteSolicitado))
 	)
 		throw new ErroHTTP("resposta", "A resposta não corresponde aos filtros da fila.");
 	return dados;
