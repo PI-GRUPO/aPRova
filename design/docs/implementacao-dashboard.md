@@ -35,8 +35,9 @@ Base `a461be7`, cards #66–#68. A Visão geral (métricas, fila e catálogo), a
 de Análises e o detalhe reaproveitam a última resposta validada da mesma
 consulta enquanto fazem uma nova leitura da API. O primeiro acesso e consultas
 sem resposta recente exibem carregamento. O cache fica em memória, com até
-40 entradas por consulta e validade de dois minutos. Instalação, repositório,
-filtros, página e corte de paginação fazem parte das chaves aplicáveis.
+40 entradas por consulta e validade de dez minutos desde a última resposta
+validada. Instalação, repositório, filtros, página e corte de paginação fazem
+parte das chaves aplicáveis.
 
 O provedor de sessão substitui o cache ao encerrar a sessão ou mudar a
 identidade ou as instalações autorizadas. Uma rejeição de acesso durante a
@@ -50,6 +51,23 @@ consultas ao build de produção. Os testes cobrem o retorno com resposta
 pendente, a atualização dos resultados e o descarte após HTTP 403. Capturas
 em desktop e mobile nos dois temas em `.capturas-mcp/f4a/local-*` e
 `.capturas-mcp/dashboard/leituras-overview-*`.
+
+### Repositórios, coleção de recibos, regras e auditoria
+
+Base `ad9ee5f`, cards #70–#73. As quatro leituras usam `useLeitura` com o mesmo
+cache em memória por sessão e revalidação em segundo plano. Repositórios usa
+instalação e página. Coleção, regras e auditoria usam a instalação e seus
+filtros de consulta, incluindo página e corte quando aplicáveis. A instalação
+padrão e a mesma instalação explícita na URL compartilham a entrada de cache.
+
+Biome, TypeScript/build e 88 cenários Playwright passaram. Cinco cenários
+cobrem o retorno a cada tela com a API pendente e o carregamento de um filtro
+novo de auditoria. A suíte exercitou os handlers Go com provedor de teste,
+incluindo exportação de recibos e fluxos de sessão.
+
+As capturas em `.capturas-mcp/dashboard/cache-de-leituras/` comparam a
+resposta da API com o retorno durante a revalidação. As quatro telas
+preservaram a apresentação em 1440 px e 390 px nos temas claro e escuro.
 
 ## Redirecionamento após expiração da sessão GitHub
 

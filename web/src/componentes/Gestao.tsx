@@ -123,9 +123,21 @@ export function SeletorGestao({ rotulo, valor, aoMudar, opcoes, className = "" }
 	);
 }
 const Contexto = createContext<Gestao | null>(null);
-export function ConsultaGestao({ titulo, children, consultar }: { titulo: string; children: ReactNode; consultar: Consulta<Gestao> }) {
+export function ConsultaGestao({
+	titulo,
+	children,
+	consultar,
+	filtrosDaConsulta,
+	reutilizar,
+}: {
+	titulo: string;
+	children: ReactNode;
+	consultar: Consulta<Gestao>;
+	filtrosDaConsulta?: string[];
+	reutilizar?: boolean;
+}) {
 	return (
-		<ConsultaPrivada titulo={titulo} consultar={consultar}>
+		<ConsultaPrivada titulo={titulo} consultar={consultar} filtrosDaConsulta={filtrosDaConsulta} reutilizar={reutilizar}>
 			{(dados) => <Contexto value={dados}>{children}</Contexto>}
 		</ConsultaPrivada>
 	);

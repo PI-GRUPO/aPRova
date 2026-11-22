@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
+import { useLeitura } from "@/componentes/ConsultaPrivada";
 import {
 	opcoesDoPeriodo,
 	PaginacaoPainel,
@@ -15,7 +16,7 @@ import {
 	useOpcoesRepos,
 } from "@/componentes/Gestao";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
-import { erroDeAnalise, saudeRepositorios } from "@/servicos/analises";
+import { saudeRepositorios } from "@/servicos/analises";
 import { Protegida } from "./Acesso";
 
 import "@/estilos/analises.css";
@@ -243,20 +244,11 @@ export function Auditoria() {
 	);
 }
 export function Repositorios() {
-	const [consulta, setConsulta] = useState(0);
 	const { sessao, erro } = useSessao();
 	const { q } = useFiltrosGestao();
 	const instalacao = q.get("installation_id") ?? (sessao?.autenticado ? String(sessao.instalacoes[0]?.id ?? "") : "");
 	if (!erro && sessao?.autenticado && sessao.instalacoes.length)
-		return (
-			<ConteudoRepositorios
-				key={JSON.stringify([sessao.usuario.id, instalacao, consulta, q.get("pagina")])}
-				instalacao={instalacao}
-				aoAtualizar={() => {
-					setConsulta((n) => n + 1);
-				}}
-			/>
-		);
+		return <ConteudoRepositorios key={JSON.stringify([sessao.usuario.id, instalacao, q.get("pagina")])} instalacao={instalacao} />;
 	return (
 		<div className="pagina">
 			<h1>Repositórios e instalação</h1>
@@ -268,32 +260,15 @@ export function Repositorios() {
 		</div>
 	);
 }
-function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string; aoAtualizar: () => void }) {
+function ConteudoRepositorios({ instalacao }: { instalacao: string }) {
 	const { sessao } = useSessao();
 	const { q, atualizar } = useFiltrosGestao();
 	const pagina = Number(q.get("pagina") ?? 1);
-	const [dados, setDados] = useState<Awaited<ReturnType<typeof saudeRepositorios>>>();
-	const [erro, setErro] = useState("");
-	const autorizada = sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao);
-	useEffect(() => {
-		setDados(undefined);
-		setErro("");
-		if (!autorizada) {
-			setErro("Instalação não autorizada.");
-			return;
-		}
-		const c = new AbortController();
-		void saudeRepositorios(instalacao, pagina, c.signal)
-			.then((v) => {
-				if (!c.signal.aborted) setDados(v);
-			})
-			.catch((e) => {
-				if (!c.signal.aborted) setErro(erroDeAnalise(e));
-			});
-		return () => {
-			c.abort();
-		};
-	}, [instalacao, autorizada, pagina]);
+	const autorizada = sessao?.autenticado === true && sessao.instalacoes.some((i) => String(i.id) === instalacao);
+	const filtros = new URLSearchParams({ pagina: String(pagina) });
+	const { estado, repetir } = useLeitura(saudeRepositorios, instalacao, filtros.toString(), { reutilizar: true, habilitada: autorizada });
+	const dados = estado && "dados" in estado ? estado.dados : undefined;
+	const erro = autorizada ? (estado && "erro" in estado ? estado.erro : "") : "Instalação não autorizada.";
 
 	return (
 		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.total ?? "—"} repositórios conectados`}>
@@ -310,7 +285,7 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 			{erro ? (
 				<PainelDeEstado titulo="Consulta de repositórios indisponível" erro>
 					<p>{erro}</p>
-					<Botao onClick={aoAtualizar}>Tentar novamente</Botao>
+					<Botao onClick={repetir}>Tentar novamente</Botao>
 				</PainelDeEstado>
 			) : !dados ? (
 				<p role="status">Consultando repositórios…</p>
@@ -337,7 +312,7 @@ function ConteudoRepositorios({ instalacao, aoAtualizar }: { instalacao: string;
 							}))}
 						/>
 						<div className="acoes-gestao">
-							<Botao variante="primario" onClick={aoAtualizar}>
+							<Botao variante="primario" onClick={repetir}>
 								Atualizar repositórios
 							</Botao>
 						</div>

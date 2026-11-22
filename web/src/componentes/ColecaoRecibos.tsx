@@ -15,6 +15,8 @@ export function ColecaoRecibos() {
 			ajuda={<p>A coleção, a verificação da cadeia e a exportação por instalação ainda estão indisponíveis.</p>}
 			titulo="Recibos por repositório"
 			consultar={consultarColecao}
+			filtrosDaConsulta={["repositorio", "periodo", "pagina", "snapshot"]}
+			reutilizar
 		>
 			{(dados) => <Lista {...dados} />}
 		</ConsultaPrivada>

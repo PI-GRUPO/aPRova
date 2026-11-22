@@ -52,12 +52,22 @@ export function App() {
 										{
 											"/repositorios": <Repositorios />,
 											"/regras": (
-												<ConsultaGestao consultar={consultasGestao["/regras"]} titulo={s.titulo}>
+												<ConsultaGestao
+													consultar={consultasGestao["/regras"]}
+													titulo={s.titulo}
+													filtrosDaConsulta={["repositorio", "periodo"]}
+													reutilizar
+												>
 													<Regras />
 												</ConsultaGestao>
 											),
 											"/auditoria": (
-												<ConsultaGestao consultar={consultasGestao["/auditoria"]} titulo={s.titulo}>
+												<ConsultaGestao
+													consultar={consultasGestao["/auditoria"]}
+													titulo={s.titulo}
+													filtrosDaConsulta={["repositorio", "periodo", "pagina", "snapshot", "recusadas", "resultado", "origem"]}
+													reutilizar
+												>
 													<Auditoria />
 												</ConsultaGestao>
 											),

@@ -168,6 +168,64 @@ test("visão geral reaparece enquanto as métricas do mesmo escopo são revalida
 	expect((await atualizada).ok()).toBeTruthy();
 });
 
+for (const { rota, titulo, endpoint, tabela } of [
+	{ rota: "repositorios", titulo: "Repositórios", endpoint: "/api/repositorios", tabela: "Saúde por repositório" },
+	{ rota: "recibos", titulo: "Recibos", endpoint: "/api/web/recibos", tabela: "Recibos por repositório" },
+	{ rota: "regras", titulo: "Regras do gate", endpoint: "/api/web/regras", tabela: "Regras e estatísticas por regra" },
+	{ rota: "auditoria", titulo: "Auditoria de ações", endpoint: "/api/web/auditoria", tabela: "Histórico de ações" },
+]) {
+	test(`${titulo} reaparece enquanto a consulta é atualizada`, async ({ page }) => {
+		await page.goto(`${origem}/entrar`);
+		await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+		await expect(page).toHaveURL(`${origem}/`);
+		await page.goto(`${origem}/${rota}?installation_id=42`);
+		const conteudo = page.getByRole("table", { name: tabela, exact: true });
+		await expect(conteudo).toBeVisible();
+
+		const menu = page.getByRole("navigation", { name: "Principal", exact: true });
+		await menu.getByRole("link", { name: "Visão geral", exact: true }).click();
+		await expect(conteudo).toHaveCount(0);
+		let capturar!: (rota: Route) => void;
+		const pendente = new Promise<Route>((resolve) => {
+			capturar = resolve;
+		});
+		await page.route(
+			(url) => url.pathname === endpoint && (rota !== "repositorios" || url.searchParams.get("detalhes") === "1"),
+			capturar,
+			{
+				times: 1,
+			},
+		);
+		await menu.getByRole("link", { name: titulo, exact: true }).click();
+		const consulta = await pendente;
+		await expect(conteudo).toBeVisible();
+		const atualizada = page.waitForResponse((r) => r.url() === consulta.request().url());
+		await consulta.continue();
+		expect((await atualizada).ok()).toBeTruthy();
+	});
+}
+
+test("um filtro novo de auditoria aguarda seus próprios dados", async ({ page }) => {
+	await page.goto(`${origem}/entrar`);
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	await expect(page).toHaveURL(`${origem}/`);
+	await page.goto(`${origem}/auditoria?installation_id=42`);
+	const tentativaAnterior = page.getByRole("cell", { name: "permissao_insuficiente" });
+	await expect(tentativaAnterior).toBeVisible();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route((url) => url.pathname === "/api/web/auditoria" && url.searchParams.get("origem") === "Painel", capturar, { times: 1 });
+	await page.getByRole("combobox", { name: "Origem", exact: true }).click();
+	await page.getByRole("option", { name: "Painel", exact: true }).click();
+	const consulta = await pendente;
+	await expect(page.getByText("Carregando…", { exact: true })).toBeVisible();
+	await expect(tentativaAnterior).toHaveCount(0);
+	await consulta.continue();
+	await expect(page.getByText("Nenhum registro encontrado para os filtros selecionados.")).toBeVisible();
+});
+
 test("a página do recorte do mapa pode ser compartilhada e recarregada", async ({ page }) => {
 	await page.goto(`${origem}/entrar`);
 	await page.getByRole("link", { name: "Continuar com GitHub" }).click();

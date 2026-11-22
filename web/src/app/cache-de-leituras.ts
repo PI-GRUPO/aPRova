@@ -1,6 +1,6 @@
 import type { Consulta } from "@/servicos/fonte";
 
-const validade = 120_000;
+const validade = 10 * 60_000;
 const limitePorConsulta = 40;
 type Entrada<T> = { dados: T; venceEm: number };
 

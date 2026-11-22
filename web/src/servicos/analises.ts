@@ -1,4 +1,4 @@
-import type { Consulta } from "./fonte";
+import type { Consulta, Escopo } from "./fonte";
 import { consultarJSON, ErroHTTP } from "./http";
 import { mesmoInstante } from "./instante";
 import { objeto, uuidValido } from "./recibos";
@@ -242,12 +242,13 @@ export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, fi
 	return dados;
 };
 
-export async function saudeRepositorios(id: string, pagina: number, signal: AbortSignal) {
-	const q = new URLSearchParams({ installation_id: id, detalhes: "1", pagina: String(pagina) });
+export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
+	const pagina = Number(filtros.get("pagina") ?? 1);
+	const q = new URLSearchParams({ installation_id: instalacao, detalhes: "1", pagina: String(pagina) });
 	const v = await consultarJSON(`/api/repositorios?${q}`, { privada: true, signal });
 	if (
 		!objeto(v) ||
-		v.installation_id !== Number(id) ||
+		v.installation_id !== Number(instalacao) ||
 		v.pagina !== pagina ||
 		v.limite !== 10 ||
 		!numero(v.total) ||
