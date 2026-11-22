@@ -5,6 +5,7 @@ import { useEscopo, useLeitura } from "@/componentes/ConsultaPrivada";
 import { FilaDePendencias } from "@/componentes/FilaDePendencias";
 import { MapaDeAnalises as Mapa } from "@/componentes/MapaDeAnalises";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
+import { Selecao } from "@/componentes/Selecao";
 import { consultarVisaoGeral } from "@/servicos/visao-geral";
 import { Protegida } from "./Acesso";
 import "@/estilos/visao-geral.css";
@@ -38,11 +39,22 @@ function Distribuicao({ titulo, apoio, itens }: { titulo: string; apoio: string;
 export function VisaoGeral() {
 	const { instalacao } = useEscopo("");
 	const { sessao } = useSessao();
-	const [filtros] = useSearchParams();
+	const [filtros, setFiltros] = useSearchParams();
 	return (
 		<div className="pagina pagina-overview">
 			<h1>Visão geral</h1>
 			<Protegida>
+				{sessao?.autenticado && sessao.instalacoes.length > 1 && (
+					<div className="campo seletor-instalacao-overview">
+						<span className="rotulo-campo">Instalação</span>
+						<Selecao
+							rotulo="Instalação"
+							valor={instalacao}
+							aoMudar={(id) => setFiltros(new URLSearchParams({ installation_id: id }))}
+							opcoes={sessao.instalacoes.map((i) => ({ valor: String(i.id), rotulo: i.conta }))}
+						/>
+					</div>
+				)}
 				{sessao?.autenticado && sessao.instalacoes.some((i) => String(i.id) === instalacao) ? (
 					<Conteudo
 						key={JSON.stringify([sessao.usuario.id, instalacao, filtros.get("repositorio")])}

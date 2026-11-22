@@ -24,7 +24,11 @@ function Tema() {
 }
 export function Casca() {
 	const { sessao } = useSessao();
-	const { pathname } = useLocation();
+	const { pathname, search } = useLocation();
+	const instalacao = new URLSearchParams(search).get("installation_id");
+	function destino(caminho: string) {
+		return instalacao ? `${caminho}?${new URLSearchParams({ installation_id: instalacao })}` : caminho;
+	}
 	const [menu, definirMenu] = useState(false);
 	const anterior = useRef(pathname);
 	useEffect(() => {
@@ -36,7 +40,7 @@ export function Casca() {
 	}
 	const links = (de = 0, ate: number = secoes.length) =>
 		secoes.slice(de, ate).map((s) => (
-			<NavLink key={s.caminho} to={s.caminho} end={s.caminho === "/"} className="item-nav" onClick={fecharMenu}>
+			<NavLink key={s.caminho} to={destino(s.caminho)} end={s.caminho === "/"} className="item-nav" onClick={fecharMenu}>
 				<Ativo nome={s.icone} ativo={pathname === s.caminho || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`))} />
 				<span>{s.titulo}</span>
 			</NavLink>
@@ -47,7 +51,7 @@ export function Casca() {
 				Pular para o conteúdo
 			</a>
 			<aside className="lateral">
-				<Link to="/" aria-label="aPRova — Visão geral">
+				<Link to={destino("/")} aria-label="aPRova — Visão geral">
 					<Ativo nome="marca" />
 				</Link>
 				<nav aria-label="Principal" className="menu-desktop">
@@ -102,7 +106,7 @@ export function Casca() {
 				</div>
 				<nav aria-label="Principal no celular">
 					{links(0, 3)}
-					<NavLink to="/regras" className="item-nav">
+					<NavLink to={destino("/regras")} className="item-nav">
 						Regras
 					</NavLink>
 				</nav>

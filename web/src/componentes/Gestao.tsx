@@ -22,10 +22,12 @@ export function PaginaGestao({
 	voltar?: boolean;
 }) {
 	const simulada = !!useContext(Contexto) && __MOCKS__;
+	const [q] = useSearchParams();
+	const instalacao = q.get("installation_id");
 	return (
 		<div className={`pagina pagina-gestao${voltar ? " pagina-regras" : ""}`}>
 			{voltar && (
-				<Link className="voltar-regras" to="/">
+				<Link className="voltar-regras" to={instalacao ? `/?${new URLSearchParams({ installation_id: instalacao })}` : "/"}>
 					<Ativo nome="voltar" />
 					Voltar à Visão geral
 				</Link>

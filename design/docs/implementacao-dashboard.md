@@ -1,5 +1,13 @@
 # Implementação do dashboard aPRova
 
+## Instalação selecionada na Visão Geral em 22/11/2026
+
+Os links do menu e da marca descartavam `installation_id`. Ao voltar para a Visão Geral, as consultas usavam a primeira instalação autorizada da sessão. Isso podia mostrar métricas de outra conta, com valores diferentes dos repositórios que a pessoa estava acompanhando.
+
+A navegação desktop/mobile e o retorno da tela de regras preservam a instalação na URL. A Visão Geral oferece um seletor quando a sessão possui mais de uma instalação. Trocar a instalação limpa os filtros e cortes anteriores e recarrega métricas, catálogo e fila no novo escopo. A autorização continua sendo conferida pelos handlers existentes. Os 15 testes Playwright de leituras e Visão Geral passaram.
+
+Foram alterados `web/src/componentes/Casca.tsx`, `web/src/componentes/Gestao.tsx`, `web/src/paginas/VisaoGeral.tsx` e o estilo do seletor em `web/src/estilos/visao-geral.css`. A regressão em `web/e2e/leituras-painel.spec.ts` usa duas instalações autorizadas, com totais diferentes, e verifica navegação, troca, recarga e retorno. Instalação pelo lockfile, Biome e build passaram. As capturas de desktop/mobile nos dois temas ficam em `.capturas-mcp/dashboard/instalacao-overview-*`. A validação usa os handlers reais com identidades e fontes de teste. A sessão GitHub da pessoa no navegador permanece como verificação integrada pendente.
+
 ## Leituras do dashboard em 21/11/2026
 
 Branch `feat/web-dashboard`, base `dea7211`. Este lote autoriza consultas de backend para as telas existentes. Os registros das fases abaixo descrevem o estado das respectivas datas. Os parâmetros, DTOs, limites, unidades e critérios de contagem estão no [OpenAPI do dashboard](dashboard-openapi.json).

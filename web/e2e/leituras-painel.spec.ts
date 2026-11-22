@@ -3,6 +3,41 @@ import { expect, test } from "@playwright/test";
 
 const origem = "http://127.0.0.1:18080";
 for (const largura of [1440, 390]) {
+	test(`visão geral mantém a instalação ao navegar e permite trocá-la em ${largura}px`, async ({ page }) => {
+		await page.setViewportSize({ width: largura, height: 900 });
+		await page.goto(`${origem}/entrar`);
+		await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+		await page.goto(`${origem}/repositorios?installation_id=43&pagina=2`);
+		const menu = page.getByRole("navigation", { name: largura === 1440 ? "Principal" : "Principal no celular", exact: true });
+		await menu.getByRole("link", { name: "Visão geral", exact: true }).click();
+		await expect(page).toHaveURL(`${origem}/?installation_id=43`);
+		const metricas = page.locator(".metrica-overview").filter({ has: page.getByRole("heading", { name: "Análises recebidas" }) });
+		await expect(metricas.locator(".valor-overview")).toHaveText("0");
+		await expect(page.getByRole("combobox", { name: "Instalação", exact: true })).toHaveText("segunda-equipe");
+		await page.getByRole("combobox", { name: "Instalação", exact: true }).click();
+		await page.getByRole("option", { name: "equipe-e2e", exact: true }).click();
+		await expect(page).toHaveURL(`${origem}/?installation_id=42`);
+		await expect(metricas.locator(".valor-overview")).toHaveText("1");
+		await page.reload();
+		await expect(metricas.locator(".valor-overview")).toHaveText("1");
+		for (const tema of ["escuro", "claro"]) {
+			await page.evaluate((valor) => localStorage.setItem("aprova-tema", valor), tema);
+			await page.reload();
+			await expect(metricas.locator(".valor-overview")).toHaveText("1");
+			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+			await page.screenshot({ path: `../.capturas-mcp/dashboard/instalacao-overview-${largura}-${tema}.png`, fullPage: true });
+		}
+		await menu.getByRole("link", { name: "Regras", exact: largura !== 1440 }).click();
+		await expect(page).toHaveURL(`${origem}/regras?installation_id=42`);
+		const voltar = page.getByRole("link", { name: "Voltar à Visão geral", includeHidden: true });
+		await expect(voltar).toHaveAttribute("href", "/?installation_id=42");
+		if (largura === 1440) await menu.getByRole("link", { name: "Visão geral", exact: true }).click();
+		else await voltar.click();
+		await expect(page).toHaveURL(`${origem}/?installation_id=42`);
+		await expect(metricas.locator(".valor-overview")).toHaveText("1");
+	});
+}
+for (const largura of [1440, 390]) {
 	test(`leituras do build de produção, escopo e exportação em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: 900 });
 		await page.goto(`${origem}/entrar`);

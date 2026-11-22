@@ -16,6 +16,9 @@
 		text-align: right;
 	}
 }
+.seletor-instalacao-overview {
+	max-width: 320px;
+}
 .faixa-overview {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
