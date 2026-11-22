@@ -11,7 +11,8 @@ risco alto pelo total avaliado. Os links da Visão geral e da coleção levam
 `installation_id` ao recibo, que preserva a instalação ao voltar ou abrir o
 elo anterior. O contrato público do recibo continua por UUID.
 
-O catálogo lê diretamente `checks`, `contents` e `pull_requests`.
+O catálogo lê diretamente `checks`, `contents` e `pull_requests`. A fila
+serializa os parâmetros do link de análise com `URLSearchParams.toString()`.
 
 Biome, TypeScript/build e 86 cenários Playwright passaram. A suíte verificou a
 equivalência entre fusos, a rejeição de diferença de um nanosegundo, a métrica

@@ -18,7 +18,7 @@ function LinkDaAnalise({ item }: { item: Analise }) {
 		retorno: q.toString(),
 	});
 	return (
-		<Link className="link-fila" to={`/analises/${encodeURIComponent(item.id)}?${destino}`}>
+		<Link className="link-fila" to={`/analises/${encodeURIComponent(item.id)}?${destino.toString()}`}>
 			{item.repositorio} #{item.numero_pr}
 		</Link>
 	);
