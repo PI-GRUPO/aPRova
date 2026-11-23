@@ -8,6 +8,7 @@ import { Ativo } from "@/componentes/Ativo";
 import { useLeitura } from "@/componentes/ConsultaPrivada";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
+import type { ResultadoAcao } from "@/servicos/acoes-analise";
 import { type Detalhe, detalharAnalise, estados, urlGitHub } from "@/servicos/analises";
 import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
 import type { Consulta } from "@/servicos/fonte";
@@ -45,10 +46,39 @@ const consultarDetalhe: Consulta<Detalhe> = ({ instalacao, repositorio }, filtro
 
 function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalacao: string; repositorio: string }) {
 	const [q] = useSearchParams();
+	const [resultadoAcao, setResultadoAcao] = useState<ResultadoAcao>();
 	const filtros = new URLSearchParams({ id, repositorio });
-	const { estado, repetir } = useLeitura(consultarDetalhe, instalacao, filtros.toString(), { reutilizar: true });
+	const { estado, repetir } = useLeitura(consultarDetalhe, instalacao, filtros.toString(), {
+		reutilizar: true,
+		manterDadosDuranteAtualizacao: true,
+	});
 	const dados = estado && "dados" in estado ? estado.dados : undefined;
 	const erro = estado && "erro" in estado ? estado.erro : "";
+	useEffect(() => {
+		if (!dados?.atual) return;
+		const estadoAtual = dados.analise.estado;
+		if (
+			estadoAtual !== "aguardando_aprovacao" &&
+			estadoAtual !== "aplicando" &&
+			!(estadoAtual === "falhou" && resultadoAcao?.tipo === "reexecutar_analise")
+		)
+			return;
+		// Agenda a próxima leitura só depois que os dados anteriores chegarem.
+		let solicitada = false;
+		const atualizar = () => {
+			if (solicitada || document.visibilityState !== "visible") return;
+			solicitada = true;
+			repetir();
+		};
+		const timer = window.setTimeout(atualizar, 5_000);
+		document.addEventListener("visibilitychange", atualizar);
+		window.addEventListener("focus", atualizar);
+		return () => {
+			window.clearTimeout(timer);
+			document.removeEventListener("visibilitychange", atualizar);
+			window.removeEventListener("focus", atualizar);
+		};
+	}, [dados, repetir, resultadoAcao?.tipo]);
 	const retorno = new URLSearchParams(q.get("retorno") ?? "");
 	retorno.set("installation_id", instalacao);
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
@@ -72,7 +102,13 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 					<p role="status">Carregando análise…</p>
 				</>
 			) : (
-				<ConteudoAnalise dados={dados} instalacao={instalacao} aoAtualizar={repetir} />
+				<ConteudoAnalise
+					dados={dados}
+					instalacao={instalacao}
+					aoAtualizar={repetir}
+					resultadoAcao={resultadoAcao}
+					aoReceberAcao={setResultadoAcao}
+				/>
 			)}
 		</>
 	);
@@ -84,6 +120,8 @@ export function ConteudoAnalise({
 	complementoSimulado,
 	linhaDoTempoSimulada,
 	aoAtualizar,
+	resultadoAcao,
+	aoReceberAcao,
 }: {
 	dados: Detalhe;
 	instalacao: string;
@@ -91,6 +129,8 @@ export function ConteudoAnalise({
 	complementoSimulado?: ComplementoDemonstracao;
 	linhaDoTempoSimulada?: ReactNode;
 	aoAtualizar?: () => void;
+	resultadoAcao?: ResultadoAcao;
+	aoReceberAcao?: (resultado: ResultadoAcao) => void;
 }) {
 	const { sessao, cacheDeLeituras } = useSessao();
 	const csrfDasAcoes = !demonstracao && !__MOCKS__ && sessao?.autenticado && sessao.acoes_disponiveis ? sessao.csrf_token : "";
@@ -346,8 +386,10 @@ export function ConteudoAnalise({
 					<p>Nenhuma decisão humana registrada para esta análise.</p>
 				)}
 				<AcoesDaAnalise
-					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${usuario}`}
+					key={`${instalacao}:${a.id}:${a.sha_head}:${usuario}`}
 					csrf={csrfDasAcoes}
+					resultado={resultadoAcao}
+					aoReceber={aoReceberAcao}
 					aoAtualizar={() => {
 						cacheDeLeituras?.limpar();
 						aoAtualizar?.();

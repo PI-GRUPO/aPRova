@@ -96,6 +96,18 @@ test("autor e análise substituída permanecem impedidos", async ({ page }) => {
 		await expect(page.getByRole("button", { name: nome, exact: true })).toBeDisabled();
 });
 
+test("detalhe busca sozinho uma decisão registrada fora do painel", async ({ page }) => {
+	const origem = "http://127.0.0.1:18080";
+	await page.clock.install();
+	await preparar(page, dados, "revisor-demo", origem);
+	await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeEnabled();
+	await page.unroute("**/api/analises/**");
+	await page.route("**/api/analises/**", (r) => r.fulfill({ json: { ...dados, analise: { ...dados.analise, estado: "concluido" } } }));
+	await page.clock.runFor(5_000);
+	await expect(page.getByText("Concluído", { exact: true })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeDisabled();
+});
+
 for (const { nome, botao, confirmar, tipo } of [
 	{ nome: "aprovação", botao: "Aprovar", confirmar: "Confirmar aprovação", tipo: "aprovar" },
 	{ nome: "pedido de alterações", botao: "Pedir alterações", confirmar: "Enviar solicitação", tipo: "solicitar_alteracao" },
@@ -157,9 +169,34 @@ for (const { nome, botao, confirmar, tipo } of [
 		await enviar.click();
 		await expect(dialogo.getByRole("status")).toContainText(reexecucao ? "Nova análise recebida pela fila" : "Review enviada ao GitHub");
 		expect(numeroDePedidos).toBe(1);
+		if (tipo === "solicitar_alteracao") {
+			const leitura = page.waitForResponse((r) => r.request().method() === "GET" && new URL(r.url()).pathname === `/api/analises/${id}`);
+			await dialogo.getByRole("button", { name: "Voltar à análise" }).click();
+			await leitura;
+			await expect(page.getByText("Aguardando atualização da análise.")).toBeVisible();
+			await expect(page.getByRole("button", { name: "Aprovar", exact: true })).toBeDisabled();
+			await expect(page.getByRole("button", { name: "Pedir alterações", exact: true })).toBeDisabled();
+		}
 		if (reexecucao) {
+			await page.route("**/api/repositorios?*", (r) =>
+				r.fulfill({ json: { installation_id: 42, repositorios: [dados.analise.repositorio] } }),
+			);
+			await page.route("**/api/analises?*", (r) =>
+				r.fulfill({
+					json: {
+						installation_id: 42,
+						snapshot: instante,
+						pagina: 1,
+						limite: 20,
+						total: 1,
+						tem_mais: false,
+						itens: [{ ...detalhe.analise, estado: "pendente" }],
+					},
+				}),
+			);
 			await dialogo.getByRole("link", { name: "Ver análises deste PR" }).click();
 			await expect(page).toHaveURL(`${origem}/analises?installation_id=42&repositorio=equipe%2Fprojeto&numero_pr=1`);
+			await expect(page.getByRole("list", { name: "Análises autorizadas" }).getByText("Pendente", { exact: true })).toBeVisible();
 		}
 	});
 }

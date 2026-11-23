@@ -79,11 +79,7 @@ function FormularioAcao({
 			titulo={respostaDaAcao ? texto.resultado : tipo === "aprovar" ? `${texto.titulo} #${contexto.pr}` : texto.titulo}
 			descricao="Confira a análise e o commit antes de confirmar."
 			gatilho={
-				<Botao
-					disabled={!!motivo || (!!resultado && !respostaDaAcao)}
-					title={motivo || undefined}
-					variante={tipo === "aprovar" ? "primario" : "secundario"}
-				>
+				<Botao disabled={!!motivo || !!resultado} title={motivo || undefined} variante={tipo === "aprovar" ? "primario" : "secundario"}>
 					{texto.botao}
 				</Botao>
 			}
@@ -184,9 +180,26 @@ function FormularioAcao({
 		</Modal>
 	);
 }
-export function AcoesDaAnalise({ contexto, csrf, aoAtualizar }: { contexto: ContextoAcao; csrf: string; aoAtualizar?: () => void }) {
-	const [resultado, setResultado] = useState<ResultadoAcao>();
+export function AcoesDaAnalise({
+	contexto,
+	csrf,
+	resultado,
+	aoReceber,
+	aoAtualizar,
+}: {
+	contexto: ContextoAcao;
+	csrf: string;
+	resultado?: ResultadoAcao;
+	aoReceber?: Dispatch<ResultadoAcao>;
+	aoAtualizar?: () => void;
+}) {
 	const [aberta, setAberta] = useState<TipoAcao>();
+	const aguardando =
+		resultado &&
+		contexto.atual &&
+		(resultado.tipo === "reexecutar_analise"
+			? contexto.estado === "falhou"
+			: contexto.estado === "aguardando_aprovacao" || contexto.estado === "aplicando");
 	return (
 		<div className="acoes-da-analise">
 			<div className="controles">
@@ -197,7 +210,7 @@ export function AcoesDaAnalise({ contexto, csrf, aoAtualizar }: { contexto: Cont
 						tipo={tipo}
 						csrf={csrf}
 						resultado={resultado}
-						aoReceber={setResultado}
+						aoReceber={(v) => aoReceber?.(v)}
 						aberto={aberta === tipo}
 						aoMudar={(v) => {
 							setAberta(v ? tipo : undefined);
@@ -208,6 +221,7 @@ export function AcoesDaAnalise({ contexto, csrf, aoAtualizar }: { contexto: Cont
 			</div>
 			{contexto.proprioPR && <p className="apoio">O autor não pode aprovar o próprio PR.</p>}
 			{!contexto.atual && <p className="apoio">Esta análise foi substituída. Consulte a análise atual.</p>}
+			{aguardando && !aberta && <p role="status">Aguardando atualização da análise.</p>}
 		</div>
 	);
 }

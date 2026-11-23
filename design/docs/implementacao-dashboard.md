@@ -1253,6 +1253,9 @@ e a justificativa na análise revisada. O evento v1 continua aceito pelos
 consumidores existentes com origem `github`; a auditoria e o histórico
 da análise mostram `painel`. A resposta 202 confirma o envio da review, e o
 worker atualiza o resultado quando recebe a confirmação do GitHub.
+O detalhe aberto revalida a análise enquanto a decisão estiver pendente,
+inclusive ao voltar à aba. Após enviar uma solicitação, o detalhe mantém
+os botões inativos durante a espera pelo resultado do núcleo.
 
 A reexecução de falha de infraestrutura cria outra análise para o mesmo
 SHA. O histórico anterior é preservado e a nova análise reaproveita o
