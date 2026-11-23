@@ -322,6 +322,20 @@ code {
   color: var(--lima-detalhe);
 }
 
+.topo-github {
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--borda-forte);
+  border-radius: 8px;
+}
+
+.topo-github svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
 .trocar-tema {
   display: inline-flex;
   align-items: center;
