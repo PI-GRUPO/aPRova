@@ -1727,6 +1727,14 @@ h1 em {
 
 .cartao,
 .fluxo-passo,
+.mini,
+.recibo-cartao,
+.bench-limites {
+  cursor: default;
+}
+
+.cartao,
+.fluxo-passo,
 .mini {
   position: relative;
   display: grid;
