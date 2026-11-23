@@ -6,6 +6,17 @@ e simulações foram consolidados.
 
 ## Orientação para manutenção
 
+### Verificação da aprovação no Slack em 22/11/2026
+
+As interações assinadas chegavam à Central, mas o nó de abertura do formulário falhava com `invalid syntax` na avaliação de `jsonBody`. A expressão da versão operacional tinha um bloco JSON compacto dentro da expressão do n8n. O bloco foi expandido e a montagem dos metadados foi reescrita com `Object.assign`. A expressão corrigida passou pelo resolvedor real do n8n com dados fictícios e foi publicada no workflow existente.
+
+- [x] Reproduzir a falha de sintaxe e validar o corpo corrigido no interpretador instalado.
+- [x] Publicar somente a alteração do parâmetro do formulário na Central.
+- [x] Confirmar uma nova interação humana com formulário aceito pelo Slack, `ok=true`.
+- [x] Confirmar o envio humano à API e a recusa de autoaprovação na PR 10 de `PI-GRUPO/aPRova-TESTES`, com HTTP 403 e motivo `autor_do_proprio_pr` para `julia-ed2`.
+
+A versão operacional possui 65 nós, incluindo App Home e o formulário com motivo da aprovação. O export desta branch possui 61 nós e um formulário anterior, já distribuído em várias linhas. Sua expressão foi validada no mesmo interpretador e preservada. A publicação da correção operacional foi confirmada por releitura da versão ativa. A aprovação da PR 10 exige outro revisor autorizado.
+
 Antes de construir ou alterar um workflow, leia este documento e
 [eventos-n8n.md](eventos-n8n.md). Mantenha por integração: finalidade,
 inventário dos nós/funções, contratos do núcleo, configuração e pendências.
