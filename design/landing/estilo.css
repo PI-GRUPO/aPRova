@@ -312,9 +312,10 @@ code {
   text-decoration: none;
 }
 
-.topo nav a[aria-current="true"] {
-  color: var(--titulo);
-  box-shadow: inset 0 -2px 0 var(--titulo);
+.topo nav a[aria-current="true"],
+.topo nav a:focus {
+  color: var(--lima-detalhe);
+  box-shadow: inset 0 -2px 0 var(--lima-detalhe);
 }
 
 .topo nav a:hover {
@@ -594,12 +595,11 @@ h1 em {
   font-size: 0.9875rem;
   text-decoration: none;
   overflow: hidden;
-  transition: transform 160ms ease-out, border-color 240ms ease-out, box-shadow 160ms ease-out;
+  transition: filter 160ms ease-out, background-color 160ms ease-out, border-color 160ms ease-out;
 }
 
 .botao:hover {
-  transform: translateY(-1px);
-  border-color: var(--lima-detalhe);
+  filter: brightness(0.85);
 }
 
 .botao-principal {
@@ -613,12 +613,15 @@ h1 em {
 }
 
 .botao-metal {
-  color: var(--secundario-texto);
-  background: var(--secundario-fundo);
-  border: 1px solid var(--secundario-borda);
-  box-shadow:
-    inset 0 1px 0 var(--secundario-luz),
-    0 6px 16px -8px var(--sombra);
+  color: var(--titulo);
+  background: var(--elevado);
+  border: 1px solid var(--borda-forte);
+}
+
+.botao-metal:hover {
+  filter: none;
+  background: color-mix(in srgb, var(--elevado) 85%, var(--titulo));
+  border-color: var(--secundario);
 }
 
 .faixa {
