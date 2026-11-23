@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { useMobile } from "@/app/responsivo";
 import { comInstalacao } from "@/app/rotas";
 import { consultarColecao, exportarColecao, type RegistroRecibo, verificarCadeia } from "@/servicos/colecao-recibos";
+import { ErroHTTP } from "@/servicos/http";
 import { baixar } from "@/servicos/recibos";
 import { ConsultaPrivada, useEscopo } from "./ConsultaPrivada";
 import { opcoesDoPeriodo, PaginacaoPainel, SecaoGestao, SeletorGestao, TabelaGestao, useFiltrosGestao } from "./Gestao";
@@ -43,15 +44,30 @@ function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapsh
 		setErro("");
 		try {
 			if (acao === "cadeia") {
-				const v = await verificarCadeia.executar(escopo, c.signal);
-				if (!c.signal.aborted)
-					definir(v.valida ? "Cadeia verificada." : `Falha na verificação da cadeia. ${v.primeiroReciboInvalido ?? ""}`);
+				const v = await verificarCadeia.executar(escopo.instalacao, c.signal);
+				if (!c.signal.aborted) {
+					definir(
+						v.valida
+							? v.total === 0
+								? "Esta instalação ainda não tem recibos."
+								: `Cadeia verificada. Recibos conferidos: ${v.total}.`
+							: `Primeiro recibo inválido: ${v.id}. ${v.detalhe}`,
+					);
+				}
 			} else {
 				const arquivo = await exportarColecao.executar(escopo, dias, acao, c.signal, snapshot ?? "");
 				if (!c.signal.aborted) baixar(`recibos.${acao}`, arquivo);
 			}
 		} catch (e) {
-			if (!c.signal.aborted) setErro(e instanceof Error ? e.message : "Não foi possível concluir a operação.");
+			if (!c.signal.aborted) {
+				setErro(
+					acao === "cadeia" && e instanceof ErroHTTP && e.status === 403
+						? "Para verificar a cadeia, você precisa ter acesso a todos os repositórios com recibos nesta instalação."
+						: e instanceof Error
+							? e.message
+							: "Não foi possível concluir a operação.",
+				);
+			}
 		} finally {
 			consulta.current = null;
 			if (!c.signal.aborted) setOcupado(false);
@@ -78,10 +94,10 @@ function Lista({ repositorios, itens, pagina = 1, limite = 20, total = 0, snapsh
 			{!verificarCadeia.disponivel && !exportarColecao.disponivel && (
 				<p className="apoio">Verificação da cadeia e exportação da coleção indisponíveis.</p>
 			)}
-			{!verificarCadeia.disponivel && exportarColecao.disponivel && (
+			{exportarColecao.disponivel && (
 				<p className="apoio">
-					JSON e CSV exportam os metadados, incluindo o identificador da chave e o hash. Os bytes assinados e a verificação estão no recibo
-					individual. A completude da cadeia está indisponível.
+					A verificação da cadeia cobre a instalação inteira. Os filtros de repositório e período se aplicam à lista e à exportação de
+					metadados em JSON e CSV.
 				</p>
 			)}
 			{total > 500 && <p className="apoio">Restrinja o período ou o repositório para exportar até 500 recibos.</p>}

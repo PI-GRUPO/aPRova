@@ -125,6 +125,7 @@ func (s *Servidor) Rotas() http.Handler {
 	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal", "/api/metricas", "/api/web/recibos", "/api/web/auditoria", "/api/web/regras", "/api/web/vinculo-slack"} {
 		roteador.Handle(caminho, s.sessaoWeb)
 	}
+	roteador.With(s.limiteDeLeituras.segurar).Handle("/api/web/recibos/cadeia", s.sessaoWeb)
 	roteador.Get("/health", saude.Viva)
 	roteador.Get("/health/live", saude.Viva)
 	roteador.Get("/ready", saude.Pronta(s.dependencias))

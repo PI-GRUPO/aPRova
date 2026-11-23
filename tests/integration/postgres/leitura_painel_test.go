@@ -3,12 +3,47 @@ package integracaopostgres
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/demo"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 )
+
+func TestCadeiaDeRecibosNoPostgres(t *testing.T) {
+	r := exigirBanco(t)
+	instalacao, outra := novoTenant(), novoTenant()
+	antigo := time.Now().UTC().AddDate(0, -6, 0)
+	assinador := assinadorDaDemo(t)
+	for _, id := range []int64{instalacao, outra} {
+		if _, err := demo.Semear(t.Context(), r, assinador, demo.Opcoes{InstallationID: id, Repositorio: repositorioDaDemo, Agora: antigo}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	v := receipt.NovoVerificadorDeCadeia(receipt.NovoChaveiro(assinador.ChavePublica()), r)
+	resultado, err := v.VerificarCadeia(t.Context(), instalacao, []string{repositorioDaDemo})
+	if err != nil || !resultado.Valida || resultado.Verificados != 8 {
+		t.Fatalf("histórico de seis meses, apenas da instalação solicitada: %+v, %v", resultado, err)
+	}
+	restrito := novoTaskRun(t, r, instalacao)
+	emissor, err := receipt.NovoEmissor(receipt.OpcoesEmissor{Assinador: assinador, Armazenamento: r})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := emissor.Emitir(t.Context(), receipt.Pedido{TaskRun: restrito, Gate: gateDeExemplo(restrito.ID), Tentativa: 1}); err != nil {
+		t.Fatal(err)
+	}
+	resultado, err = v.VerificarCadeia(t.Context(), instalacao, []string{repositorioDaDemo})
+	if !errors.Is(err, domain.ErrCadeiaSemAcesso) || resultado.Total != 0 {
+		t.Fatalf("histórico parcialmente autorizado: %+v, %v", resultado, err)
+	}
+	resultado, err = v.VerificarCadeia(t.Context(), instalacao, []string{repositorioDaDemo, restrito.Repositorio})
+	if err != nil || !resultado.Valida || resultado.Verificados != 9 {
+		t.Fatalf("histórico de dois repositórios autorizados: %+v, %v", resultado, err)
+	}
+}
 
 func TestLeiturasDoPainelNoPostgres(t *testing.T) {
 	r := exigirBanco(t)

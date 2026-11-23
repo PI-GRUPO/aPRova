@@ -24,6 +24,7 @@ type Relatorios interface {
 }
 type Opcoes struct {
 	Leituras      LeiturasPainel
+	Cadeia        CadeiaDeRecibos
 	Vinculos      map[string]string
 	Origem        string
 	Provedor      Provedor
@@ -34,6 +35,7 @@ type Opcoes struct {
 }
 type Servidor struct {
 	leituras      LeiturasPainel
+	cadeia        CadeiaDeRecibos
 	vinculos      map[string]string
 	origem        string
 	seguro        bool
@@ -62,7 +64,7 @@ func Novo(op Opcoes) (*Servidor, error) {
 	if op.Agora == nil {
 		op.Agora = time.Now
 	}
-	return &Servidor{leituras: op.Leituras, vinculos: op.Vinculos, origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
+	return &Servidor{leituras: op.Leituras, cadeia: op.Cadeia, vinculos: op.Vinculos, origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
 }
 func origemValida(origem string) (*url.URL, error) {
 	erro := errors.New("WEB_URL_PUBLICA deve ser uma origem HTTPS, ou HTTP em localhost")
@@ -152,6 +154,8 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.sair(w, r)
 	case "GET /api/metricas", "GET /api/web/recibos", "GET /api/web/auditoria", "GET /api/web/regras":
 		s.leituraPainel(w, r, path.Base(r.URL.Path))
+	case "GET /api/web/recibos/cadeia":
+		s.verificarCadeia(w, r)
 	case "GET /api/web/vinculo-slack":
 		s.vinculoPessoal(w, r)
 	case "GET /api/repositorios":

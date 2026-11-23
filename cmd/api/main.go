@@ -75,7 +75,8 @@ func executar() error {
 		defer desligar(parar)
 	}
 
-	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio)
+	chaveiro := chaveiroDosRecibos(configuracao)
+	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio, receipt.NovoVerificadorDeCadeia(chaveiro, repositorio))
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func executar() error {
 			AcoesRemotas:        acoesRemotas,
 			Relatorios:          repositorio,
 			ConsultasAnalises:   repositorio,
-			Recibos:             receipt.NovoVerificador(chaveiroDosRecibos(configuracao), repositorio),
+			Recibos:             receipt.NovoVerificador(chaveiro, repositorio),
 			Desfechos:           repositorio,
 			Commits:             leitorDeCommits(configuracao),
 			URLPublica:          configuracao.URLPublica,
@@ -216,7 +217,7 @@ func dependencias(repositorio *repository.RepositorioPostgres, clienteRedis *red
 	}
 }
 
-func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios *repository.RepositorioPostgres) (*sessaoweb.Servidor, error) {
+func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, repositorio *repository.RepositorioPostgres, cadeia sessaoweb.CadeiaDeRecibos) (*sessaoweb.Servidor, error) {
 	if c.WebURLPublica == "" {
 		return nil, nil
 	}
@@ -224,5 +225,8 @@ func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, relatorios *r
 	if err != nil {
 		return nil, err
 	}
-	return sessaoweb.Novo(sessaoweb.Opcoes{Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)}, Armazenamento: armazenamento, Relatorios: relatorios, Analises: relatorios, Leituras: relatorios, Vinculos: c.VinculosSlackGitHub})
+	return sessaoweb.Novo(sessaoweb.Opcoes{
+		Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)},
+		Armazenamento: armazenamento, Relatorios: repositorio, Analises: repositorio, Leituras: repositorio, Cadeia: cadeia, Vinculos: c.VinculosSlackGitHub,
+	})
 }

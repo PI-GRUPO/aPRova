@@ -11,6 +11,7 @@ var (
 	ErrNaoEncontrado        = errors.New("domain: registro não encontrado")
 	ErrDuplicado            = errors.New("domain: registro já existe")
 	ErrDadosInvalidos       = errors.New("domain: dados inválidos")
+	ErrCadeiaSemAcesso      = errors.New("domain: acesso insuficiente para verificar a cadeia inteira")
 	ErrTransicaoConcorrente = errors.New("domain: task_run não está mais no estado esperado")
 	ErrTransicaoProibida    = errors.New("domain: transição fora da máquina de estados")
 	ErrPrazoPerdido         = errors.New("domain: task_run não está mais reivindicado por este trabalhador")

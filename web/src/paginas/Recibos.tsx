@@ -361,8 +361,11 @@ function ConsultaDoRecibo({ id }: { id: string }) {
 								<Link to={comInstalacao(`/recibos/${recibo.recibo_anterior_id}`, instalacao)}>Consultar recibo anterior</Link>
 							)}
 							<p className="apoio">A verificação deste recibo não valida toda a cadeia.</p>
-							<Botao disabled>Verificar cadeia da instalação</Botao>
-							<p className="apoio">Verificação da cadeia completa ainda indisponível.</p>
+							{__MOCKS__ ? (
+								<Botao disabled>Verificar cadeia da instalação</Botao>
+							) : (
+								<Link to={comInstalacao("/recibos", instalacao)}>Abrir auditoria de recibos</Link>
+							)}
 						</Painel>
 					</div>
 					<Painel titulo="Evidências da classificação">
