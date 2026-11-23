@@ -1855,7 +1855,27 @@ h1 em {
   border-color: var(--lima-detalhe);
 }
 
+.visual-passo .cartao-vivo:hover {
+  border-color: var(--borda);
+  box-shadow: none;
+}
+
+@property --luz-cursor {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: transparent;
+}
+
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .visual-passo .cartao-vivo {
+    background: radial-gradient(280px circle at var(--luz-x, 50%) var(--luz-y, 50%), var(--luz-cursor), transparent 70%), var(--superficie);
+    transition: --luz-cursor 240ms ease-out;
+  }
+
+  .visual-passo .cartao-vivo:hover {
+    --luz-cursor: color-mix(in srgb, var(--titulo) 10%, transparent);
+  }
+
   #como-funciona .fluxo .cartao-vivo {
     transform: perspective(900px) rotateX(var(--giro-x, 0deg)) rotateY(var(--giro-y, 0deg));
     transform-style: preserve-3d;

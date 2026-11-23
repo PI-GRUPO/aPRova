@@ -15,7 +15,18 @@ function voltarAoLugar(evento) {
   evento.currentTarget.style.setProperty("--giro-y", "0deg");
 }
 
+function iluminarCursor(evento) {
+  const cartao = evento.currentTarget;
+  const caixa = cartao.getBoundingClientRect();
+  cartao.style.setProperty("--luz-x", `${evento.clientX - caixa.left}px`);
+  cartao.style.setProperty("--luz-y", `${evento.clientY - caixa.top}px`);
+}
+
 if (podeAnimar.matches) {
+  for (const cartao of document.querySelectorAll(".visual-passo .cartao-vivo")) {
+    cartao.addEventListener("pointermove", iluminarCursor);
+  }
+
   for (const cartao of document.querySelectorAll("#como-funciona .fluxo .cartao-vivo")) {
     cartao.addEventListener("pointermove", seguirCursor);
     cartao.addEventListener("pointerleave", voltarAoLugar);
