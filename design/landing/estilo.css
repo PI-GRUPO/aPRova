@@ -694,6 +694,23 @@ h1 em {
   padding: clamp(80px, 11vw, 140px) var(--margem) 0;
 }
 
+.secao.tambem,
+.secao.recibo {
+  max-width: none;
+  min-height: 100svh;
+  margin-top: clamp(80px, 11vw, 140px);
+  padding-block: clamp(64px, 8vw, 96px);
+  padding-inline: max(var(--margem), calc((100% - var(--largura)) / 2));
+  background: color-mix(in srgb, var(--fundo) 50%, var(--elevado));
+  align-content: center;
+}
+
+.tambem {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .lead {
   font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
   max-width: 56ch;
