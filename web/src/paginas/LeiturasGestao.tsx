@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Risco } from "@/componentes/Analise";
-import { Ativo } from "@/componentes/Ativo";
 import { useLeitura } from "@/componentes/ConsultaPrivada";
 import {
 	opcoesDoPeriodo,
@@ -89,13 +87,6 @@ export function Regras() {
 						}}
 						opcoes={todosRepos}
 					/>
-					<Link
-						className="botao botao-primario"
-						to={`/configuracao?${new URLSearchParams([...q].filter(([k]) => ["installation_id", "repositorio"].includes(k)))}`}
-					>
-						<Ativo nome="settings-primario" />
-						Configurar regras
-					</Link>
 				</div>
 				<SecaoGestao
 					titulo="Regras e estatísticas por regra"
