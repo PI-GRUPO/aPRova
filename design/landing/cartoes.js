@@ -23,7 +23,7 @@ function iluminarCursor(evento) {
 }
 
 if (podeAnimar.matches) {
-  for (const cartao of document.querySelectorAll(".visual-passo .cartao-vivo")) {
+  for (const cartao of document.querySelectorAll(".visual-passo .cartao-vivo, .bench-limites")) {
     cartao.addEventListener("pointermove", iluminarCursor);
   }
 

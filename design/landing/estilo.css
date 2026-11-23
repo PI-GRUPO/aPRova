@@ -1499,8 +1499,83 @@ h1 em {
 
 .bench-leitura {
   display: grid;
-  gap: 14px;
+  gap: 28px;
   max-width: 58ch;
+}
+
+.bench-resultado {
+  display: grid;
+  gap: 18px;
+  padding-left: 22px;
+  border-left: 2px solid var(--lima-detalhe);
+  color: var(--titulo);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.bench-resultado strong {
+  font: inherit;
+  color: inherit;
+}
+
+.bench-limites {
+  padding: 16px 20px;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  background: var(--superficie);
+}
+
+.bench-limites summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--texto);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.bench-limites summary::-webkit-details-marker {
+  display: none;
+}
+
+.bench-limites summary::after {
+  content: "+";
+  color: var(--lima-detalhe);
+  font-size: 1.25rem;
+}
+
+.bench-limites[open] summary::after {
+  content: "−";
+}
+
+.bench-limites:hover summary {
+  color: var(--lima-detalhe);
+}
+
+.bench-limites .limites {
+  margin-top: 12px;
+}
+
+.bench-limites a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 12px;
+}
+
+.icone-externo {
+  width: 1em;
+  height: 1em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
 .limites {
@@ -1885,12 +1960,14 @@ h1 em {
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .visual-passo .cartao-vivo {
+  .visual-passo .cartao-vivo,
+  .bench-limites {
     background: radial-gradient(280px circle at var(--luz-x, 50%) var(--luz-y, 50%), var(--luz-cursor), transparent 70%), var(--superficie);
     transition: --luz-cursor 240ms ease-out;
   }
 
-  .visual-passo .cartao-vivo:hover {
+  .visual-passo .cartao-vivo:hover,
+  .bench-limites:hover {
     --luz-cursor: color-mix(in srgb, var(--titulo) 10%, transparent);
   }
 
