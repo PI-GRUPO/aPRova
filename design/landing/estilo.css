@@ -2106,9 +2106,34 @@ h1 em {
   color: inherit;
 }
 
-.cena .navegador .ampliar {
+.cena .navegador .ampliar,
+.recibo-transicao .ampliar {
   padding: clamp(8px, 1.5vw, 18px);
   background: #08090a;
+}
+
+.recibo-transicao {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  pointer-events: none;
+  will-change: transform, width, height, opacity;
+}
+
+.recibo-transicao[hidden] {
+  display: none;
+}
+
+.recibo-transicao .ampliar {
+  display: block;
+  height: calc(100% - 36px);
+}
+
+.recibo-transicao img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .mini-apagado {
