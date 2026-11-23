@@ -1634,10 +1634,10 @@ h1 em {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   align-items: start;
-  gap: 32px 48px;
+  gap: 16px 48px;
   max-width: calc(var(--largura) + 2 * var(--margem));
   margin: 0 auto;
-  padding: 56px var(--margem);
+  padding: 56px var(--margem) 24px;
 }
 
 .rodape-grupo {
@@ -1687,16 +1687,8 @@ h1 em {
 }
 
 .rodape-github {
-  gap: 8px;
   min-width: 44px;
   color: var(--titulo);
-}
-
-.rodape-github svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-  flex-shrink: 0;
 }
 
 .rodape-faixa {
@@ -1708,6 +1700,8 @@ h1 em {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 12px 24px;
   max-width: calc(var(--largura) + 2 * var(--margem));
   margin: 0 auto;
