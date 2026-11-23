@@ -1619,11 +1619,12 @@ h1 em {
 
 .rodape-grupo {
   display: grid;
-  gap: 16px;
+  gap: 8px;
 }
 
 .rodape-marca {
   width: fit-content;
+  margin-bottom: 8px;
 }
 
 .rodape-participantes {
@@ -1639,6 +1640,10 @@ h1 em {
   font-weight: 600;
 }
 
+.rodape-conteudo nav {
+  padding-top: calc(116px * 52 / 193 + 16px);
+}
+
 .rodape-nota {
   grid-column: 1 / -1;
 }
@@ -1647,7 +1652,7 @@ h1 em {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
-  gap: 0 24px;
+  gap: 8px 24px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1656,19 +1661,19 @@ h1 em {
 .rodape-links a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
 }
 
 .rodape-github {
-  justify-content: center;
+  gap: 8px;
   min-width: 44px;
   color: var(--titulo);
 }
 
 .rodape-github svg {
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   fill: currentColor;
+  flex-shrink: 0;
 }
 
 .rodape-faixa {
@@ -1690,6 +1695,10 @@ h1 em {
 @media (max-width: 640px) {
   .rodape-conteudo {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rodape-conteudo nav {
+    padding-top: 0;
   }
 }
 
