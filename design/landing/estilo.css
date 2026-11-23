@@ -1430,16 +1430,18 @@ h1 em {
 }
 
 .selo-piloto {
+  grid-column: 1 / -1;
   justify-self: start;
+  transform: translateY(12px);
   padding: 5px 12px;
-  border: 1px solid var(--borda-forte);
+  border: 1px solid var(--lima-detalhe);
   border-radius: 999px;
   color: var(--texto);
   font-size: 0.8125rem;
 }
 
 .tabela-bench {
-  margin-top: 0;
+  margin-top: -24px;
 }
 
 .tabela-bench table {
@@ -1488,7 +1490,6 @@ h1 em {
   margin-top: 14px;
   color: var(--secundario);
   font-size: 0.875rem;
-  max-width: 60ch;
 }
 
 .legenda-tabela strong {
