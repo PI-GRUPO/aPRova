@@ -10,7 +10,9 @@ function temaAtual() {
 }
 
 function atualizarRotuloTema() {
-  botaoTema.setAttribute("aria-label", ROTULO_TEMA[temaAtual()]);
+  const rotulo = ROTULO_TEMA[temaAtual()];
+  botaoTema.setAttribute("aria-label", rotulo);
+  botaoTema.setAttribute("title", rotulo);
 }
 
 function guardarTema(tema) {

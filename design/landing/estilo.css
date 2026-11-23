@@ -292,7 +292,7 @@ code {
 .topo-acoes {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 8px;
 }
 
 .topo ul {
@@ -327,6 +327,13 @@ code {
   padding: 0 12px;
   border: 1px solid var(--borda-forte);
   border-radius: 8px;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.topo nav .topo-github:hover {
+  color: var(--lima-detalhe);
+  background: var(--elevado);
+  border-color: var(--secundario);
 }
 
 .topo-github svg {
@@ -348,10 +355,12 @@ code {
   background: transparent;
   color: var(--titulo);
   cursor: pointer;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
 }
 
 .trocar-tema:hover {
   background: var(--elevado);
+  border-color: var(--secundario);
 }
 
 .trocar-tema svg {
@@ -363,24 +372,24 @@ code {
   stroke-linecap: round;
 }
 
-.icone-sol {
+.icone-lua {
   display: none;
 }
 
-:root[data-tema="claro"] .icone-sol {
+:root[data-tema="claro"] .icone-lua {
   display: block;
 }
 
-:root[data-tema="claro"] .icone-lua {
+:root[data-tema="claro"] .icone-sol {
   display: none;
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-tema="escuro"]) .icone-sol {
+  :root:not([data-tema="escuro"]) .icone-lua {
     display: block;
   }
 
-  :root:not([data-tema="escuro"]) .icone-lua {
+  :root:not([data-tema="escuro"]) .icone-sol {
     display: none;
   }
 }
@@ -2123,7 +2132,7 @@ h1 em {
   }
 
   .topo-acoes {
-    gap: 16px;
+    gap: 8px;
   }
 
   .logo {
