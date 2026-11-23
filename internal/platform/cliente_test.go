@@ -229,8 +229,21 @@ func TestEnviarReviewPublicaOEventoEOCorpo(t *testing.T) {
 	if recebida.corpo["event"] != "APPROVE" || recebida.corpo["body"] != "Aprovado por @erin via Slack" {
 		t.Errorf("corpo enviado errado: %v", recebida.corpo)
 	}
+	if _, enviado := recebida.corpo["commit_id"]; enviado {
+		t.Errorf("review legada sem commit enviou commit_id: %v", recebida.corpo)
+	}
 	if recebida.tipoDoCorpo != "application/json" || recebida.autorizacao != "Bearer "+tokenDeInstalacaoDeTeste {
 		t.Errorf("cabeçalhos errados: tipo %q, autorização %q", recebida.tipoDoCorpo, recebida.autorizacao)
+	}
+}
+
+func TestEnviarReviewDoPainelFixaOCommit(t *testing.T) {
+	servidor, recebida := servidorDaAPIQueResponde(t, http.StatusOK, `{"id":1}`)
+	err := clienteContra(servidor, &fornecedorDeTokenFalso{}).EnviarReview(t.Context(), 7001, "PI-GRUPO", "aPRova", 42, Review{
+		Evento: EventoAprovar, Corpo: "Revisado", CommitID: "commit-analisado",
+	})
+	if err != nil || recebida.corpo["commit_id"] != "commit-analisado" {
+		t.Fatal(err, recebida.corpo)
 	}
 }
 

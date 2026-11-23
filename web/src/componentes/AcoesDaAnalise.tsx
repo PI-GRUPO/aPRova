@@ -1,5 +1,6 @@
 import { type Dispatch, useId, useRef, useState } from "react";
-import { type ContextoAcao, motivoIndisponivel, type ResultadoAcao, registrarAcao, type TipoAcao } from "@/servicos/acoes-simuladas";
+import { Link } from "react-router";
+import { type ContextoAcao, motivoIndisponivel, type ResultadoAcao, registrarAcao, type TipoAcao } from "@/servicos/acoes-analise";
 import { niveis } from "@/servicos/analises";
 import { Risco } from "./Analise";
 import { Botao, Modal } from "./Primitivos";
@@ -27,6 +28,7 @@ function FormularioAcao({
 	aoReceber,
 	aberto,
 	aoMudar,
+	csrf,
 }: {
 	contexto: ContextoAcao;
 	tipo: TipoAcao;
@@ -34,6 +36,7 @@ function FormularioAcao({
 	aoReceber: Dispatch<ResultadoAcao>;
 	aberto: boolean;
 	aoMudar: (v: boolean) => void;
+	csrf: string;
 }) {
 	const [justificativa, setJustificativa] = useState("");
 	const [erro, setErro] = useState("");
@@ -42,7 +45,7 @@ function FormularioAcao({
 	const idAcao = useRef<string | null>(null);
 	const campoId = useId();
 	const texto = rotulos[tipo];
-	const motivo = motivoIndisponivel(contexto, tipo);
+	const motivo = motivoIndisponivel(contexto, tipo) || (!csrf ? "Ação indisponível no painel." : "");
 	const respostaDaAcao = resultado?.tipo === tipo ? resultado : undefined;
 	async function enviar() {
 		if (motivo || trava.current || resultado) return;
@@ -55,7 +58,7 @@ function FormularioAcao({
 		setErro("");
 		try {
 			if (idAcao.current === null) idAcao.current = crypto.randomUUID();
-			aoReceber(await registrarAcao.executar(contexto, tipo, justificativa, idAcao.current));
+			aoReceber(await registrarAcao.executar(contexto, tipo, justificativa, idAcao.current, csrf));
 		} catch (e) {
 			setErro(e instanceof Error ? e.message : "Não foi possível enviar a solicitação. Tente novamente.");
 		} finally {
@@ -92,6 +95,19 @@ function FormularioAcao({
 						Análise {respostaDaAcao.contexto.id} · commit {respostaDaAcao.contexto.sha}.
 					</p>
 					<div className="rodape-acao">
+						{tipo === "reexecutar_analise" && (
+							<Link
+								className="botao botao-secundario"
+								to={`/analises?${new URLSearchParams({
+									installation_id: contexto.instalacao,
+									repositorio: contexto.repo,
+									numero_pr: String(contexto.pr),
+								})}`}
+								onClick={() => aoMudar(false)}
+							>
+								Ver análises deste PR
+							</Link>
+						)}
 						<Botao
 							variante="primario"
 							onClick={() => {
@@ -168,22 +184,24 @@ function FormularioAcao({
 		</Modal>
 	);
 }
-export function AcoesSimuladas({ contexto }: { contexto: ContextoAcao }) {
+export function AcoesDaAnalise({ contexto, csrf, aoAtualizar }: { contexto: ContextoAcao; csrf: string; aoAtualizar?: () => void }) {
 	const [resultado, setResultado] = useState<ResultadoAcao>();
 	const [aberta, setAberta] = useState<TipoAcao>();
 	return (
-		<div className="acoes-simuladas">
+		<div className="acoes-da-analise">
 			<div className="controles">
 				{(Object.keys(rotulos) as TipoAcao[]).map((tipo) => (
 					<FormularioAcao
 						key={tipo}
 						contexto={contexto}
 						tipo={tipo}
+						csrf={csrf}
 						resultado={resultado}
 						aoReceber={setResultado}
 						aberto={aberta === tipo}
 						aoMudar={(v) => {
 							setAberta(v ? tipo : undefined);
+							if (!v && resultado?.tipo === tipo) aoAtualizar?.();
 						}}
 					/>
 				))}

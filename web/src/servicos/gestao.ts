@@ -84,11 +84,16 @@ function consultarRegistros(recurso: "regras" | "auditoria"): Consulta<Gestao> {
 				pessoa: r.pessoa === null ? "Login não registrado" : texto(r.pessoa),
 				acao: `${texto(r.acao)} · ${repo(r)}`,
 				pr: inteiro(r.pr),
-				origem: "Slack",
+				// A API anterior só listava tentativas do Slack e omitia a origem.
+				origem: r.origem === undefined ? "Slack" : texto(r.origem),
 				decisao: texto(r.decisao),
 				motivo: texto(r.motivo),
 			}));
-			if (base.auditoria.length !== Math.max(0, Math.min(v.limite, total - (v.pagina - 1) * v.limite))) return invalido();
+			if (
+				base.auditoria.some((a) => !["Slack", "Painel"].includes(a.origem) || (f.get("origem") && a.origem !== f.get("origem"))) ||
+				base.auditoria.length !== Math.max(0, Math.min(v.limite, total - (v.pagina - 1) * v.limite))
+			)
+				return invalido();
 			base.paginacao = { total, pagina: v.pagina, limite: v.limite, snapshot: v.snapshot };
 		}
 		return base;

@@ -5,6 +5,7 @@ export type Sessao =
 	| {
 			autenticado: true;
 			login_disponivel: boolean;
+			acoes_disponiveis?: boolean;
 			usuario: { id: number; login: string };
 			instalacoes: { id: number; conta: string }[];
 			csrf_token: string;
@@ -19,6 +20,7 @@ export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
 		(!objeto(v.usuario) ||
 			!(typeof v.usuario.id === "number" && Number.isSafeInteger(v.usuario.id) && v.usuario.id > 0) ||
 			typeof v.usuario.login !== "string" ||
+			(v.acoes_disponiveis !== undefined && typeof v.acoes_disponiveis !== "boolean") ||
 			!Array.isArray(v.instalacoes) ||
 			!v.instalacoes.every(
 				(i) => objeto(i) && typeof i.id === "number" && Number.isSafeInteger(i.id) && i.id > 0 && typeof i.conta === "string",

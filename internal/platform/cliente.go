@@ -126,13 +126,38 @@ func (c *Cliente) AutorDoPullRequest(ctx context.Context, installationID int64, 
 	return resposta.Usuario.Login, nil
 }
 
+// CabecaDoPullRequest lê o estado e o commit atual antes de uma ação no painel.
+func (c *Cliente) CabecaDoPullRequest(ctx context.Context, installationID int64, dono, repositorio string, numero int) (string, bool, error) {
+	var resposta struct {
+		Estado string `json:"state"`
+		Head   struct {
+			SHA string `json:"sha"`
+		} `json:"head"`
+	}
+	err := c.chamar(ctx, chamada{
+		instalacaoID: installationID, metodo: http.MethodGet,
+		caminho: caminhoDoPullRequest(dono, repositorio, numero), resposta: &resposta,
+	})
+	if err != nil {
+		return "", false, err
+	}
+	if (resposta.Estado != "open" && resposta.Estado != "closed") || resposta.Head.SHA == "" {
+		return "", false, fmt.Errorf("%w: pull request sem estado ou commit", ErrRespostaInesperada)
+	}
+	return resposta.Head.SHA, resposta.Estado == "open", nil
+}
+
 // EnviarReview publica a review no pull request.
 func (c *Cliente) EnviarReview(ctx context.Context, installationID int64, dono, repositorio string, numero int, review Review) error {
+	corpo := map[string]string{"event": string(review.Evento), "body": review.Corpo}
+	if review.CommitID != "" {
+		corpo["commit_id"] = review.CommitID
+	}
 	return c.chamar(ctx, chamada{
 		instalacaoID: installationID,
 		metodo:       http.MethodPost,
 		caminho:      caminhoDoPullRequest(dono, repositorio, numero) + "/reviews",
-		corpo:        map[string]string{"event": string(review.Evento), "body": review.Corpo},
+		corpo:        corpo,
 	})
 }
 

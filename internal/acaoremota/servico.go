@@ -24,23 +24,35 @@ var nivelDoDiarioPorDecisao = map[Decisao]slog.Level{
 
 // OpcoesServico reúne as dependências do serviço de ações remotas.
 type OpcoesServico struct {
-	Identidades ResolvedorIdentidade
-	Permissoes  ConsultorPermissao
-	Autoria     ConsultorAutoria
-	Executor    ExecutorAcao
-	Tentativas  RegistroTentativas
-	Agora       func() time.Time
+	Identidades    ResolvedorIdentidade
+	Permissoes     ConsultorPermissao
+	Autoria        ConsultorAutoria
+	Executor       ExecutorAcao
+	Tentativas     RegistroTentativas
+	Agora          func() time.Time
+	AnalisesPainel interface {
+		ValidarAcaoPainel(context.Context, Pedido) error
+	}
+	CabecaDoPR interface {
+		CabecaDoPullRequest(context.Context, int64, string, string, int) (string, bool, error)
+	}
 }
 
 // Servico é o ponto único por onde passa toda ação pedida por canal externo.
 type Servico struct {
-	identidades ResolvedorIdentidade
-	permissoes  ConsultorPermissao
-	autoria     ConsultorAutoria
-	executor    ExecutorAcao
-	tentativas  RegistroTentativas
-	politica    Politica
-	agora       func() time.Time
+	identidades    ResolvedorIdentidade
+	permissoes     ConsultorPermissao
+	autoria        ConsultorAutoria
+	executor       ExecutorAcao
+	tentativas     RegistroTentativas
+	politica       Politica
+	agora          func() time.Time
+	analisesPainel interface {
+		ValidarAcaoPainel(context.Context, Pedido) error
+	}
+	cabecaDoPR interface {
+		CabecaDoPullRequest(context.Context, int64, string, string, int) (string, bool, error)
+	}
 }
 
 type desfecho struct {
@@ -64,13 +76,15 @@ func NovoServico(opcoes OpcoesServico) (*Servico, error) {
 	}
 
 	return &Servico{
-		identidades: opcoes.Identidades,
-		permissoes:  opcoes.Permissoes,
-		autoria:     opcoes.Autoria,
-		executor:    opcoes.Executor,
-		tentativas:  opcoes.Tentativas,
-		politica:    NovaPolitica(),
-		agora:       opcoes.Agora,
+		identidades:    opcoes.Identidades,
+		permissoes:     opcoes.Permissoes,
+		autoria:        opcoes.Autoria,
+		executor:       opcoes.Executor,
+		tentativas:     opcoes.Tentativas,
+		politica:       NovaPolitica(),
+		agora:          opcoes.Agora,
+		analisesPainel: opcoes.AnalisesPainel,
+		cabecaDoPR:     opcoes.CabecaDoPR,
 	}, nil
 }
 
@@ -99,6 +113,10 @@ func (s *Servico) autorizar(ctx context.Context, pedido Pedido) desfecho {
 		return desfecho{pedido: pedido, decisao: DecisaoRecusada, motivo: MotivoFalhaNaIdentidade, causa: err}
 	}
 
+	return s.autorizarLogin(ctx, pedido, login)
+}
+
+func (s *Servico) autorizarLogin(ctx context.Context, pedido Pedido, login string) desfecho {
 	situacao, err := s.levantarSituacao(ctx, pedido, login)
 	if err != nil {
 		return desfecho{pedido: pedido, login: login, decisao: DecisaoRecusada, motivo: MotivoFalhaNaVerificacao, causa: err}
@@ -123,15 +141,19 @@ func (s *Servico) efetivar(ctx context.Context, autorizado desfecho) desfecho {
 
 	acao := AcaoAutorizada{Pedido: autorizado.pedido, LoginGitHub: autorizado.login}
 	if err := s.executor.Executar(ctx, acao); err != nil {
-		s.liberarReserva(ctx, autorizado.pedido.IDAcao, reserva)
-		return autorizado.com(DecisaoFalha, MotivoFalhaNaExecucao, err).registrado()
+		motivo := MotivoFalhaNaExecucao
+		if errors.Is(err, ErrAnaliseIncompativel) {
+			motivo = MotivoAnaliseIncompativel
+		}
+		s.liberarReserva(ctx, autorizado.pedido.IDAcao, reserva, motivo)
+		return autorizado.com(DecisaoFalha, motivo, err).registrado()
 	}
 
 	return autorizado.registrado()
 }
 
-func (s *Servico) liberarReserva(ctx context.Context, idAcao string, reserva Reserva) {
-	if err := s.tentativas.RegistrarFalhaNaExecucao(context.WithoutCancel(ctx), reserva, MotivoFalhaNaExecucao); err != nil {
+func (s *Servico) liberarReserva(ctx context.Context, idAcao string, reserva Reserva, motivo Motivo) {
+	if err := s.tentativas.RegistrarFalhaNaExecucao(context.WithoutCancel(ctx), reserva, motivo); err != nil {
 		slog.ErrorContext(ctx, "a tentativa aceita não pôde ser marcada como falha depois do erro no GitHub; o id_acao continua reservado",
 			"id_acao", idAcao, "erro", err)
 	}
@@ -182,6 +204,7 @@ func (s *Servico) tentativaDe(resultado desfecho) Tentativa {
 		Decisao:        resultado.decisao,
 		Motivo:         resultado.motivo,
 		Em:             s.agora(),
+		Origem:         resultado.pedido.Origem,
 	}
 }
 

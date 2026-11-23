@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
-import { AcoesSimuladas } from "@/componentes/AcoesSimuladas";
+import { AcoesDaAnalise } from "@/componentes/AcoesDaAnalise";
 import { dataUTC, Estado, PainelAnalise, Risco } from "@/componentes/Analise";
 import { Ativo } from "@/componentes/Ativo";
 import { useLeitura } from "@/componentes/ConsultaPrivada";
@@ -72,7 +72,7 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 					<p role="status">Carregando análise…</p>
 				</>
 			) : (
-				<ConteudoAnalise dados={dados} instalacao={instalacao} />
+				<ConteudoAnalise dados={dados} instalacao={instalacao} aoAtualizar={repetir} />
 			)}
 		</>
 	);
@@ -83,14 +83,17 @@ export function ConteudoAnalise({
 	demonstracao = false,
 	complementoSimulado,
 	linhaDoTempoSimulada,
+	aoAtualizar,
 }: {
 	dados: Detalhe;
 	instalacao: string;
 	demonstracao?: boolean;
 	complementoSimulado?: ComplementoDemonstracao;
 	linhaDoTempoSimulada?: ReactNode;
+	aoAtualizar?: () => void;
 }) {
-	const { sessao } = useSessao();
+	const { sessao, cacheDeLeituras } = useSessao();
+	const csrfDasAcoes = !demonstracao && !__MOCKS__ && sessao?.autenticado && sessao.acoes_disponiveis ? sessao.csrf_token : "";
 	const a = d.analise;
 	const g = d.gate;
 
@@ -342,8 +345,13 @@ export function ConteudoAnalise({
 				) : (
 					<p>Nenhuma decisão humana registrada para esta análise.</p>
 				)}
-				<AcoesSimuladas
+				<AcoesDaAnalise
 					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${usuario}`}
+					csrf={csrfDasAcoes}
+					aoAtualizar={() => {
+						cacheDeLeituras?.limpar();
+						aoAtualizar?.();
+					}}
 					contexto={{
 						instalacao,
 						id: a.id,
@@ -356,10 +364,10 @@ export function ConteudoAnalise({
 						atual: d.atual,
 						proprioPR:
 							!demonstracao && !!sessao?.autenticado && sessao.usuario.login.toLowerCase() === a.autor.replace(/^@/, "").toLowerCase(),
-						falhaInfra: d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
+						falhaInfra: d.gate === null && d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
 					}}
 				/>
-				<p className="apoio">Aprovação, pedido de alterações e reexecução pelo painel estão indisponíveis.</p>
+				{!csrfDasAcoes && <p className="apoio">Ações indisponíveis nesta visualização.</p>}
 			</PainelAnalise>
 			<PainelAnalise
 				titulo="Recibo assinado"

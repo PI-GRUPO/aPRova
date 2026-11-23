@@ -135,6 +135,9 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
 	roteador.Get("/api/analises", s.manipularListaAnalises)
 	roteador.Get("/api/analises/{id}", s.manipularConsultaAnalise)
+	roteador.Post("/api/web/analises/{id}/acoes", func(w http.ResponseWriter, r *http.Request) {
+		s.sessaoWeb.ExecutarAcao(w, r, chi.URLParam(r, "id"))
+	})
 	roteador.Route("/receipts", func(recibos chi.Router) {
 		recibos.Use(s.limiteDeLeituras.segurar)
 		recibos.Get("/keys", s.manipularChavesDeRecibo)

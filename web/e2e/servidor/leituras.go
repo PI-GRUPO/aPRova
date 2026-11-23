@@ -41,7 +41,7 @@ func (l leiturasTeste) LerPainel(ctx context.Context, recurso string, f domain.F
 		visivel := f.TenantID == 42 && f.Origem != "Painel" && (f.Decisao == "" || f.Decisao == "recusada")
 		item := map[string]any{
 			"id": "1", "repo": repositorioDoCenario, "pr": 1, "data": instanteDoCenario,
-			"pessoa": nil, "acao": "aprovar", "decisao": "recusada", "motivo": "permissao_insuficiente",
+			"pessoa": nil, "acao": "aprovar", "decisao": "recusada", "motivo": "permissao_insuficiente", "origem": "Slack",
 		}
 		return paginaDoCenario(f, visivel, item)
 	case "regras":

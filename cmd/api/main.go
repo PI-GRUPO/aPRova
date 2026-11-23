@@ -64,9 +64,17 @@ func executar() error {
 	}()
 
 	repositorio := repository.NovoRepositorioPostgres(bancoDados, repository.OpcoesPostgres{TetoDeAnalisesPorHora: configuracao.TetoDeAnalisesPorHora})
-	acoesRemotas, err := montarAcoesRemotas(configuracao, repositorio)
+	acoes, err := montarAcoesRemotas(configuracao, repositorio)
 	if err != nil {
 		return err
+	}
+	var acoesRemotas api.ProcessadorDeAcoesRemotas
+	var acoesDoPainel sessaoweb.AcoesDoPainel
+	if acoes != nil {
+		acoesDoPainel = acoes
+		if configuracao.N8NSegredoAcoes != "" {
+			acoesRemotas = acoes
+		}
 	}
 
 	prontidao := dependencias(repositorio, clienteRedis)
@@ -76,7 +84,7 @@ func executar() error {
 	}
 
 	chaveiro := chaveiroDosRecibos(configuracao)
-	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio, receipt.NovoVerificadorDeCadeia(chaveiro, repositorio))
+	sessaoWeb, err := montarSessaoWeb(configuracao, clienteRedis, repositorio, receipt.NovoVerificadorDeCadeia(chaveiro, repositorio), acoesDoPainel)
 	if err != nil {
 		return err
 	}
@@ -139,28 +147,31 @@ func chaveiroDosRecibos(configuracao config.Configuracao) *receipt.Chaveiro {
 	return chaveiro
 }
 
-func montarAcoesRemotas(configuracao config.Configuracao, tentativas acaoremota.RegistroTentativas) (api.ProcessadorDeAcoesRemotas, error) {
+func montarAcoesRemotas(configuracao config.Configuracao, repositorio *repository.RepositorioPostgres) (*acaoremota.Servico, error) {
 	if configuracao.N8NSegredoAcoes == "" {
 		slog.Warn("N8N_SEGREDO_ACOES ausente, /acoes-remotas recusará todo pedido")
-		return nil, nil
+		if configuracao.WebURLPublica == "" {
+			return nil, nil
+		}
 	}
 
-	autenticador, err := platform.NovoAutenticador(platform.OpcoesAutenticador{
-		AppID:           configuracao.GitHubAppID,
-		ChavePrivadaPEM: configuracao.GitHubChavePrivada,
-	})
+	clienteGitHub, err := clienteDoApp(configuracao)
 	if err != nil {
+		if configuracao.N8NSegredoAcoes == "" {
+			slog.Warn("ações do painel indisponíveis sem as credenciais do GitHub App")
+			return nil, nil
+		}
 		return nil, fmt.Errorf("ações remotas exigem as credenciais do GitHub App: %w", err)
 	}
 
-	clienteGitHub := platform.NovoCliente(platform.OpcoesCliente{Tokens: autenticador})
-
 	return acaoremota.NovoServico(acaoremota.OpcoesServico{
-		Identidades: acaoremota.NovoResolvedorEmMemoria(configuracao.VinculosSlackGitHub),
-		Permissoes:  clienteGitHub,
-		Autoria:     clienteGitHub,
-		Executor:    acaoremota.NovoExecutorNoGitHub(clienteGitHub, acaoremota.ReenfileiradorIndisponivel{}),
-		Tentativas:  tentativas,
+		Identidades:    acaoremota.NovoResolvedorEmMemoria(configuracao.VinculosSlackGitHub),
+		Permissoes:     clienteGitHub,
+		Autoria:        clienteGitHub,
+		Executor:       acaoremota.NovoExecutorNoGitHub(clienteGitHub, repositorio),
+		Tentativas:     repositorio,
+		AnalisesPainel: repositorio,
+		CabecaDoPR:     clienteGitHub,
 	})
 }
 
@@ -217,7 +228,7 @@ func dependencias(repositorio *repository.RepositorioPostgres, clienteRedis *red
 	}
 }
 
-func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, repositorio *repository.RepositorioPostgres, cadeia sessaoweb.CadeiaDeRecibos) (*sessaoweb.Servidor, error) {
+func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, repositorio *repository.RepositorioPostgres, cadeia sessaoweb.CadeiaDeRecibos, acoes sessaoweb.AcoesDoPainel) (*sessaoweb.Servidor, error) {
 	if c.WebURLPublica == "" {
 		return nil, nil
 	}
@@ -227,6 +238,6 @@ func montarSessaoWeb(c config.Configuracao, cliente *redis.Client, repositorio *
 	}
 	return sessaoweb.Novo(sessaoweb.Opcoes{
 		Origem: c.WebURLPublica, Provedor: &sessaoweb.GitHub{ClientID: c.GitHubClientID, ClientSecret: c.GitHubClientSecret, Callback: sessaoweb.Callback(c.WebURLPublica)},
-		Armazenamento: armazenamento, Relatorios: repositorio, Analises: repositorio, Leituras: repositorio, Cadeia: cadeia, Vinculos: c.VinculosSlackGitHub,
+		Armazenamento: armazenamento, Relatorios: repositorio, Analises: repositorio, Leituras: repositorio, Cadeia: cadeia, Acoes: acoes, Vinculos: c.VinculosSlackGitHub,
 	})
 }

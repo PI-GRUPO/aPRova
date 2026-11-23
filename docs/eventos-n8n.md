@@ -336,7 +336,7 @@ GitHub ou pelos botões do Slack.
 | `url_pr` | texto (URL) | sim | `https://github.com/Azulpasta/aPRova-TESTES/pull/14` | |
 | `decisao` | texto | sim | `alteracoes_solicitadas` | `aprovada` ou `alteracoes_solicitadas`, os mesmos valores que o núcleo guarda para cada decisão |
 | `login_github` | texto | sim | `Azulpasta` | quem decidiu |
-| `origem` | texto | sim | `slack` | `github` ou `slack` |
+| `origem` | texto | sim | `slack` | `github` ou `slack`. A review publicada pelo painel chega pelo GitHub; a origem `painel` fica na auditoria do núcleo. |
 | `nivel_risco_original` | texto | sim | `alto` | o risco que bloqueou o PR |
 | `id_aprovacao` | inteiro | sim | `37` | identificador da decisão no núcleo |
 
