@@ -331,8 +331,11 @@
       <details class="mais"><summary>Mais detalhes</summary><p><code>/metrics</code>, <code>/health/live</code> e <code>/health/ready</code>; liga com <code>METRICAS_ENDERECO</code>.</p></details>
     </li>
     <li class="cartao cartao-vivo">
-      <div class="cartao-cabeca"><h3 class="cartao-rotulo">Limites de uso</h3><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg></div>
-      <p class="cartao-destaque"><span class="cartao-numero">60</span> análises por hora</p>
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Limites de uso</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg></div>
+      <div class="cartao-limite">
+        <span class="cartao-numero">60</span>
+        <h3 class="cartao-destaque">análises por hora</h3>
+      </div>
       <p class="cartao-detalhe">Por conta. Acima disso, o pedido espera na fila; nunca passa sem análise.</p>
       <details class="mais"><summary>Mais detalhes</summary><p>Teto por instalação em <code>APROVA_TETO_ANALISES_POR_HORA</code>; leitura pública de recibos limitada a 60 por minuto por IP.</p></details>
     </li>
