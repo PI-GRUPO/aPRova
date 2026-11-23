@@ -411,7 +411,7 @@
             "description": "Somente com detalhes=1."
           }
         ],
-        "description": "Sem detalhes, lista os nomes autorizados como antes. Com detalhes=1, consulta a saúde da página, por nome crescente (10 por página). O catálogo GitHub é consultado a cada requisição e pode mudar entre páginas. Sem repositórios acessíveis retorna 403.",
+        "description": "Sem detalhes, lista os nomes autorizados e retorna 403 se não houver repositórios acessíveis. Com detalhes=1, consulta a saúde dos repositórios ativos em ordem de nome (10 por página). Uma instalação autorizada sem repositórios ativos retorna uma página vazia. O catálogo GitHub é consultado a cada requisição e pode mudar entre páginas.",
         "responses": {
           "200": {
             "description": "Consulta autorizada, sem cache.",
@@ -2023,6 +2023,7 @@
           "limite",
           "total",
           "permissoes",
+          "permissoes_conhecidas",
           "itens"
         ],
         "properties": {
@@ -2039,7 +2040,12 @@
           },
           "total": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Total de repositórios ativos da instalação acessíveis à pessoa. Exclui repositórios arquivados e desabilitados."
+          },
+          "permissoes_conhecidas": {
+            "type": "boolean",
+            "description": "Indica se o GitHub retornou o objeto de permissões da instalação."
           },
           "permissoes": {
             "type": "object",
@@ -2070,10 +2076,28 @@
                   "write",
                   "admin"
                 ]
+              },
+              "administration": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "read",
+                  "write",
+                  "admin"
+                ]
+              },
+              "metadata": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "read",
+                  "write",
+                  "admin"
+                ]
               }
             },
             "additionalProperties": false,
-            "description": "Permissões declaradas pela instalação. Campo ausente indica nível não informado."
+            "description": "Permissões declaradas pela instalação. Quando permissoes_conhecidas é true, campos ausentes representam permissões não concedidas. Metadados pode ser implícita e aparece como não informada quando ausente."
           },
           "itens": {
             "type": "array",
@@ -2114,7 +2138,18 @@
                       "type": "null"
                     }
                   ],
-                  "description": "true quando confirmado por contexto e App na proteção clássica ou em regra efetiva. false quando ambas as consultas completas permitem concluir ausência. null quando o resultado é inconclusivo, inclusive se a permissão é insuficiente."
+                  "description": "true quando confirmado por contexto e App na proteção clássica ou em regra ativa. false quando as regras e a consulta clássica ou os metadados da branch permitem concluir ausência. null quando o resultado é inconclusivo."
+                },
+                "motivo_protecao": {
+                  "type": "string",
+                  "enum": [
+                    "acesso_insuficiente",
+                    "branch_ou_app_nao_informado",
+                    "check_sem_origem",
+                    "consulta_indisponivel",
+                    "dados_incompletos"
+                  ],
+                  "description": "Motivo de a proteção da branch padrão ficar sem confirmação."
                 }
               }
             }

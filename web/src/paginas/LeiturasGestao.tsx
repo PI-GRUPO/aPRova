@@ -16,6 +16,7 @@ import {
 	useOpcoesRepos,
 } from "@/componentes/Gestao";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
+import { SaudeDosRepositorios } from "@/componentes/SaudeRepositorios";
 import { saudeRepositorios } from "@/servicos/analises";
 import { Protegida } from "./Acesso";
 
@@ -271,7 +272,7 @@ function ConteudoRepositorios({ instalacao }: { instalacao: string }) {
 	const erro = autorizada ? (estado && "erro" in estado ? estado.erro : "") : "Instalação não autorizada.";
 
 	return (
-		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.total ?? "—"} repositórios conectados`}>
+		<PaginaGestao titulo="Repositórios e instalação" subtitulo={`${dados?.total ?? "—"} repositórios ativos`}>
 			{sessao?.autenticado && (
 				<SeletorGestao
 					rotulo="Instalação"
@@ -291,33 +292,7 @@ function ConteudoRepositorios({ instalacao }: { instalacao: string }) {
 				<p role="status">Consultando repositórios…</p>
 			) : (
 				<>
-					<SecaoGestao
-						titulo="Saúde por repositório"
-						ajuda="Sem Check obrigatório na proteção de branch, a classificação de risco não impede o merge. Falta de permissão significa estado não confirmado."
-					>
-						<TabelaGestao
-							legenda="Saúde por repositório"
-							colunas={["Repositório", "Check obrigatório", "Última análise", "Permissões"]}
-							larguras={["276px", "226px", "196px", "318px"]}
-							linhas={dados.itens.map(({ nome, branch, ultima, check }) => ({
-								id: nome,
-								celulas: [
-									<Link key="repo" to={`/analises?${new URLSearchParams({ installation_id: instalacao ?? "", repositorio: nome })}`}>
-										{nome}
-									</Link>,
-									check === null ? "Não confirmado" : check ? `Obrigatório em ${branch}` : `Não obrigatório em ${branch}`,
-									ultima ? `${new Date(ultima).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC` : "Sem análises",
-									dados.permissoes || "Não confirmadas",
-								],
-							}))}
-						/>
-						<div className="acoes-gestao">
-							<Botao variante="primario" onClick={repetir}>
-								Atualizar repositórios
-							</Botao>
-						</div>
-					</SecaoGestao>
-					<p className="apoio">Proteção consultada na branch padrão · permissões declaradas pela instalação.</p>
+					<SaudeDosRepositorios instalacao={instalacao} dados={dados} atualizar={repetir} />
 					{dados.total > 10 && (
 						<div className="controles">
 							<Botao disabled={pagina <= 1} onClick={() => atualizar("pagina", String(pagina - 1))}>

@@ -213,6 +213,39 @@
 	margin-top: 16px;
 	align-items: start;
 }
+.alerta-saude-repositorios {
+	border: 1px solid var(--risco-alto);
+	border-radius: 8px;
+	padding: 12px;
+	display: grid;
+	gap: 4px;
+}
+.alerta-saude-repositorios strong,
+.texto-sem-protecao {
+	color: var(--risco-alto);
+}
+.saude-repo-celula {
+	display: grid;
+	gap: 4px;
+	padding-block: 6px;
+	overflow-wrap: anywhere;
+}
+.saude-repo-celula a {
+	text-decoration: underline;
+}
+.permissoes-instalacao {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+	gap: 12px;
+}
+.permissoes-instalacao > div {
+	border: 1px solid var(--borda-padrao);
+	border-radius: 8px;
+	padding: 12px;
+}
+.permissoes-instalacao dd {
+	margin: 4px 0 0;
+}
 .escopo-sla {
 	width: 420px;
 	max-width: 100%;
