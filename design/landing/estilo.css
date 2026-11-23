@@ -695,7 +695,8 @@ h1 em {
 }
 
 .secao.tambem,
-.secao.recibo {
+.secao.recibo,
+.secao.nunca {
   max-width: none;
   min-height: 100svh;
   margin-top: clamp(80px, 11vw, 140px);
@@ -705,7 +706,8 @@ h1 em {
   align-content: center;
 }
 
-.tambem {
+.tambem,
+.nunca {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1153,16 +1155,19 @@ h1 em {
   stroke-linejoin: round;
 }
 
-.tambem .icone-item {
+.tambem .icone-item,
+.nunca .icone-item {
   transition: stroke 240ms ease-out;
 }
 
-.tambem .cartao:hover .icone-item {
+.tambem .cartao:hover .icone-item,
+.nunca .cartao:hover .icone-item {
   stroke: var(--lima-detalhe);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tambem .icone-item {
+  .tambem .icone-item,
+  .nunca .icone-item {
     transition: none;
   }
 }
@@ -1597,26 +1602,36 @@ h1 em {
 }
 
 .rodape {
-  margin-top: clamp(96px, 12vw, 160px);
   border-top: 1px solid var(--borda);
   color: var(--secundario);
   font-size: 0.9375rem;
 }
 
 .rodape-conteudo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px 48px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 32px 48px;
   max-width: calc(var(--largura) + 2 * var(--margem));
   margin: 0 auto;
-  padding: 40px var(--margem);
+  padding: 56px var(--margem);
 }
 
 .rodape-grupo {
   display: grid;
-  gap: 6px;
+  gap: 16px;
+}
+
+.rodape-marca {
+  width: fit-content;
+}
+
+.rodape-participantes {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .rodape-rotulo {
@@ -1624,10 +1639,14 @@ h1 em {
   font-weight: 600;
 }
 
+.rodape-nota {
+  grid-column: 1 / -1;
+}
+
 .rodape-links {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 0 24px;
   margin: 0;
   padding: 0;
@@ -1668,14 +1687,10 @@ h1 em {
   font-size: 0.875rem;
 }
 
-.rodape-faixa .logo {
-  width: 96px;
-  color: var(--faixa-texto);
-}
-
-.rodape-faixa .logo-simbolo,
-.rodape-faixa .logo-texto {
-  fill: currentColor;
+@media (max-width: 640px) {
+  .rodape-conteudo {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @property --angulo {
@@ -1747,6 +1762,10 @@ h1 em {
 .lista-nunca .cartao {
   padding: 22px 24px 24px;
   gap: 12px;
+}
+
+.lista-nunca .cartao-rotulo {
+  color: var(--lima-detalhe);
 }
 
 .codigo-pontos {
@@ -1961,13 +1980,15 @@ h1 em {
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .visual-passo .cartao-vivo,
-  .bench-limites {
+  .bench-limites,
+  .nunca .cartao {
     background: radial-gradient(280px circle at var(--luz-x, 50%) var(--luz-y, 50%), var(--luz-cursor), transparent 70%), var(--superficie);
     transition: --luz-cursor 240ms ease-out;
   }
 
   .visual-passo .cartao-vivo:hover,
-  .bench-limites:hover {
+  .bench-limites:hover,
+  .nunca .cartao:hover {
     --luz-cursor: color-mix(in srgb, var(--titulo) 10%, transparent);
   }
 
