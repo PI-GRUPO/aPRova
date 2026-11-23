@@ -36,20 +36,7 @@ func (v *VerificadorDeCadeia) VerificarCadeia(ctx context.Context, instalacao in
 		return ResultadoDaCadeia{}, err
 	}
 	resposta := ResultadoDaCadeia{Total: len(recibos)}
-	porID := make(map[string]*domain.Recibo, len(recibos))
-	proximos := make(map[string]*domain.Recibo, len(recibos))
-	var raiz *domain.Recibo
-	for i := range recibos {
-		r := &recibos[i]
-		porID[r.ID] = r
-		if r.ReciboAnteriorID == nil {
-			if raiz == nil {
-				raiz = r
-			}
-		} else if proximos[*r.ReciboAnteriorID] == nil {
-			proximos[*r.ReciboAnteriorID] = r
-		}
-	}
+	porID, proximos, raiz := indexarCadeia(recibos)
 
 	// As referências determinam a ordem. Dois recibos podem ter a mesma data.
 	var anterior *Anterior
@@ -70,6 +57,33 @@ func (v *VerificadorDeCadeia) VerificarCadeia(ctx context.Context, instalacao in
 		return resposta, nil
 	}
 
+	solto := primeiroReciboDesconectado(recibos, porID, visitados)
+	if !v.conferir(&resposta, *solto, nil, porID) {
+		// Outra raiz também é quebra, mesmo que o recibo dessa raiz seja válido.
+		resposta.PrimeiroReciboInvalido = solto.ID
+		resposta.Falha = FalhaElo
+	}
+	return resposta, nil
+}
+
+func indexarCadeia(recibos []domain.Recibo) (porID, proximos map[string]*domain.Recibo, raiz *domain.Recibo) {
+	porID = make(map[string]*domain.Recibo, len(recibos))
+	proximos = make(map[string]*domain.Recibo, len(recibos))
+	for i := range recibos {
+		r := &recibos[i]
+		porID[r.ID] = r
+		if r.ReciboAnteriorID == nil {
+			if raiz == nil {
+				raiz = r
+			}
+		} else if proximos[*r.ReciboAnteriorID] == nil {
+			proximos[*r.ReciboAnteriorID] = r
+		}
+	}
+	return porID, proximos, raiz
+}
+
+func primeiroReciboDesconectado(recibos []domain.Recibo, porID map[string]*domain.Recibo, visitados map[string]bool) *domain.Recibo {
 	// Um recibo removido deixa o seu sucessor fora do trecho ligado à raiz.
 	// Dê prioridade ao início do trecho quebrado, antes de examinar seus descendentes.
 	var solto *domain.Recibo
@@ -82,16 +96,10 @@ func (v *VerificadorDeCadeia) VerificarCadeia(ctx context.Context, instalacao in
 			solto = r
 		}
 		if r.ReciboAnteriorID == nil || porID[*r.ReciboAnteriorID] == nil {
-			solto = r
-			break
+			return r
 		}
 	}
-	if !v.conferir(&resposta, *solto, nil, porID) {
-		// Outra raiz também é quebra, mesmo que o recibo dessa raiz seja válido.
-		resposta.PrimeiroReciboInvalido = solto.ID
-		resposta.Falha = FalhaElo
-	}
-	return resposta, nil
+	return solto
 }
 
 func (v *VerificadorDeCadeia) conferir(resposta *ResultadoDaCadeia, r domain.Recibo, anterior *Anterior, porID map[string]*domain.Recibo) bool {

@@ -114,6 +114,10 @@ func TestPainelRevalidaPermissaoAutorECommitEAuditaAReview(t *testing.T) {
 	}
 
 	agora := time.Now().UTC()
+	// As datas das ações e das inserções vêm de relógios diferentes.
+	if err := pool.QueryRow(t.Context(), "SELECT greatest(clock_timestamp(), $1::timestamptz)", agora).Scan(&agora); err != nil {
+		t.Fatal(err)
+	}
 	f := domain.FiltroLeituraPainel{TenantID: tr.TenantID, Repositorios: []string{tr.Repositorio}, Origem: "Painel",
 		Inicio: agora.Add(-time.Hour), Fim: agora.Add(time.Hour), Snapshot: agora, Pagina: 1, Limite: 20}
 	var auditoria struct {

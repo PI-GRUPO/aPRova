@@ -54,29 +54,10 @@ func (s *Servidor) ExecutarAcao(w http.ResponseWriter, r *http.Request, id strin
 		falhar(w, http.StatusServiceUnavailable, "ações do painel indisponíveis")
 		return
 	}
-	pessoa, err := s.provedor.Usuario(r.Context(), v.Token)
-	if err != nil {
-		s.erroProvedor(w, r, err)
-		return
-	}
-	if pessoa.ID != v.Usuario.ID || pessoa.Login == "" {
-		falhar(w, http.StatusUnauthorized, "identidade da sessão inválida")
-		return
-	}
-	repos, ok := s.escopoWeb(w, r, tenant)
+	a, login, ok := s.autorizarAnaliseParaAcao(w, r, v, tenant, analiseID.String())
 	if !ok {
 		return
 	}
-	detalhe, err := s.analises.DetalharAnaliseWeb(r.Context(), tenant, repos, analiseID.String())
-	if errors.Is(err, domain.ErrNaoEncontrado) {
-		falhar(w, http.StatusNotFound, "análise não encontrada neste escopo")
-		return
-	}
-	if err != nil {
-		falhar(w, http.StatusServiceUnavailable, "não foi possível consultar a análise")
-		return
-	}
-	a := detalhe.Analise
 	if pedido.Commit != a.SHAHead {
 		responderAcaoDoPainel(w, acaoremota.DecisaoRecusada, acaoremota.MotivoAnaliseIncompativel, acaoID)
 		return
@@ -85,8 +66,34 @@ func (s *Servidor) ExecutarAcao(w http.ResponseWriter, r *http.Request, id strin
 		IDAcao: "painel:" + acaoID, Tipo: pedido.Tipo, InstallationID: tenant,
 		Repositorio: a.Repositorio, NumeroPR: int(a.NumeroPR), TaskRunID: a.ID,
 		CommitSHA: a.SHAHead, Justificativa: pedido.Justificativa,
-	}, pessoa.Login)
+	}, login)
 	responderAcaoDoPainel(w, decisao, motivo, acaoID)
+}
+
+func (s *Servidor) autorizarAnaliseParaAcao(w http.ResponseWriter, r *http.Request, v sessao, tenant int64, id string) (domain.AnaliseWeb, string, bool) {
+	pessoa, err := s.provedor.Usuario(r.Context(), v.Token)
+	if err != nil {
+		s.erroProvedor(w, r, err)
+		return domain.AnaliseWeb{}, "", false
+	}
+	if pessoa.ID != v.Usuario.ID || pessoa.Login == "" {
+		falhar(w, http.StatusUnauthorized, "identidade da sessão inválida")
+		return domain.AnaliseWeb{}, "", false
+	}
+	repos, ok := s.escopoWeb(w, r, tenant)
+	if !ok {
+		return domain.AnaliseWeb{}, "", false
+	}
+	detalhe, err := s.analises.DetalharAnaliseWeb(r.Context(), tenant, repos, id)
+	if errors.Is(err, domain.ErrNaoEncontrado) {
+		falhar(w, http.StatusNotFound, "análise não encontrada neste escopo")
+		return domain.AnaliseWeb{}, "", false
+	}
+	if err != nil {
+		falhar(w, http.StatusServiceUnavailable, "não foi possível consultar a análise")
+		return domain.AnaliseWeb{}, "", false
+	}
+	return detalhe.Analise, pessoa.Login, true
 }
 
 func lerPedidoDoPainel(w http.ResponseWriter, r *http.Request) (pedidoDoPainel, string, bool) {

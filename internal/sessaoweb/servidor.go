@@ -135,15 +135,9 @@ func guardar(ctx context.Context, a Armazenamento, id string, v any, ttl time.Du
 	return a.Guardar(ctx, id, b, ttl)
 }
 func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
+	cabecalhosPrivados(w)
 	if s == nil {
-		if r.URL.Path == "/api/sessao" && r.Method == http.MethodGet {
-			jsonResposta(w, 200, respostaSessao{})
-			return
-		}
-		falhar(w, 503, "login web indisponível")
+		responderLoginIndisponivel(w, r)
 		return
 	}
 	switch r.Method + " " + r.URL.Path {
@@ -169,6 +163,15 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		falhar(w, 405, "método não permitido")
 	}
 }
+
+func responderLoginIndisponivel(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/sessao" && r.Method == http.MethodGet {
+		jsonResposta(w, 200, respostaSessao{})
+		return
+	}
+	falhar(w, 503, "login web indisponível")
+}
+
 func (s *Servidor) iniciar(w http.ResponseWriter, r *http.Request) {
 	state, verifier := aleatorio(), aleatorio()
 	if err := guardar(r.Context(), s.armazenamento, "oauth:"+state, fluxo{verifier}, 5*time.Minute); err != nil {

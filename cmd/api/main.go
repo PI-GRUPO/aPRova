@@ -111,7 +111,10 @@ func executar() error {
 		}).Rotas(),
 		ReadHeaderTimeout: tempoLimiteLeituraCabecalho,
 	}
+	return servirHTTP(ctx, servidorHTTP)
+}
 
+func servirHTTP(ctx context.Context, servidorHTTP *http.Server) error {
 	falhaDeEscuta := make(chan error, 1)
 	go func() {
 		slog.Info("api escutando", "endereco", servidorHTTP.Addr)
