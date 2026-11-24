@@ -9,11 +9,12 @@ export const metricasReais: Consulta<VisaoGeralDados> = async (escopo, _filtros,
 	const recebidas = inteiro(dados.recebidas),
 		avaliadas = inteiro(dados.avaliadas),
 		alto = inteiro(dados.alto);
-	const f = registro(dados.falhas);
-	const falhas = Object.entries({ infraestrutura: "Infraestrutura", teste: "Teste", compilacao: "Compilação" }).map(([k, nome]) => ({
-		nome,
-		quantidade: inteiro(f[k]),
-	}));
+	const falhasPorTipo = registro(dados.falhas);
+	const falhas = [
+		{ nome: "Infraestrutura", quantidade: inteiro(falhasPorTipo.infraestrutura) },
+		{ nome: "Teste", quantidade: inteiro(falhasPorTipo.teste) },
+		{ nome: "Compilação", quantidade: inteiro(falhasPorTipo.compilacao) },
+	];
 	const bloqueios = registro(dados.bloqueios);
 	const totalFalhas = falhas.reduce((s, f) => s + f.quantidade, 0),
 		tentativas = inteiro(dados.tentativas);
@@ -87,12 +88,12 @@ export const metricasReais: Consulta<VisaoGeralDados> = async (escopo, _filtros,
 				contexto: `${recebidas - avaliadas} sem avaliação · ${media === null ? "Duração média indisponível" : `Tempo médio até o estado final: ${Math.round(media)} s`}`,
 			},
 		],
-		bloqueadas: Object.entries({
-			aguardando: "Aguardando",
-			aprovadas: "Aprovadas",
-			alteracoes: "Alterações pedidas",
-			sem_decisao: "Sem decisão para o commit",
-		}).map(([k, nome]) => ({ nome, quantidade: inteiro(bloqueios[k]) })),
+		bloqueadas: [
+			{ nome: "Aguardando", quantidade: inteiro(bloqueios.aguardando) },
+			{ nome: "Aprovadas", quantidade: inteiro(bloqueios.aprovadas) },
+			{ nome: "Alterações pedidas", quantidade: inteiro(bloqueios.alteracoes) },
+			{ nome: "Sem decisão para o commit", quantidade: inteiro(bloqueios.sem_decisao) },
+		],
 		falhas,
 		ultimoRecibo,
 	};
