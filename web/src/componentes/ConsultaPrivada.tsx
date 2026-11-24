@@ -72,7 +72,7 @@ export function useLeitura<T>(
 		const c = new AbortController();
 		const q = new URLSearchParams(filtros);
 		const geracao = cache?.geracao;
-		const registrar = (estado?: EstadoDaLeitura<T>) => definir({ consultar, chave, cache, estado });
+		const registrar = (estado?: EstadoDaLeitura<T>) => { definir({ consultar, chave, cache, estado }); };
 		const armazenado = cache?.buscar(consultar, chave);
 		definir((atual) =>
 			manterDadosDuranteAtualizacao &&
@@ -102,7 +102,7 @@ export function useLeitura<T>(
 	}, [consultar, instalacao, filtros, tentativa, cache, chave, habilitada, manterDadosDuranteAtualizacao]);
 	const mesmaConsulta = resultado?.consultar === consultar && resultado.chave === chave && resultado.cache === cache;
 	const estado = habilitada ? (mesmaConsulta ? resultado.estado : cache?.buscar(consultar, chave)) : undefined;
-	const atualizar = useCallback(() => repetir((n) => n + 1), []);
+	const atualizar = useCallback(() => { repetir((n) => n + 1); }, []);
 	return { estado, repetir: atualizar };
 }
 function Resultado<T>({

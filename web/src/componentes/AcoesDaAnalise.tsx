@@ -99,7 +99,7 @@ function FormularioAcao({
 									repositorio: contexto.repo,
 									numero_pr: String(contexto.pr),
 								}).toString()}`}
-								onClick={() => aoMudar(false)}
+								onClick={() => { aoMudar(false); }}
 							>
 								Ver análises deste PR
 							</Link>

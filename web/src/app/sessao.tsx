@@ -96,7 +96,7 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 	}, [estado.sessao, encerrarLocalmente]);
 
 	const { erro } = estado;
-	const sessao = estado.carregando || erro ? undefined : estado.sessao;
+	const sessao = estado.carregando ?? erro ? undefined : estado.sessao;
 	const escopoDaSessao = sessao?.autenticado
 		? JSON.stringify([sessao.usuario.id, sessao.csrf_token, sessao.expira_em, sessao.instalacoes.map((i) => i.id).sort((a, b) => a - b)])
 		: "";

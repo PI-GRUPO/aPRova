@@ -181,10 +181,10 @@ export function PaginacaoPainel({ pagina, limite, total, snapshot }: { pagina: n
 			<span className="apoio" role="status">
 				{total} registros · página {pagina}
 			</span>
-			<Botao disabled={pagina <= 1} onClick={() => paginar(pagina - 1)}>
+			<Botao disabled={pagina <= 1} onClick={() => { paginar(pagina - 1); }}>
 				Anterior
 			</Botao>
-			<Botao disabled={pagina >= 201 || pagina * limite >= total} onClick={() => paginar(pagina + 1)}>
+			<Botao disabled={pagina >= 201 || pagina * limite >= total} onClick={() => { paginar(pagina + 1); }}>
 				Próxima
 			</Botao>
 		</div>

@@ -56,7 +56,7 @@ export function FilaDePendencias() {
 						rotulo="Buscar na fila"
 						placeholder="PR, repositório ou commit nesta página"
 						value={q.get("fila") ?? ""}
-						onChange={(e) => filtrar("fila", e.target.value)}
+						onChange={(e) => { filtrar("fila", e.target.value); }}
 					/>
 					<ConsultaPrivada titulo="Repositórios" secao consultar={consultarRepos} filtrosDaConsulta={[]} reutilizar>
 						{(repos) => (
@@ -65,7 +65,7 @@ export function FilaDePendencias() {
 								<Selecao
 									rotulo="Repositório"
 									valor={q.get("repositorio") || "todos"}
-									aoMudar={(v) => filtrar("repositorio", v === "todos" ? "" : v)}
+									aoMudar={(v) => { filtrar("repositorio", v === "todos" ? "" : v); }}
 									opcoes={[{ valor: "todos", rotulo: "Todos os repositórios" }, ...repos.map((r) => ({ valor: r, rotulo: r }))]}
 								/>
 							</div>
@@ -138,10 +138,10 @@ function Resultados({ dados }: { dados: PaginaAnalises }) {
 			{!itens.length && <p className="apoio vazio-fila">Nenhuma análise encontrada nesta página com esses filtros.</p>}
 			{(dados.pagina > 1 || dados.tem_mais) && (
 				<div className="controles">
-					<Botao disabled={dados.pagina <= 1} onClick={() => paginar(dados.pagina - 1)}>
+					<Botao disabled={dados.pagina <= 1} onClick={() => { paginar(dados.pagina - 1); }}>
 						Anterior
 					</Botao>
-					<Botao disabled={!dados.tem_mais || dados.pagina >= 201} onClick={() => paginar(dados.pagina + 1)}>
+					<Botao disabled={!dados.tem_mais || dados.pagina >= 201} onClick={() => { paginar(dados.pagina + 1); }}>
 						Próxima
 					</Botao>
 				</div>

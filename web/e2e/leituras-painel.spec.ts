@@ -78,7 +78,7 @@ for (const largura of [1440, 390]) {
 		await page.reload();
 		await expect(metricas.locator(".valor-overview")).toHaveText("1");
 		for (const tema of ["escuro", "claro"]) {
-			await page.evaluate((valor) => localStorage.setItem("aprova-tema", valor), tema);
+			await page.evaluate((valor) => { localStorage.setItem("aprova-tema", valor); }, tema);
 			await page.reload();
 			await expect(metricas.locator(".valor-overview")).toHaveText("1");
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -100,7 +100,7 @@ for (const largura of [1440, 390]) {
 		await page.goto(`${origem}/entrar`);
 		await page.getByRole("link", { name: "Continuar com GitHub" }).click();
 		for (const tema of ["escuro", "claro"]) {
-			await page.evaluate((t) => localStorage.setItem("aprova-tema", t), tema);
+			await page.evaluate((t) => { localStorage.setItem("aprova-tema", t); }, tema);
 			await page.goto(`${origem}/?installation_id=42`);
 			await expect(page.getByText(/Dados da API · 30 dias/)).toBeVisible();
 			await expect(page.getByRole("heading", { name: "Falhas por tipo" })).toBeVisible();

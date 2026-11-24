@@ -212,7 +212,7 @@ test.describe("ajuda em tela de toque", () => {
 	test.use({ viewport: { width: 320, height: 844 }, hasTouch: true });
 	test("abre o balão ao tocar e fecha ao tocar fora", async ({ page }) => {
 		await simular(page);
-		await page.addInitScript(() => localStorage.setItem("aprova-tema", "claro"));
+		await page.addInitScript(() => { localStorage.setItem("aprova-tema", "claro"); });
 		await page.goto(`/recibos/${id}`);
 		const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
 		const balao = page.getByRole("tooltip");
