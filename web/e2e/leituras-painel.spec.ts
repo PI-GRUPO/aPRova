@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { text } from "node:stream/consumers";
 import { expect, type Route, test } from "@playwright/test";
 
 const origem = "http://127.0.0.1:18080";
@@ -130,9 +130,7 @@ for (const largura of [1440, 390]) {
 			await page.getByRole("button", { name: `Exportar ${formato.toUpperCase()}` }).click();
 			const arq = await download;
 			expect(arq.suggestedFilename()).toBe(`recibos.${formato}`);
-			const caminho = await arq.path();
-			expect(caminho).toBeTruthy();
-			expect(await readFile(caminho as string, "utf8")).toContain("equipe-e2e/projeto");
+			expect(await text(await arq.createReadStream())).toContain("equipe-e2e/projeto");
 		}
 		const previa = largura < 500 ? `Ver prévia do recibo ${recibo}` : "00000000…";
 		await page.getByRole("button", { name: previa, exact: true }).click();
