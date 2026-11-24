@@ -7,6 +7,7 @@ import { Botao } from "./Primitivos";
 
 type SaudeDaInstalacao = Awaited<ReturnType<typeof saudeRepositorios>>;
 type SaudeDoRepositorio = SaudeDaInstalacao["itens"][number];
+type NivelDeAcesso = SaudeDaInstalacao["permissoes"][number]["concedida"];
 
 const motivosDaProtecao = new Map([
 	[
@@ -18,8 +19,22 @@ const motivosDaProtecao = new Map([
 	["consulta_indisponivel", "O GitHub não respondeu à consulta de proteção. Tente atualizar."],
 	["dados_incompletos", "O GitHub retornou dados incompletos sobre a proteção."],
 ]);
-const rotulosDeAcesso = { none: "Não concedida", read: "Leitura", write: "Escrita", admin: "Administração" };
 const horasSemAnalise = 24;
+
+function rotuloDeAcesso(nivel: NivelDeAcesso): string {
+	switch (nivel) {
+		case "none":
+			return "Não concedida";
+		case "read":
+			return "Leitura";
+		case "write":
+			return "Escrita";
+		case "admin":
+			return "Administração";
+		case undefined:
+			return "Não informada";
+	}
+}
 
 function linkDaProtecao(nome: string) {
 	if (!/^[A-Za-z0-9][A-Za-z0-9-]{0,38}\/(?!\.{1,2}$)[A-Za-z0-9._-]{1,100}$/.test(nome)) return undefined;
@@ -78,11 +93,9 @@ function PermissoesDaInstalacao({ permissoes }: Pick<SaudeDaInstalacao, "permiss
 						<dt>{nome}</dt>
 						<dd>
 							<strong className={suficiente === false ? "texto-sem-protecao" : undefined}>
-								{suficiente === false
-									? `Falta ${rotulosDeAcesso[minimo].toLowerCase()}`
-									: (concedida && rotulosDeAcesso[concedida]) || "Não informada"}
+								{suficiente === false ? `Falta ${rotuloDeAcesso(minimo).toLowerCase()}` : rotuloDeAcesso(concedida)}
 							</strong>
-							{suficiente === false && <span> · Atual: {rotulosDeAcesso[concedida ?? "none"]}</span>}
+							{suficiente === false && <span> · Atual: {rotuloDeAcesso(concedida ?? "none")}</span>}
 							<p className="apoio">{uso}</p>
 						</dd>
 					</div>
