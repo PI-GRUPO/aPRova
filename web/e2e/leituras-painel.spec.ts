@@ -340,11 +340,11 @@ test("a página do recorte do mapa pode ser compartilhada e recarregada", async 
 	const escopo = { installation_id: "42", repositorio: "equipe-e2e/projeto" };
 	const corte = new Date(Date.now() - 60000).toISOString().replace(/\.\d{3}Z$/, ".123456780Z");
 	const data = corte.slice(0, 10);
-	const url = new URLSearchParams({ ...escopo, mapa_pagina: "2", mapa_snapshot: corte, mapa_dia: data, mapa_nivel: "alto" });
+	const parametros = new URLSearchParams({ ...escopo, mapa_pagina: "2", mapa_snapshot: corte, mapa_dia: data, mapa_nivel: "alto" });
 	const resposta = page.waitForResponse(
 		(r) => new URL(r.url()).pathname === "/api/analises" && new URL(r.url()).searchParams.get("pagina") === "2",
 	);
-	await page.goto(`${origem}/?${url}`);
+	await page.goto(`${origem}/?${parametros.toString()}`);
 	const q = new URL((await resposta).url()).searchParams;
 	expect(q.get("repositorio")).toBe(escopo.repositorio);
 	expect(q.get("snapshot")).toBe(corte);
