@@ -14,5 +14,7 @@ export const secoes = [
 ] as const;
 
 export function comInstalacao(caminho: string, instalacao: string | null) {
-	return instalacao ? `${caminho}?${new URLSearchParams({ installation_id: instalacao })}` : caminho;
+	if (!instalacao) return caminho;
+	const parametros = new URLSearchParams({ installation_id: instalacao });
+	return `${caminho}?${parametros.toString()}`;
 }
