@@ -88,6 +88,15 @@ test('Feedback: os três motivos usam contexto assinado e não são persistidos 
   }
 });
 
+test('Feedback: aprovação pelo Slack dispensa uma nova pergunta pública', () => {
+  const e = rodar('02 |', evento());
+  e.configuracao_feedback.vinculos_slack_github = { U123: 'revisor' };
+  const pelaCentral = rodar('04 |', { ...e, aprovacao: { ...e.aprovacao, origem: 'slack' } });
+  assert.equal(pelaCentral.feedback.status, 'ignorado');
+  assert.equal(pelaCentral.slack_payload, undefined);
+  assert.equal(rodar('04 |', { ...e, aprovacao: { ...e.aprovacao, origem: 'github' } }).feedback.status, 'pronto_para_perguntar');
+});
+
 test('Feedback: corpo assinado é exato; 202 ou aprovação diferente não confirmam persistência', () => {
   const p = pergunta();
   const b = p.slack_payload.blocks.find(b => b.type === 'actions').elements[0];

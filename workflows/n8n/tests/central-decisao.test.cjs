@@ -94,8 +94,10 @@ for (const decisao of ['aprovada', 'alteracoes_solicitadas']) {
     assert.ok(actions.every(b => !['aprovar', 'solicitar_alteracao'].includes(b.action_id)));
     assert.ok(actions.some(b => b.action_id === 'verificar_recibo'));
     assert.ok(p.slack_payload.blocks.some(b => b.text?.text.includes('OSV')));
-    assert.match(p.slack_payload.text, decisao === 'aprovada' ? /Aprovação registrada/ : /Alterações solicitadas/);
-    assert.doesNotMatch(p.slack_payload.blocks[0].text.text, /aguardando aprovação/);
+    const titulo = decisao === 'aprovada' ? 'Risco alto: aprovado por @Azulpasta' : 'Alteração solicitada por @Azulpasta via Slack';
+    assert.equal(p.slack_payload.text.split('\n')[0], titulo);
+    assert.equal(p.slack_payload.blocks[0].text.text.split('\n')[0], titulo);
+    assert.ok(p.slack_payload.blocks.every(b => b.block_id !== 'aprova_estado_explicacao'));
     assert.deepEqual(a, original);
     assert.deepEqual(JSON.parse(p.correlacao_alerta.contexto).slack_payload, a.slack_payload);
   });
