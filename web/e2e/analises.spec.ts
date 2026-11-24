@@ -301,7 +301,7 @@ for (const { caso, estados, marcadores } of [
 			analise: { ...analise, estado: estados.at(-1) },
 			etapas: estados.slice(1).map((para, i) => ({
 				id: i + 1,
-				de: estados[i],
+				de: estados.at(i),
 				para,
 				detalhe: "",
 				criado_em: instante,
