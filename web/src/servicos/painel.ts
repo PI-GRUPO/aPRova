@@ -31,7 +31,7 @@ export async function lerPainel(caminho: string, escopo: Escopo, filtros: URLSea
 	const q = new URLSearchParams(filtros);
 	q.set("installation_id", escopo.instalacao);
 	if (escopo.repositorio) q.set("repositorio", escopo.repositorio);
-	const v = registro(await consultarJSON(`${caminho}?${q}`, { privada: true, signal }));
+	const v = registro(await consultarJSON(`${caminho}?${q.toString()}`, { privada: true, signal }));
 	const snapshot = data(v.snapshot);
 	const corteSolicitado = q.get("snapshot");
 	if (

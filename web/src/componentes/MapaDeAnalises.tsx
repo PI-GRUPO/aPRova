@@ -76,7 +76,12 @@ function ListaDoRecorte({ data, nivel }: { data: string; nivel: NivelMapa }) {
 					to={
 						recorte.origem === "mock"
 							? destinoAnalise(item.id, recorte.origem, instalacao, retorno)
-							: `/analises/${encodeURIComponent(item.id)}?${new URLSearchParams({ installation_id: instalacao, repositorio: item.repositorio, origem: "fila", retorno: retorno.toString() })}`
+							: `/analises/${encodeURIComponent(item.id)}?${new URLSearchParams({
+									installation_id: instalacao,
+									repositorio: item.repositorio,
+									origem: "fila",
+									retorno: retorno.toString(),
+								}).toString()}`
 					}
 				>
 					<span>

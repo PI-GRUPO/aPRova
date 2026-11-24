@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { createContext, useContext } from "react";
 import { Link, useSearchParams } from "react-router";
+import { comInstalacao } from "@/app/rotas";
 import type { Consulta } from "@/servicos/fonte";
 import type { Gestao } from "@/servicos/gestao";
 import { Ativo } from "./Ativo";
@@ -27,7 +28,7 @@ export function PaginaGestao({
 	return (
 		<div className={`pagina pagina-gestao${voltar ? " pagina-regras" : ""}`}>
 			{voltar && (
-				<Link className="voltar-regras" to={instalacao ? `/?${new URLSearchParams({ installation_id: instalacao })}` : "/"}>
+				<Link className="voltar-regras" to={comInstalacao("/", instalacao)}>
 					<Ativo nome="voltar" />
 					Voltar à Visão geral
 				</Link>

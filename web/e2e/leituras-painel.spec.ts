@@ -165,7 +165,7 @@ test("auditoria aceita o mesmo corte em outro fuso e recusa diferença de um nan
 	const utc = new Date(instante).toISOString().slice(0, 19);
 	const local = new Date(instante - 3 * 3_600_000).toISOString().slice(0, 19);
 	const filtros = new URLSearchParams({ installation_id: "42", snapshot: `${local}.1234567809-03:00` });
-	await page.goto(`${origem}/auditoria?${filtros}`);
+	await page.goto(`${origem}/auditoria?${filtros.toString()}`);
 	await expect(page.getByRole("cell", { name: "permissao_insuficiente" })).toBeVisible();
 
 	await page.route("**/api/web/auditoria?*", async (rota) => {

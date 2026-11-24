@@ -39,7 +39,7 @@ export const registrarAcao = {
 		let repetida = false;
 		try {
 			const r = registro(
-				await consultarJSON(`/api/web/analises/${encodeURIComponent(contexto.id)}/acoes?${q}`, {
+				await consultarJSON(`/api/web/analises/${encodeURIComponent(contexto.id)}/acoes?${q.toString()}`, {
 					metodo: "POST",
 					privada: true,
 					csrf,

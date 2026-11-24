@@ -98,7 +98,7 @@ function FormularioAcao({
 									installation_id: contexto.instalacao,
 									repositorio: contexto.repo,
 									numero_pr: String(contexto.pr),
-								})}`}
+								}).toString()}`}
 								onClick={() => aoMudar(false)}
 							>
 								Ver análises deste PR

@@ -152,7 +152,7 @@ export function SaudeDosRepositorios({
 								<Link
 									key="repo"
 									className="texto-quebrado"
-									to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: repo.nome })}`}
+									to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: repo.nome }).toString()}`}
 								>
 									{repo.nome}
 								</Link>,
