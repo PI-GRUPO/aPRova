@@ -101,7 +101,7 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
 	return (
 		<>
-			<Link className="voltar" to={`${q.get("origem") === "fila" ? "/" : "/analises"}?${retorno}`}>
+			<Link className="voltar" to={`${q.get("origem") === "fila" ? "/" : "/analises"}?${retorno.toString()}`}>
 				<Ativo nome="voltar" />
 				{q.get("origem") === "fila" ? "Voltar à visão geral" : "Voltar às análises"}
 			</Link>
@@ -191,7 +191,7 @@ export function ConteudoAnalise({
 				<PainelDeEstado titulo="Esta análise foi substituída">
 					<p>Existe uma análise mais recente deste PR. A decisão e as evidências abaixo pertencem exclusivamente ao commit {a.sha_head}.</p>
 					<Link
-						to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: a.repositorio, numero_pr: String(a.numero_pr), periodo: "todos" })}`}
+						to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: a.repositorio, numero_pr: String(a.numero_pr), periodo: "todos" }).toString()}`}
 					>
 						Consultar histórico deste PR
 					</Link>
@@ -440,7 +440,7 @@ export function ConteudoAnalise({
 					<>
 						<p>Verificação de assinatura indisponível.</p>
 						{d.recibo_id ? <code className="caminho">{d.recibo_id}</code> : <p>Recibo indisponível.</p>}
-						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio })}`}>Consultar recibos</Link>
+						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio }).toString()}`}>Consultar recibos</Link>
 					</>
 				) : d.recibo_id ? (
 					<ReciboDaAnalise id={d.recibo_id} analiseID={a.id} />
