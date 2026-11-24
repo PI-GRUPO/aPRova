@@ -4,7 +4,7 @@ import { useMobile } from "@/app/responsivo";
 import { comInstalacao } from "@/app/rotas";
 import { Ativo } from "@/componentes/Ativo";
 import { ColecaoRecibos } from "@/componentes/ColecaoRecibos";
-import { Botao, Campo, Modal, PainelDeEstado } from "@/componentes/Primitivos";
+import { Ajuda, Botao, Campo, PainelDeEstado } from "@/componentes/Primitivos";
 import {
 	baixar,
 	buscarChaves,
@@ -35,17 +35,12 @@ function Painel({
 			<header>
 				<h2>{titulo}</h2>
 				{ajuda && (
-					<Modal
-						gatilho={
-							<Botao variante="discreto" className="ajuda-recibo" aria-label={`Ajuda: ${titulo}`}>
-								<Ativo nome="ajuda" />
-							</Botao>
-						}
+					<Ajuda
 						titulo={titulo}
 						descricao={ajuda}
-					>
-						<p>Consulte as conferências para conhecer o resultado da verificação.</p>
-					</Modal>
+						complemento="Consulte as conferências para conhecer o resultado da verificação."
+						className="ajuda-recibo"
+					/>
 				)}
 			</header>
 			<div className="conteudo-recibo">{children}</div>

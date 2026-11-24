@@ -151,6 +151,9 @@ test("catálogo autenticado distingue falta de proteção, acesso insuficiente e
 	await expect(page.getByRole("cell", { name: "cobranca-api", exact: true })).toHaveCount(0);
 	falhar = false;
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
+	await page.getByRole("button", { name: "Ajuda: Saúde por repositório", exact: true }).hover();
+	await expect(page.getByRole("tooltip")).toContainText("A consulta verifica se a branch padrão exige o check");
+	await page.keyboard.press("Escape");
 	const tabela = page.getByRole("table", { name: "Saúde por repositório" });
 	const real = tabela.getByRole("row", { name: /equipe\/real/ });
 	const semCheck = tabela.getByRole("row", { name: /equipe\/sem-check/ });

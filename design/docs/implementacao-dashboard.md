@@ -1,5 +1,11 @@
 # Implementação do dashboard aPRova
 
+## Balões de ajuda
+
+Os pontos de interrogação de análises, recibos e gestão exibem a explicação
+junto ao ícone com mouse, foco do teclado ou toque. A ajuda usa o componente
+compartilhado `Ajuda` e fecha com Escape ou ao tocar fora.
+
 ## Navegação do relatório semanal
 
 Base `7b151e4`, card #67. O botão Consultar relatório semanal fica à direita

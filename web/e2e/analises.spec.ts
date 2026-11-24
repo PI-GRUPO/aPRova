@@ -158,6 +158,11 @@ for (const largura of [1440, 390, 360])
 		await expect(saida.locator("script")).toHaveCount(0);
 		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();
+		await page.getByRole("link", { name: "Abrir Check Run", exact: true }).focus();
+		await page.keyboard.press("Tab");
+		await expect(page.getByRole("button", { name: "Ajuda: Motivo e evidências", exact: true })).toBeFocused();
+		await expect(page.getByRole("tooltip")).toContainText("O gate registra o nível decidido e as regras acionadas.");
+		await page.keyboard.press("Escape");
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 		await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 		await page.getByRole("button", { name: "Testando sandbox", exact: true }).click();
