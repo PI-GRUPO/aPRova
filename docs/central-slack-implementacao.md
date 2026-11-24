@@ -1,10 +1,28 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-16**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-24**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
 ## Orientação para manutenção
+
+### Mensagens de decisão no Slack
+
+- [x] Padronizar os títulos e os textos de estado com a publicação do aPRova no GitHub. No alerta de risco alto, o cartão apresenta o commit e os motivos, além do resumo do sandbox e dos identificadores do recibo quando o núcleo o valida.
+- [x] Publicar no canal original as aprovações e os pedidos de alterações enviados ao GitHub. O aviso identifica quem agiu e inclui o link do PR. Justificativas, recusas e falhas ficam fora do aviso público. O evento autenticado `aprovacao_registrada` confirma a decisão e aciona a edição do alerta original. O feedback pula aprovações vindas do Slack, cujo formulário já pede justificativa.
+- [x] Habilitar a correlação na Central ativa no canal já configurado. A edição retira os botões de decisão e mantém links e recibos. Mensagens publicadas antes da ativação podem carecer da associação com a análise.
+- [x] Atualizar os exports portáteis da Central e do feedback. Passaram 253 testes de workflows, com aviso de review no canal, recusas privadas e preservação dos links após a decisão. A versão ativa e a configuração foram conferidas no n8n. A publicação e a edição no Slack serão observadas na próxima decisão real.
+
+### Verificação da aprovação no Slack em 22/11/2026
+
+As interações assinadas chegavam à Central, mas o nó de abertura do formulário falhava com `invalid syntax` na avaliação de `jsonBody`. A expressão da versão operacional tinha um bloco JSON compacto dentro da expressão do n8n. O bloco foi expandido e a montagem dos metadados foi reescrita com `Object.assign`. A expressão corrigida passou pelo resolvedor real do n8n com dados fictícios e foi publicada no workflow existente.
+
+- [x] Reproduzir a falha de sintaxe e validar o corpo corrigido no interpretador instalado.
+- [x] Publicar somente a alteração do parâmetro do formulário na Central.
+- [x] Confirmar uma nova interação humana com formulário aceito pelo Slack, `ok=true`.
+- [x] Confirmar o envio humano à API e a recusa de autoaprovação na PR 10 de `PI-GRUPO/aPRova-TESTES`, com HTTP 403 e motivo `autor_do_proprio_pr` para `julia-ed2`.
+
+A versão operacional possui 65 nós, incluindo App Home e o formulário com motivo da aprovação. O export desta branch possui 61 nós e um formulário anterior, já distribuído em várias linhas. Sua expressão foi validada no mesmo interpretador e preservada. A publicação da correção operacional foi confirmada por releitura da versão ativa. A aprovação da PR 10 exige outro revisor autorizado.
 
 Antes de construir ou alterar um workflow, leia este documento e
 [eventos-n8n.md](eventos-n8n.md). Mantenha por integração: finalidade,
@@ -860,7 +878,7 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | `07F–07G` | Encaminham ações `aprova_feedback_*` ao feedback, preservando as demais rotas. |
 | `08–09`, `10`, `10B` | Separam botões/formulários e abrem aprovação/revisão. |
 | `11`, `11R` | Validam decisão/justificativa ou preparam reexecução. |
-| `12–14`, `HTTP Request1` | Assinam pedido, consultam núcleo e publicam retorno. |
+| `12–16` | Assinam o pedido, consultam o núcleo e conferem o aviso no canal ou o retorno privado. |
 | `C01–C02` | Validam a configuração/correlação e escolhem publicação rastreável ou envio anterior. |
 | `C03–C07` | Reservam o controle de publicação, consultam correlação e bloqueiam duplicatas/ambiguidades. |
 | `C08–C08B`, `C09–C11B` | Persistem e conferem reserva; publicam pelo bot; classificam e conferem persistência do resultado. |
@@ -1135,7 +1153,7 @@ justificativa também no backend. O pedido leva ID Slack e, quando disponível,
 e registra tentativas; migration 21 inclui
 `remote_action_attempts.justification`. A correlação confere análise,
 tenant, repositório e PR; justificativa também segue na review GitHub.
-Somente `202 + status=aceito` confirma a execução nesse contrato.
+Para aprovação ou pedido de alterações, `202 + status=aceito` confirma o envio da review ao GitHub.
 Timeout/conexão recusada não confirmam ação.
 
 O alerta de aprovação oferece os links **Abrir PR**, **Ver recibo** e

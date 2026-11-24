@@ -242,6 +242,30 @@ export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, fi
 	return dados;
 };
 
+const requisitosDaInstalacao = [
+	{ chave: "checks", nome: "Checks", minimo: "write", uso: "Publicar o resultado da análise no GitHub." },
+	{ chave: "contents", nome: "Conteúdo", minimo: "read", uso: "Ler o código e os commits analisados." },
+	{ chave: "pull_requests", nome: "Pull requests", minimo: "write", uso: "Consultar PRs e publicar revisões." },
+	{ chave: "administration", nome: "Administração", minimo: "read", uso: "Verificar a proteção clássica da branch." },
+	{ chave: "metadata", nome: "Metadados", minimo: "read", uso: "Consultar as regras ativas da branch." },
+] as const;
+const niveisDeAcesso = { none: 0, read: 1, write: 2, admin: 3 } as const;
+type NivelDeAcesso = keyof typeof niveisDeAcesso;
+
+function diagnosticarPermissoes(permissoes: Record<string, unknown>, conhecidas: boolean | undefined) {
+	return requisitosDaInstalacao.map((requisito) => {
+		const nivel = permissoes[requisito.chave];
+		if (nivel !== undefined && (typeof nivel !== "string" || !Object.hasOwn(niveisDeAcesso, nivel))) return invalida();
+		const concedida = nivel as NivelDeAcesso | undefined;
+		const verificada = conhecidas !== false && (concedida !== undefined || (conhecidas === true && requisito.chave !== "metadata"));
+		return {
+			...requisito,
+			concedida,
+			suficiente: verificada ? niveisDeAcesso[concedida ?? "none"] >= niveisDeAcesso[requisito.minimo] : null,
+		};
+	});
+}
+
 export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
 	const pagina = Number(filtros.get("pagina") ?? 1);
 	const q = new URLSearchParams({ installation_id: instalacao, detalhes: "1", pagina: String(pagina) });
@@ -253,30 +277,23 @@ export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSear
 		v.limite !== 10 ||
 		!numero(v.total) ||
 		!objeto(v.permissoes) ||
+		(v.permissoes_conhecidas !== undefined && typeof v.permissoes_conhecidas !== "boolean") ||
 		!Array.isArray(v.itens) ||
 		v.itens.length !== Math.max(0, Math.min(10, v.total - (pagina - 1) * 10))
 	)
 		return invalida();
-	const permissoesConhecidas = [
-		["checks", v.permissoes.checks],
-		["contents", v.permissoes.contents],
-		["pull_requests", v.permissoes.pull_requests],
-	] as const;
-	const acessos = permissoesConhecidas.flatMap(([chave, nivel]) => {
-		if (nivel === undefined) return [];
-		if (typeof nivel !== "string" || !["read", "write", "admin", "none"].includes(nivel)) return invalida();
-		return [`${chave}: ${nivel}`];
-	});
+	const permissoes = diagnosticarPermissoes(v.permissoes, v.permissoes_conhecidas);
 	const itens = v.itens.map((r) => {
 		if (
 			!objeto(r) ||
 			typeof r.nome !== "string" ||
 			typeof r.branch !== "string" ||
+			(r.motivo_protecao !== undefined && typeof r.motivo_protecao !== "string") ||
 			!(r.ultima_analise === null || (typeof r.ultima_analise === "string" && data(r.ultima_analise))) ||
 			!(r.check_obrigatorio === null || typeof r.check_obrigatorio === "boolean")
 		)
 			return invalida();
-		return { nome: r.nome, branch: r.branch, ultima: r.ultima_analise, check: r.check_obrigatorio };
+		return { nome: r.nome, branch: r.branch, ultima: r.ultima_analise, check: r.check_obrigatorio, motivo: r.motivo_protecao };
 	});
-	return { itens, permissoes: acessos.join(" · "), total: v.total };
+	return { itens, permissoes, total: v.total };
 }

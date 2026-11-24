@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import type { CacheDeLeituras } from "@/app/cache-de-leituras";
 import { useSessao } from "@/app/sessao";
@@ -55,7 +55,11 @@ export function useLeitura<T>(
 	consultar: Consulta<T>,
 	instalacao: string,
 	filtros: string,
-	{ reutilizar = false, habilitada = true }: { reutilizar?: boolean; habilitada?: boolean } = {},
+	{
+		reutilizar = false,
+		habilitada = true,
+		manterDadosDuranteAtualizacao = false,
+	}: { reutilizar?: boolean; habilitada?: boolean; manterDadosDuranteAtualizacao?: boolean } = {},
 ) {
 	const { cacheDeLeituras } = useSessao();
 	const cache = reutilizar ? cacheDeLeituras : undefined;
@@ -69,7 +73,17 @@ export function useLeitura<T>(
 		const q = new URLSearchParams(filtros);
 		const geracao = cache?.geracao;
 		const registrar = (estado?: EstadoDaLeitura<T>) => definir({ consultar, chave, cache, estado });
-		registrar(cache?.buscar(consultar, chave));
+		const armazenado = cache?.buscar(consultar, chave);
+		definir((atual) =>
+			manterDadosDuranteAtualizacao &&
+			atual?.consultar === consultar &&
+			atual.chave === chave &&
+			atual.cache === cache &&
+			atual.estado &&
+			"dados" in atual.estado
+				? atual
+				: { consultar, chave, cache, estado: armazenado },
+		);
 		consultar({ instalacao, repositorio: q.get("repositorio") ?? "" }, q, c.signal)
 			.then((dados) => {
 				if (c.signal.aborted) return;
@@ -85,10 +99,11 @@ export function useLeitura<T>(
 		return () => {
 			c.abort();
 		};
-	}, [consultar, instalacao, filtros, tentativa, cache, chave, habilitada]);
+	}, [consultar, instalacao, filtros, tentativa, cache, chave, habilitada, manterDadosDuranteAtualizacao]);
 	const mesmaConsulta = resultado?.consultar === consultar && resultado.chave === chave && resultado.cache === cache;
 	const estado = habilitada ? (mesmaConsulta ? resultado.estado : cache?.buscar(consultar, chave)) : undefined;
-	return { estado, repetir: () => repetir((n) => n + 1) };
+	const atualizar = useCallback(() => repetir((n) => n + 1), []);
+	return { estado, repetir: atualizar };
 }
 function Resultado<T>({
 	secao,

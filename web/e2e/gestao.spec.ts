@@ -97,7 +97,7 @@ test("sugestão permanece disponível somente para leitura", async ({ page }) =>
 	await expect(page.getByRole("button", { name: "Revisar configuração", exact: true })).toBeDisabled();
 	await expect(page.getByRole("button", { name: "Recusar", exact: true })).toBeDisabled();
 });
-test("catálogo autenticado consulta a API e não substitui falhas por mocks", async ({ page }) => {
+test("catálogo autenticado distingue falta de proteção, acesso insuficiente e check obrigatório", async ({ page }) => {
 	await page.route("**/api/sessao", (r) =>
 		r.fulfill({
 			json: {
@@ -111,7 +111,13 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 		}),
 	);
 	let falhar = true;
+	const ultimaAntiga = new Date(Date.now() - 30 * 3_600_000).toISOString();
+	const ultimaRecente = new Date(Date.now() - 2 * 3_600_000).toISOString();
 	const instalacoes: string[] = [];
+	const escritas: string[] = [];
+	page.on("request", (r) => {
+		if (r.method() !== "GET") escritas.push(r.url());
+	});
 	await page.route("**/api/repositorios?*", (r) => {
 		instalacoes.push(new URL(r.request().url()).searchParams.get("installation_id") ?? "");
 		return falhar
@@ -122,9 +128,20 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 								installation_id: 42,
 								pagina: 1,
 								limite: 10,
-								total: 1,
-								permissoes: { checks: "write", contents: "read", pull_requests: "write", metadata: "read" },
-								itens: [{ nome: "equipe/real", branch: "main", ultima_analise: null, check_obrigatorio: null }],
+								total: 3,
+								permissoes_conhecidas: true,
+								permissoes: { checks: "read", contents: "read", metadata: "read" },
+								itens: [
+									{
+										nome: "equipe/real",
+										branch: "main",
+										ultima_analise: null,
+										check_obrigatorio: null,
+										motivo_protecao: "acesso_insuficiente",
+									},
+									{ nome: "equipe/sem-check", branch: "main", ultima_analise: ultimaAntiga, check_obrigatorio: false },
+									{ nome: "equipe/protegido", branch: "main", ultima_analise: ultimaRecente, check_obrigatorio: true },
+								],
 							}
 						: { installation_id: 42, repositorios: ["equipe/real"] },
 				});
@@ -134,14 +151,40 @@ test("catálogo autenticado consulta a API e não substitui falhas por mocks", a
 	await expect(page.getByRole("cell", { name: "cobranca-api", exact: true })).toHaveCount(0);
 	falhar = false;
 	await page.getByRole("button", { name: "Tentar novamente" }).click();
-	await expect(page.getByRole("cell", { name: "equipe/real", exact: true })).toBeVisible();
-	await expect(page.getByRole("cell", { name: "checks: write · contents: read · pull_requests: write", exact: true })).toBeVisible();
-	await expect(page.getByRole("cell", { name: "Não confirmado", exact: true })).toBeVisible();
-	await expect(page.getByRole("button", { name: "Configurar cobranca-api no GitHub" })).toHaveCount(0);
+	await page.getByRole("button", { name: "Ajuda: Saúde por repositório", exact: true }).hover();
+	await expect(page.getByRole("tooltip")).toContainText("A consulta verifica se a branch padrão exige o check");
+	await page.keyboard.press("Escape");
+	const tabela = page.getByRole("table", { name: "Saúde por repositório" });
+	const real = tabela.getByRole("row", { name: /equipe\/real/ });
+	const semCheck = tabela.getByRole("row", { name: /equipe\/sem-check/ });
+	const protegido = tabela.getByRole("row", { name: /equipe\/protegido/ });
+	await expect(real).toContainText("Não confirmado");
+	await expect(real).toContainText("O GitHub não expôs a configuração");
+	await expect(real).toContainText("Sem análises recebidas");
+	await expect(semCheck).toContainText("Não obrigatório em main");
+	await expect(semCheck).toContainText("Sem análises nas últimas 24 h");
+	await expect(semCheck.locator("time")).toHaveAttribute("datetime", ultimaAntiga);
+	await expect(semCheck.getByRole("link", { name: "Ver proteção de equipe/sem-check no GitHub" })).toHaveAttribute(
+		"href",
+		"https://github.com/equipe/sem-check/settings/branches",
+	);
+	await expect(protegido).toContainText("Obrigatório em main");
+	await expect(protegido).not.toContainText("confira as entregas do webhook");
+	await expect(page.getByRole("alert").filter({ hasText: /não é obrigatório/ })).toContainText("em um repositório desta página");
+	await expect(page.getByText(/adicione o check aPRova e selecione o App aPRova como origem/)).toBeVisible();
+	await expect(page.getByRole("heading", { name: "Permissões do GitHub App" })).toBeVisible();
+	const permissoes = page.locator(".permissoes-instalacao");
+	await expect(permissoes.locator("div").filter({ hasText: /^Checks/ })).toContainText("Falta escrita · Atual: Leitura");
+	await expect(permissoes.locator("div").filter({ hasText: /^Pull requests/ })).toContainText("Falta escrita · Atual: Não concedida");
+	await expect(permissoes.locator("div").filter({ hasText: /^Administração/ })).toContainText("Falta leitura");
+	await page.setViewportSize({ width: 360, height: 844 });
+	await expect(real.getByText("Não confirmado")).toBeVisible();
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 	await page.getByRole("link", { name: "equipe/real", exact: true }).click();
 	await expect(page).toHaveURL(/analises\?installation_id=42&repositorio=equipe%2Freal/);
 	expect(instalacoes.length).toBeGreaterThanOrEqual(2);
 	expect(instalacoes.every((i) => i === "42")).toBeTruthy();
+	expect(escritas).toEqual([]);
 });
 
 for (const largura of [1440, 390, 360]) {

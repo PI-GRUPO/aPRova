@@ -5,7 +5,7 @@ import type { Consulta } from "@/servicos/fonte";
 import type { Gestao } from "@/servicos/gestao";
 import { Ativo } from "./Ativo";
 import { ConsultaPrivada } from "./ConsultaPrivada";
-import { Botao, Modal } from "./Primitivos";
+import { Ajuda, Botao } from "./Primitivos";
 import { Selecao } from "./Selecao";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "./Tabela";
 import "@/estilos/gestao.css";
@@ -60,17 +60,7 @@ export function SecaoGestao({
 		<section className={`secao-gestao${caixa ? " secao-gestao-caixa" : ""}`}>
 			<header>
 				<h2>{titulo}</h2>
-				{ajuda && (
-					<Modal
-						titulo={titulo}
-						descricao={ajuda}
-						gatilho={
-							<Botao variante="discreto" className="ajuda-gestao" aria-label={`Ajuda: ${titulo}`}>
-								<Ativo nome="ajuda" />
-							</Botao>
-						}
-					/>
-				)}
+				{ajuda && <Ajuda titulo={titulo} descricao={ajuda} className="ajuda-gestao" />}
 				{extra && <div className="extra-secao">{extra}</div>}
 			</header>
 			<div className="corpo-gestao">{children}</div>

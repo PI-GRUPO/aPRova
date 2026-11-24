@@ -3,6 +3,7 @@ package sessaoweb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
@@ -15,52 +16,147 @@ import (
 )
 
 type permissoesGitHub struct {
-	Checks   string `json:"checks,omitempty"`
-	Conteudo string `json:"contents,omitempty"`
-	PR       string `json:"pull_requests,omitempty"`
+	Checks        string `json:"checks,omitempty"`
+	Conteudo      string `json:"contents,omitempty"`
+	PR            string `json:"pull_requests,omitempty"`
+	Administracao string `json:"administration,omitempty"`
+	Metadados     string `json:"metadata,omitempty"`
 }
 type instalacaoGitHub struct {
 	Instalacao
 	AppID      int64
-	Permissoes permissoesGitHub
+	Permissoes *permissoesGitHub
 }
 type repositorioGitHub struct {
-	Nome   string `json:"full_name"`
-	Branch string `json:"default_branch"`
+	Nome         string `json:"full_name"`
+	Branch       string `json:"default_branch"`
+	Arquivado    bool   `json:"archived"`
+	Desabilitado bool   `json:"disabled"`
 }
 type saudeRepo struct {
 	Nome   string     `json:"nome"`
 	Branch string     `json:"branch"`
 	Ultima *time.Time `json:"ultima_analise"`
-	Check  *bool      `json:"check_obrigatorio"`
+	protecaoRepo
+}
+
+type protecaoRepo struct {
+	Check  *bool  `json:"check_obrigatorio"`
+	Motivo string `json:"motivo_protecao,omitempty"`
 }
 type erroAcessoMetadata struct{}
 
 func (erroAcessoMetadata) Error() string { return "metadados inacessíveis" }
 func (erroAcessoMetadata) Unwrap() error { return ErrGitHubIndisponivel }
 
+type leituraDaProtecao struct {
+	obrigatorio, ambigua, completa bool
+}
+
 // Confirma o check somente com nome e App da instalação na branch padrão.
-// Uma resposta oculta ou uma página de regras incompleta impede concluir ausência.
-func (g *GitHub) checkObrigatorio(ctx context.Context, token string, r repositorioGitHub, app int64) (*bool, error) {
+// A ausência exige evidência tanto na proteção clássica quanto nas regras ativas.
+func (g *GitHub) diagnosticarProtecao(ctx context.Context, token string, r repositorioGitHub, app int64) (protecaoRepo, error) {
 	if app <= 0 || r.Branch == "" || !nomesgithub.RepositorioValido(r.Nome) {
-		return nil, nil
+		return protecaoRepo{Motivo: "branch_ou_app_nao_informado"}, nil
 	}
 	base := "/repos/" + r.Nome
 	branch := url.PathEscape(r.Branch)
-	var classica struct {
-		Checks    []checkExigido `json:"checks"`
-		Contextos []string       `json:"contexts"`
+	caminhoBranch := base + "/branches/" + branch
+	classica, erroClassica := g.lerProtecaoClassica(ctx, token, caminhoBranch+"/protection", app)
+	if classica.obrigatorio {
+		return protecaoConfirmada(true), nil
 	}
-	e := g.get(ctx, token, base+"/branches/"+branch+"/protection/required_status_checks", &classica)
-	if e != nil && !errors.Is(e, erroAcessoMetadata{}) {
-		return nil, e
+	if errors.Is(erroClassica, ErrSemSessao) {
+		return protecaoRepo{}, erroClassica
 	}
-	if confirmado(classica.Checks, app) {
-		v := true
-		return &v, nil
+	regras, erroRegras := g.lerProtecaoDasRegras(ctx, token, base+"/rules/branches/"+branch, app)
+	if regras.obrigatorio {
+		return protecaoConfirmada(true), nil
 	}
-	ausente := e == nil && classica.Checks != nil && !slices.Contains(classica.Contextos, publicacao.NomeDoCheckRun) && !contextoSemApp(classica.Checks)
-	return g.checkDasRegras(ctx, token, base+"/rules/branches/"+branch+"?per_page=100", app, ausente)
+	if errors.Is(erroRegras, ErrSemSessao) {
+		return protecaoRepo{}, erroRegras
+	}
+	if classica.ambigua || regras.ambigua {
+		return protecaoRepo{Motivo: "check_sem_origem"}, nil
+	}
+	if regras.completa {
+		return g.confirmarAusencia(ctx, token, caminhoBranch, classica, erroClassica)
+	}
+	return protecaoNaoConfirmada(erroRegras), nil
+}
+
+func protecaoConfirmada(obrigatorio bool) protecaoRepo {
+	return protecaoRepo{Check: &obrigatorio}
+}
+
+func protecaoNaoConfirmada(err error) protecaoRepo {
+	switch {
+	case errors.Is(err, erroAcessoMetadata{}):
+		return protecaoRepo{Motivo: "acesso_insuficiente"}
+	case err != nil:
+		return protecaoRepo{Motivo: "consulta_indisponivel"}
+	default:
+		return protecaoRepo{Motivo: "dados_incompletos"}
+	}
+}
+
+func (g *GitHub) confirmarAusencia(ctx context.Context, token, caminho string, classica leituraDaProtecao, err error) (protecaoRepo, error) {
+	if classica.completa {
+		return protecaoConfirmada(false), nil
+	}
+	if !errors.Is(err, erroAcessoMetadata{}) {
+		return protecaoNaoConfirmada(err), nil
+	}
+	// Um 403/404 não informa se há proteção clássica. Use a sinalização
+	// explícita da branch somente depois de conferir as regras ativas.
+	var branch struct {
+		Protegida *bool `json:"protected"`
+	}
+	if erroBranch := g.get(ctx, token, caminho, &branch); erroBranch != nil {
+		if errors.Is(erroBranch, ErrSemSessao) {
+			return protecaoRepo{}, erroBranch
+		}
+		return protecaoNaoConfirmada(erroBranch), nil
+	}
+	if branch.Protegida == nil {
+		return protecaoNaoConfirmada(nil), nil
+	}
+	if !*branch.Protegida {
+		return protecaoConfirmada(false), nil
+	}
+	return protecaoNaoConfirmada(err), nil
+}
+
+type checksDaProtecao struct {
+	Checks    []checkExigido `json:"checks"`
+	Contextos []string       `json:"contexts"`
+}
+
+func (g *GitHub) lerProtecaoClassica(ctx context.Context, token, caminho string, app int64) (leituraDaProtecao, error) {
+	var resposta *struct {
+		URL    string            `json:"url"`
+		Status *checksDaProtecao `json:"required_status_checks"`
+	}
+	if err := g.get(ctx, token, caminho, &resposta); err != nil || resposta == nil {
+		return leituraDaProtecao{}, err
+	}
+	if resposta.Status == nil {
+		return leituraDaProtecao{completa: resposta.URL != ""}, nil
+	}
+	status := resposta.Status
+	if slices.Contains(status.Contextos, publicacao.NomeDoCheckRun) && !slices.ContainsFunc(status.Checks, temNomeDoCheck) {
+		// A proteção clássica também pode trazer só o contexto legado. O
+		// endpoint específico informa o App que precisa publicar esse check.
+		var detalhes *checksDaProtecao
+		err := g.get(ctx, token, caminho+"/required_status_checks", &detalhes)
+		if detalhes != nil && err == nil {
+			detalhes.Contextos = append(detalhes.Contextos, status.Contextos...)
+			status = detalhes
+		} else {
+			return leituraDaProtecao{ambigua: true}, err
+		}
+	}
+	return avaliarChecks(status.Checks, status.Contextos, app), nil
 }
 
 type checkExigido struct {
@@ -69,48 +165,57 @@ type checkExigido struct {
 	Integracao int64  `json:"integration_id"`
 }
 
-func confirmado(checks []checkExigido, app int64) bool {
-	return slices.ContainsFunc(checks, func(c checkExigido) bool {
+func avaliarChecks(checks []checkExigido, contextos []string, app int64) leituraDaProtecao {
+	exato := slices.ContainsFunc(checks, func(c checkExigido) bool {
 		return c.Contexto == publicacao.NomeDoCheckRun && (c.App == app || c.Integracao == app)
 	})
-}
-func contextoSemApp(checks []checkExigido) bool {
-	return slices.ContainsFunc(checks, func(c checkExigido) bool {
+	semOrigem := slices.ContainsFunc(checks, func(c checkExigido) bool {
 		return c.Contexto == publicacao.NomeDoCheckRun && c.App <= 0 && c.Integracao <= 0
 	})
+	legado := slices.Contains(contextos, publicacao.NomeDoCheckRun) && !slices.ContainsFunc(checks, temNomeDoCheck)
+	return leituraDaProtecao{obrigatorio: exato, ambigua: semOrigem || legado, completa: checks != nil || contextos != nil}
 }
-func (g *GitHub) checkDasRegras(ctx context.Context, token, caminho string, app int64, ausente bool) (*bool, error) {
-	var regras []struct {
-		Tipo       string `json:"type"`
-		Parametros struct {
-			Checks []checkExigido `json:"required_status_checks"`
-		} `json:"parameters"`
+
+func temNomeDoCheck(check checkExigido) bool { return check.Contexto == publicacao.NomeDoCheckRun }
+
+type regraDaBranch struct {
+	Tipo       string `json:"type"`
+	Parametros struct {
+		Checks []checkExigido `json:"required_status_checks"`
+	} `json:"parameters"`
+}
+
+func (g *GitHub) lerProtecaoDasRegras(ctx context.Context, token, caminho string, app int64) (leituraDaProtecao, error) {
+	const porPagina = 100
+	resultado := leituraDaProtecao{completa: true}
+	for pagina := 1; pagina <= 10; pagina++ {
+		var regras []regraDaBranch
+		err := g.get(ctx, token, fmt.Sprintf("%s?per_page=%d&page=%d", caminho, porPagina, pagina), &regras)
+		if err != nil || regras == nil || len(regras) > porPagina {
+			resultado.completa = false
+			return resultado, err
+		}
+		verificarPaginaDeRegras(regras, app, &resultado)
+		if resultado.obrigatorio || len(regras) < porPagina {
+			return resultado, nil
+		}
 	}
-	err := g.get(ctx, token, caminho, &regras)
-	if errors.Is(err, erroAcessoMetadata{}) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
+	resultado.completa = false
+	return resultado, nil
+}
+
+func verificarPaginaDeRegras(regras []regraDaBranch, app int64, resultado *leituraDaProtecao) {
 	for _, regra := range regras {
-		if regra.Tipo != "required_status_checks" {
-			continue
-		}
-		checks := regra.Parametros.Checks
-		if confirmado(checks, app) {
-			v := true
-			return &v, nil
-		}
-		if checks == nil || contextoSemApp(checks) {
-			ausente = false
+		switch regra.Tipo {
+		case "required_status_checks":
+			leitura := avaliarChecks(regra.Parametros.Checks, nil, app)
+			resultado.obrigatorio = resultado.obrigatorio || leitura.obrigatorio
+			resultado.ambigua = resultado.ambigua || leitura.ambigua
+			resultado.completa = resultado.completa && leitura.completa
+		case "":
+			resultado.completa = false
 		}
 	}
-	if ausente && regras != nil && len(regras) < 100 {
-		v := false
-		return &v, nil
-	}
-	return nil, nil
 }
 
 func (s *Servidor) repositoriosComMetadados(ctx context.Context, token string, id int64) (instalacaoGitHub, []repositorioGitHub, error) {
@@ -146,7 +251,7 @@ func (s *Servidor) catalogoSaude(w http.ResponseWriter, r *http.Request, id int6
 		return
 	}
 	instalacao, repos, e := s.repositoriosComMetadados(r.Context(), v.Token, id)
-	if errors.Is(e, errSemAcesso) || (e == nil && len(repos) == 0) {
+	if errors.Is(e, errSemAcesso) {
 		falhar(w, 403, "instalação ou repositório não autorizado")
 		return
 	}
@@ -154,6 +259,7 @@ func (s *Servidor) catalogoSaude(w http.ResponseWriter, r *http.Request, id int6
 		s.erroProvedor(w, r, e)
 		return
 	}
+	repos = slices.DeleteFunc(repos, func(repo repositorioGitHub) bool { return repo.Arquivado || repo.Desabilitado })
 	slices.SortFunc(repos, func(a, b repositorioGitHub) int { return strings.Compare(a.Nome, b.Nome) })
 	const limite = 10
 	inicio := min(int(pagina-1)*limite, len(repos))
@@ -177,7 +283,17 @@ func (s *Servidor) catalogoSaude(w http.ResponseWriter, r *http.Request, id int6
 		s.erroProvedor(w, r, err)
 		return
 	}
-	jsonResposta(w, 200, map[string]any{parametroInstalacaoWeb: id, "pagina": pagina, "limite": limite, "total": len(repos), "permissoes": instalacao.Permissoes, "itens": itens})
+	jsonResposta(w, 200, map[string]any{
+		parametroInstalacaoWeb: id, "pagina": pagina, "limite": limite, "total": len(repos), "itens": itens,
+		"permissoes": permissoesDaInstalacao(instalacao), "permissoes_conhecidas": instalacao.Permissoes != nil,
+	})
+}
+
+func permissoesDaInstalacao(instalacao instalacaoGitHub) permissoesGitHub {
+	if instalacao.Permissoes == nil {
+		return permissoesGitHub{}
+	}
+	return *instalacao.Permissoes
 }
 
 func (s *Servidor) completarSaude(ctx context.Context, token string, app int64, recorte []repositorioGitHub, ultimas map[string]time.Time, itens []saudeRepo) error {
@@ -190,8 +306,8 @@ func (s *Servidor) completarSaude(ctx context.Context, token string, app int64, 
 		}
 		if github {
 			grupo.Go(func() error {
-				check, err := g.checkObrigatorio(ctx, token, repo, app)
-				itens[i].Check = check
+				protecao, err := g.diagnosticarProtecao(ctx, token, repo, app)
+				itens[i].protecaoRepo = protecao
 				return err
 			})
 		}

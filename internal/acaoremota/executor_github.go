@@ -65,6 +65,14 @@ func (e *ExecutorNoGitHub) Executar(ctx context.Context, acao AcaoAutorizada) er
 }
 
 func (e *ExecutorNoGitHub) publicar(ctx context.Context, acao AcaoAutorizada, review platform.Review) error {
+	if acao.Origem == OrigemPainel {
+		texto := "Aprovado"
+		if acao.Tipo == TipoSolicitarAlteracao {
+			texto = "Alteração solicitada"
+		}
+		review.Corpo = fmt.Sprintf("%s por @%s via Painel:\n\n<!-- aprova-analise: %s -->\n\n%s", texto, acao.LoginGitHub, acao.TaskRunID, acao.Justificativa)
+		review.CommitID = acao.CommitSHA
+	}
 	dono, repositorio := acao.donoERepositorio()
 	return e.publicador.EnviarReview(ctx, acao.InstallationID, dono, repositorio, acao.NumeroPR, review)
 }
@@ -89,4 +97,16 @@ func QuemDecidiuNoSlack(corpo string) (login, justificativa string, doSlack bool
 	login = partes[1] + partes[3]
 	justificativa = partes[2] + partes[4]
 	return login, justificativa, len(login) <= tamanhoMaximoDoLogin
+}
+
+var reviewPublicadaPeloPainel = regexp.MustCompile(
+	`^(?:Aprovado|Alteração solicitada) por @([A-Za-z0-9](?:-?[A-Za-z0-9])*) via Painel:\n\n<!-- aprova-analise: ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}) -->\n\n((?s:.*))$`)
+
+// QuemDecidiuNoPainel lê o revisor, a análise e a justificativa da review publicada pelo App.
+func QuemDecidiuNoPainel(corpo string) (login, analise, justificativa string, doPainel bool) {
+	partes := reviewPublicadaPeloPainel.FindStringSubmatch(corpo)
+	if partes == nil || len(partes[1]) > tamanhoMaximoDoLogin {
+		return "", "", "", false
+	}
+	return partes[1], partes[2], partes[3], true
 }

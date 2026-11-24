@@ -217,6 +217,23 @@ select {
 .campo input[aria-invalid="true"] {
 	border-width: 2px;
 }
+.balao-ajuda {
+	z-index: 22;
+	display: grid;
+	gap: 6px;
+	max-inline-size: min(21rem, var(--radix-tooltip-content-available-width));
+	padding: 10px 12px;
+	border: 1px solid var(--borda-padrao);
+	border-radius: var(--radius-controle);
+	background: var(--fundo-elevado);
+	color: var(--texto-primario);
+	font-size: 13px;
+	line-height: 18px;
+	overflow-wrap: anywhere;
+}
+.balao-ajuda-seta {
+	fill: var(--fundo-elevado);
+}
 .modal-fundo {
 	position: fixed;
 	inset: 0;

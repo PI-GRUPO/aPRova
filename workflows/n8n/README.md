@@ -225,12 +225,18 @@ na instância, no projeto pessoal. Detalhes e limites estão no checklist.
 
 ### Correlação dos alertas da Central
 
-A Central possui um caminho de publicação pelo bot que guarda canal e
-timestamp para futuras atualizações da mensagem. Por padrão,
+A Central publica pelo bot e guarda o canal e o timestamp para editar a mensagem.
+A instância local está com a correlação habilitada. Em nova instalação,
 `APROVA_SLACK_CORRELACAO_HABILITADA=false` mantém o Incoming Webhook anterior.
-Os retornos dos formulários continuam no caminho existente. Com a correlação
-habilitada, o evento `aprovacao_registrada` atualiza o alerta da mesma análise;
-o OSV também pode atualizar o contexto quando a consulta termina depois.
+Com a correlação habilitada, o evento `aprovacao_registrada` atualiza o alerta da
+mesma análise. O OSV também pode atualizar o contexto de uma consulta posterior.
+Quando o GitHub aceita uma aprovação ou pedido de alterações iniciado num
+canal, o bot publica por `chat.postMessage` naquele mesmo canal um aviso
+com a pessoa e o link do PR. Recusas, erros e simulações continuam restritos
+ao solicitante por `chat.postEphemeral`. A justificativa fica na review.
+Esse retorno funciona independentemente da configuração de correlação.
+O workflow de feedback pula aprovações feitas pelo Slack, cujo formulário já
+coleta a justificativa.
 
 | Variável | Função |
 | --- | --- |
@@ -242,8 +248,9 @@ o OSV também pode atualizar o contexto quando a consulta termina depois.
 Crie as tabelas conforme [mensagens](recursos/tabela-slack-mensagens.json) e
 [controle](recursos/tabela-slack-controle.json), incluindo exatamente uma
 linha inicial de controle conforme `initialRows`. Associe `slackApi` ao nó
-`C09 | Publicar alerta pelo bot` e `D04 | Atualizar alerta após decisão`,
-com permissão para publicar e editar as mensagens do próprio bot no canal.
+`C09 | Publicar alerta pelo bot`, `D04 | Atualizar alerta após decisão` e
+`15 | Enviar retorno ao Slack`, com permissão para publicar e editar as
+mensagens do próprio bot no canal e enviar o retorno efêmero.
 Carregue as variáveis no container antes de habilitar a flag e valide o
 envio em destino autorizado. O export permanece inativo e sem credenciais.
 
@@ -325,8 +332,11 @@ válido no n8n; a 6B confirmou o percurso automático `aguardando_aprovacao` →
 Central V01–V07 → alerta Slack com recibo válido, encerrando a pendência
 integrada da Fase 3. Nenhuma decisão humana foi enviada.
 
-O envio assinado a `/acoes-remotas` não
-segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
+O alerta usa os títulos e textos de estado do aPRova no GitHub. Motivos e commit
+vêm do evento. Resumo do sandbox, hash e identificador da chave usam o recibo
+correlacionado e validado pelo núcleo. OSV e links continuam disponíveis no cartão.
+`202 + status=aceito` indica envio da review ao GitHub. O evento de decisão
+registrada aciona a remoção dos botões no alerta correlacionado.
 
 Interatividade dos botões: HTTPS público com
 `/webhook/aprova/slack/interacoes`, em **Interactivity & Shortcuts**.

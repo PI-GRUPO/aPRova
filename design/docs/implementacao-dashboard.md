@@ -1,5 +1,14 @@
 # Implementação do dashboard aPRova
 
+Configuração do gate, Sugestões da IA e Limites de SLA ficam fora do menu em
+desktop e no celular. As rotas continuam disponíveis por endereço direto.
+
+## Balões de ajuda
+
+Os pontos de interrogação de análises, recibos e gestão exibem a explicação
+junto ao ícone com mouse, foco do teclado ou toque. A ajuda usa o componente
+compartilhado `Ajuda` e fecha com Escape ou ao tocar fora.
+
 ## Navegação do relatório semanal
 
 Base `7b151e4`, card #67. O botão Consultar relatório semanal fica à direita
@@ -160,6 +169,10 @@ Branch `feat/web-dashboard`, base `dea7211`. Este lote autoriza consultas de bac
 | Auditoria | `GET /api/web/auditoria` consulta tentativas remotas persistidas, inclusive recusadas, com filtros e total no escopo. A fonte atual registra ações originadas no Slack. A ordenação usa instante e ID. A decisão de uma tentativa já existente pode passar de aceita a falha entre consultas. |
 | Conta (#77) | `GET /api/web/vinculo-slack` informa à própria pessoa se o login GitHub revalidado consta no mapa usado pela API. Identificadores do Slack ficam no servidor. |
 | Repositórios | `GET /api/repositorios` preserva o catálogo e aceita `detalhes=1` para consultar dez repositórios por página. Mostra o último recebimento e as permissões declaradas pela instalação. A proteção considera o check aPRova da mesma App na branch padrão, por proteção clássica ou regra efetiva. Dados ocultos, ambíguos ou incompletos aparecem como não confirmados. |
+
+A consulta detalhada lista somente repositórios ativos. Em cada página, o painel alerta quando a branch padrão permite concluir que o check do aPRova não é obrigatório e explica por que uma proteção ficou sem confirmação. A tela mostra a idade e o horário UTC do último recebimento. Após 24 horas sem análises, orienta a conferir as entregas do webhook se houve PR recente. As permissões declaradas são comparadas ao nível necessário para publicar, consultar PRs e verificar a proteção. Os links levam às configurações do GitHub para revisão manual.
+
+Saúde de repositórios (#71), base `fe8a331`, tela `9:1185` e mobile `15:2952`. A API e os testes estão em `internal/sessaoweb`, a visualização em `web/src/componentes/SaudeRepositorios.tsx` e o cenário de navegador em `web/e2e/gestao.spec.ts`. Passaram os testes Go de sessão e API com detector de corrida, o lint, o build e cinco cenários Playwright. A validação usou respostas controladas do GitHub e os handlers locais do painel. Falta validar a versão publicada com uma instalação real.
 
 **Limites das fontes.** Versão, histórico e configuração efetivamente usada pelo worker carecem de registro consultável por repositório. Propostas e seus estados carecem de fonte persistida no núcleo. Os limites de SLA pertencem aos timers do n8n. O recorte de recibos acessíveis pode omitir elos de outros repositórios e o núcleo não publica um inventário assinado da cadeia inteira. Essas leituras permanecem indisponíveis em produção. Demonstrações de gestão e métricas continuam identificadas em desenvolvimento com `APROVA_DASHBOARD_MOCKS=1`. O catálogo e a fila exigem autorização mesmo com a demonstração ativa.
 
@@ -705,6 +718,9 @@ ser implementados e testados antes de anunciar cada sublote como integrado.
 - Front: filtros de PR/repositório/nível/estado/período, ordenação e paginação;
   detalhe com autoria/branch quando disponíveis, SHA, links GitHub/Check, timeline,
   motivos, calibração/casos semelhantes, tentativas/saída e decisão humana.
+  A linha do tempo marca uma etapa como concluída quando a próxima transição
+  registrada confirma sua saída. Se essa transição leva a uma falha, a etapa
+  aparece como interrompida. A espera por aprovação tem indicação própria.
 - O modelo persistido de task_run não contém `head_branch`; não fabricar branch.
   Definir se será persistida ou obtida pelo núcleo no GitHub. IDs do Check existem
   internamente, mas falta contrato para URL/visibilidade na tela.
@@ -1232,3 +1248,36 @@ A falha da fila oferece nova tentativa na própria seção. A troca de escopo ca
 A homologação depende do backend com sessão web e OAuth GitHub configurados, da instalação com repositórios autorizados e de dados de análises e recibos no ambiente. O front usa a configuração existente de origem/proxy. Evidências visuais locais em `.capturas-mcp/dashboard/local-overview-*`.
 
 Validação local da rodada em Chromium com 136 testes Playwright aprovados, incluindo HTML malicioso, sessão expirada, isolamento, cancelamento, erro de contrato, recuperação e retorno paginado. As verificações de interface cobriram 320 a 1440 px nos temas claro e escuro. Instalação pelo lockfile com `npm ci --offline`, Biome, TypeScript e build de produção aprovados. O Vite emitiu o aviso de tamanho do chunk principal. A suíte usa respostas controladas e handlers Go com provedores de teste.
+
+### Decisões e reexecução pelo painel — 23/11/2026
+
+Base `5c2610a`, branch `feat/web-dashboard`. Os modais do detalhe usam
+`POST /api/web/analises/{id}/acoes` quando a API informa
+`acoes_disponiveis` na sessão. A rota exige sessão GitHub, origem e CSRF
+válidos. O núcleo resolve instalação, repositório e PR pela análise
+autorizada, consulta a permissão no GitHub na hora e confere o estado do PR
+e o SHA antes do efeito. Aprovação e pedido de alterações exigem
+justificativa. O autor continua impedido de aprovar o próprio PR.
+
+A migration 27 diferencia Slack e Painel em `remote_action_attempts`.
+As reviews do painel fixam o SHA, e o webhook do GitHub guarda a decisão
+e a justificativa na análise revisada. O evento v1 continua aceito pelos
+consumidores existentes com origem `github`; a auditoria e o histórico
+da análise mostram `painel`. A resposta 202 confirma o envio da review, e o
+worker atualiza o resultado quando recebe a confirmação do GitHub.
+O detalhe aberto revalida a análise enquanto a decisão estiver pendente,
+inclusive ao voltar à aba. Após enviar uma solicitação, o detalhe mantém
+os botões inativos durante a espera pelo resultado do núcleo.
+
+A reexecução de falha de infraestrutura cria outra análise para o mesmo
+SHA. O histórico anterior é preservado e a nova análise reaproveita o
+Check Run existente, quando disponível. O identificador auditado da ação
+corresponde ao `delivery_id` da nova análise. A tela oferece um link para
+acompanhar as análises do PR.
+
+Validação isolada com build, Biome, Chromium, PostgreSQL descartável
+e GitHub simulado. Os testes cobrem recusas de permissão, autoaprovação
+e commit obsoleto, registro da justificativa, idempotência e consumo de
+uma única reexecução concorrente pelo worker. A homologação ainda exige
+aplicar a migration 27, atualizar API e worker e verificar a entrega real
+da review e do evento em um PR de teste.

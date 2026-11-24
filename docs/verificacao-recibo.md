@@ -235,6 +235,12 @@ Isso torna detectável apagar um recibo do meio: o recibo seguinte continua
 apontando para um hash que não existe mais, e a verificação do elo reprova. E
 não dá para consertar o seguinte, porque o apontador está sob a assinatura.
 
+No painel **Recibos e auditoria**, use **Verificar cadeia** para conferir todo
+o histórico da instalação, inclusive recibos fora do período ou repositório
+selecionado na lista. É preciso ter acesso a todos os repositórios com recibos
+naquele histórico. Se um recibo do meio estiver ausente, o painel informa o
+primeiro sucessor que aponta para ele e o UUID do recibo ausente.
+
 Para conferir o elo por conta própria, baixe o recibo anterior pelo id que está
 em `anterior.id`, extraia o `payload.bin` dele e compare o SHA-256 com
 `anterior.hash`.

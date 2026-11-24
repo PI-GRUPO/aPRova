@@ -16,9 +16,10 @@ type EventoPullRequest struct {
 
 // DecisaoDeReview descreve a decisão de uma revisão humana sobre um pull request.
 // CommitSHA é o commit revisado, o review.commit_id do GitHub. Justificativa é
-// o texto da review: o digitado no Slack ou o corpo inteiro da review no GitHub.
+// o texto da review. TaskRunID é preenchido pelas reviews do App vindas do painel.
 type DecisaoDeReview struct {
 	InstallationID int64
+	TaskRunID      string
 	DeliveryID     string
 	Repositorio    string
 	NumeroPR       int

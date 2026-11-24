@@ -1,6 +1,7 @@
 import { listarRepositorios } from "./analises";
-import { type Consulta, type Escopo, type Operacao, operacaoPendente } from "./fonte";
-import { data, filtrosPeriodo, inteiro, invalido, lerPainel, lista, texto } from "./painel";
+import { type Consulta, type Escopo, indisponivel } from "./fonte";
+import { consultarJSON } from "./http";
+import { data, filtrosPeriodo, inteiro, invalido, lerPainel, lista, registro, texto } from "./painel";
 import { uuidValido } from "./recibos";
 export type RegistroRecibo = { id: string; repo: string; pr: number; sha: string; emissao: string };
 type Colecao = { repositorios: string[]; itens: RegistroRecibo[]; pagina?: number; limite?: number; total?: number; snapshot?: string };
@@ -23,9 +24,45 @@ export const consultarColecao: Consulta<Colecao> = __MOCKS__
 			if (colecao.itens.some((i) => !repositorios.includes(i.repo))) return invalido();
 			return { ...colecao, repositorios };
 		};
-export const verificarCadeia: Operacao<
-	(escopo: Escopo, signal: AbortSignal) => Promise<{ valida: boolean; primeiroReciboInvalido: string | null }>
-> = operacaoPendente;
+const falhasDaCadeia = {
+	hash: "O hash do recibo não confere.",
+	chave_desconhecida: "A chave pública usada para assinar o recibo não está disponível.",
+	assinatura: "A assinatura do recibo não confere.",
+	conteudo: "O conteúdo assinado não confere com o registro.",
+	elo: "O vínculo com o recibo anterior está quebrado.",
+};
+
+export const verificarCadeia = {
+	disponivel: !__MOCKS__,
+	async executar(instalacao: string, signal: AbortSignal) {
+		if (__MOCKS__) return indisponivel();
+		const q = new URLSearchParams({ installation_id: instalacao });
+		const r = registro(await consultarJSON(`/api/web/recibos/cadeia?${q}`, { privada: true, signal, timeout: 30000 }));
+		const total = inteiro(r.total);
+		const verificados = inteiro(r.verificados);
+		if (r.installation_id !== Number(instalacao) || typeof r.valida !== "boolean") return invalido();
+		if (r.valida) {
+			if (verificados !== total || [r.primeiro_recibo_invalido, r.recibo_anterior_ausente, r.falha].some((v) => v !== undefined))
+				return invalido();
+			return { valida: true as const, total };
+		}
+		const id = texto(r.primeiro_recibo_invalido);
+		const falha = texto(r.falha);
+		const ausente = r.recibo_anterior_ausente;
+		if (
+			verificados >= total ||
+			!uuidValido(id) ||
+			!Object.hasOwn(falhasDaCadeia, falha) ||
+			(ausente !== undefined && (falha !== "elo" || typeof ausente !== "string" || !uuidValido(ausente)))
+		)
+			return invalido();
+		return {
+			valida: false as const,
+			id,
+			detalhe: typeof ausente === "string" ? `Recibo anterior ausente: ${ausente}.` : falhasDaCadeia[falha as keyof typeof falhasDaCadeia],
+		};
+	},
+};
 async function lerRecibos(escopo: Escopo, q: URLSearchParams, signal: AbortSignal) {
 	const { dados, pagina, limite, snapshot } = await lerPainel("/api/web/recibos", escopo, q, signal);
 	const itens = lista(dados.itens, (r) => {

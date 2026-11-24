@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/PI-GRUPO/aPRova/internal/repository"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -47,8 +48,8 @@ func TestCadaMigrationAplicaEReverteLimpa(t *testing.T) {
 		passos++
 	}
 
-	if passos != 26 {
-		t.Errorf("esperava 26 migrations, apliquei %d", passos)
+	if passos != repository.VersaoEsperadaDoBanco {
+		t.Errorf("esperava %d migrations, apliquei %d", repository.VersaoEsperadaDoBanco, passos)
 	}
 
 	if err := migracao.Down(); err != nil {

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { estados, niveis } from "@/servicos/analises";
 import { Ativo } from "./Ativo";
-import { Botao, Modal } from "./Primitivos";
+import { Ajuda } from "./Primitivos";
 export function Risco({ nivel }: { nivel: string | null }) {
 	const n = nivel === "alto" || nivel === "medio" || nivel === "baixo" ? nivel : "nao_avaliado";
 	return (
@@ -20,17 +20,12 @@ export function PainelAnalise({ titulo, ajuda, children }: { titulo: string; aju
 			<header>
 				<h2>{titulo}</h2>
 				{ajuda && (
-					<Modal
+					<Ajuda
 						titulo={titulo}
 						descricao={ajuda}
-						gatilho={
-							<Botao variante="discreto" className="ajuda-analise" aria-label={`Ajuda: ${titulo}`}>
-								<Ativo nome="ajuda" />
-							</Botao>
-						}
-					>
-						<p>Os dados apresentados pertencem a esta análise e a este commit.</p>
-					</Modal>
+						complemento="Os dados apresentados pertencem a esta análise e a este commit."
+						className="ajuda-analise"
+					/>
 				)}
 			</header>
 			<div className="conteudo-analise">{children}</div>

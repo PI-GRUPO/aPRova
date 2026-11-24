@@ -158,6 +158,11 @@ for (const largura of [1440, 390, 360])
 		await expect(saida.locator("script")).toHaveCount(0);
 		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();
+		await page.getByRole("link", { name: "Abrir Check Run", exact: true }).focus();
+		await page.keyboard.press("Tab");
+		await expect(page.getByRole("button", { name: "Ajuda: Motivo e evidências", exact: true })).toBeFocused();
+		await expect(page.getByRole("tooltip")).toContainText("O gate registra o nível decidido e as regras acionadas.");
+		await page.keyboard.press("Escape");
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 		await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 		await page.getByRole("button", { name: "Testando sandbox", exact: true }).click();
@@ -266,6 +271,53 @@ test("análise substituída sem gate, histórico ou recibo não inventa evidênc
 	await expect(page.getByText("Nenhuma tentativa de sandbox registrada.")).toBeVisible();
 	await expect(page.getByText("Recibo ainda não emitido para esta análise.")).toBeVisible();
 });
+
+const etapasAteSandbox = ["pendente", "mapeando_contexto", "testando_sandbox"];
+for (const { caso, estados, marcadores } of [
+	{
+		caso: "concluída",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aplicando", "concluido"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Concluída", "Concluída"],
+	},
+	{
+		caso: "aguardando aprovação",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aguardando_aprovacao"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Aguardando"],
+	},
+	{
+		caso: "interrompida no sandbox",
+		estados: [...etapasAteSandbox, "falhou"],
+		marcadores: ["Concluída", "Interrompida", "Falhou"],
+	},
+	{
+		caso: "rejeitada na revisão",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aguardando_aprovacao", "rejeitado"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Concluída", "Rejeitada"],
+	},
+]) {
+	test(`linha do tempo mantém os checks das etapas registradas com análise ${caso}`, async ({ page }) => {
+		await simular(page, {
+			...detalhe,
+			analise: { ...analise, estado: estados.at(-1) },
+			etapas: estados.slice(1).map((para, i) => ({
+				id: i + 1,
+				de: estados[i],
+				para,
+				detalhe: "",
+				criado_em: instante,
+			})),
+		});
+		await page.goto(`/analises/${id}?installation_id=42`);
+		const etapas = page.locator(".timeline-analise .marcador-etapa");
+		await expect(etapas).toHaveText(marcadores);
+		const icones = etapas.locator("img");
+		await expect(icones).toHaveCount(marcadores.length);
+		await expect
+			.poll(() => icones.evaluateAll((imagens) => imagens.every((i) => i instanceof HTMLImageElement && i.complete && i.naturalWidth > 0)))
+			.toBe(true);
+	});
+}
+
 for (const status of [404, 403, 503])
 	test(`detalhe ${status} não mostra conteúdo privado e permite repetir`, async ({ page }) => {
 		await simular(page);

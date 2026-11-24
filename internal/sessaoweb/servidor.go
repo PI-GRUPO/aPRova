@@ -24,6 +24,8 @@ type Relatorios interface {
 }
 type Opcoes struct {
 	Leituras      LeiturasPainel
+	Cadeia        CadeiaDeRecibos
+	Acoes         AcoesDoPainel
 	Vinculos      map[string]string
 	Origem        string
 	Provedor      Provedor
@@ -34,6 +36,8 @@ type Opcoes struct {
 }
 type Servidor struct {
 	leituras      LeiturasPainel
+	cadeia        CadeiaDeRecibos
+	acoes         AcoesDoPainel
 	vinculos      map[string]string
 	origem        string
 	seguro        bool
@@ -62,7 +66,7 @@ func Novo(op Opcoes) (*Servidor, error) {
 	if op.Agora == nil {
 		op.Agora = time.Now
 	}
-	return &Servidor{leituras: op.Leituras, vinculos: op.Vinculos, origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
+	return &Servidor{leituras: op.Leituras, cadeia: op.Cadeia, acoes: op.Acoes, vinculos: op.Vinculos, origem: u.Scheme + "://" + u.Host, seguro: u.Scheme == "https", provedor: op.Provedor, armazenamento: op.Armazenamento, analises: op.Analises, relatorios: op.Relatorios, agora: op.Agora}, nil
 }
 func origemValida(origem string) (*url.URL, error) {
 	erro := errors.New("WEB_URL_PUBLICA deve ser uma origem HTTPS, ou HTTP em localhost")
@@ -86,12 +90,13 @@ func origemValida(origem string) (*url.URL, error) {
 }
 
 type respostaSessao struct {
-	Autenticado     bool         `json:"autenticado"`
-	LoginDisponivel bool         `json:"login_disponivel"`
-	Usuario         *Usuario     `json:"usuario,omitempty"`
-	Instalacoes     []Instalacao `json:"instalacoes"`
-	CSRF            string       `json:"csrf_token,omitempty"`
-	Expira          time.Time    `json:"expira_em,omitzero"`
+	Autenticado      bool         `json:"autenticado"`
+	LoginDisponivel  bool         `json:"login_disponivel"`
+	AcoesDisponiveis bool         `json:"acoes_disponiveis,omitempty"`
+	Usuario          *Usuario     `json:"usuario,omitempty"`
+	Instalacoes      []Instalacao `json:"instalacoes"`
+	CSRF             string       `json:"csrf_token,omitempty"`
+	Expira           time.Time    `json:"expira_em,omitzero"`
 }
 
 func (s *Servidor) nomeCookie() string {
@@ -130,15 +135,9 @@ func guardar(ctx context.Context, a Armazenamento, id string, v any, ttl time.Du
 	return a.Guardar(ctx, id, b, ttl)
 }
 func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Referrer-Policy", "no-referrer")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
+	cabecalhosPrivados(w)
 	if s == nil {
-		if r.URL.Path == "/api/sessao" && r.Method == http.MethodGet {
-			jsonResposta(w, 200, respostaSessao{})
-			return
-		}
-		falhar(w, 503, "login web indisponível")
+		responderLoginIndisponivel(w, r)
 		return
 	}
 	switch r.Method + " " + r.URL.Path {
@@ -152,6 +151,8 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.sair(w, r)
 	case "GET /api/metricas", "GET /api/web/recibos", "GET /api/web/auditoria", "GET /api/web/regras":
 		s.leituraPainel(w, r, path.Base(r.URL.Path))
+	case "GET /api/web/recibos/cadeia":
+		s.verificarCadeia(w, r)
 	case "GET /api/web/vinculo-slack":
 		s.vinculoPessoal(w, r)
 	case "GET /api/repositorios":
@@ -162,6 +163,15 @@ func (s *Servidor) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		falhar(w, 405, "método não permitido")
 	}
 }
+
+func responderLoginIndisponivel(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/api/sessao" && r.Method == http.MethodGet {
+		jsonResposta(w, 200, respostaSessao{})
+		return
+	}
+	falhar(w, 503, "login web indisponível")
+}
+
 func (s *Servidor) iniciar(w http.ResponseWriter, r *http.Request) {
 	state, verifier := aleatorio(), aleatorio()
 	if err := guardar(r.Context(), s.armazenamento, "oauth:"+state, fluxo{verifier}, 5*time.Minute); err != nil {
@@ -285,14 +295,17 @@ func (s *Servidor) consultar(w http.ResponseWriter, r *http.Request) {
 		s.erroProvedor(w, r, e)
 		return
 	}
-	jsonResposta(w, 200, respostaSessao{Autenticado: true, LoginDisponivel: true, Usuario: &usuario, Instalacoes: instalacoes, CSRF: v.CSRF, Expira: v.Expira})
+	jsonResposta(w, 200, respostaSessao{
+		Autenticado: true, LoginDisponivel: true, AcoesDisponiveis: s.acoes != nil && s.analises != nil,
+		Usuario: &usuario, Instalacoes: instalacoes, CSRF: v.CSRF, Expira: v.Expira,
+	})
 }
 func (s *Servidor) sair(w http.ResponseWriter, r *http.Request) {
 	v, ok := s.autenticar(w, r)
 	if !ok {
 		return
 	}
-	if r.Header.Get("Origin") != s.origem || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-CSRF-Token")), []byte(v.CSRF)) != 1 {
+	if !s.confereCSRF(r, v) {
 		falhar(w, 403, "origem ou proteção CSRF inválida")
 		return
 	}
@@ -303,6 +316,11 @@ func (s *Servidor) sair(w http.ResponseWriter, r *http.Request) {
 	}
 	s.cookie(w, s.nomeCookie(), "", -time.Hour)
 	w.WriteHeader(204)
+}
+
+func (s *Servidor) confereCSRF(r *http.Request, v sessao) bool {
+	return v.CSRF != "" && r.Header.Get("Origin") == s.origem &&
+		subtle.ConstantTimeCompare([]byte(r.Header.Get("X-CSRF-Token")), []byte(v.CSRF)) == 1
 }
 func (s *Servidor) relatorio(w http.ResponseWriter, r *http.Request) {
 	v, ok := s.autenticar(w, r)

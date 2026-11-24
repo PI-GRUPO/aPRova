@@ -3,6 +3,14 @@ import { expect, type Route, test } from "@playwright/test";
 
 const origem = "http://127.0.0.1:18080";
 const recibo = "00000000-0000-4000-8000-000000000002";
+test("auditoria identifica o recibo que aponta para um elo ausente", async ({ page }) => {
+	await page.goto(`${origem}/entrar`);
+	await page.getByRole("link", { name: "Continuar com GitHub" }).click();
+	await page.goto(`${origem}/recibos?installation_id=43&periodo=7`);
+	await page.getByRole("button", { name: "Verificar cadeia" }).click();
+	await expect(page.getByText(/Primeiro recibo inválido: 00000000-0000-4000-8000-000000000003/)).toBeVisible();
+	await expect(page.getByText(/Recibo anterior ausente: 00000000-0000-4000-8000-000000000005/)).toBeVisible();
+});
 for (const largura of [1440, 390]) {
 	test(`relatório semanal mantém Visão geral ativa e permite voltar pela trilha em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: 900 });
@@ -113,7 +121,10 @@ for (const largura of [1440, 390]) {
 		}
 		await page.goto(`${origem}/recibos?installation_id=42&repositorio=equipe-e2e%2Fprojeto`);
 		if (largura < 500) await page.getByText("Período, cadeia e exportação", { exact: true }).click();
-		await expect(page.getByRole("button", { name: "Verificar cadeia" })).toBeDisabled();
+		const cadeia = page.waitForResponse((r) => r.url() === `${origem}/api/web/recibos/cadeia?installation_id=42` && r.status() === 200);
+		await page.getByRole("button", { name: "Verificar cadeia" }).click();
+		await cadeia;
+		await expect(page.getByText("Cadeia verificada. Recibos conferidos: 1.")).toBeVisible();
 		for (const formato of ["json", "csv"]) {
 			const download = page.waitForEvent("download");
 			await page.getByRole("button", { name: `Exportar ${formato.toUpperCase()}` }).click();

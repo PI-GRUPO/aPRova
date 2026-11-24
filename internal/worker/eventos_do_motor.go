@@ -100,6 +100,12 @@ func (c *conducao) emitirAguardandoAprovacao(gravado domain.GateDeRisco, recibo 
 }
 
 func (c *conducao) emitirAprovacaoRegistrada(aprovacao domain.AprovacaoRegistrada, gravado domain.GateDeRisco) {
+	origem := origemDe(aprovacao)
+	if origem == domain.OrigemPainel {
+		// O evento v1 classifica essa review pelo canal de entrega. A auditoria
+		// e o histórico da análise mantêm a origem painel.
+		origem = domain.OrigemGitHub
+	}
 	c.emitir(eventos.TipoAprovacaoRegistrada, eventos.DadosAprovacaoRegistrada{
 		TaskRunID:          c.taskRun.ID,
 		Repositorio:        c.taskRun.Repositorio,
@@ -107,7 +113,7 @@ func (c *conducao) emitirAprovacaoRegistrada(aprovacao domain.AprovacaoRegistrad
 		URLPR:              c.urlDoPR(),
 		Decisao:            aprovacao.Decisao,
 		LoginGitHub:        aprovacao.Revisor,
-		Origem:             string(origemDe(aprovacao)),
+		Origem:             string(origem),
 		NivelRiscoOriginal: gravado.Nivel,
 		IDAprovacao:        aprovacao.ID,
 	}, strconv.FormatInt(aprovacao.ID, 10))

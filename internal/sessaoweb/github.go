@@ -142,10 +142,10 @@ func (g *GitHub) instalacoesGitHub(ctx context.Context, token string) ([]instala
 		var v struct {
 			Total       int `json:"total_count"`
 			Instalacoes []struct {
-				AppID      int64            `json:"app_id"`
-				Permissoes permissoesGitHub `json:"permissions"`
-				ID         int64            `json:"id"`
-				Suspensa   *string          `json:"suspended_at"`
+				AppID      int64             `json:"app_id"`
+				Permissoes *permissoesGitHub `json:"permissions"`
+				ID         int64             `json:"id"`
+				Suspensa   *string           `json:"suspended_at"`
 				Conta      struct {
 					Login string `json:"login"`
 				} `json:"account"`

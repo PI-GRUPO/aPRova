@@ -186,14 +186,52 @@ test("erro de rede na verificação não mantém resultado válido e permite rep
 	await verificar.click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 });
-test("ajuda mantém foco e consulta rejeita UUID inválido", async ({ page }) => {
+test("ajuda aparece ao passar o mouse ou focar o ícone", async ({ page }) => {
 	await simular(page);
 	await page.goto(`/recibos/${id}`);
 	const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
-	await ajuda.click();
-	await expect(page.getByRole("dialog", { name: "Conteúdo assinado", exact: true })).toBeVisible();
+	const balao = page.getByRole("tooltip");
+	await expect(balao).toBeHidden();
+	await ajuda.hover();
+	await expect(balao).toContainText("O conteúdo registrado só tem sua integridade confirmada após a verificação.");
+	await expect(balao).toBeVisible();
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await balao.hover();
+	await expect(balao).toBeVisible();
+	await page.getByRole("heading", { name: /^Recibo \/ / }).hover();
+	await expect(balao).toBeHidden();
+	await ajuda.focus();
+	await expect(balao).toBeVisible();
+	await expect(ajuda).toHaveAccessibleDescription(/O conteúdo registrado/);
 	await page.keyboard.press("Escape");
+	await expect(balao).toBeHidden();
 	await expect(ajuda).toBeFocused();
+});
+
+test.describe("ajuda em tela de toque", () => {
+	test.use({ viewport: { width: 320, height: 844 }, hasTouch: true });
+	test("abre o balão ao tocar e fecha ao tocar fora", async ({ page }) => {
+		await simular(page);
+		await page.addInitScript(() => localStorage.setItem("aprova-tema", "claro"));
+		await page.goto(`/recibos/${id}`);
+		const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
+		const balao = page.getByRole("tooltip");
+		await ajuda.tap();
+		await expect(balao).toBeVisible();
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+		const caixa = await balao.boundingBox();
+		expect(caixa).not.toBeNull();
+		if (caixa) {
+			expect(caixa.x).toBeGreaterThanOrEqual(0);
+			expect(caixa.x + caixa.width).toBeLessThanOrEqual(320);
+		}
+		await page.getByRole("heading", { name: /^Recibo \/ / }).tap();
+		await expect(balao).toBeHidden();
+	});
+});
+
+test("consulta rejeita UUID inválido", async ({ page }) => {
+	await simular(page);
 	await page.goto("/recibos");
 	await page.getByLabel("UUID do recibo").fill("inválido");
 	await page.getByRole("button", { name: "Localizar recibo" }).click();

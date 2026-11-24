@@ -13,7 +13,7 @@ import (
 const createRemoteActionAttempt = `-- name: CreateRemoteActionAttempt :one
 INSERT INTO remote_action_attempts (
     action_id, tenant_id, task_run_id, action_type, slack_user_id, github_login,
-    repository, pr_number, decision, reason, attempted_at, justification
+    repository, pr_number, decision, reason, attempted_at, justification, origin
 )
 VALUES (
     $1, $2,
@@ -23,7 +23,7 @@ VALUES (
      ORDER BY tr.created_at DESC, tr.id DESC
      LIMIT 1),
     $6, $7, $8,
-    $3, $4, $9, $10, $11, $12
+    $3, $4, $9, $10, $11, $12, $13
 )
 RETURNING id
 `
@@ -35,12 +35,13 @@ type CreateRemoteActionAttemptParams struct {
 	PrNumber      int32     `json:"pr_number"`
 	TaskRunID     *string   `json:"task_run_id"`
 	ActionType    string    `json:"action_type"`
-	SlackUserID   string    `json:"slack_user_id"`
+	SlackUserID   *string   `json:"slack_user_id"`
 	GithubLogin   *string   `json:"github_login"`
 	Decision      string    `json:"decision"`
 	Reason        string    `json:"reason"`
 	AttemptedAt   time.Time `json:"attempted_at"`
 	Justification string    `json:"justification"`
+	Origin        string    `json:"origin"`
 }
 
 func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemoteActionAttemptParams) (int64, error) {
@@ -57,6 +58,7 @@ func (q *Queries) CreateRemoteActionAttempt(ctx context.Context, arg CreateRemot
 		arg.Reason,
 		arg.AttemptedAt,
 		arg.Justification,
+		arg.Origin,
 	)
 	var id int64
 	err := row.Scan(&id)
