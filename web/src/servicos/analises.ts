@@ -110,7 +110,7 @@ function analise(v: unknown): v is Analise {
 	);
 }
 export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): Promise<PaginaAnalises> {
-	const v = await consultarJSON(`/api/analises?${q}`, { signal, privada: true });
+	const v = await consultarJSON(`/api/analises?${q.toString()}`, { signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(q.get("installation_id")) ||
@@ -187,7 +187,7 @@ export function urlGitHub(v: string) {
 export async function detalharAnalise(id: string, instalacao: string, signal: AbortSignal, repositorio = ""): Promise<Detalhe> {
 	const q = new URLSearchParams({ installation_id: instalacao });
 	if (repositorio) q.set("repositorio", repositorio);
-	const v = await consultarJSON(`/api/analises/${encodeURIComponent(id)}?${q}`, { signal, privada: true });
+	const v = await consultarJSON(`/api/analises/${encodeURIComponent(id)}?${q.toString()}`, { signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(instalacao) ||
@@ -269,7 +269,7 @@ function diagnosticarPermissoes(permissoes: Record<string, unknown>, conhecidas:
 export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
 	const pagina = Number(filtros.get("pagina") ?? 1);
 	const q = new URLSearchParams({ installation_id: instalacao, detalhes: "1", pagina: String(pagina) });
-	const v = await consultarJSON(`/api/repositorios?${q}`, { privada: true, signal });
+	const v = await consultarJSON(`/api/repositorios?${q.toString()}`, { privada: true, signal });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(instalacao) ||
