@@ -37,7 +37,7 @@ export const verificarCadeia = {
 	async executar(instalacao: string, signal: AbortSignal) {
 		if (__MOCKS__) return indisponivel();
 		const q = new URLSearchParams({ installation_id: instalacao });
-		const r = registro(await consultarJSON(`/api/web/recibos/cadeia?${q}`, { privada: true, signal, timeout: 30000 }));
+		const r = registro(await consultarJSON(`/api/web/recibos/cadeia?${q.toString()}`, { privada: true, signal, timeout: 30000 }));
 		const total = inteiro(r.total);
 		const verificados = inteiro(r.verificados);
 		if (r.installation_id !== Number(instalacao) || typeof r.valida !== "boolean") return invalido();
