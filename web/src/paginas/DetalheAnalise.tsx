@@ -4,12 +4,12 @@ import { Link, useParams, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { AcoesDaAnalise } from "@/componentes/AcoesDaAnalise";
 import { dataUTC, Estado, PainelAnalise, Risco } from "@/componentes/Analise";
-import { Ativo } from "@/componentes/Ativo";
+import { Ativo, type NomeDoAtivo } from "@/componentes/Ativo";
 import { useLeitura } from "@/componentes/ConsultaPrivada";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
 import type { ResultadoAcao } from "@/servicos/acoes-analise";
-import { type Detalhe, detalharAnalise, estados, urlGitHub } from "@/servicos/analises";
+import { type Detalhe, detalharAnalise, type Etapa, estados, urlGitHub } from "@/servicos/analises";
 import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
 import type { Consulta } from "@/servicos/fonte";
 import { buscarRecibo, type Verificacao, verificarRecibo } from "@/servicos/recibos";
@@ -43,6 +43,23 @@ export function DetalheAnalise() {
 }
 const consultarDetalhe: Consulta<Detalhe> = ({ instalacao, repositorio }, filtros, signal) =>
 	detalharAnalise(filtros.get("id") ?? "", instalacao, signal, repositorio);
+
+function marcadorDaEtapa(etapa: Etapa, proxima: Etapa | undefined, estadoAtual: string): { icone: NomeDoAtivo; rotulo: string } {
+	switch (etapa.para) {
+		case "concluido":
+			return { icone: "concluido", rotulo: "Concluída" };
+		case "falhou":
+			return { icone: "falhou", rotulo: "Falhou" };
+		case "rejeitado":
+			return { icone: "falhou", rotulo: "Rejeitada" };
+	}
+	// O card representa o estado alcançado. A próxima transição registra a saída dessa etapa.
+	if (proxima?.de === etapa.para) {
+		return proxima.para === "falhou" ? { icone: "falhou", rotulo: "Interrompida" } : { icone: "concluido", rotulo: "Concluída" };
+	}
+	if (etapa.para === estadoAtual) return { icone: "clock", rotulo: estadoAtual === "aguardando_aprovacao" ? "Aguardando" : "Em andamento" };
+	return { icone: "clock", rotulo: "Transição registrada" };
+}
 
 function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalacao: string; repositorio: string }) {
 	const [q] = useSearchParams();
@@ -291,24 +308,28 @@ export function ConteudoAnalise({
 				{linhaDoTempoSimulada ??
 					(d.etapas.length ? (
 						<ol className="timeline-analise">
-							{d.etapas.map((e) => (
-								<li key={e.id}>
-									<span className="marcador-etapa">
-										<Ativo nome={e.para === "concluido" ? "concluido" : e.para === "falhou" ? "falhou" : "clock"} />
-										{e.para === "concluido" ? "Concluída" : e.para === "falhou" ? "Falhou" : "Transição registrada"}
-									</span>
-									<Modal
-										titulo={estados.get(e.para) ?? e.para}
-										descricao={`De ${estados.get(e.de) ?? e.de} para ${estados.get(e.para) ?? e.para}, em ${dataUTC(e.criado_em)}.`}
-										gatilho={<Botao variante="discreto">{estados.get(e.para) ?? e.para}</Botao>}
-									>
-										<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
-									</Modal>
-									<time className="apoio" dateTime={e.criado_em}>
-										{dataUTC(e.criado_em)}
-									</time>
-								</li>
-							))}
+							{d.etapas.map((e, i) => {
+								const { icone, rotulo } = marcadorDaEtapa(e, d.etapas[i + 1], a.estado);
+								const titulo = estados.get(e.para) ?? e.para;
+								return (
+									<li key={e.id}>
+										<span className="marcador-etapa">
+											<Ativo nome={icone} />
+											{rotulo}
+										</span>
+										<Modal
+											titulo={titulo}
+											descricao={`De ${estados.get(e.de) ?? e.de} para ${titulo}, em ${dataUTC(e.criado_em)}.`}
+											gatilho={<Botao variante="discreto">{titulo}</Botao>}
+										>
+											<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
+										</Modal>
+										<time className="apoio" dateTime={e.criado_em}>
+											{dataUTC(e.criado_em)}
+										</time>
+									</li>
+								);
+							})}
 						</ol>
 					) : (
 						<p>Histórico de transições não disponível.</p>

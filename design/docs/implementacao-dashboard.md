@@ -709,6 +709,9 @@ ser implementados e testados antes de anunciar cada sublote como integrado.
 - Front: filtros de PR/repositório/nível/estado/período, ordenação e paginação;
   detalhe com autoria/branch quando disponíveis, SHA, links GitHub/Check, timeline,
   motivos, calibração/casos semelhantes, tentativas/saída e decisão humana.
+  A linha do tempo marca uma etapa como concluída quando a próxima transição
+  registrada confirma sua saída. Se essa transição leva a uma falha, a etapa
+  aparece como interrompida. A espera por aprovação tem indicação própria.
 - O modelo persistido de task_run não contém `head_branch`; não fabricar branch.
   Definir se será persistida ou obtida pelo núcleo no GitHub. IDs do Check existem
   internamente, mas falta contrato para URL/visibilidade na tela.
