@@ -46,8 +46,16 @@ for (const largura of [1440, 390, 360]) {
 		if (largura < 768) {
 			await page.getByRole("button", { name: "Menu completo" }).click();
 			await expect(page.getByRole("dialog", { name: "Navegação" })).toBeVisible();
-			await page.getByRole("dialog").getByRole("link", { name: "Configuração do gate" }).click();
-			await expect(page.getByRole("heading", { name: "Configuração do gate" })).toBeVisible();
+		}
+		const menu = page.getByRole("navigation", { name: largura < 768 ? "Todas as telas" : "Principal", exact: true });
+		await expect(menu).toBeVisible();
+		for (const nome of ["Configuração do gate", "Sugestões da IA", "Limites de SLA"]) {
+			await expect(menu.getByRole("link", { name: nome, exact: true })).toHaveCount(0);
+		}
+		await expect(menu.getByRole("link", { name: "Conta e integrações", exact: true })).toBeVisible();
+		if (largura < 768) {
+			await menu.getByRole("link", { name: "Recibos", exact: true }).click();
+			await expect(page).toHaveURL(/\/recibos$/);
 			await expect(page.getByRole("dialog")).not.toBeVisible();
 		}
 		for (const rota of rotas) {

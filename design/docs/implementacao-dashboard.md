@@ -1,5 +1,8 @@
 # Implementação do dashboard aPRova
 
+Configuração do gate, Sugestões da IA e Limites de SLA ficam fora do menu em
+desktop e no celular. As rotas continuam disponíveis por endereço direto.
+
 ## Balões de ajuda
 
 Os pontos de interrogação de análises, recibos e gestão exibem a explicação

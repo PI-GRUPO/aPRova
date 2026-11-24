@@ -7,6 +7,8 @@ import { Sair } from "@/paginas/Acesso";
 import { Ativo } from "./Ativo";
 import { Botao, Modal } from "./Primitivos";
 
+const secoesDoMenu = secoes.filter((secao) => !["/configuracao", "/sugestoes", "/sla"].includes(secao.caminho));
+
 function Tema() {
 	const { tema, alternar } = useTema();
 	const proximo = tema === "escuro" ? "claro" : "escuro";
@@ -39,8 +41,8 @@ export function Casca() {
 	function fecharMenu() {
 		definirMenu(false);
 	}
-	const links = (de = 0, ate: number = secoes.length) =>
-		secoes.slice(de, ate).map((s) => {
+	const links = (de = 0, ate = secoesDoMenu.length) =>
+		secoesDoMenu.slice(de, ate).map((s) => {
 			const naSecao = matchPath({ path: s.caminho, end: s.caminho === "/" }, pathname) !== null;
 			const ativa = naSecao || (s.caminho === "/" && noRelatorio);
 			return (
