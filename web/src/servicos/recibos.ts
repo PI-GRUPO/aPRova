@@ -1,5 +1,7 @@
 import { consultarJSON, ErroHTTP } from "./http";
 
+export { uuidValido } from "./uuid";
+
 export type Recibo = {
 	id: string;
 	task_run_id: string;
@@ -27,9 +29,8 @@ export function objeto(v: unknown): v is Record<string, unknown> {
 function invalida(): never {
 	throw new ErroHTTP("resposta", "A resposta de recibos não corresponde ao formato esperado.");
 }
-export const uuidValido = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 export async function buscarRecibo(id: string, signal: AbortSignal): Promise<Recibo> {
-	const v = await consultarJSON(`/receipts/${encodeURIComponent(id)}`, { signal });
+	const v = await consultarJSON("recibo", { id, signal });
 	if (
 		!objeto(v) ||
 		!["id", "task_run_id", "key_id", "hash_sha256", "payload_base64", "assinatura_base64"].every((k) => typeof v[k] === "string") ||
@@ -41,7 +42,7 @@ export async function buscarRecibo(id: string, signal: AbortSignal): Promise<Rec
 	return v as Recibo;
 }
 export async function buscarChaves(signal: AbortSignal): Promise<Chave[]> {
-	const v = await consultarJSON("/receipts/keys", { signal });
+	const v = await consultarJSON("chavesRecibos", { signal });
 	if (
 		!objeto(v) ||
 		!Array.isArray(v.chaves) ||
@@ -51,7 +52,7 @@ export async function buscarChaves(signal: AbortSignal): Promise<Chave[]> {
 	return v.chaves as Chave[];
 }
 export async function verificarRecibo(recibo: Recibo, signal: AbortSignal): Promise<Verificacao> {
-	const v = await consultarJSON(`/receipts/${encodeURIComponent(recibo.id)}/verify`, { signal });
+	const v = await consultarJSON("verificarRecibo", { id: recibo.id, signal });
 	if (
 		!objeto(v) ||
 		v.id !== recibo.id ||

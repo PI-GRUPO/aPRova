@@ -7,13 +7,13 @@ export interface Prontidao {
 	dependencias: Record<string, "ok" | "indisponivel">;
 }
 export async function consultarSaude(signal?: AbortSignal): Promise<Saude> {
-	const dado = await consultarJSON("/health", { signal });
+	const dado = await consultarJSON("saude", { signal });
 	if (!dado || typeof dado !== "object" || !("status" in dado) || dado.status !== "ok")
 		throw new ErroHTTP("resposta", "Resposta de saúde inválida.");
 	return { status: "ok" };
 }
 export async function consultarProntidao(signal?: AbortSignal): Promise<Prontidao> {
-	const dado = await consultarJSON("/ready", { signal });
+	const dado = await consultarJSON("prontidao", { signal });
 	if (
 		!dado ||
 		typeof dado !== "object" ||

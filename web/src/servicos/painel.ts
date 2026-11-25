@@ -27,11 +27,16 @@ export function lista<T>(v: unknown, validar: (item: Record<string, unknown>) =>
 	if (!Array.isArray(v)) return invalido();
 	return v.map((item) => validar(registro(item)));
 }
-export async function lerPainel(caminho: string, escopo: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
+export async function lerPainel(
+	rota: "auditoria" | "metricas" | "recibos" | "regras",
+	escopo: Escopo,
+	filtros: URLSearchParams,
+	signal: AbortSignal,
+) {
 	const q = new URLSearchParams(filtros);
 	q.set("installation_id", escopo.instalacao);
 	if (escopo.repositorio) q.set("repositorio", escopo.repositorio);
-	const v = registro(await consultarJSON(`${caminho}?${q.toString()}`, { privada: true, signal }));
+	const v = registro(await consultarJSON(rota, { parametros: q, privada: true, signal }));
 	const snapshot = data(v.snapshot);
 	const corteSolicitado = q.get("snapshot");
 	if (

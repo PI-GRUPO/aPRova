@@ -42,10 +42,7 @@ function consultarRegistros(recurso: "regras" | "auditoria"): Consulta<Gestao> {
 			if (resultado) q.set("decisao", resultado);
 			if (f.get("origem")) q.set("origem", f.get("origem") ?? "");
 		}
-		const [v, repositorios] = await Promise.all([
-			lerPainel(`/api/web/${recurso}`, escopo, q, signal),
-			listarRepositorios(escopo.instalacao, signal),
-		]);
+		const [v, repositorios] = await Promise.all([lerPainel(recurso, escopo, q, signal), listarRepositorios(escopo.instalacao, signal)]);
 		const base: Gestao = { repositorios, configuracoes: {}, sla: {}, sugestoes: [], regras: [], calibracoes: [], auditoria: [] };
 		function repo(r: Record<string, unknown>) {
 			const nome = texto(r.repo);

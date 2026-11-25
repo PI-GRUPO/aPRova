@@ -1,3 +1,5 @@
+import { uuidValido } from "./uuid";
+
 export type TipoDeErro = "http" | "rede" | "timeout" | "cancelado" | "resposta";
 export class ErroHTTP extends Error {
 	constructor(
@@ -18,9 +20,32 @@ function origemPublica(valor: string | undefined) {
 	return url.origin;
 }
 const origem = origemPublica(import.meta.env.VITE_API_ORIGEM);
+const rotas = {
+	acoesAnalise: "/api/web/analises/:id/acoes",
+	analise: "/api/analises/:id",
+	analises: "/api/analises",
+	auditoria: "/api/web/auditoria",
+	cadeiaRecibos: "/api/web/recibos/cadeia",
+	chavesRecibos: "/receipts/keys",
+	metricas: "/api/metricas",
+	prontidao: "/ready",
+	recibo: "/receipts/:id",
+	recibos: "/api/web/recibos",
+	regras: "/api/web/regras",
+	relatorioSemanal: "/api/web/relatorio-semanal",
+	repositorios: "/api/repositorios",
+	sair: "/api/sessao/sair",
+	saude: "/health",
+	sessao: "/api/sessao",
+	verificarRecibo: "/receipts/:id/verify",
+	vinculoSlack: "/api/web/vinculo-slack",
+} as const;
+
 export async function consultarJSON(
-	caminho: string,
+	rota: keyof typeof rotas,
 	opcoes: {
+		id?: string;
+		parametros?: URLSearchParams;
 		signal?: AbortSignal;
 		timeout?: number;
 		privada?: boolean;
@@ -31,9 +56,15 @@ export async function consultarJSON(
 		lerCodigo?: boolean;
 	} = {},
 ): Promise<unknown> {
-	if (!caminho.startsWith("/") || caminho.startsWith("//") || caminho.includes("\\")) throw new Error("Caminho de API inválido.");
+	if (!Object.hasOwn(rotas, rota)) throw new Error("Rota de API não permitida.");
+	let caminho: string = rotas[rota];
+	if (caminho.includes(":id")) {
+		const id = opcoes.id;
+		if (!id || !uuidValido(id)) throw new ErroHTTP("http", "Identificador inválido.", 404);
+		caminho = caminho.replace(":id", id);
+	}
 	const destino = new URL(caminho, origem || window.location.origin);
-	if (destino.origin !== (origem || window.location.origin)) throw new Error("Origem de API inválida.");
+	if (opcoes.parametros) destino.search = opcoes.parametros.toString();
 	const controlador = new AbortController();
 	let expirou = false;
 	const cancelar = () => controlador.abort();

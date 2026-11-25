@@ -110,7 +110,7 @@ test("cliente trata saúde, prontidão 503 e falha de rede", async ({ page }) =>
 	await page.route("**/ready", (route) =>
 		route.fulfill({ status: 503, json: { status: "indisponivel", dependencias: { postgres: "indisponivel" } } }),
 	);
-	await page.route("**/api/teste", (route) => route.abort());
+	await page.route("**/receipts/keys", (route) => route.abort());
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar health", exact: true }).click();
 	await expect(page.getByRole("status")).toHaveText("Serviço disponível.");
@@ -120,10 +120,33 @@ test("cliente trata saúde, prontidão 503 e falha de rede", async ({ page }) =>
 	await expect(page.getByRole("status")).toContainText("rede:");
 });
 
+test("cliente só consulta rotas cadastradas e mantém filtros na query", async ({ page }) => {
+	await page.goto("/__teste");
+	const resultado = await page.evaluate(async (modulo) => {
+		const { consultarJSON }: typeof import("../src/servicos/http") = await import(modulo);
+		const destinos: string[] = [];
+		window.fetch = async (url) => {
+			destinos.push(String(url));
+			return Response.json({});
+		};
+		const rejeicoes = await Promise.allSettled([
+			consultarJSON("/api/rota-externa-ao-cadastro" as Parameters<typeof consultarJSON>[0]),
+			consultarJSON("recibo", { id: "identificador-invalido" }),
+		]);
+		const id = "00000000-0000-0000-0000-000000000001";
+		await consultarJSON("analise", { id, parametros: new URLSearchParams({ repositorio: "org/repo & teste" }) });
+		return { rejeicoes: rejeicoes.map((r) => r.status), destinos };
+	}, "/src/servicos/http.ts");
+	expect(resultado.rejeicoes).toEqual(["rejected", "rejected"]);
+	expect(resultado.destinos).toEqual([
+		`${new URL(page.url()).origin}/api/analises/00000000-0000-0000-0000-000000000001?repositorio=org%2Frepo+%26+teste`,
+	]);
+});
+
 test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) => {
 	await page.route("**/health", (route) => route.fulfill({ json: { status: "inventado" } }));
 	await page.route("**/ready", (route) => route.fulfill({ contentType: "text/html", path: "e2e/fixtures/login.html" }));
-	await page.route("**/api/teste", (route) => route.fulfill({ contentType: "application/json", body: "{" }));
+	await page.route("**/receipts/keys", (route) => route.fulfill({ contentType: "application/json", body: "{" }));
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar health", exact: true }).click();
 	await expect(page.getByRole("status")).toContainText("Resposta de saúde inválida");
@@ -134,7 +157,7 @@ test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) =>
 });
 
 test("timeout e cancelamento não viram sucesso", async ({ page }) => {
-	await page.route("**/api/teste", (route) => {
+	await page.route("**/receipts/keys", (route) => {
 		// Mantém o GET interceptado para exercitar timeout e cancelamento do cliente.
 		expect(route.request().method()).toBe("GET");
 	});
@@ -148,7 +171,7 @@ test("timeout e cancelamento não viram sucesso", async ({ page }) => {
 
 test("401 privado volta para entrar", async ({ page }) => {
 	await page.route("**/api/sessao", (route) => route.fulfill({ json: { autenticado: false, login_disponivel: true } }));
-	await page.route("**/api/teste", (route) => route.fulfill({ status: 401 }));
+	await page.route("**/receipts/keys", (route) => route.fulfill({ status: 401 }));
 	await page.goto("/__teste");
 	await page.getByRole("button", { name: "Consultar privada", exact: true }).click();
 	await expect(page).toHaveURL(/\/entrar$/);
@@ -176,7 +199,7 @@ test("timeout durante a leitura do corpo preserva o tipo do erro", async ({ page
 	await page.addInitScript(() => {
 		const original = window.fetch.bind(window);
 		window.fetch = (url, opcoes) => {
-			if (!String(url).endsWith("/api/teste")) return original(url, opcoes);
+			if (!String(url).endsWith("/receipts/keys")) return original(url, opcoes);
 			const corpo = new ReadableStream({
 				start(controlador) {
 					controlador.enqueue(new TextEncoder().encode('{"status":'));

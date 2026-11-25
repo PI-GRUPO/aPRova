@@ -5,7 +5,7 @@ import { uuidValido } from "./recibos";
 import type { VisaoGeralDados } from "./visao-geral";
 
 export const metricasReais: Consulta<VisaoGeralDados> = async (escopo, _filtros, signal) => {
-	const { dados, inicio, fim, snapshot } = await lerPainel("/api/metricas", escopo, new URLSearchParams(), signal);
+	const { dados, inicio, fim, snapshot } = await lerPainel("metricas", escopo, new URLSearchParams(), signal);
 	const recebidas = inteiro(dados.recebidas),
 		avaliadas = inteiro(dados.avaliadas),
 		alto = inteiro(dados.alto);

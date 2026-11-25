@@ -35,7 +35,7 @@ export default function Harness() {
 			if (tipo === "health") await consultarSaude(controlador.signal);
 			else if (tipo === "ready") await consultarProntidao(controlador.signal);
 			else
-				await consultarJSON("/api/teste", {
+				await consultarJSON("chavesRecibos", {
 					signal: controlador.signal,
 					timeout: tipo === "timeout" ? 30 : 10000,
 					privada: tipo === "privada",

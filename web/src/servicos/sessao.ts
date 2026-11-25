@@ -12,7 +12,7 @@ export type Sessao =
 			expira_em: string;
 	  };
 export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
-	const v = await consultarJSON("/api/sessao", { signal });
+	const v = await consultarJSON("sessao", { signal });
 	if (!objeto(v) || typeof v.autenticado !== "boolean" || typeof v.login_disponivel !== "boolean")
 		throw new ErroHTTP("resposta", "Resposta de sessão inválida.");
 	if (
@@ -34,7 +34,7 @@ export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
 	return v as Sessao;
 }
 export async function encerrarSessao(csrf: string) {
-	await consultarJSON("/api/sessao/sair", { metodo: "POST", csrf, statusEsperado: 204 });
+	await consultarJSON("sair", { metodo: "POST", csrf, statusEsperado: 204 });
 }
 export type Relatorio = {
 	installation_id: number;
@@ -55,7 +55,7 @@ export async function consultarRelatorio(id: string, inicio: string, signal: Abo
 	const q = new URLSearchParams({ installation_id: id });
 	if (repositorio) q.set("repositorio", repositorio);
 	if (inicio) q.set("inicio", inicio);
-	const v = await consultarJSON(`/api/web/relatorio-semanal?${q}`, { signal, privada: true });
+	const v = await consultarJSON("relatorioSemanal", { parametros: q, signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(id) ||
