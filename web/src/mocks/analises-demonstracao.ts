@@ -144,46 +144,49 @@ export const analisesDemonstracao: Detalhe[] = referencias.map((item, indice) =>
 	};
 });
 
-export const complementosDemonstracao: Record<string, ComplementoDemonstracao> = {
-	[referencias[0].id]: {
-		contextoCalibracao: "1 teste falhou nesta execução.",
-		ajudaCalibracao: "O histórico não reduz o risco de uma execução com falha nos testes.",
-		etapas: [
-			{
-				id: 1,
-				titulo: "Recebida",
-				estado: "concluida",
-				momento: "2026-11-09T11:00:00Z",
-				detalhe: "Análise recebida.",
-			},
-			{
-				id: 2,
-				titulo: "Contexto mapeado",
-				estado: "concluida",
-				momento: "2026-11-09T11:00:01Z",
-				detalhe: "Código e contexto obtidos.",
-			},
-			{
-				id: 3,
-				titulo: "Testes executados",
-				estado: "falhou",
-				momento: "2026-11-09T11:00:04Z",
-				detalhe: "10 testes passaram; TestFretePesoZero falhou.",
-			},
-			{
-				id: 4,
-				titulo: "Risco avaliado",
-				estado: "concluida",
-				momento: "2026-11-09T11:00:46Z",
-				detalhe: "Risco alto devido à falha nos testes.",
-			},
-			{
-				id: 5,
-				titulo: "Aguardando aprovação",
-				estado: "aguardando",
-				momento: "2026-11-09T11:00:47Z",
-				detalhe: "Aguardando revisão humana.",
-			},
-		],
-	},
-};
+export const complementosDemonstracao = new Map<string, ComplementoDemonstracao>([
+	[
+		referencias[0].id,
+		{
+			contextoCalibracao: "1 teste falhou nesta execução.",
+			ajudaCalibracao: "O histórico não reduz o risco de uma execução com falha nos testes.",
+			etapas: [
+				{
+					id: 1,
+					titulo: "Recebida",
+					estado: "concluida",
+					momento: "2026-11-09T11:00:00Z",
+					detalhe: "Análise recebida.",
+				},
+				{
+					id: 2,
+					titulo: "Contexto mapeado",
+					estado: "concluida",
+					momento: "2026-11-09T11:00:01Z",
+					detalhe: "Código e contexto obtidos.",
+				},
+				{
+					id: 3,
+					titulo: "Testes executados",
+					estado: "falhou",
+					momento: "2026-11-09T11:00:04Z",
+					detalhe: "10 testes passaram; TestFretePesoZero falhou.",
+				},
+				{
+					id: 4,
+					titulo: "Risco avaliado",
+					estado: "concluida",
+					momento: "2026-11-09T11:00:46Z",
+					detalhe: "Risco alto devido à falha nos testes.",
+				},
+				{
+					id: 5,
+					titulo: "Aguardando aprovação",
+					estado: "aguardando",
+					momento: "2026-11-09T11:00:47Z",
+					detalhe: "Aguardando revisão humana.",
+				},
+			],
+		},
+	],
+]);

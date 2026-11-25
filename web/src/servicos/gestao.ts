@@ -21,7 +21,7 @@ export type Gestao = {
 	paginacao?: { pagina: number; limite: number; snapshot: string; total: number };
 	repositorios: string[];
 	configuracoes: Record<string, Configuracao>;
-	sla: Record<string, { primeiro: number; segundo: number }>;
+	sla: ReadonlyMap<string, { primeiro: number; segundo: number }>;
 	sugestoes: Sugestao[];
 	regras: { id: string; descricao: string; nivel: string; acionamentos: number; avaliadasAltas?: number; aprovadas: number }[];
 	calibracoes: { id: string; nome: string; risco: string; resultado: string }[];
@@ -43,7 +43,7 @@ function consultarRegistros(recurso: "regras" | "auditoria"): Consulta<Gestao> {
 			if (f.get("origem")) q.set("origem", f.get("origem") ?? "");
 		}
 		const [v, repositorios] = await Promise.all([lerPainel(recurso, escopo, q, signal), listarRepositorios(escopo.instalacao, signal)]);
-		const base: Gestao = { repositorios, configuracoes: {}, sla: {}, sugestoes: [], regras: [], calibracoes: [], auditoria: [] };
+		const base: Gestao = { repositorios, configuracoes: {}, sla: new Map(), sugestoes: [], regras: [], calibracoes: [], auditoria: [] };
 		function repo(r: Record<string, unknown>) {
 			const nome = texto(r.repo);
 			if (!repositorios.includes(nome) || (escopo.repositorio && nome !== escopo.repositorio)) return invalido();

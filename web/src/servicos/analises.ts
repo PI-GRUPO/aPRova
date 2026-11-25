@@ -100,13 +100,13 @@ function invalida(): never {
 function analise(v: unknown): v is Analise {
 	return (
 		objeto(v) &&
-		["id", "repositorio", "sha_head", "autor"].every((k) => typeof v[k] === "string") &&
+		[v.id, v.repositorio, v.sha_head, v.autor].every((campo) => typeof campo === "string") &&
 		numero(v.numero_pr) &&
 		(v.espera_segundos === undefined || numero(v.espera_segundos)) &&
 		typeof v.estado === "string" &&
 		estados.has(v.estado) &&
 		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
-		["recebido_em", "criado_em", "atualizado_em"].every((k) => data(v[k]))
+		[v.recebido_em, v.criado_em, v.atualizado_em].every(data)
 	);
 }
 export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): Promise<PaginaAnalises> {
@@ -115,7 +115,8 @@ export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): P
 		!objeto(v) ||
 		v.installation_id !== Number(q.get("installation_id")) ||
 		!data(v.snapshot) ||
-		!["pagina", "limite", "total"].every((k) => numero(v[k])) ||
+		!numero(v.pagina) ||
+		!numero(v.total) ||
 		typeof v.tem_mais !== "boolean" ||
 		!Array.isArray(v.itens) ||
 		!v.itens.every(analise) ||
@@ -133,14 +134,16 @@ function gateValido(v: unknown) {
 	return (
 		v === null ||
 		(objeto(v) &&
-			["nivel_deterministico", "nivel", "motivo", "calibracao_estado", "calibracao_razao"].every((k) => typeof v[k] === "string") &&
+			[v.nivel_deterministico, v.nivel, v.motivo, v.calibracao_estado, v.calibracao_razao].every((campo) => typeof campo === "string") &&
 			Array.isArray(v.motivos) &&
-			v.motivos.every((m) => objeto(m) && ["id", "nivel", "descricao"].every((k) => typeof m[k] === "string") && textos(m.evidencias)) &&
+			v.motivos.every(
+				(m) => objeto(m) && [m.id, m.nivel, m.descricao].every((campo) => typeof campo === "string") && textos(m.evidencias),
+			) &&
 			Array.isArray(v.vizinhos) &&
 			v.vizinhos.every(
 				(m) =>
 					objeto(m) &&
-					["task_run_id", "repositorio", "desfecho"].every((k) => typeof m[k] === "string") &&
+					[m.task_run_id, m.repositorio, m.desfecho].every((campo) => typeof campo === "string") &&
 					numero(m.numero_pr) &&
 					typeof m.similaridade === "number",
 			))
@@ -150,13 +153,13 @@ function agregadosValidos(v: Record<string, unknown>) {
 	return (
 		Array.isArray(v.etapas) &&
 		v.etapas.every(
-			(e) => objeto(e) && numero(e.id) && ["de", "para", "detalhe"].every((k) => typeof e[k] === "string") && data(e.criado_em),
+			(e) => objeto(e) && numero(e.id) && [e.de, e.para, e.detalhe].every((campo) => typeof campo === "string") && data(e.criado_em),
 		) &&
 		Array.isArray(v.tentativas) &&
 		v.tentativas.every(
 			(e) =>
 				objeto(e) &&
-				["tentativa", "testes_passaram", "testes_falharam", "duracao_ms"].every((k) => numero(e[k])) &&
+				[e.tentativa, e.testes_passaram, e.testes_falharam, e.duracao_ms].every(numero) &&
 				typeof e.compilou === "boolean" &&
 				typeof e.saida_truncada === "boolean" &&
 				typeof e.saida === "string" &&
@@ -168,7 +171,7 @@ function agregadosValidos(v: Record<string, unknown>) {
 			(e) =>
 				objeto(e) &&
 				numero(e.id) &&
-				["decisao", "revisor", "origem"].every((k) => typeof e[k] === "string") &&
+				[e.decisao, e.revisor, e.origem].every((campo) => typeof campo === "string") &&
 				anulavel(e.justificativa) &&
 				anulavel(e.commit_sha) &&
 				typeof e.aplicavel_ao_commit === "boolean" &&

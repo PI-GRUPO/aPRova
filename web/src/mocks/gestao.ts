@@ -140,7 +140,7 @@ export function lerGestaoMock(repo: string, filtros: URLSearchParams) {
 	return {
 		repositorios,
 		configuracoes: Object.fromEntries(repositorios.map((r) => [r, configuracaoInicialMock])),
-		sla: Object.fromEntries(repositorios.map((r) => [r, slaInicialMock])),
+		sla: new Map(repositorios.map((r) => [r, slaInicialMock])),
 		sugestoes: sugestoesMock,
 		regras: regrasMock.map((r) => {
 			const itens = ocorrenciasRegrasMock.filter((i) => i.regra === r.id && noPeriodo(i));

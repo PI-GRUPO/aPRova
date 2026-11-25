@@ -81,15 +81,15 @@ export async function consultarRelatorio(id: string, inicio: string, signal: Abo
 		!v.repositorios.every((r) => typeof r === "string") ||
 		(!!repositorio && (v.repositorios.length !== 1 || v.repositorios[0] !== repositorio)) ||
 		![
-			"total_execucoes",
-			"concluidas",
-			"rejeitadas",
-			"falhas",
-			"em_andamento",
-			"exigiram_aprovacao_humana",
-			"risco_medio",
-			"revertidas",
-		].every((k) => typeof v[k] === "number" && Number.isSafeInteger(v[k]) && v[k] >= 0) ||
+			v.total_execucoes,
+			v.concluidas,
+			v.rejeitadas,
+			v.falhas,
+			v.em_andamento,
+			v.exigiram_aprovacao_humana,
+			v.risco_medio,
+			v.revertidas,
+		].every((campo) => typeof campo === "number" && Number.isSafeInteger(campo) && campo >= 0) ||
 		typeof v.inicio !== "string" ||
 		typeof v.fim !== "string" ||
 		Number.isNaN(Date.parse(v.inicio)) ||

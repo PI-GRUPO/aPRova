@@ -28,7 +28,7 @@ export async function consultarAnaliseDemonstracao(id: string, signal: AbortSign
 		signal.throwIfAborted();
 		dados = referenciasMapaMock.find((r) => r.detalhe.analise.id === id)?.detalhe;
 	}
-	return dados ? structuredClone({ origem: "mock", dados, complemento: complementosDemonstracao[id] }) : null;
+	return dados ? structuredClone({ origem: "mock", dados, complemento: complementosDemonstracao.get(dados.analise.id) }) : null;
 }
 // A volta sempre aponta à visão geral; nunca aceita um destino arbitrário.
 export function retornoDaFila(valor: string | null) {

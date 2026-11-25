@@ -33,8 +33,8 @@ export async function buscarRecibo(id: string, signal: AbortSignal): Promise<Rec
 	const v = await consultarJSON("recibo", { id, signal });
 	if (
 		!objeto(v) ||
-		!["id", "task_run_id", "key_id", "hash_sha256", "payload_base64", "assinatura_base64"].every((k) => typeof v[k] === "string") ||
 		v.id !== id ||
+		![v.task_run_id, v.key_id, v.hash_sha256, v.payload_base64, v.assinatura_base64].every((campo) => typeof campo === "string") ||
 		!(v.recibo_anterior_id === null || typeof v.recibo_anterior_id === "string") ||
 		!(v.payload === null || objeto(v.payload))
 	)
@@ -46,10 +46,25 @@ export async function buscarChaves(signal: AbortSignal): Promise<Chave[]> {
 	if (
 		!objeto(v) ||
 		!Array.isArray(v.chaves) ||
-		!v.chaves.every((c) => objeto(c) && ["key_id", "algoritmo", "chave_publica_base64"].every((k) => typeof c[k] === "string"))
+		!v.chaves.every((c) => objeto(c) && [c.key_id, c.algoritmo, c.chave_publica_base64].every((campo) => typeof campo === "string"))
 	)
 		return invalida();
 	return v.chaves as Chave[];
+}
+function verificacoesValidas(v: unknown): v is Verificacao["verificacoes"] {
+	return (
+		Array.isArray(v) &&
+		v.length === etapas.length &&
+		etapas.every((nome, ordem) => {
+			const etapa = v.at(ordem);
+			return (
+				objeto(etapa) &&
+				etapa.nome === nome &&
+				typeof etapa.resultado === "string" &&
+				["ok", "falhou", "nao_verificada"].includes(etapa.resultado)
+			);
+		})
+	);
 }
 export async function verificarRecibo(recibo: Recibo, signal: AbortSignal): Promise<Verificacao> {
 	const v = await consultarJSON("verificarRecibo", { id: recibo.id, signal });
@@ -59,12 +74,7 @@ export async function verificarRecibo(recibo: Recibo, signal: AbortSignal): Prom
 		v.key_id !== recibo.key_id ||
 		typeof v.hash_sha256 !== "string" ||
 		typeof v.valido !== "boolean" ||
-		!Array.isArray(v.verificacoes) ||
-		v.verificacoes.length !== 5 ||
-		!v.verificacoes.every(
-			(c, i) =>
-				objeto(c) && c.nome === etapas[i] && typeof c.resultado === "string" && ["ok", "falhou", "nao_verificada"].includes(c.resultado),
-		) ||
+		!verificacoesValidas(v.verificacoes) ||
 		(v.falha !== undefined && typeof v.falha !== "string") ||
 		(v.detalhe !== undefined && typeof v.detalhe !== "string")
 	)

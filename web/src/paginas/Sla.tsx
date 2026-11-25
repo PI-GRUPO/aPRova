@@ -9,16 +9,13 @@ export function Sla() {
 	const { q, atualizar } = useFiltrosGestao();
 	const dados = useGestao();
 	const repo = q.get("repositorio") ?? opcoesRepos[0]?.valor ?? "";
+	const atual = opcoesRepos.some((r) => r.valor === repo) ? dados.sla.get(repo) : undefined;
 	return (
 		<PaginaGestao titulo="Limites de SLA" subtitulo="Prazos de aviso e escalonamento por repositório">
 			<div className="escopo-sla">
 				<SeletorGestao rotulo="Repositório" valor={repo} aoMudar={(v) => atualizar("repositorio", v)} opcoes={opcoesRepos} />
 			</div>
-			{opcoesRepos.some((r) => r.valor === repo) && dados.sla[repo] ? (
-				<FormularioSla key={repo} repo={repo} atual={dados.sla[repo]} />
-			) : (
-				<p>Limites indisponíveis para este repositório.</p>
-			)}
+			{atual ? <FormularioSla key={repo} repo={repo} atual={atual} /> : <p>Limites indisponíveis para este repositório.</p>}
 		</PaginaGestao>
 	);
 }
