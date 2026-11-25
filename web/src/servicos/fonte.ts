@@ -6,8 +6,8 @@ export class RecursoIndisponivel extends Error {
 		super("Recurso indisponível no momento.");
 	}
 }
-export async function indisponivel(): Promise<never> {
-	throw new RecursoIndisponivel();
+export function indisponivel(): Promise<never> {
+	return Promise.reject(new RecursoIndisponivel());
 }
 
 export type Operacao<F> = { disponivel: boolean; executar: F };
