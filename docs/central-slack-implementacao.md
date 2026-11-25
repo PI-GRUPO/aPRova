@@ -1,10 +1,28 @@
 # Central de operação aPRova no Slack
 
-Atualizado em **2026-11-15**, horário de São Paulo. Este documento reúne as
+Atualizado em **2026-11-24**, horário de São Paulo. Este documento reúne as
 explicações e pendências atuais. Registros antigos de implementação, testes
 e simulações foram consolidados.
 
 ## Orientação para manutenção
+
+### Mensagens de decisão no Slack
+
+- [x] Padronizar os títulos e os textos de estado com a publicação do aPRova no GitHub. No alerta de risco alto, o cartão apresenta o commit e os motivos, além do resumo do sandbox e dos identificadores do recibo quando o núcleo o valida.
+- [x] Publicar no canal original as aprovações e os pedidos de alterações enviados ao GitHub. O aviso identifica quem agiu e inclui o link do PR. Justificativas, recusas e falhas ficam fora do aviso público. O evento autenticado `aprovacao_registrada` confirma a decisão e aciona a edição do alerta original. O feedback pula aprovações vindas do Slack, cujo formulário já pede justificativa.
+- [x] Habilitar a correlação na Central ativa no canal já configurado. A edição retira os botões de decisão e mantém links e recibos. Mensagens publicadas antes da ativação podem carecer da associação com a análise.
+- [x] Atualizar os exports portáteis da Central e do feedback. Passaram 253 testes de workflows, com aviso de review no canal, recusas privadas e preservação dos links após a decisão. A versão ativa e a configuração foram conferidas no n8n. A publicação e a edição no Slack serão observadas na próxima decisão real.
+
+### Verificação da aprovação no Slack em 22/11/2026
+
+As interações assinadas chegavam à Central, mas o nó de abertura do formulário falhava com `invalid syntax` na avaliação de `jsonBody`. A expressão da versão operacional tinha um bloco JSON compacto dentro da expressão do n8n. O bloco foi expandido e a montagem dos metadados foi reescrita com `Object.assign`. A expressão corrigida passou pelo resolvedor real do n8n com dados fictícios e foi publicada no workflow existente.
+
+- [x] Reproduzir a falha de sintaxe e validar o corpo corrigido no interpretador instalado.
+- [x] Publicar somente a alteração do parâmetro do formulário na Central.
+- [x] Confirmar uma nova interação humana com formulário aceito pelo Slack, `ok=true`.
+- [x] Confirmar o envio humano à API e a recusa de autoaprovação na PR 10 de `PI-GRUPO/aPRova-TESTES`, com HTTP 403 e motivo `autor_do_proprio_pr` para `julia-ed2`.
+
+A versão operacional possui 65 nós, incluindo App Home e o formulário com motivo da aprovação. O export desta branch possui 61 nós e um formulário anterior, já distribuído em várias linhas. Sua expressão foi validada no mesmo interpretador e preservada. A publicação da correção operacional foi confirmada por releitura da versão ativa. A aprovação da PR 10 exige outro revisor autorizado.
 
 Antes de construir ou alterar um workflow, leia este documento e
 [eventos-n8n.md](eventos-n8n.md). Mantenha por integração: finalidade,
@@ -326,6 +344,110 @@ anterior do contexto não eliminaram a recorrência. Sem evidência de cota 429.
 
 A recuperação não garante disponibilidade do provedor. Se também falhar,
 o destino autenticado recebe o aviso seguro, sem métricas inventadas.
+
+#### Teste integrado real — PR 4, OSV, Slack e Trello — concluído
+
+Validação em `PI-GRUPO/aPRova-TESTES`, PR 4, sem merge ou aprovação. Card
+confirmado pelo usuário: [Teste de integração Trello e Slack](https://trello.com/c/kURLrZdr/1-teste-de-integra%C3%A7%C3%A3o-trello-e-slack), no quadro de testes.
+
+- [x] Criar branch exclusiva a partir da main e PR de rascunho com autoria
+  humana autenticada; commits e descrição em português brasileiro. Adicionar
+  somente `github.com/google/uuid v1.6.0` e seus checksums. Dez testes Go locais
+  passaram; o sandbox real também confirmou dez testes e nenhuma falha.
+- [x] Restabelecer relay Smee temporário, filtrado por instalação, repositório,
+  branch e SHA, preservando os bytes/assinatura entregues pelo cliente oficial.
+  GitHub enviou `opened` e depois `synchronize`; a API verificou/aceitou os
+  eventos reais, sem payload GitHub forjado ou disparo manual na API.
+- [x] Confirmar worker → Core → OSV e Central: consulta OSV HTTP 200, sem avisos
+  conhecidos para a versão; recibo válido, risco ALTO por dependência nova e
+  avisos de aprovação/dependência aceitos pelo Slack. OSV não reduziu o risco.
+- [x] Vincular a URL completa da PR à descrição do card, preservando seu
+  conteúdo anterior e a lista Backlog. O conector Trello recusou a escrita;
+  o vínculo foi confirmado por operação manual limitada no n8n.
+- [x] Recuperar o primeiro evento Trello real após o vínculo tardio, por
+  reprocessamento exclusivo do consumidor, sem repetir núcleo ou OSV.
+- [x] Com o card já vinculado, enviar commit vazio de validação na mesma PR.
+  Novo webhook real gerou outra análise; comentário Trello e aviso Slack foram
+  disparados automaticamente pelo fluxo existente, sem replay nessa rodada.
+  Commit final: `3e6cc08b2cf80536bff3e01c2429b95b9f81c4ce`.
+- [x] Conferir correlação da análise/SHA e comentário no card; a análise antiga
+  foi substituída pelo novo commit. Há um comentário por análise distinta,
+  incluindo a recuperação da primeira; não são duas cópias do mesmo evento.
+- [x] Encerrar relay temporário; manter API/worker/n8n, main, card e estado de
+  aprovação. Workflows auxiliares ficam inativos no projeto pessoal, com as
+  operações de escrita/reprocessamento desabilitadas após o uso.
+- [x] Preservar os workflows funcionais publicados, sem alterações/exportação
+  por consequência do teste; atualizar documentação e evidências privadas.
+
+A primeira rodada não comprovou Trello automático, pois o evento foi liberado
+antes de confirmar a escrita do vínculo. A rodada do commit final comprovou
+GitHub → relay → API → worker → Core → OSV/Slack e Trello/Slack automaticamente.
+Correlação global permanece desligada: os alertas são separados, sem provar
+atualização OSV da mesma mensagem. Digest, SLA e o caso adiado da 6C mantêm
+suas condições. Para novos testes automáticos locais, o relay precisa estar
+ativo; o cliente usado aqui foi restrito à PR/SHA e encerrado ao concluir.
+Evidências em `tmp/teste-integrado-osv/`, ignorado pelo Git.
+
+#### Demonstração local ligada — 2026-11-16
+
+- [x] Conferir API/worker ativos, `/health` e `/ready` HTTP 200, PostgreSQL e
+  Redis prontos. n8n respondeu ao healthcheck e os cinco workflows de Core,
+  OSV, Central, Trello e assistente permanecem publicados.
+- [x] Ligar relay Smee em segundo plano para `PI-GRUPO/aPRova-TESTES`, limitado
+  à instalação configurada e aos eventos `pull_request`/`pull_request_review`,
+  sem restrição por PR, branch ou SHA. Assinatura continua verificada pela API.
+- [x] Confirmar conexão Smee ativa, sem reiniciar serviços que já funcionavam
+  nem criar nova PR/mensagem por consequência da ativação.
+- [x] Registrar controles locais de iniciar/status/parar em
+  `tmp/demonstracao/controle.py` e instruções na mesma pasta, ignorada pelo Git.
+
+Esse relay substitui o filtro temporário da PR 4 para a demonstração. Fica
+ligado até encerramento ou desligamento do computador; não inicia sozinho
+com o sistema. O vínculo Trello continua por URL completa da nova PR na
+descrição de um único card antes do consumo do evento. Flags de Digest,
+SLA, correlação e regras de autorização não foram alteradas. Workflows
+funcionais não foram modificados; não há exportação nova nesta ativação.
+
+#### Novo exemplo com PR e card próprios — concluído em 2026-11-16
+
+- [x] Abrir [PR 5](https://github.com/PI-GRUPO/aPRova-TESTES/pull/5), em branch
+  exclusiva, com `github.com/google/uuid v1.6.0`, checksums e autoria humana.
+  Dez testes Go locais e dez testes do sandbox real passaram. PR em rascunho,
+  sem merge ou aprovação; títulos/commit/descrição em português brasileiro.
+- [x] Criar novo [card de demonstração](https://trello.com/c/3sCdjsML/2-demonstra%C3%A7%C3%A3o-pr-com-depend%C3%AAncia-nova-e-osv)
+  no Backlog e confirmar links nos dois sentidos: card na descrição da PR e
+  PR na descrição do card. Operações n8n manuais limitadas ao novo card, no
+  projeto pessoal; escrita desabilitada ao concluir, sem publicação/exportação.
+- [x] Reter brevemente o encaminhamento enquanto o vínculo era confirmado e
+  depois liberar o webhook `opened` real. API validou assinatura; núcleo, Core,
+  OSV, Central e Trello processaram dados reais sem replay manual do consumidor.
+- [x] Confirmar risco ALTO por dependência nova, recibo válido, consulta OSV
+  concluída sem avisos conhecidos e avisos Slack aceitos. Novo card recebeu
+  exatamente um comentário automático dessa análise e o aviso Trello no Slack.
+- [x] Conferir demonstração ainda ativa: API/n8n saudáveis, relay conectado e
+  liberado para novas PRs/reviews do repositório de testes, sem filtro por SHA.
+
+Workflows funcionais e flags preservados; somente dados de demonstração e
+auxiliar manual foram criados. Evidências em `tmp/exemplo-pr-card/`, ignorado.
+
+#### Ambiente religado para teste da API — 2026-11-19
+
+- [x] Conferir PostgreSQL/Redis saudáveis e preservar os volumes existentes.
+- [x] Iniciar o container n8n parado e conferir a reativação dos workflows
+  publicados pelos logs, sem alterar definições, credenciais ou flags.
+- [x] Compilar API e worker do checkout atual (base `214cad4`) e substituir
+  os binários locais antigos, com backup e recarga controlada; sem migrations
+  ou mudanças em dados/configuração. Relay retido apenas durante a recarga.
+- [x] Confirmar `/health` e `/ready` HTTP 200, worker ativo e chaves públicas
+  de recibo preservadas. Consulta assinada `GET /api/analises` retornou 200 e
+  instalação correspondente, sem expor dados/segredos no resultado da conferência.
+- [x] Confirmar n8n em `http://localhost:5978` e relay de demonstração conectado
+  para novas PRs/reviews do repositório de testes, sem filtro por PR/SHA.
+
+API disponível em `http://localhost:8080`. A ativação não criou PRs ou enviou
+mensagens de teste. Digest/SLA e autorização mantêm as condições anteriores.
+Nenhum workflow funcional foi modificado/exportado. Helpers de operação e
+validação permanecem em `tmp/demonstracao/`, ignorado pelo Git.
 
 ### Etapa S — Simplificação da persistência do n8n
 
@@ -749,14 +871,14 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | Nós | Função |
 | --- | --- |
 | `01–02`, `03A–03B`, `HTTP Request` | Recebem evento, separam e publicam alertas; `03A` inclui acesso à PR, recibo e verificação. |
-| `02A–02F` | Buscam/validam contexto OSV e fazem consulta complementar quando possível. |
+| `02A–02H` | Buscam e validam o contexto OSV, consultam diretamente se conhecem os pacotes e aguardam brevemente quando o gate detectou dependência nova. |
 | `O01`, `C01–C13`, `D00–D09` | Validam OSV posterior e reutilizam associação, reserva e confirmação das edições, preservando decisões. |
 | `V01–V07` | Consultam documento e verificação do recibo no núcleo, conferem identidade e classificam válido, inválido ou indisponível antes de `03A`. |
 | `05–07`, `07E` | Interações, assinatura Slack, confirmação e recusa. |
 | `07F–07G` | Encaminham ações `aprova_feedback_*` ao feedback, preservando as demais rotas. |
 | `08–09`, `10`, `10B` | Separam botões/formulários e abrem aprovação/revisão. |
 | `11`, `11R` | Validam decisão/justificativa ou preparam reexecução. |
-| `12–14`, `HTTP Request1` | Assinam pedido, consultam núcleo e publicam retorno. |
+| `12–16` | Assinam o pedido, consultam o núcleo e conferem o aviso no canal ou o retorno privado. |
 | `C01–C02` | Validam a configuração/correlação e escolhem publicação rastreável ou envio anterior. |
 | `C03–C07` | Reservam o controle de publicação, consultam correlação e bloqueiam duplicatas/ambiguidades. |
 | `C08–C08B`, `C09–C11B` | Persistem e conferem reserva; publicam pelo bot; classificam e conferem persistência do resultado. |
@@ -925,13 +1047,36 @@ do teste de uma mensagem com dados fictícios.
 
 ### Atualização posterior com OSV — Fase 4
 
+Quando a primeira leitura não encontra contexto e o alerta tem o motivo
+`dependencia_nova` sem uma lista de pacotes, `02G–02H` relê a tabela da mesma
+análise até oito vezes, com intervalo de um segundo. Sai da espera assim que
+há contexto aproveitável. Se o prazo se esgotar ou a leitura falhar, o alerta
+segue com o status de indisponibilidade. A atualização posterior pode
+complementar a mensagem quando a correlação está ligada.
+
+- [x] Espera publicada na Central e exportada com os testes do grafo. A
+  instância confirmou a espera com resultado simulado, o limite com leitura
+  real de uma chave fictícia e a passagem imediata sem dependência nova. O
+  ensaio foi isolado e não enviou mensagem no Slack.
+- [x] Teste integrado na [PR 12 de aPRova-TESTES](https://github.com/PI-GRUPO/aPRova-TESTES/pull/12).
+  O OSV respondeu HTTP 200 para `github.com/google/uuid v1.6.0`. Depois de
+  quatro releituras, a Central leu o resultado persistido e publicou o
+  primeiro alerta de aprovação no Slack já com o resumo da consulta.
+- [x] Removido o aviso separado de dependência. O OSV devolve o resultado
+  persistido para a consulta síncrona ou o encaminha à Central para compor ou
+  atualizar o alerta de aprovação. Os dois caminhos foram validados no n8n
+  em fluxo isolado, com persistência e destino simulados.
+- [x] Teste integrado na [PR 13 de aPRova-TESTES](https://github.com/PI-GRUPO/aPRova-TESTES/pull/13).
+  O OSV respondeu HTTP 200 sem avisos conhecidos. A Central publicou um
+  único alerta de aprovação, já com o resumo, após quatro releituras.
+
 Após guardar o snapshot em `aprova_osv_por_analise`, o workflow OSV passa por
 `06E–06F` e encaminha `dependencia_nova` enriquecido à Central usando
 `APROVA_SLACK_WORKFLOW_ID`, um evento por execução e sem aguardar retorno.
 A entrega usa um marcador interno entre subworkflows; não é um novo evento
 assinado do worker nem muda o contrato v1. Consultas síncronas com
 `modo_osv=contexto_aprovacao` não voltam à Central, evitando ciclo.
-O alerta independente de dependência e o retorno síncrono foram preservados.
+A Central exibe o resultado no alerta de aprovação.
 
 `O01` exige origem autenticada/normalizada e valida identidade do snapshot,
 tenant, análise, repositório, PR e SHA quando disponível nos dois lados.
@@ -1031,7 +1176,7 @@ justificativa também no backend. O pedido leva ID Slack e, quando disponível,
 e registra tentativas; migration 21 inclui
 `remote_action_attempts.justification`. A correlação confere análise,
 tenant, repositório e PR; justificativa também segue na review GitHub.
-Somente `202 + status=aceito` confirma a execução nesse contrato.
+Para aprovação ou pedido de alterações, `202 + status=aceito` confirma o envio da review ao GitHub.
 Timeout/conexão recusada não confirmam ação.
 
 O alerta de aprovação oferece os links **Abrir PR**, **Ver recibo** e
@@ -1123,9 +1268,9 @@ não significam ausência de vulnerabilidades.
 | Nós | Função |
 | --- | --- |
 | `01–03` | Entrada, validação e separação das dependências. |
-| `04–06` | Consulta paginada, consolidação de CVEs/completude e alerta. |
+| `04–06` | Consulta paginada, consolidação de CVEs/completude e resumo por dependência. |
 | `06A–06C` | Agrupamento, persistência e retorno do contexto por análise. |
-| `06D`, `07` | Separam contextualização e publicação do alerta. |
+| `06D` | Devolve o contexto persistido ao chamador síncrono. |
 | `06E–06F` | Encaminham contexto já persistido à Central, quando a correlação está habilitada e a consulta não é síncrona. |
 
 Data Table `aprova_osv_por_analise`: colunas String `chave` e

@@ -15,10 +15,11 @@ import (
 )
 
 func main() {
+	recibos, cadeia := recibosDeTeste()
 	servidor := &http.Server{
 		Addr:              "127.0.0.1:18080",
 		ReadHeaderTimeout: 5 * time.Second,
-		Handler:           api.NovoServidor(api.Opcoes{SessaoWeb: sessaoDeTeste(), Recibos: recibosDeTeste(), Dependencias: []api.Dependencia{{Nome: "postgres", Verificar: func(context.Context) error { return errors.New("dependência indisponível no cenário de teste") }}}}).Rotas(),
+		Handler:           api.NovoServidor(api.Opcoes{SessaoWeb: sessaoDeTeste(recibos, cadeia), Recibos: recibos, Dependencias: []api.Dependencia{{Nome: "postgres", Verificar: func(context.Context) error { return errors.New("dependência indisponível no cenário de teste") }}}}).Rotas(),
 	}
 	ctx, cancelar := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancelar()

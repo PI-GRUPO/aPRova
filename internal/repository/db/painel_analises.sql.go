@@ -164,8 +164,14 @@ func (q *Queries) GetWebRiskGate(ctx context.Context, arg GetWebRiskGateParams) 
 }
 
 const listWebAnalyses = `-- name: ListWebAnalyses :many
-SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, tr.started_at, rg.level AS risk_level
+SELECT tr.id, tr.tenant_id, tr.delivery_id, tr.repository, tr.pr_number, tr.head_sha, tr.author, tr.event_action, tr.state, tr.received_at, tr.created_at, tr.updated_at, tr.claimed_by, tr.lease_expires_at, tr.step_attempts, tr.last_approval_seen, tr.check_run_id, tr.started_at, rg.level AS risk_level, coalesce(floor(extract(epoch FROM (CURRENT_TIMESTAMP - espera.created_at)))::bigint, -1)::bigint AS espera_segundos
 FROM task_runs tr
+LEFT JOIN LATERAL (
+ SELECT ts.created_at FROM task_steps ts
+ WHERE tr.state='aguardando_aprovacao' AND ts.tenant_id=tr.tenant_id
+ AND ts.task_run_id=tr.id AND ts.to_state='aguardando_aprovacao'
+ ORDER BY ts.created_at DESC,ts.id DESC LIMIT 1
+) espera ON true
 LEFT JOIN risk_gates rg ON rg.task_run_id = tr.id AND rg.tenant_id = tr.tenant_id
 WHERE tr.tenant_id = $1
  AND tr.repository = ANY($2::text[])
@@ -216,6 +222,7 @@ type ListWebAnalysesRow struct {
 	CheckRunID       *int64     `json:"check_run_id"`
 	StartedAt        *time.Time `json:"started_at"`
 	RiskLevel        *string    `json:"risk_level"`
+	EsperaSegundos   int64      `json:"espera_segundos"`
 }
 
 func (q *Queries) ListWebAnalyses(ctx context.Context, arg ListWebAnalysesParams) ([]ListWebAnalysesRow, error) {
@@ -259,6 +266,7 @@ func (q *Queries) ListWebAnalyses(ctx context.Context, arg ListWebAnalysesParams
 			&i.CheckRunID,
 			&i.StartedAt,
 			&i.RiskLevel,
+			&i.EsperaSegundos,
 		); err != nil {
 			return nil, err
 		}

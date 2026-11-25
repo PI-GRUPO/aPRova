@@ -1,3 +1,5 @@
+export const caminhoRelatorioSemanal = "/relatorio-semanal";
+
 export const secoes = [
 	{ caminho: "/", titulo: "Visão geral", icone: "activity", fase: "F3/F4B" },
 	{ caminho: "/analises", titulo: "Análises", icone: "list", fase: "F4A" },
@@ -10,3 +12,9 @@ export const secoes = [
 	{ caminho: "/conta", titulo: "Conta e integrações", icone: "link", fase: "F3/F7A" },
 	{ caminho: "/sla", titulo: "Limites de SLA", icone: "clock", fase: "F7B" },
 ] as const;
+
+export function comInstalacao(caminho: string, instalacao: string | null) {
+	if (!instalacao) return caminho;
+	const parametros = new URLSearchParams({ installation_id: instalacao });
+	return `${caminho}?${parametros.toString()}`;
+}

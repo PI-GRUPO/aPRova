@@ -26,7 +26,8 @@ function fixture() {
   const id = '00000000-0000-4000-8000-000000000031', key = '0123456789abcdef';
   const payload = { versao: 1, id, task_run_id: event.meta.execution_id,
     tenant_id: event.meta.tenant_id, repositorio: event.repositorio.full_name,
-    numero_pr: event.pr.numero, head_sha: event.pr.sha, nivel: event.risco.nivel.toLowerCase(), key_id: key };
+    numero_pr: event.pr.numero, head_sha: event.pr.sha, nivel: event.risco.nivel.toLowerCase(), key_id: key,
+    sandbox: { compilou: true, testes_passaram: 1, testes_falharam: 0, tipo_falha: '' } };
   const bytes = Buffer.from(JSON.stringify(payload));
   const hash = crypto.createHash('sha256').update(bytes).digest('hex');
   event.recibo = { url: `https://publico.example/prefixo/receipts/${id}/verify`, hash };
@@ -82,6 +83,15 @@ test('veredito injetado no evento é descartado', () => {
 test('documento e cinco conferências coerentes produzem resultado válido', () => {
   const r = classify(); assert.equal(r.verificacao_recibo.status, 'valido');
   assert.equal(r.verificacao_recibo.fonte, 'nucleo'); assert.equal(r.consulta_recibo, undefined);
+  const { slack_payload: alerta } = run('03A |', r);
+  assert.match(alerta.text, /^Risco alto: merge bloqueado até aprovação humana/);
+  assert.match(alerta.text, /Commit analisado: [0-9a-f]{7}/);
+  assert.match(alerta.text, /Hash SHA-256: [0-9a-f]{64}/);
+  assert.ok(alerta.blocks.some(b => b.text?.text === 'Sandbox\nO código compilou: 1 teste passou e nenhum falhou.'));
+  const f = fixture();
+  failure(f, 2);
+  const { slack_payload: reprovado } = run('03A |', classify(f));
+  assert.ok(reprovado.blocks.every(b => !b.text?.text.startsWith('Sandbox\n')));
 });
 for (const field of ['tenant_id', 'task_run_id', 'repositorio', 'numero_pr', 'head_sha', 'nivel', 'key_id', 'id']) {
   test(`bytes assinados com ${field} diferente não são correlacionados, mesmo com payload legível forjado`, () => {

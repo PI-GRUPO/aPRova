@@ -3,6 +3,7 @@ package sessaoweb
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,5 +90,33 @@ func TestGitHubFalhaFechadaEmRevogacaoRateLimitERespostaInvalida(t *testing.T) {
 		if err == nil || strings.Contains(err.Error(), "detalhe-secreto") {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestGitHubRestringeOrigemEPreservaCaminhoDaBranch(t *testing.T) {
+	chamadas := 0
+	g := &GitHub{Cliente: &http.Client{Transport: transporteFunc(func(r *http.Request) (*http.Response, error) {
+		chamadas++
+		if r.URL.Scheme != "https" || r.URL.Host != "api.github.com" ||
+			r.URL.EscapedPath() != "/repos/equipe/projeto/rules/branches/release%2Fstable" ||
+			r.URL.Query().Get("per_page") != "100" || r.Header.Get("Authorization") != "Bearer teste" {
+			t.Fatal("requisição fora do contrato")
+		}
+		return respostaTeste([]any{}, http.StatusOK), nil
+	})}}
+
+	for _, caminho := range []string{"https://example.test/user", "//example.test/user", "user", "/repos/%zz"} {
+		var destino any
+		if err := g.get(t.Context(), "teste", caminho, &destino); !errors.Is(err, ErrGitHubIndisponivel) {
+			t.Errorf("caminho %q deveria ser recusado: %v", caminho, err)
+		}
+	}
+	if chamadas != 0 {
+		t.Fatal("caminho inválido chegou ao transporte")
+	}
+
+	var destino []any
+	if err := g.get(t.Context(), "teste", "/repos/equipe/projeto/rules/branches/release%2Fstable?per_page=100", &destino); err != nil || chamadas != 1 {
+		t.Fatal(err, chamadas)
 	}
 }

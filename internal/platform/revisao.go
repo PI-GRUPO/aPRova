@@ -11,6 +11,7 @@ const (
 
 // Review é o conteúdo de uma review a publicar num pull request.
 type Review struct {
-	Evento EventoReview
-	Corpo  string
+	Evento   EventoReview
+	Corpo    string
+	CommitID string
 }

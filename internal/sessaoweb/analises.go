@@ -221,11 +221,16 @@ func (s *Servidor) DetalharAnalise(w http.ResponseWriter, r *http.Request, id st
 	jsonResposta(w, 200, detalhe)
 }
 func (s *Servidor) repositorios(w http.ResponseWriter, r *http.Request) {
-	if _, ok := s.autenticar(w, r); !ok {
+	v, ok := s.autenticar(w, r)
+	if !ok {
 		return
 	}
 	q := r.URL.Query()
 	id, e := instalacaoWeb(q)
+	if e == nil && q.Get("detalhes") == "1" {
+		s.catalogoSaude(w, r, id, v)
+		return
+	}
 	if e != nil || id == 0 || parametrosWeb(q, parametroInstalacaoWeb) != nil {
 		falhar(w, 400, "instalação inválida")
 		return

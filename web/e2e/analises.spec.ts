@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Page, type Route, test } from "@playwright/test";
 
 import tentativaComHtml from "./fixtures/tentativa-com-html.json" with { type: "json" };
 
@@ -158,6 +158,11 @@ for (const largura of [1440, 390, 360])
 		await expect(saida.locator("script")).toHaveCount(0);
 		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();
+		await page.getByRole("link", { name: "Abrir Check Run", exact: true }).focus();
+		await page.keyboard.press("Tab");
+		await expect(page.getByRole("button", { name: "Ajuda: Motivo e evidências", exact: true })).toBeFocused();
+		await expect(page.getByRole("tooltip")).toContainText("O gate registra o nível decidido e as regras acionadas.");
+		await page.keyboard.press("Escape");
 		await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 		await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 		await page.getByRole("button", { name: "Testando sandbox", exact: true }).click();
@@ -191,6 +196,62 @@ test("filtros, ordenação, paginação e retorno preservam URL e snapshot", asy
 	await page.getByRole("button", { name: "Limpar filtros" }).click();
 	await expect(page).toHaveURL(/\/analises\?installation_id=42$/);
 });
+
+test("retorno do detalhe mantém a lista visível até atualizar em segundo plano", async ({ page }) => {
+	await simular(page);
+	await page.goto("http://127.0.0.1:18080/analises");
+	const itemAnterior = page.getByRole("link", { name: "equipe/projeto #12", exact: true });
+	await itemAnterior.click();
+	await expect(page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true })).toBeVisible();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route("**/api/analises?*", capturar, { times: 1 });
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	const consulta = await pendente;
+	await expect(itemAnterior).toBeVisible();
+	await expect(page.getByText("Carregando análises…")).toHaveCount(0);
+	await consulta.fulfill({
+		json: {
+			installation_id: 42,
+			snapshot: instante,
+			pagina: 1,
+			limite: 2,
+			total: 1,
+			tem_mais: false,
+			itens: [{ ...analise, numero_pr: 17 }],
+		},
+	});
+	await expect(page.getByRole("link", { name: "equipe/projeto #17", exact: true })).toBeVisible();
+	await expect(itemAnterior).toHaveCount(0);
+});
+
+test("revalidação negada descarta as leituras guardadas da sessão", async ({ page }) => {
+	await simular(page);
+	await page.goto("http://127.0.0.1:18080/analises?installation_id=42");
+	const item = page.getByRole("link", { name: "equipe/projeto #12", exact: true });
+	const titulo = page.getByRole("heading", { name: "equipe/projeto / PR #12", exact: true });
+	await item.click();
+	await expect(titulo).toBeVisible();
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	let capturar!: (rota: Route) => void;
+	const pendente = new Promise<Route>((resolve) => {
+		capturar = resolve;
+	});
+	await page.route("**/api/analises/*?*", capturar, { times: 1 });
+	await item.click();
+	const consulta = await pendente;
+	await expect(titulo).toBeVisible();
+	await consulta.fulfill({ status: 403, json: {} });
+	await expect(page.getByText("Você não tem acesso a esta instalação ou repositório.")).toBeVisible();
+	await expect(titulo).toHaveCount(0);
+	await page.route("**/api/analises?*", () => {});
+	await page.getByRole("link", { name: "Voltar às análises" }).click();
+	await expect(page.getByText("Carregando análises…")).toBeVisible();
+	await expect(item).toHaveCount(0);
+});
+
 test("análise substituída sem gate, histórico ou recibo não inventa evidências", async ({ page }) => {
 	await simular(page, {
 		...detalhe,
@@ -210,6 +271,53 @@ test("análise substituída sem gate, histórico ou recibo não inventa evidênc
 	await expect(page.getByText("Nenhuma tentativa de sandbox registrada.")).toBeVisible();
 	await expect(page.getByText("Recibo ainda não emitido para esta análise.")).toBeVisible();
 });
+
+const etapasAteSandbox = ["pendente", "mapeando_contexto", "testando_sandbox"];
+for (const { caso, estados, marcadores } of [
+	{
+		caso: "concluída",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aplicando", "concluido"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Concluída", "Concluída"],
+	},
+	{
+		caso: "aguardando aprovação",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aguardando_aprovacao"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Aguardando"],
+	},
+	{
+		caso: "interrompida no sandbox",
+		estados: [...etapasAteSandbox, "falhou"],
+		marcadores: ["Concluída", "Interrompida", "Falhou"],
+	},
+	{
+		caso: "rejeitada na revisão",
+		estados: [...etapasAteSandbox, "avaliando_risco", "aguardando_aprovacao", "rejeitado"],
+		marcadores: ["Concluída", "Concluída", "Concluída", "Concluída", "Rejeitada"],
+	},
+]) {
+	test(`linha do tempo mantém os checks das etapas registradas com análise ${caso}`, async ({ page }) => {
+		await simular(page, {
+			...detalhe,
+			analise: { ...analise, estado: estados.at(-1) },
+			etapas: estados.slice(1).map((para, i) => ({
+				id: i + 1,
+				de: estados.at(i),
+				para,
+				detalhe: "",
+				criado_em: instante,
+			})),
+		});
+		await page.goto(`/analises/${id}?installation_id=42`);
+		const etapas = page.locator(".timeline-analise .marcador-etapa");
+		await expect(etapas).toHaveText(marcadores);
+		const icones = etapas.locator("img");
+		await expect(icones).toHaveCount(marcadores.length);
+		await expect
+			.poll(() => icones.evaluateAll((imagens) => imagens.every((i) => i instanceof HTMLImageElement && i.complete && i.naturalWidth > 0)))
+			.toBe(true);
+	});
+}
+
 for (const status of [404, 403, 503])
 	test(`detalhe ${status} não mostra conteúdo privado e permite repetir`, async ({ page }) => {
 		await simular(page);

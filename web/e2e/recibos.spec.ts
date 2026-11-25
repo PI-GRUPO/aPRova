@@ -37,10 +37,10 @@ async function simular(page: Page, doc: unknown = documento, resultado: unknown 
 		await route.fulfill({ json: path.endsWith("/keys") ? { chaves } : path.endsWith("/verify") ? resultado : doc });
 	});
 }
-for (const largura of [1440, 390, 360]) {
+for (const largura of [1920, 1440, 390, 360]) {
 	test(`consulta, verificação, exportação e temas em ${largura}px`, async ({ page }) => {
 		await simular(page);
-		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
+		await page.setViewportSize({ width: largura, height: largura >= 768 ? 900 : 844 });
 		await page.goto("/recibos");
 		await page.getByLabel("UUID do recibo").fill(id);
 		await page.getByRole("button", { name: "Localizar recibo" }).click();
@@ -50,6 +50,15 @@ for (const largura of [1440, 390, 360]) {
 		await page.evaluate(() => document.fonts.ready);
 		for (const tema of ["escuro", "claro"]) {
 			if (tema === "claro") await page.getByRole("button", { name: "Usar tema claro" }).click();
+			if (largura === 1920) {
+				const borda = await page.locator(".recibo-assinado").evaluate((painel) => {
+					const estilo = getComputedStyle(painel, "::after");
+					return { repeticao: estilo.backgroundRepeat, imagem: estilo.backgroundImage, largura: parseFloat(estilo.width) };
+				});
+				expect(borda.repeticao).toBe("repeat-x");
+				expect(borda.imagem).not.toBe("none");
+				expect(borda.largura).toBeGreaterThan(558);
+			}
 			await page.screenshot({ path: `../.capturas-mcp/f2/local-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(
@@ -122,7 +131,7 @@ for (const status of [404, 500, 503])
 	});
 test("troca de UUID cancela consulta e limpa a verificação anterior", async ({ page }) => {
 	await simular(page);
-	await page.goto(`/recibos/${id}`);
+	await page.goto(`/recibos/${id}?installation_id=43`);
 	await page.getByRole("button", { name: "Verificar recibo", exact: true }).click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 	await page.route(`**/receipts/${anterior}`, async (route) => {
@@ -130,8 +139,10 @@ test("troca de UUID cancela consulta e limpa a verificação anterior", async ({
 		await route.fulfill({ json: { ...documento, id: anterior, recibo_anterior_id: null } });
 	});
 	await page.getByRole("link", { name: "Consultar recibo anterior" }).click();
+	await expect(page).toHaveURL(`/recibos/${anterior}?installation_id=43`);
 	await expect(page.getByText("Recibo válido.", { exact: true })).toHaveCount(0);
 	await page.getByRole("link", { name: "Voltar para recibos" }).click();
+	await expect(page).toHaveURL("/recibos?installation_id=43");
 	await expect(page.getByRole("heading", { name: "Recibos e auditoria", exact: true })).toBeVisible();
 	await page.unrouteAll({ behavior: "wait" });
 });
@@ -184,14 +195,54 @@ test("erro de rede na verificação não mantém resultado válido e permite rep
 	await verificar.click();
 	await expect(page.getByText("Recibo válido.", { exact: true })).toBeVisible();
 });
-test("ajuda mantém foco e consulta rejeita UUID inválido", async ({ page }) => {
+test("ajuda aparece ao passar o mouse ou focar o ícone", async ({ page }) => {
 	await simular(page);
 	await page.goto(`/recibos/${id}`);
 	const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
-	await ajuda.click();
-	await expect(page.getByRole("dialog", { name: "Conteúdo assinado", exact: true })).toBeVisible();
+	const balao = page.getByRole("tooltip");
+	await expect(balao).toBeHidden();
+	await ajuda.hover();
+	await expect(balao).toContainText("O conteúdo registrado só tem sua integridade confirmada após a verificação.");
+	await expect(balao).toBeVisible();
+	await expect(page.getByRole("dialog")).toHaveCount(0);
+	await balao.hover();
+	await expect(balao).toBeVisible();
+	await page.getByRole("heading", { name: /^Recibo \/ / }).hover();
+	await expect(balao).toBeHidden();
+	await ajuda.focus();
+	await expect(balao).toBeVisible();
+	await expect(ajuda).toHaveAccessibleDescription(/O conteúdo registrado/);
 	await page.keyboard.press("Escape");
+	await expect(balao).toBeHidden();
 	await expect(ajuda).toBeFocused();
+});
+
+test.describe("ajuda em tela de toque", () => {
+	test.use({ viewport: { width: 320, height: 844 }, hasTouch: true });
+	test("abre o balão ao tocar e fecha ao tocar fora", async ({ page }) => {
+		await simular(page);
+		await page.addInitScript(() => {
+			localStorage.setItem("aprova-tema", "claro");
+		});
+		await page.goto(`/recibos/${id}`);
+		const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
+		const balao = page.getByRole("tooltip");
+		await ajuda.tap();
+		await expect(balao).toBeVisible();
+		await expect(page.getByRole("dialog")).toHaveCount(0);
+		const caixa = await balao.boundingBox();
+		expect(caixa).not.toBeNull();
+		if (caixa) {
+			expect(caixa.x).toBeGreaterThanOrEqual(0);
+			expect(caixa.x + caixa.width).toBeLessThanOrEqual(320);
+		}
+		await page.getByRole("heading", { name: /^Recibo \/ / }).tap();
+		await expect(balao).toBeHidden();
+	});
+});
+
+test("consulta rejeita UUID inválido", async ({ page }) => {
+	await simular(page);
 	await page.goto("/recibos");
 	await page.getByLabel("UUID do recibo").fill("inválido");
 	await page.getByRole("button", { name: "Localizar recibo" }).click();

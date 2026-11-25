@@ -46,19 +46,9 @@ func (v *Verificador) Verificar(ctx context.Context, id string) (domain.Recibo, 
 		return domain.Recibo{}, Resultado{}, err
 	}
 
-	resultado := v.chaveiro.Verificar(Assinado{
-		Conteudo: []byte(recibo.Conteudo), Hash: recibo.Hash, Assinatura: recibo.Assinatura, IDChave: recibo.IDChave,
-	})
+	conteudo, resultado := v.chaveiro.verificarGuardado(recibo)
 	if !resultado.Valido {
 		return recibo, resultado, nil
-	}
-
-	conteudo, err := LerConteudo([]byte(recibo.Conteudo))
-	if err != nil {
-		return recibo, reprovado(FalhaConteudo, err.Error()), nil
-	}
-	if conteudo.ID != recibo.ID || conteudo.TaskRunID != recibo.TaskRunID || conteudo.TenantID != recibo.TenantID {
-		return recibo, reprovado(FalhaConteudo, "o conteúdo assinado não é o deste registro: id, task_run ou tenant diferentes"), nil
 	}
 
 	anterior, err := v.anteriorDe(ctx, recibo)
@@ -69,6 +59,22 @@ func (v *Verificador) Verificar(ctx context.Context, id string) (domain.Recibo, 
 		return recibo, reprovado(FalhaElo, quebra), nil
 	}
 	return recibo, Resultado{Valido: true}, nil
+}
+
+func (c *Chaveiro) verificarGuardado(recibo domain.Recibo) (Conteudo, Resultado) {
+	bruto := []byte(recibo.Conteudo)
+	resultado := c.Verificar(Assinado{Conteudo: bruto, Hash: recibo.Hash, Assinatura: recibo.Assinatura, IDChave: recibo.IDChave})
+	if !resultado.Valido {
+		return Conteudo{}, resultado
+	}
+	conteudo, err := LerConteudo(bruto)
+	if err != nil {
+		return Conteudo{}, reprovado(FalhaConteudo, err.Error())
+	}
+	if conteudo.ID != recibo.ID || conteudo.TaskRunID != recibo.TaskRunID || conteudo.TenantID != recibo.TenantID {
+		return Conteudo{}, reprovado(FalhaConteudo, "o conteúdo assinado não é o deste registro: id, task_run ou tenant diferentes")
+	}
+	return conteudo, resultado
 }
 
 func (v *Verificador) anteriorDe(ctx context.Context, recibo domain.Recibo) (*Anterior, error) {

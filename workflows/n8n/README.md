@@ -225,12 +225,18 @@ na instância, no projeto pessoal. Detalhes e limites estão no checklist.
 
 ### Correlação dos alertas da Central
 
-A Central possui um caminho de publicação pelo bot que guarda canal e
-timestamp para futuras atualizações da mensagem. Por padrão,
+A Central publica pelo bot e guarda o canal e o timestamp para editar a mensagem.
+A instância local está com a correlação habilitada. Em nova instalação,
 `APROVA_SLACK_CORRELACAO_HABILITADA=false` mantém o Incoming Webhook anterior.
-Os retornos dos formulários continuam no caminho existente. Com a correlação
-habilitada, o evento `aprovacao_registrada` atualiza o alerta da mesma análise;
-o OSV também pode atualizar o contexto quando a consulta termina depois.
+Com a correlação habilitada, o evento `aprovacao_registrada` atualiza o alerta da
+mesma análise. O OSV também pode atualizar o contexto de uma consulta posterior.
+Quando o GitHub aceita uma aprovação ou pedido de alterações iniciado num
+canal, o bot publica por `chat.postMessage` naquele mesmo canal um aviso
+com a pessoa e o link do PR. Recusas, erros e simulações continuam restritos
+ao solicitante por `chat.postEphemeral`. A justificativa fica na review.
+Esse retorno funciona independentemente da configuração de correlação.
+O workflow de feedback pula aprovações feitas pelo Slack, cujo formulário já
+coleta a justificativa.
 
 | Variável | Função |
 | --- | --- |
@@ -242,8 +248,9 @@ o OSV também pode atualizar o contexto quando a consulta termina depois.
 Crie as tabelas conforme [mensagens](recursos/tabela-slack-mensagens.json) e
 [controle](recursos/tabela-slack-controle.json), incluindo exatamente uma
 linha inicial de controle conforme `initialRows`. Associe `slackApi` ao nó
-`C09 | Publicar alerta pelo bot` e `D04 | Atualizar alerta após decisão`,
-com permissão para publicar e editar as mensagens do próprio bot no canal.
+`C09 | Publicar alerta pelo bot`, `D04 | Atualizar alerta após decisão` e
+`15 | Enviar retorno ao Slack`, com permissão para publicar e editar as
+mensagens do próprio bot no canal e enviar o retorno efêmero.
 Carregue as variáveis no container antes de habilitar a flag e valide o
 envio em destino autorizado. O export permanece inativo e sem credenciais.
 
@@ -273,8 +280,8 @@ para o mesmo canal e timestamp, com persistência do resultado conferida.
 Na Fase 4, OSV encaminha à Central o resultado já persistido de
 `dependencia_nova`, via `APROVA_SLACK_WORKFLOW_ID`, por evento e sem aguardar.
 Consultas síncronas de contexto da aprovação não fazem esse encaminhamento,
-evitando ciclo Central → OSV → Central. O alerta independente de dependência
-continua no caminho existente. `O01` valida estrutura, identidade, SHA quando
+evitando ciclo Central → OSV → Central. A Central exibe o resultado no alerta
+de aprovação. `O01` valida estrutura, identidade, SHA quando
 disponível, validade de 24h e até 5 minutos de relógio futuro.
 
 A atualização reutiliza a mesma associação e reserva de decisão, preservando
@@ -325,8 +332,11 @@ válido no n8n; a 6B confirmou o percurso automático `aguardando_aprovacao` →
 Central V01–V07 → alerta Slack com recibo válido, encerrando a pendência
 integrada da Fase 3. Nenhuma decisão humana foi enviada.
 
-O envio assinado a `/acoes-remotas` não
-segue redirects e mantém a confirmação restrita a `202 + status=aceito`.
+O alerta usa os títulos e textos de estado do aPRova no GitHub. Motivos e commit
+vêm do evento. Resumo do sandbox, hash e identificador da chave usam o recibo
+correlacionado e validado pelo núcleo. OSV e links continuam disponíveis no cartão.
+`202 + status=aceito` indica envio da review ao GitHub. O evento de decisão
+registrada aciona a remoção dos botões no alerta correlacionado.
 
 Interatividade dos botões: HTTPS público com
 `/webhook/aprova/slack/interacoes`, em **Interactivity & Shortcuts**.
@@ -408,9 +418,12 @@ sem publicar Digest. É pedido da automação, não evento emitido pelo worker.
 
 OSV é público, não altera risco e guarda contexto por análise na Data Table.
 Central reutiliza contexto por até 24h ou consulta dependências conhecidas
-antes do alerta. Sem resultado completo, informa indisponibilidade/parcial.
-Eventos fora de ordem não atualizam automaticamente alerta já publicado.
-Falta emissão automática de dependências e contexto na review do núcleo.
+antes do alerta. Quando o gate detectou uma dependência nova e o alerta chega
+sem a lista de pacotes, a Central pode esperar até oito intervalos de um
+segundo para o resultado da mesma análise. Sem resultado completo, o alerta
+informa indisponibilidade ou resultados parciais. Com a correlação habilitada,
+uma consulta posterior pode atualizar a mensagem. O contexto OSV ainda não é
+exibido na review do núcleo.
 
 Trello exige link completo da PR na descrição de um único card. Pesquisa,
 revalida e comenta, sem mover. Marcador tenant/evento evita duplicidade
@@ -583,7 +596,7 @@ correspondência inequívoca na instância. Nenhum vínculo de pessoa foi inferi
 | `N8N_SEGREDO_EVENTOS` | Go → Core, HMAC | vazio; obrigatório quando emissão habilitada | Segredo compartilhado por direção | Emissor e n8n |
 | `N8N_SEGREDO_ACOES` | n8n → API, HMAC | vazio; obrigatório para ações/consultas | Segredo compartilhado por direção | API e n8n |
 | `SLACK_SIGNING_SECRET` | Central/assistente: autenticar Slack | vazio bloqueia | Slack App / Basic Information | n8n |
-| `SLACK_INCOMING_WEBHOOK_URL` | Alertas, OSV, Trello e Digest | vazio impede envio | Incoming Webhook do Slack (segredo) | n8n |
+| `SLACK_INCOMING_WEBHOOK_URL` | Alertas, Trello e Digest | vazio impede envio | Incoming Webhook do Slack (segredo) | n8n |
 | `NODE_FUNCTION_ALLOW_BUILTIN` | Compose → Code | `crypto`, fixo no Compose | Requisito HMAC | n8n |
 | `N8N_BLOCK_ENV_ACCESS_IN_NODE` | Compose → Code | `false`, fixo no Compose | Permitir leitura de `$env` | n8n |
 | `APROVA_TRELLO_LISTA_BACKLOG_ID` | Trello: lista Backlog | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
@@ -817,3 +830,58 @@ No reteste integrado da mesma pergunta, o agente principal consultou as duas
 semanas corretas e enviou uma resposta Slack confirmada, sem duplicata. Esse
 reteste não acionou a recuperação; o teste manual forçou o primeiro erro e
 validou o segundo agente com modelo/API reais. Não confundir as evidências.
+
+### Teste com webhook GitHub real — PR 4
+
+A PR [PI-GRUPO/aPRova-TESTES #4](https://github.com/PI-GRUPO/aPRova-TESTES/pull/4)
+adicionou `github.com/google/uuid v1.6.0`; dez testes Go passaram localmente e
+no sandbox. O webhook real entrou via Smee restrito, com assinatura conferida
+pela API. Core encaminhou os eventos reais: OSV respondeu HTTP 200 sem avisos
+conhecidos, Central confirmou recibo válido/risco ALTO e Slack aceitou os avisos.
+
+O card [Teste de integração Trello e Slack](https://trello.com/c/kURLrZdr/1-teste-de-integra%C3%A7%C3%A3o-trello-e-slack)
+recebeu a URL completa da PR na descrição. A primeira análise chegou antes da
+confirmação desse vínculo e precisou de reprocessamento exclusivo do Trello.
+Um commit vazio posterior gerou nova análise, agora com card já vinculado:
+comentário no Trello e aviso Slack ocorreram automaticamente nessa rodada.
+O card permaneceu em Backlog e a PR em rascunho/aberta, sem merge ou aprovação.
+
+Nenhum workflow funcional foi alterado ou exportado por esse teste. As duas
+operações manuais auxiliares ficaram inativas no projeto pessoal, com escrita
+ou reprocessamento desabilitados ao terminar. Relay temporário encerrado:
+novas PRs locais precisam de encaminhamento GitHub → API ativo. Correlação
+continua desligada, portanto alerta de aprovação e resultado OSV são separados.
+
+### Sessão de demonstração local — 2026-11-16
+
+API, worker, banco, Redis e n8n foram conferidos ativos. O relay Smee da
+demonstração foi iniciado em segundo plano para novas PRs/reviews de
+`PI-GRUPO/aPRova-TESTES`, sem filtro por PR/branch/SHA e preservando a instalação
+permitida e a verificação HMAC da API. Não foi necessário reiniciar serviços.
+Ele permanece até ser encerrado ou o computador desligar, sem autostart.
+
+Na raiz do repositório, `python3 tmp/demonstracao/controle.py status` consulta
+saúde/conexão; os argumentos `parar` e `iniciar` controlam somente esse relay.
+Scripts, URL Smee, logs e entregas ficam locais/ignorados. Os caminhos temporários
+usados pelo cliente precisam continuar disponíveis durante a demonstração.
+Trello exige a URL da nova PR no card antes da análise ser consumida; o relay
+não cria o vínculo automaticamente. Flags e workflows funcionais preservados.
+
+Exemplo adicional criado a pedido do usuário: [PR 5](https://github.com/PI-GRUPO/aPRova-TESTES/pull/5)
+e [novo card](https://trello.com/c/3sCdjsML/2-demonstra%C3%A7%C3%A3o-pr-com-depend%C3%AAncia-nova-e-osv),
+com links recíprocos. Dez testes passaram localmente e no sandbox. Webhook
+real, risco ALTO, recibo válido, OSV sem avisos e Slack foram confirmados;
+Trello adicionou um comentário automático, sem mover o card. O evento ficou
+retido apenas até confirmar o vínculo. Relay foi liberado e permanece ligado.
+Auxiliar de criação/vínculo ficou inativo no projeto pessoal, com escrita
+desabilitada. Nenhum workflow funcional foi alterado/exportado.
+
+### Retomada para teste da API — 2026-11-19
+
+n8n foi iniciado a partir do container existente; PostgreSQL e Redis já estavam
+saudáveis. API e worker foram recompilados do código atual e recarregados com
+backup dos binários anteriores. Nenhuma migration/configuração foi alterada.
+`/health` e `/ready` retornaram 200 e a consulta HMAC de análises confirmou
+HTTP 200/instalação correta. API: `http://localhost:8080`; n8n:
+`http://localhost:5978`. Relay Smee de demonstração conectado, com o escopo
+anterior do repositório de testes. Não foram criadas PRs/mensagens de teste.

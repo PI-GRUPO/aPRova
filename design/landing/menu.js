@@ -10,7 +10,9 @@ function temaAtual() {
 }
 
 function atualizarRotuloTema() {
-  botaoTema.setAttribute("aria-label", ROTULO_TEMA[temaAtual()]);
+  const rotulo = ROTULO_TEMA[temaAtual()];
+  botaoTema.setAttribute("aria-label", rotulo);
+  botaoTema.setAttribute("title", rotulo);
 }
 
 function guardarTema(tema) {
@@ -39,8 +41,9 @@ function esconderTopoAoDescer() {
 function marcarSecaoAtual(entradas) {
   for (const entrada of entradas) {
     if (!entrada.isIntersecting) continue;
+    const secaoAtual = entrada.target.id === "alem-da-decisao" ? "como-funciona" : entrada.target.id;
     for (const link of document.querySelectorAll('.topo nav a[href^="#"]')) {
-      if (link.hash === `#${entrada.target.id}`) link.setAttribute("aria-current", "true");
+      if (link.hash === `#${secaoAtual}`) link.setAttribute("aria-current", "true");
       else link.removeAttribute("aria-current");
     }
   }

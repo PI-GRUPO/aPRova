@@ -139,6 +139,16 @@ func TestApagarOReciboDoMeioDaCadeiaFazOTerceiroFalharNoElo(t *testing.T) {
 	if _, resultado, err := verificador.Verificar(t.Context(), recibos[0].ID); err != nil || !resultado.Valido {
 		t.Errorf("o primeiro continua válido: %+v, erro %v", resultado, err)
 	}
+	conteudo, err := receipt.LerConteudo([]byte(recibos[0].Conteudo))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cadeia := receipt.NovoVerificadorDeCadeia(receipt.NovoChaveiro(assinadorDeTeste(t).ChavePublica()), banco.repo)
+	resumo, err := cadeia.VerificarCadeia(t.Context(), conteudo.TenantID, []string{conteudo.Repositorio})
+	if err != nil || resumo.Valida || resumo.Falha != receipt.FalhaElo || resumo.Verificados != 1 ||
+		resumo.PrimeiroReciboInvalido != recibos[2].ID || resumo.ReciboAnteriorAusente != recibos[1].ID {
+		t.Fatalf("cadeia inteira após remoção: %+v, erro %v", resumo, err)
+	}
 }
 
 func TestEmissoesSimultaneasComOEmissorRealFormamUmaCadeiaQueVerifica(t *testing.T) {

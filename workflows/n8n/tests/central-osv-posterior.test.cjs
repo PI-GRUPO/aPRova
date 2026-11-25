@@ -97,8 +97,8 @@ for (const choice of ['aprovada', 'alteracoes_solicitadas']) {
     assert.equal(p.correlacao_alerta.acao, 'atualizar_osv');
     assert.ok(actions(p.slack_payload).every(a => !['aprovar', 'solicitar_alteracao'].includes(a.action_id)));
     assert.ok(actions(p.slack_payload).some(a => a.action_id === 'verificar_recibo'));
-    assert.match(p.slack_payload.text, choice === 'aprovada' ? /Aprovação registrada/ : /Alterações solicitadas/);
-    assert.equal(p.slack_payload.blocks.filter(b => b.text?.text.startsWith(choice === 'aprovada' ? 'Aprovação registrada pelo núcleo' : 'Alterações solicitadas pelo núcleo')).length, 1);
+    assert.match(p.slack_payload.text, choice === 'aprovada' ? /Aprovação registrada/ : /Alteração solicitada/);
+    assert.equal(p.slack_payload.blocks.filter(b => b.text?.text.startsWith(choice === 'aprovada' ? 'Aprovação registrada pelo núcleo' : 'Pedido de alterações registrado pelo núcleo')).length, 1);
   });
 }
 test('decisão depois do OSV usa o resumo novo e remove os botões sem apagar recibos', () => {

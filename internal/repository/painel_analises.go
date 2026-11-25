@@ -44,7 +44,11 @@ func (r *RepositorioPostgres) ListarAnalisesWeb(ctx context.Context, f domain.Fi
 			return e
 		}
 		for _, l := range linhas {
-			p.Itens = append(p.Itens, domain.AnaliseWeb{ID: l.ID, Repositorio: l.Repository, NumeroPR: l.PrNumber, SHAHead: l.HeadSha, Autor: l.Author, Estado: l.State, Nivel: l.RiskLevel, RecebidoEm: l.ReceivedAt, CriadoEm: l.CreatedAt, AtualizadoEm: l.UpdatedAt})
+			var espera *int64
+			if l.EsperaSegundos >= 0 {
+				espera = &l.EsperaSegundos
+			}
+			p.Itens = append(p.Itens, domain.AnaliseWeb{EsperaSegundos: espera, ID: l.ID, Repositorio: l.Repository, NumeroPR: l.PrNumber, SHAHead: l.HeadSha, Autor: l.Author, Estado: l.State, Nivel: l.RiskLevel, RecebidoEm: l.ReceivedAt, CriadoEm: l.CreatedAt, AtualizadoEm: l.UpdatedAt})
 		}
 		p.TemMais = int64(f.Pagina)*int64(f.Limite) < p.Total
 		return nil

@@ -78,6 +78,24 @@ func TestReviewHumanoNoGitHubTemOrigemGitHub(t *testing.T) {
 	}
 }
 
+func TestReviewDoPainelSoUsaIdentidadeDoTextoQuandoVeioDoApp(t *testing.T) {
+	const id = "00000000-0000-4000-8000-000000000001"
+	const texto = "Aprovado por @revisora via Painel:\n\n<!-- aprova-analise: " + id + " -->\n\nRevisado."
+	registro := novoRegistroFalso()
+	w := enviarReview(t, registro, slugDeTeste, corpoReviewDe("approved", slugDeTeste+"[bot]", texto))
+	if w.Code != http.StatusAccepted || registro.quantidadeDeRevisoes() != 1 {
+		t.Fatal(w.Code, registro.quantidadeDeRevisoes())
+	}
+	decisao := registro.revisoes[0]
+	if decisao.TaskRunID != id || decisao.Revisor != "revisora" || decisao.Origem != domain.OrigemPainel || decisao.Justificativa != "Revisado." {
+		t.Fatalf("review do painel: %+v", decisao)
+	}
+	w = enviarReview(t, registro, slugDeTeste, corpoReviewDe("approved", "outro[bot]", texto))
+	if w.Code != http.StatusNoContent || registro.quantidadeDeRevisoes() != 1 {
+		t.Fatal(w.Code, registro.quantidadeDeRevisoes())
+	}
+}
+
 func TestReviewHumanoNoGitHubGravaOCorpoInteiroComoJustificativa(t *testing.T) {
 	registro := novoRegistroFalso()
 	corpo := "Conferi o cálculo do frete.\n\nAprovado por @mallory via Slack"

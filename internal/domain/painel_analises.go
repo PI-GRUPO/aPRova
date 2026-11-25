@@ -12,16 +12,17 @@ type FiltroAnalisesWeb struct {
 	Pagina, Limite        int32
 }
 type AnaliseWeb struct {
-	ID           string    `json:"id"`
-	Repositorio  string    `json:"repositorio"`
-	NumeroPR     int32     `json:"numero_pr"`
-	SHAHead      string    `json:"sha_head"`
-	Autor        string    `json:"autor"`
-	Estado       string    `json:"estado"`
-	Nivel        *string   `json:"nivel"`
-	RecebidoEm   time.Time `json:"recebido_em"`
-	CriadoEm     time.Time `json:"criado_em"`
-	AtualizadoEm time.Time `json:"atualizado_em"`
+	EsperaSegundos *int64    `json:"espera_segundos,omitempty"`
+	ID             string    `json:"id"`
+	Repositorio    string    `json:"repositorio"`
+	NumeroPR       int32     `json:"numero_pr"`
+	SHAHead        string    `json:"sha_head"`
+	Autor          string    `json:"autor"`
+	Estado         string    `json:"estado"`
+	Nivel          *string   `json:"nivel"`
+	RecebidoEm     time.Time `json:"recebido_em"`
+	CriadoEm       time.Time `json:"criado_em"`
+	AtualizadoEm   time.Time `json:"atualizado_em"`
 }
 type PaginaAnalisesWeb struct {
 	InstallationID int64        `json:"installation_id"`

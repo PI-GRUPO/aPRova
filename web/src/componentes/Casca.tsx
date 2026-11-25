@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { secoes } from "@/app/rotas";
+import { Link, matchPath, NavLink, Outlet, useLocation } from "react-router";
+import { caminhoRelatorioSemanal, comInstalacao, secoes } from "@/app/rotas";
 import { useSessao } from "@/app/sessao";
 import { useTema } from "@/app/tema";
 import { Sair } from "@/paginas/Acesso";
 import { Ativo } from "./Ativo";
 import { Botao, Modal } from "./Primitivos";
+
+const secoesDoMenu = secoes.filter((secao) => !["/configuracao", "/sugestoes", "/sla"].includes(secao.caminho));
 
 function Tema() {
 	const { tema, alternar } = useTema();
@@ -24,7 +26,12 @@ function Tema() {
 }
 export function Casca() {
 	const { sessao } = useSessao();
-	const { pathname } = useLocation();
+	const { pathname, search } = useLocation();
+	const noRelatorio = matchPath(caminhoRelatorioSemanal, pathname) !== null;
+	const instalacao = new URLSearchParams(search).get("installation_id");
+	function destino(caminho: string) {
+		return comInstalacao(caminho, instalacao);
+	}
 	const [menu, definirMenu] = useState(false);
 	const anterior = useRef(pathname);
 	useEffect(() => {
@@ -34,20 +41,30 @@ export function Casca() {
 	function fecharMenu() {
 		definirMenu(false);
 	}
-	const links = (de = 0, ate: number = secoes.length) =>
-		secoes.slice(de, ate).map((s) => (
-			<NavLink key={s.caminho} to={s.caminho} end={s.caminho === "/"} className="item-nav" onClick={fecharMenu}>
-				<Ativo nome={s.icone} ativo={pathname === s.caminho || (s.caminho !== "/" && pathname.startsWith(`${s.caminho}/`))} />
-				<span>{s.titulo}</span>
-			</NavLink>
-		));
+	const links = (de = 0, ate = secoesDoMenu.length) =>
+		secoesDoMenu.slice(de, ate).map((s) => {
+			const naSecao = matchPath({ path: s.caminho, end: s.caminho === "/" }, pathname) !== null;
+			const ativa = naSecao || (s.caminho === "/" && noRelatorio);
+			return (
+				<Link
+					key={s.caminho}
+					to={destino(s.caminho)}
+					className={ativa ? "item-nav active" : "item-nav"}
+					aria-current={naSecao ? "page" : ativa ? "location" : undefined}
+					onClick={fecharMenu}
+				>
+					<Ativo nome={s.icone} ativo={ativa} />
+					<span>{s.titulo}</span>
+				</Link>
+			);
+		});
 	return (
 		<div className="aplicacao">
 			<a className="pular" href="#conteudo">
 				Pular para o conteúdo
 			</a>
 			<aside className="lateral">
-				<Link to="/" aria-label="aPRova — Visão geral">
+				<Link to={destino("/")} aria-label="aPRova — Visão geral">
 					<Ativo nome="marca" />
 				</Link>
 				<nav aria-label="Principal" className="menu-desktop">
@@ -102,7 +119,7 @@ export function Casca() {
 				</div>
 				<nav aria-label="Principal no celular">
 					{links(0, 3)}
-					<NavLink to="/regras" className="item-nav">
+					<NavLink to={destino("/regras")} className="item-nav">
 						Regras
 					</NavLink>
 				</nav>

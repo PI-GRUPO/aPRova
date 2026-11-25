@@ -1,20 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { alterarVinculo, consultarVinculo } from "@/servicos/vinculo-slack";
 import { Botao } from "./Primitivos";
-export function VinculoSlack() {
-	const [vinculo, definir] = useState<Awaited<ReturnType<typeof consultarVinculo.executar>>>();
+export function VinculoSlack({ usuario }: { usuario: number }) {
+	const [vinculo, definir] = useState<Awaited<ReturnType<typeof consultarVinculo>>>();
 	const [erro, setErro] = useState("");
 	const [revisao, atualizar] = useState(0);
 	const [enviando, setEnviando] = useState(false);
 	const trava = useRef(false);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: revisao solicita a leitura do vínculo persistido.
 	useEffect(() => {
-		if (!consultarVinculo.disponivel) return;
 		const c = new AbortController();
 		definir(undefined);
 		setErro("");
-		consultarVinculo
-			.executar(c.signal)
+		consultarVinculo(usuario, c.signal)
 			.then((v) => {
 				if (!c.signal.aborted) definir(v);
 			})
@@ -24,7 +22,7 @@ export function VinculoSlack() {
 		return () => {
 			c.abort();
 		};
-	}, [revisao]);
+	}, [revisao, usuario]);
 	async function alterar() {
 		if (trava.current || vinculo === undefined || !alterarVinculo.disponivel) return;
 		trava.current = true;
@@ -44,14 +42,12 @@ export function VinculoSlack() {
 		<section className="painel-sessao">
 			<h2>Conectar Slack</h2>
 			<div>
-				{!consultarVinculo.disponivel ? (
-					<p>O vínculo com o Slack ainda está indisponível.</p>
-				) : erro ? (
+				{erro ? (
 					<p role="alert">{erro}</p>
 				) : vinculo === undefined ? (
 					<p role="status">Consultando vínculo…</p>
 				) : (
-					<p>{vinculo ? `${vinculo.usuarioSlack} · ${vinculo.workspace}` : "Nenhuma conta Slack vinculada."}</p>
+					<p>{vinculo ? "Vínculo configurado para seu login GitHub." : "Nenhuma conta Slack vinculada."}</p>
 				)}
 				{erro && (
 					<Botao

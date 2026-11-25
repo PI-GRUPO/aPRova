@@ -167,6 +167,7 @@ func (p *Publicador) gravarCheckRun(ctx context.Context, taskRun domain.TaskRun,
 	if id == 0 {
 		return p.criarCheckRun(ctx, taskRun, checkRun)
 	}
+	checkRun.IDExterno = taskRun.ID
 	dono, repositorio := donoERepositorio(taskRun)
 	return p.opcoes.GitHub.AtualizarCheckRun(ctx, taskRun.TenantID, dono, repositorio, id, checkRun)
 }

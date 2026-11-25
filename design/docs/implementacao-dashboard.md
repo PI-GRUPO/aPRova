@@ -1,6 +1,218 @@
 # Implementação do dashboard aPRova
 
-## Escopo atual — orientação da usuária em 16/11/2026
+Configuração do gate, Sugestões da IA e Limites de SLA ficam fora do menu em
+desktop e no celular. As rotas continuam disponíveis por endereço direto.
+
+Em Conta e integrações, o painel de vínculo com o Slack está oculto. A página
+exibe a identidade GitHub e as instalações autorizadas.
+
+## Balões de ajuda
+
+Os pontos de interrogação de análises, recibos e gestão exibem a explicação
+junto ao ícone com mouse, foco do teclado ou toque. A ajuda usa o componente
+compartilhado `Ajuda` e fecha com Escape ou ao tocar fora.
+
+## Navegação do relatório semanal
+
+Base `7b151e4`, card #67. O botão Consultar relatório semanal fica à direita
+do seletor de instalação, com ícone de calendário e fundo branco no tema
+escuro. A rota `/relatorio-semanal` mantém a Visão geral ativa no menu. O
+link Visão geral da trilha preserva a instalação e o repositório ao retornar.
+O relatório consulta `GET /api/web/relatorio-semanal`.
+
+Biome, TypeScript/build e 42 cenários Playwright passaram. A suíte conferiu
+o alinhamento, o ícone, a cor no tema escuro, a seleção no menu e o retorno
+pela trilha em desktop e mobile. Capturas dos dois temas em
+`.capturas-mcp/dashboard/instalacao-overview-*` e `.capturas-mcp/f3/local-semanal-*`.
+
+## Formato da espera na Visão geral
+
+Base `145247c`, cards #67–#68, nós `9:22` e `15:1789`. O indicador de espera
+mais antiga e a fila de pendências exibem minutos completos. A partir de 60
+minutos o formato inclui horas, como `1h 0m`, e a partir de 24 horas inclui
+dias, como `1d 0h 0m`. O indicador usa `GET /api/metricas` e a fila usa
+`GET /api/analises`. A tabela desktop e os cartões mobile usam a mesma
+formatação.
+
+Biome, TypeScript/build e 24 cenários Playwright passaram, incluindo a
+virada de hora e de dia e a exibição de `5d 3h 25m` em desktop e mobile.
+Capturas dos dois temas em `.capturas-mcp/dashboard/local-overview-*`.
+
+## Ajustes da revisão de métricas, paginação e recibos
+
+Base `8339adb`, cards #66–#68 e #70. A validação do corte compara o instante em
+nanosegundos e reconhece diferentes fusos e representações da fração. O valor
+original da API segue na URL de paginação.
+
+A Visão geral usa **Proporção de risco alto** para a divisão de análises de
+risco alto pelo total avaliado. Os links da Visão geral e da coleção levam
+`installation_id` ao recibo, que preserva a instalação ao voltar ou abrir o
+elo anterior. O contrato público do recibo continua por UUID.
+
+O catálogo lê diretamente `checks`, `contents` e `pull_requests`. A fila
+serializa os parâmetros do link de análise com `URLSearchParams.toString()`
+e o mapa chama a paginação dentro dos callbacks de clique.
+
+Biome, TypeScript/build e 86 cenários Playwright passaram. A suíte verificou a
+equivalência entre fusos, a rejeição de diferença de um nanosegundo, a métrica
+de risco alto e o contexto de instalação nos links e no retorno. Capturas em
+`.capturas-mcp/dashboard/leituras-overview-*` para desktop e mobile nos dois temas.
+Após os ajustes de catálogo, fila e mapa, Biome, build e 45 cenários Playwright
+passaram, incluindo a exibição exclusiva das permissões conhecidas do catálogo.
+
+## Parâmetro SQL da paginação de auditoria e recibos
+
+Base `ded799a`. As consultas incorporadas à API usam `@deslocamento` no `OFFSET`
+para que o nome do parâmetro seja aceito pelo analisador SQL. O repositório
+mantém o cálculo `(página - 1) × limite`. O teste `TestLeiturasDoPainelNoPostgres`
+conferiu páginas distintas da auditoria e dos recibos em PostgreSQL descartável.
+
+## Reaproveitamento de leituras na navegação
+
+Base `a461be7`, cards #66–#68. A Visão geral (métricas, fila e catálogo), a lista
+de Análises e o detalhe reaproveitam a última resposta validada da mesma
+consulta enquanto fazem uma nova leitura da API. O primeiro acesso e consultas
+sem resposta recente exibem carregamento. O cache fica em memória, com até
+40 entradas por consulta e validade de dez minutos desde a última resposta
+validada. Instalação, repositório, filtros, página e corte de paginação fazem
+parte das chaves aplicáveis.
+
+O provedor de sessão substitui o cache ao encerrar a sessão ou mudar a
+identidade ou as instalações autorizadas. Uma rejeição de acesso durante a
+revalidação descarta as leituras guardadas. A API continua validando o acesso
+em cada atualização. A lógica fica em `web/src/app/cache-de-leituras.ts` e no
+hook `useLeitura`. As telas e os contratos HTTP existentes são reutilizados.
+
+Biome e build passaram. A regressão Chromium aprovou 149 cenários e os dois
+cenários de Análises restantes passaram após ajustar a interceptação das
+consultas ao build de produção. Os testes cobrem o retorno com resposta
+pendente, a atualização dos resultados e o descarte após HTTP 403. Capturas
+em desktop e mobile nos dois temas em `.capturas-mcp/f4a/local-*` e
+`.capturas-mcp/dashboard/leituras-overview-*`.
+
+### Repositórios, coleção de recibos, regras e auditoria
+
+Base `ad9ee5f`, cards #70–#73. As quatro leituras usam `useLeitura` com o mesmo
+cache em memória por sessão e revalidação em segundo plano. Repositórios usa
+instalação e página. Coleção, regras e auditoria usam a instalação e seus
+filtros de consulta, incluindo página e corte quando aplicáveis. A instalação
+padrão e a mesma instalação explícita na URL compartilham a entrada de cache.
+
+Biome, TypeScript/build e 88 cenários Playwright passaram. Cinco cenários
+cobrem o retorno a cada tela com a API pendente e o carregamento de um filtro
+novo de auditoria. A suíte exercitou os handlers Go com provedor de teste,
+incluindo exportação de recibos e fluxos de sessão.
+
+As capturas em `.capturas-mcp/dashboard/cache-de-leituras/` comparam a
+resposta da API com o retorno durante a revalidação. As quatro telas
+preservaram a apresentação em 1440 px e 390 px nos temas claro e escuro.
+
+## Redirecionamento após expiração da sessão GitHub
+
+Base `432b527`, F3B, card #65. O provedor de sessão do dashboard abre `/entrar`
+quando chega o prazo de `expira_em`, quando uma consulta autenticada recebe HTTP
+401 ou quando a revalidação ao recuperar o foco detecta a perda da sessão. O
+redirecionamento substitui a página atual no histórico e a tela de login
+oferece uma nova entrada pelo GitHub. Erros temporários continuam recuperáveis na
+página atual. A interface usa a tela existente (`9:2` e `15:1769`) e o contrato
+de sessão documentado em [F3](dashboard-f3.md).
+
+A lógica está em `web/src/app/sessao.tsx` e `web/src/servicos/http.ts`. A
+regressão em `web/e2e/sessao.spec.ts` cobre o vencimento com a página aberta,
+o retorno à aba com respostas HTTP 200 sem autenticação ou 401 e o tratamento
+de falhas temporárias. As capturas locais em `.capturas-mcp/login/local-*`
+conferem a tela em desktop e mobile, nos temas claro e escuro. As referências
+Figma incluem um aviso de protótipo que a tela de produção já omitia.
+
+Instalação pelo lockfile, Biome, TypeScript e build aprovados. No Chromium,
+143 cenários passaram na suíte completa. Os três cenários restantes passaram
+na reexecução após isolar a consulta de vínculo Slack nos testes de Conta. A
+validação usou respostas controladas e handlers Go com provedor de teste.
+
+### Revalidação em segundo plano
+
+O cookie mantém o login ao recarregar a página dentro do prazo de `expira_em`
+(até oito horas, limitado pela validade do token). Ao voltar para a aba, o
+provedor confere a sessão em segundo plano e mantém os dados exibidos enquanto
+aguarda. Eventos simultâneos de foco e restauração da página compartilham a
+consulta pendente. Os testes cobrem a resposta demorada, o relatório já exibido
+durante a revalidação e a persistência após recarregar a página com os handlers
+Go de teste. Biome, build e 51 cenários Playwright de sessão, login, navegação
+e leituras passaram.
+
+### Entrada manual após sair ou expirar
+
+Ao vencer a sessão ou confirmar **Sair**, o dashboard encerra a sessão da aba e
+abre `/entrar`. O logout confirmado também retorna as outras abas à tela de
+login. A tela oferece **Continuar com GitHub** enquanto a disponibilidade é
+consultada e em falhas transitórias. A autorização começa quando a pessoa
+aciona esse link. Depois de encerrar a sessão, os eventos de foco e restauração
+da página deixam de revalidá-la. Biome e build aprovados. A regressão completa
+passou com 148 testes e a última execução focada de login e sessão passou com
+26 testes, incluindo cancelamento no vencimento, saída em duas abas e nova
+autenticação com o provedor de teste.
+
+## Instalação selecionada na Visão Geral em 22/11/2026
+
+Os links do menu e da marca descartavam `installation_id`. Ao voltar para a Visão Geral, as consultas usavam a primeira instalação autorizada da sessão. Isso podia mostrar métricas de outra conta, com valores diferentes dos repositórios que a pessoa estava acompanhando.
+
+A navegação desktop/mobile e o retorno da tela de regras preservam a instalação na URL. A Visão Geral oferece um seletor quando a sessão possui mais de uma instalação. Trocar a instalação limpa os filtros e cortes anteriores e recarrega métricas, catálogo e fila no novo escopo. A autorização continua sendo conferida pelos handlers existentes. Os 15 testes Playwright de leituras e Visão Geral passaram.
+
+Foram alterados `web/src/componentes/Casca.tsx`, `web/src/componentes/Gestao.tsx`, `web/src/paginas/VisaoGeral.tsx` e o estilo do seletor em `web/src/estilos/visao-geral.css`. A regressão em `web/e2e/leituras-painel.spec.ts` usa duas instalações autorizadas, com totais diferentes, e verifica navegação, troca, recarga e retorno. Instalação pelo lockfile, Biome e build passaram. As capturas de desktop/mobile nos dois temas ficam em `.capturas-mcp/dashboard/instalacao-overview-*`. A validação usa os handlers reais com identidades e fontes de teste. A sessão GitHub da pessoa no navegador permanece como verificação integrada pendente.
+
+## Leituras do dashboard em 21/11/2026
+
+Branch `feat/web-dashboard`, base `dea7211`. Este lote autoriza consultas de backend para as telas existentes. Os registros das fases abaixo descrevem o estado das respectivas datas. Os parâmetros, DTOs, limites, unidades e critérios de contagem estão no [OpenAPI do dashboard](dashboard-openapi.json).
+
+| Tela | Fonte de produção e alcance |
+| --- | --- |
+| Visão geral, mapa e fila (#67–68) | `GET /api/metricas` agrega recebimentos, níveis finais, falhas por tentativa, desfechos das bloqueadas, duração média observável e série diária. O estoque em aprovação e o último recibo consideram todo o escopo autorizado. A fila e o detalhe do dia usam a lista canônica de análises. A espera em segundos só aparece quando há transição registrada. O relatório semanal permanece em `GET /api/web/relatorio-semanal`. |
+| Coleção privada de recibos (#70) | `GET /api/web/recibos` pagina por emissão e UUID, com período, repositório e corte de inserção. O painel exporta UUID, repositório, PR, SHA, emissão, identificador da chave e hash SHA-256 em JSON ou CSV, até 500 por arquivo. Consulta pública por UUID, download dos bytes assinados, chaves e verificação individual permanecem nos contratos de recibos. |
+| Regras e calibração | `GET /api/web/regras` consulta motivos acionados por identificador e nível, aprovações registradas para o SHA e até 50 avaliações com nível determinístico, nível final e estado da calibração. Regras sem ocorrências não têm registro no agregado. |
+| Auditoria | `GET /api/web/auditoria` consulta tentativas remotas persistidas, inclusive recusadas, com filtros e total no escopo. A fonte atual registra ações originadas no Slack. A ordenação usa instante e ID. A decisão de uma tentativa já existente pode passar de aceita a falha entre consultas. |
+| Conta (#77) | `GET /api/web/vinculo-slack` informa à própria pessoa se o login GitHub revalidado consta no mapa usado pela API. Identificadores do Slack ficam no servidor. |
+| Repositórios | `GET /api/repositorios` preserva o catálogo e aceita `detalhes=1` para consultar dez repositórios por página. Mostra o último recebimento e as permissões declaradas pela instalação. A proteção considera o check aPRova da mesma App na branch padrão, por proteção clássica ou regra efetiva. Dados ocultos, ambíguos ou incompletos aparecem como não confirmados. |
+
+A consulta detalhada lista somente repositórios ativos. Em cada página, o painel alerta quando a branch padrão permite concluir que o check do aPRova não é obrigatório e explica por que uma proteção ficou sem confirmação. A tela mostra a idade e o horário UTC do último recebimento. Após 24 horas sem análises, orienta a conferir as entregas do webhook se houve PR recente. As permissões declaradas são comparadas ao nível necessário para publicar, consultar PRs e verificar a proteção. Os links levam às configurações do GitHub para revisão manual.
+
+Saúde de repositórios (#71), base `fe8a331`, tela `9:1185` e mobile `15:2952`. A API e os testes estão em `internal/sessaoweb`, a visualização em `web/src/componentes/SaudeRepositorios.tsx` e o cenário de navegador em `web/e2e/gestao.spec.ts`. Passaram os testes Go de sessão e API com detector de corrida, o lint, o build e cinco cenários Playwright. A validação usou respostas controladas do GitHub e os handlers locais do painel. Falta validar a versão publicada com uma instalação real.
+
+**Limites das fontes.** Versão, histórico e configuração efetivamente usada pelo worker carecem de registro consultável por repositório. Propostas e seus estados carecem de fonte persistida no núcleo. Os limites de SLA pertencem aos timers do n8n. O recorte de recibos acessíveis pode omitir elos de outros repositórios e o núcleo não publica um inventário assinado da cadeia inteira. Essas leituras permanecem indisponíveis em produção. Demonstrações de gestão e métricas continuam identificadas em desenvolvimento com `APROVA_DASHBOARD_MOCKS=1`. O catálogo e a fila exigem autorização mesmo com a demonstração ativa.
+
+**Arquivos do lote.** Rotas e composição em `cmd/api`, `internal/api` e `internal/sessaoweb`. Consultas em `internal/repository/painelsql`, `queries/painel_analises.sql`, `internal/repository` e modelo em `internal/domain`. Adapters, componentes e páginas em `web/src`. Cobertura em `internal/sessaoweb`, `tests/integration/postgres` e `web/e2e`. As telas utilizam os frames já inventariados da página desktop `5:2` e variantes mobile/claro.
+
+<details>
+<summary>Arquivos alterados nesta rodada</summary>
+
+- `cmd/api/` — `main.go`.
+- `design/docs/` — `dashboard-openapi.json`, `implementacao-dashboard.md`.
+- `internal/api/` — `servidor.go`.
+- `internal/domain/` — `leitura_painel.go`, `painel_analises.go`.
+- `internal/repository/db/` — `painel_analises.sql.go`.
+- `internal/repository/` — `leitura_painel.go`, `painel_analises.go`.
+- `internal/repository/painelsql/` — `auditoria.sql`, `metricas.sql`, `recibos.sql`, `regras.sql`.
+- `internal/sessaoweb/` — `analises.go`, `github.go`, `leitura_painel.go`, `leitura_painel_test.go`, `saude_repositorios.go`, `servidor.go`.
+- `queries/` — `painel_analises.sql`.
+- `tests/integration/postgres/` — `leitura_painel_test.go`.
+- `web/` — `README.md`.
+- `web/e2e/` — `gestao.spec.ts`, `leituras-painel.spec.ts`, `sessao.spec.ts`, `validacao-interface.spec.ts`.
+- `web/e2e/servidor/` — `analises.go`, `leituras.go`, `main.go`, `recibos.go`, `sessao.go`.
+- `web/src/componentes/` — `ColecaoRecibos.tsx`, `ConsultaPrivada.tsx`, `FilaDePendencias.tsx`, `Gestao.tsx`, `MapaDeAnalises.tsx`, `VinculoSlack.tsx`.
+- `web/src/estilos/` — `visao-geral.css`.
+- `web/src/paginas/` — `Acesso.tsx`, `LeiturasGestao.tsx`, `VisaoGeral.tsx`.
+- `web/src/servicos/` — `analises.ts`, `colecao-recibos.ts`, `gestao.ts`, `mapa.ts`, `metricas.ts`, `painel.ts`, `vinculo-slack.ts`, `visao-geral.ts`.
+
+</details>
+
+**Validação local.** Instalação pelo lockfile (`npm ci --offline`), Biome, TypeScript, build Vite, geração sqlc e lint Go do diff. Testes com `-race` dos pacotes de sessão web, API, repositório, recibos, composição da API e web. Quatro testes de integração usaram PostgreSQL 16 com pgvector em contêiner descartável, com fixtures de dois tenants. Conferiram filtros, totais, paginação com inserção posterior ao corte, UUID fora do escopo, relações autorizadas e coincidência dos metadados de exportação com o recibo armazenado.
+
+O lint integral do CI apontou `G704` na montagem das consultas autenticadas ao GitHub. O cliente agora cria a requisição com origem HTTPS fixa e copia apenas o caminho validado e os parâmetros de consulta. O teste cobre caminhos inválidos e branches com barra codificada. Em checkout limpo, o `golangci-lint` v2.13.2 integral e os testes com `-race` de `internal/sessaoweb`, `internal/api` e `cmd/api` passaram.
+
+Os 140 testes Playwright passaram em Chromium. A suíte cobre HTML malicioso, sessão expirada, isolamento, cancelamento, erro e recuperação, download e verificação de assinatura e recorte paginado reaberto pela URL. O Playwright exercita os handlers de sessão no build de produção com identidades e fontes de teste, além das demonstrações explícitas do Vite. As capturas em `.capturas-mcp/dashboard/leituras-overview-*` cobrem 1440 e 390 px nos temas claro e escuro. A matriz transversal do projeto também cobre 1024, 768 e 360 px. O build emite o aviso de tamanho do bundle principal.
+
+**Homologação.** Requer a API e o worker da instalação, sessão GitHub App com callback e armazenamento de sessão configurados, PostgreSQL com os dados existentes e permissões GitHub para as leituras de proteção. A consulta pessoal reflete `SLACK_GITHUB_VINCULOS` do processo da API. A mesma origem e o proxy existentes atendem às novas leituras.
+
+## Escopo histórico — orientação da usuária em 16/11/2026
 
 Implementar somente o front na branch `feat/web-dashboard`, consumindo a API
 existente. Não alterar API, endpoints, SQL, migrations ou código Go. Para
@@ -304,7 +516,9 @@ histórico”. Não reintroduzir esse botão por causa dos modais remanescentes.
 O guia `17:2676` é apoio ao protótipo; não é uma funcionalidade operacional
 obrigatória nem deve navegar o produto real por PRs fictícios.
 
-## 5. Matriz de disponibilidade real do núcleo
+## 5. Matriz de disponibilidade do núcleo
+
+A matriz abaixo registra a auditoria F0. Para as leituras web disponíveis hoje, consulte o [registro da fila na visão geral](#leituras-da-visão-geral--21112026).
 
 **A:** HTTP implementado, consumível após verificar ambiente e origem.
 **B:** HTTP implementado, mas exige adaptação segura para uso web.
@@ -507,6 +721,9 @@ ser implementados e testados antes de anunciar cada sublote como integrado.
 - Front: filtros de PR/repositório/nível/estado/período, ordenação e paginação;
   detalhe com autoria/branch quando disponíveis, SHA, links GitHub/Check, timeline,
   motivos, calibração/casos semelhantes, tentativas/saída e decisão humana.
+  A linha do tempo marca uma etapa como concluída quando a próxima transição
+  registrada confirma sua saída. Se essa transição leva a uma falha, a etapa
+  aparece como interrompida. A espera por aprovação tem indicação própria.
 - O modelo persistido de task_run não contém `head_branch`; não fabricar branch.
   Definir se será persistida ou obtida pelo núcleo no GitHub. IDs do Check existem
   internamente, mas falta contrato para URL/visibilidade na tela.
@@ -938,6 +1155,8 @@ que incluía uma proposta de AGENTS.md versionado.
 - Contratos: os três GETs públicos de recibos existentes; nenhuma API nova.
 - Arquivos: páginas/serviço/estilo de recibos, rotas, ativos de ajuda/serrilhado,
   cenários Playwright, fixture assinada do servidor exclusivo de testes e documentação.
+- A borda do conteúdo assinado repete o serrilhado por toda a largura. A
+  regressão cobre 1920 px nos temas claro e escuro.
 - Validação: Biome e build aprovados; testes Go de API/receipt/web e go vet web
   aprovados. Regressão F1/servidor aprovada; cenários F2 incluem HTTP local com
   verificador real e assinatura do download conferida independentemente.
@@ -1016,3 +1235,54 @@ que incluía uma proposta de AGENTS.md versionado.
 - O servidor estático valida nomes com `fs.ValidPath`, após rejeitar segmentos ocultos, travessia, contrabarras e NUL. Separadores repetidos mantêm o comportamento anterior. Foram adicionados casos de travessia codificada e NUL aos testes existentes.
 - Biome, TypeScript e build aprovados. Go test de `web` e `internal/api` passou com `-race -count=1`, e GolangCI-Lint de `web/...` terminou com zero alertas. O build manteve o aviso de bundle principal acima de 500 kB.
 - A suíte Playwright completa passou nos 133 cenários em 2,4 minutos, incluindo desktop/mobile nos dois temas, HTML malicioso, timeout, cancelamento e handlers Go isolados. As 12 capturas de recortes do mapa coincidiram pixel a pixel com as referências locais da rodada anterior em `.capturas-mcp/mapa/`. A baixa dos demais avisos depende da análise do novo commit pelo Codacy.
+
+### Leituras da visão geral — 21/11/2026
+
+Base local `5fb6476`, cards #65–#68 e #70, visão geral desktop `9:22` e variantes mobile. A integração acrescentada em `web/src/servicos/analises.ts` e `web/src/componentes/FilaDePendencias.tsx` usa os contratos de sessão conferidos em `internal/sessaoweb`, o resumo de `internal/domain/painel_analises.go` e a paginação do repositório PostgreSQL.
+
+| Seção | Origem e comportamento |
+| --- | --- |
+| Fila da visão geral | `GET /api/analises` com instalação, repositório opcional, estado `aguardando_aprovacao`, nível alto e início em 1970 para incluir pendências anteriores aos últimos 30 dias. A fila pede até 25 PRs por página. O servidor ordena por recebimento, calcula o total e fornece o snapshot para paginar. A busca por texto abrange a página indicada. |
+| Filtros e detalhe | `GET /api/repositorios` fornece o catálogo da instalação. O link da fila abre `GET /api/analises/{id}` no escopo da linha. URL, busca e paginação acompanham o retorno. O resumo informa PR, autor, commit e recebimento. A idade da pendência, a branch, os motivos e as evidências estão ausentes no resumo. |
+| Sessão e relatório semanal | Integrações existentes em `GET /api/sessao` e `GET /api/web/relatorio-semanal`. O relatório cobre sete dias UTC no escopo autorizado. |
+| Recibo individual | Consulta por UUID, download, verificação e chaves públicas já integrados a `/receipts/{id}`, `/receipts/{id}/verify` e `/receipts/keys`. O envelope preserva os bytes assinados. A rota de instruções `/receipts/{id}/revert` da base local não tem ação correspondente no dashboard. |
+| Seções simuladas | Métricas de 30 dias, distribuições, mapa e seus detalhes demonstrativos, último recibo, coleção de recibos e gestão pendente exibem sua origem. Seguem o controle `APROVA_DASHBOARD_MOCKS=1` em desenvolvimento/teste. O build de produção continua excluindo as fixtures. |
+
+A falha da fila oferece nova tentativa na própria seção. A troca de escopo cancela a consulta pendente. As operações de escrita mantêm a disponibilidade anterior.
+
+A homologação depende do backend com sessão web e OAuth GitHub configurados, da instalação com repositórios autorizados e de dados de análises e recibos no ambiente. O front usa a configuração existente de origem/proxy. Evidências visuais locais em `.capturas-mcp/dashboard/local-overview-*`.
+
+Validação local da rodada em Chromium com 136 testes Playwright aprovados, incluindo HTML malicioso, sessão expirada, isolamento, cancelamento, erro de contrato, recuperação e retorno paginado. As verificações de interface cobriram 320 a 1440 px nos temas claro e escuro. Instalação pelo lockfile com `npm ci --offline`, Biome, TypeScript e build de produção aprovados. O Vite emitiu o aviso de tamanho do chunk principal. A suíte usa respostas controladas e handlers Go com provedores de teste.
+
+### Decisões e reexecução pelo painel — 23/11/2026
+
+Base `5c2610a`, branch `feat/web-dashboard`. Os modais do detalhe usam
+`POST /api/web/analises/{id}/acoes` quando a API informa
+`acoes_disponiveis` na sessão. A rota exige sessão GitHub, origem e CSRF
+válidos. O núcleo resolve instalação, repositório e PR pela análise
+autorizada, consulta a permissão no GitHub na hora e confere o estado do PR
+e o SHA antes do efeito. Aprovação e pedido de alterações exigem
+justificativa. O autor continua impedido de aprovar o próprio PR.
+
+A migration 27 diferencia Slack e Painel em `remote_action_attempts`.
+As reviews do painel fixam o SHA, e o webhook do GitHub guarda a decisão
+e a justificativa na análise revisada. O evento v1 continua aceito pelos
+consumidores existentes com origem `github`; a auditoria e o histórico
+da análise mostram `painel`. A resposta 202 confirma o envio da review, e o
+worker atualiza o resultado quando recebe a confirmação do GitHub.
+O detalhe aberto revalida a análise enquanto a decisão estiver pendente,
+inclusive ao voltar à aba. Após enviar uma solicitação, o detalhe mantém
+os botões inativos durante a espera pelo resultado do núcleo.
+
+A reexecução de falha de infraestrutura cria outra análise para o mesmo
+SHA. O histórico anterior é preservado e a nova análise reaproveita o
+Check Run existente, quando disponível. O identificador auditado da ação
+corresponde ao `delivery_id` da nova análise. A tela oferece um link para
+acompanhar as análises do PR.
+
+Validação isolada com build, Biome, Chromium, PostgreSQL descartável
+e GitHub simulado. Os testes cobrem recusas de permissão, autoaprovação
+e commit obsoleto, registro da justificativa, idempotência e consumo de
+uma única reexecução concorrente pelo worker. A homologação ainda exige
+aplicar a migration 27, atualizar API e worker e verificar a entrega real
+da review e do evento em um PR de teste.

@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { type ButtonHTMLAttributes, type ComponentProps, type InputHTMLAttributes, type ReactNode, useId } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { type ButtonHTMLAttributes, type ComponentProps, type InputHTMLAttributes, type ReactNode, useId, useState } from "react";
 import { Ativo } from "./Ativo";
 import { cn } from "./classes";
 
@@ -9,6 +10,51 @@ export function Botao({
 	...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "primario" | "secundario" | "discreto" }) {
 	return <button type="button" className={cn("botao", `botao-${variante}`, className)} {...props} />;
+}
+export function Ajuda({
+	titulo,
+	descricao,
+	complemento,
+	className,
+}: {
+	titulo: string;
+	descricao: string;
+	complemento?: string;
+	className: string;
+}) {
+	const [aberta, definirAberta] = useState(false);
+	return (
+		<Tooltip.Root open={aberta} onOpenChange={definirAberta}>
+			<Tooltip.Trigger
+				asChild
+				onFocus={(e) => {
+					const gatilho = e.currentTarget;
+					if (!gatilho.matches(":focus-visible")) return;
+					// Aguarde a rolagem que o navegador faz ao mover o foco pelo teclado.
+					e.preventDefault();
+					requestAnimationFrame(() => {
+						if (gatilho === document.activeElement) definirAberta(true);
+					});
+				}}
+				onClick={(e) => {
+					// O toque também mostra a explicação em telas sem mouse.
+					e.preventDefault();
+					definirAberta(true);
+				}}
+			>
+				<Botao variante="discreto" className={className} aria-label={`Ajuda: ${titulo}`}>
+					<Ativo nome="ajuda" />
+				</Botao>
+			</Tooltip.Trigger>
+			<Tooltip.Portal>
+				<Tooltip.Content className="balao-ajuda" sideOffset={8} collisionPadding={12}>
+					<p>{descricao}</p>
+					{complemento && <p>{complemento}</p>}
+					<Tooltip.Arrow className="balao-ajuda-seta" />
+				</Tooltip.Content>
+			</Tooltip.Portal>
+		</Tooltip.Root>
+	);
 }
 export function Campo({ rotulo, erro, id, ...props }: InputHTMLAttributes<HTMLInputElement> & { rotulo: string; erro?: string }) {
 	const gerado = useId();

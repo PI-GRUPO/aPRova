@@ -1,5 +1,7 @@
+import type { Consulta, Escopo } from "./fonte";
 import { consultarJSON, ErroHTTP } from "./http";
-import { objeto } from "./recibos";
+import { mesmoInstante } from "./instante";
+import { objeto, uuidValido } from "./recibos";
 export const estados = new Map<string, string>([
 	["pendente", "Pendente"],
 	["mapeando_contexto", "Mapeando contexto"],
@@ -19,6 +21,7 @@ export const niveis = new Map<string, string>([
 	["nao_avaliado", "Não avaliado"],
 ]);
 export type Analise = {
+	espera_segundos?: number;
 	id: string;
 	repositorio: string;
 	numero_pr: number;
@@ -99,6 +102,7 @@ function analise(v: unknown): v is Analise {
 		objeto(v) &&
 		["id", "repositorio", "sha_head", "autor"].every((k) => typeof v[k] === "string") &&
 		numero(v.numero_pr) &&
+		(v.espera_segundos === undefined || numero(v.espera_segundos)) &&
 		typeof v.estado === "string" &&
 		estados.has(v.estado) &&
 		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
@@ -106,7 +110,7 @@ function analise(v: unknown): v is Analise {
 	);
 }
 export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): Promise<PaginaAnalises> {
-	const v = await consultarJSON(`/api/analises?${q}`, { signal, privada: true });
+	const v = await consultarJSON(`/api/analises?${q.toString()}`, { signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(q.get("installation_id")) ||
@@ -183,7 +187,7 @@ export function urlGitHub(v: string) {
 export async function detalharAnalise(id: string, instalacao: string, signal: AbortSignal, repositorio = ""): Promise<Detalhe> {
 	const q = new URLSearchParams({ installation_id: instalacao });
 	if (repositorio) q.set("repositorio", repositorio);
-	const v = await consultarJSON(`/api/analises/${encodeURIComponent(id)}?${q}`, { signal, privada: true });
+	const v = await consultarJSON(`/api/analises/${encodeURIComponent(id)}?${q.toString()}`, { signal, privada: true });
 	if (
 		!objeto(v) ||
 		v.installation_id !== Number(instalacao) ||
@@ -218,4 +222,79 @@ export function erroDeAnalise(e: unknown) {
 		return e.message;
 	}
 	return "Não foi possível consultar as análises.";
+}
+
+export const consultarRepos: Consulta<string[]> = ({ instalacao }, _, signal) => listarRepositorios(instalacao, signal);
+export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, filtros, signal) => {
+	const q = new URLSearchParams(filtros);
+	q.set("installation_id", instalacao);
+	q.set("estado", "aguardando_aprovacao");
+	q.set("nivel", "alto");
+	q.set("inicio", "1970-01-01");
+	q.set("ordem", "antigas");
+	q.set("limite", "25");
+	const dados = await listarAnalises(q, signal);
+	const corteSolicitado = q.get("snapshot");
+	if (
+		dados.itens.some((i) => !uuidValido(i.id) || i.estado !== "aguardando_aprovacao" || i.nivel !== "alto") ||
+		(corteSolicitado !== null && !mesmoInstante(dados.snapshot, corteSolicitado))
+	)
+		throw new ErroHTTP("resposta", "A resposta não corresponde aos filtros da fila.");
+	return dados;
+};
+
+const requisitosDaInstalacao = [
+	{ chave: "checks", nome: "Checks", minimo: "write", uso: "Publicar o resultado da análise no GitHub." },
+	{ chave: "contents", nome: "Conteúdo", minimo: "read", uso: "Ler o código e os commits analisados." },
+	{ chave: "pull_requests", nome: "Pull requests", minimo: "write", uso: "Consultar PRs e publicar revisões." },
+	{ chave: "administration", nome: "Administração", minimo: "read", uso: "Verificar a proteção clássica da branch." },
+	{ chave: "metadata", nome: "Metadados", minimo: "read", uso: "Consultar as regras ativas da branch." },
+] as const;
+const niveisDeAcesso = { none: 0, read: 1, write: 2, admin: 3 } as const;
+type NivelDeAcesso = keyof typeof niveisDeAcesso;
+
+function diagnosticarPermissoes(permissoes: Record<string, unknown>, conhecidas: boolean | undefined) {
+	return requisitosDaInstalacao.map((requisito) => {
+		const nivel = permissoes[requisito.chave];
+		if (nivel !== undefined && (typeof nivel !== "string" || !Object.hasOwn(niveisDeAcesso, nivel))) return invalida();
+		const concedida = nivel as NivelDeAcesso | undefined;
+		const verificada = conhecidas !== false && (concedida !== undefined || (conhecidas === true && requisito.chave !== "metadata"));
+		return {
+			...requisito,
+			concedida,
+			suficiente: verificada ? niveisDeAcesso[concedida ?? "none"] >= niveisDeAcesso[requisito.minimo] : null,
+		};
+	});
+}
+
+export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
+	const pagina = Number(filtros.get("pagina") ?? 1);
+	const q = new URLSearchParams({ installation_id: instalacao, detalhes: "1", pagina: String(pagina) });
+	const v = await consultarJSON(`/api/repositorios?${q.toString()}`, { privada: true, signal });
+	if (
+		!objeto(v) ||
+		v.installation_id !== Number(instalacao) ||
+		v.pagina !== pagina ||
+		v.limite !== 10 ||
+		!numero(v.total) ||
+		!objeto(v.permissoes) ||
+		(v.permissoes_conhecidas !== undefined && typeof v.permissoes_conhecidas !== "boolean") ||
+		!Array.isArray(v.itens) ||
+		v.itens.length !== Math.max(0, Math.min(10, v.total - (pagina - 1) * 10))
+	)
+		return invalida();
+	const permissoes = diagnosticarPermissoes(v.permissoes, v.permissoes_conhecidas);
+	const itens = v.itens.map((r) => {
+		if (
+			!objeto(r) ||
+			typeof r.nome !== "string" ||
+			typeof r.branch !== "string" ||
+			(r.motivo_protecao !== undefined && typeof r.motivo_protecao !== "string") ||
+			!(r.ultima_analise === null || (typeof r.ultima_analise === "string" && data(r.ultima_analise))) ||
+			!(r.check_obrigatorio === null || typeof r.check_obrigatorio === "boolean")
+		)
+			return invalida();
+		return { nome: r.nome, branch: r.branch, ultima: r.ultima_analise, check: r.check_obrigatorio, motivo: r.motivo_protecao };
+	});
+	return { itens, permissoes, total: v.total };
 }

@@ -8,7 +8,7 @@ const workflow = JSON.parse(fs.readFileSync(path.join(raiz, 'dependencias-osv.js
 const core = JSON.parse(fs.readFileSync(path.join(raiz, 'entrada-eventos.json')));
 const no = prefixo => workflow.nodes.find(n => n.name.startsWith(prefixo));
 const consolidar = new Function('$input', '$', no('05 |').parameters.jsCode);
-const alertar = new Function('$json', no('06 |').parameters.jsCode);
+const resumir = new Function('$json', no('06 |').parameters.jsCode);
 const avaliar = (expressao, json, response, pageCount = 0) => new Function('$json', '$response', '$pageCount',
   'return (' + expressao.slice(3, -2).trim() + ');')(json, response, pageCount);
 
@@ -37,7 +37,7 @@ function executar(respostas, contextos = respostas.map(() => contexto())) {
     itemMatching: indice => ({ json: contextos[indice] }),
   }));
   return resultado.map(item => {
-    const json = alertar(item.json).json;
+    const json = resumir(item.json).json;
     assert.equal(json.risco, contextos[item.pairedItem[0].item].risco);
     assert.equal(json.original, contextos[item.pairedItem[0].item].original);
     return { ...item, json };
@@ -66,12 +66,9 @@ test('consulta OSV usa nome, versão e ecossistema exatos, sem autenticação', 
   }
 });
 
-test('regra crítica: únicos destinos HTTP são OSV e Incoming Webhook do Slack', () => {
+test('consulta só faz HTTP para o OSV e encaminha o contexto à Central', () => {
   const http = workflow.nodes.filter(n => n.type === 'n8n-nodes-base.httpRequest');
-  assert.equal(http.length, 2);
-  assert.deepEqual(http.map(n => n.parameters.url), [
-    'https://api.osv.dev/v1/query', '={{ $env.SLACK_INCOMING_WEBHOOK_URL }}',
-  ]);
+  assert.deepEqual(http.map(n => n.parameters.url), ['https://api.osv.dev/v1/query']);
   assert.ok(workflow.nodes.every(n => ['executeWorkflowTrigger', 'executeWorkflow', 'if', 'splitOut', 'httpRequest', 'code', 'dataTable']
     .some(tipo => n.type === 'n8n-nodes-base.' + tipo)));
   const chamadas = workflow.nodes.filter(n => n.type === 'n8n-nodes-base.executeWorkflow');
@@ -83,7 +80,7 @@ test('regra crítica: únicos destinos HTTP são OSV e Incoming Webhook do Slack
   }
 });
 
-test('alerta com severidade crítica preserva integralmente o risco baixo do núcleo', () => {
+test('resumo com severidade crítica preserva integralmente o risco baixo do núcleo', () => {
   const [resultado] = executar([resposta({ vulns: [aviso('GHSA-teste', ['CVE-2026-1000'], 'CRITICAL')] })]);
   assert.equal(resultado.json.risco.nivel, 'BAIXO');
   assert.equal(resultado.json.enriquecimento_osv.total_cves, 1);
@@ -184,11 +181,10 @@ test('pacotes iguais em eventos ou tenants diferentes não misturam resultados',
   assert.deepEqual(resultados.map(r => r.json.enriquecimento_osv.total_avisos), [1, 0, 0]);
 });
 
-test('alerta usa texto simples, quebras de linha reais e blocos dentro do limite Slack', () => {
+test('resultado inclui o resumo da dependência e dispensa payload de Slack', () => {
   const [resultado] = executar([resposta({ vulns: [aviso('OSV-1', ['CVE-2026-1000'], 'HIGH')] })]);
-  assert.ok(resultado.json.slack_payload.text.includes('\n'));
-  assert.ok(resultado.json.slack_payload.blocks.every(b => b.text.type === 'plain_text' && b.text.text.length <= 3000));
-  assert.match(resultado.json.slack_payload.text, /equipe\/projeto #42/);
+  assert.match(resultado.json.texto_alerta, /\n\nCVEs: CVE-2026-1000/);
+  assert.equal(resultado.json.slack_payload, undefined);
 });
 
 test('export do Core chama OSV somente pela rota dependencia_nova e configura ID por ambiente', () => {

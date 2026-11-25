@@ -1,5 +1,6 @@
 import "@fontsource-variable/inter";
 import "@fontsource/ibm-plex-mono/400.css";
+import { Provider as ProvedorDeBaloes } from "@radix-ui/react-tooltip";
 import "./estilos/tokens.css";
 import "./estilos/aplicacao.css";
 import { StrictMode } from "react";
@@ -12,7 +13,9 @@ if (raiz)
 	createRoot(raiz).render(
 		<StrictMode>
 			<FronteiraDeErro>
-				<App />
+				<ProvedorDeBaloes delayDuration={180}>
+					<App />
+				</ProvedorDeBaloes>
 			</FronteiraDeErro>
 		</StrictMode>,
 	);

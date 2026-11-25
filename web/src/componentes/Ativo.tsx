@@ -29,8 +29,7 @@ export type NomeDoAtivo =
 	| "risco-nao_avaliado"
 	| "github"
 	| "github-login"
-	| "ajuda"
-	| "serrilhado";
+	| "ajuda";
 export function Ativo({ nome, className = "", ativo = false }: { nome: NomeDoAtivo; className?: string; ativo?: boolean }) {
 	const { tema } = useTema();
 	const arquivo = nome;

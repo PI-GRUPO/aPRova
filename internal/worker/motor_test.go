@@ -397,6 +397,21 @@ func TestReviewAprovadoAplicaEConclui(t *testing.T) {
 	}
 }
 
+func TestReviewDoPainelEmiteConfirmacaoCompativelComEventoV1(t *testing.T) {
+	c := novoCenario(domain.RiscoAlto)
+	tr := levarAteAguardando(t, c)
+	aprovacao := c.armazenamento.registrarAprovacao(tr.ID, domain.DecisaoAprovada, "Azulpasta", domain.OrigemPainel)
+	c.conduzirTudo(t)
+	pedido, emitido := c.eventos.doTipo(eventos.TipoAprovacaoRegistrada)
+	if !emitido || c.armazenamento.taskRun(tr.ID).Estado != domain.EstadoConcluido {
+		t.Fatal("uma aprovação do painel deve passar pelo worker e emitir a confirmação")
+	}
+	dados := dadosDoEvento[eventos.DadosAprovacaoRegistrada](t, pedido)
+	if dados.Origem != "github" || dados.IDAprovacao != aprovacao.ID || dados.LoginGitHub != "Azulpasta" {
+		t.Fatalf("evento incompatível com consumidores v1: %+v", dados)
+	}
+}
+
 func TestReviewComAlteracoesSolicitadasRejeita(t *testing.T) {
 	c := novoCenario(domain.RiscoAlto)
 	taskRun := levarAteAguardando(t, c)

@@ -39,8 +39,17 @@
 	border-bottom: 0;
 	border-radius: 12px 12px 0 0;
 }
+.recibo-assinado::after {
+	display: block;
+	height: 10px;
+	background: url("../ativos/escuro-serrilhado.svg") left bottom / auto 8px repeat-x;
+	content: "";
+}
 [data-tema="claro"] .recibo-assinado {
 	background: var(--fundo-superficie);
+}
+[data-tema="claro"] .recibo-assinado::after {
+	background-image: url("../ativos/claro-serrilhado.svg");
 }
 .ajuda-recibo {
 	width: 28px;
@@ -66,16 +75,6 @@
 .comando-recibo,
 .chave-recibo code {
 	font-family: var(--font-mono);
-}
-.serrilhado-recibo {
-	height: 10px;
-	overflow: hidden;
-	background: inherit;
-	padding-top: 2px;
-}
-.serrilhado-recibo img {
-	display: block;
-	max-width: none;
 }
 .acoes-recibo {
 	display: flex;

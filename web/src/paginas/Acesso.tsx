@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
-import { VinculoSlack } from "@/componentes/VinculoSlack";
 import { ErroHTTP } from "@/servicos/http";
 import "@/estilos/sessao.css";
 export function Protegida({ children }: { children: ReactNode }) {
@@ -41,27 +40,22 @@ export function Entrar() {
 				</h1>
 				<p className="secundario">Entre com sua conta GitHub para acessar os repositórios autorizados.</p>
 				{q.has("erro") && <p role="alert">Não foi possível concluir a autenticação. Inicie uma nova tentativa.</p>}
-				{erro ? (
-					<>
-						<p role="alert">{erro}</p>
-						<Botao onClick={carregar}>Tentar novamente</Botao>
-					</>
-				) : !sessao ? (
-					<p role="status">Confirmando disponibilidade…</p>
-				) : sessao.autenticado ? (
+				{erro && <p role="alert">{erro}</p>}
+				{sessao?.autenticado ? (
 					<Link className="botao botao-primario" to="/">
 						Continuar para o dashboard
 					</Link>
-				) : sessao.login_disponivel ? (
+				) : sessao?.login_disponivel === false ? (
+					<PainelDeEstado titulo="Login indisponível">
+						<p>O acesso com GitHub ainda não está configurado neste ambiente.</p>
+					</PainelDeEstado>
+				) : (
 					<a className="botao botao-primario" href="/auth/github">
 						<Ativo nome="github-login" />
 						Continuar com GitHub
 					</a>
-				) : (
-					<PainelDeEstado titulo="Login indisponível">
-						<p>O acesso com GitHub ainda não está configurado neste ambiente.</p>
-					</PainelDeEstado>
 				)}
+				{erro && <Botao onClick={carregar}>Tentar novamente</Botao>}
 				<p className="apoio">Você autoriza o acesso no GitHub. O aPRova não pede sua senha.</p>
 			</section>
 		</main>
@@ -103,34 +97,30 @@ export function Conta() {
 		<div className="pagina">
 			<div className="titulo-contexto">
 				<h1>Conta e integrações</h1>
-				<p className="apoio">Conecte sua conta Slack ao GitHub</p>
 			</div>
 			<Protegida>
 				{sessao?.autenticado && (
-					<>
-						<section className="painel-sessao">
-							<h2>Sua identidade GitHub</h2>
-							<div>
-								<dl className="dados-identidade">
-									<div>
-										<dt>Conta autenticada</dt>
-										<dd>@{sessao.usuario.login}</dd>
-									</div>
-								</dl>
-								<p className="apoio">Sessão até {new Date(sessao.expira_em).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC</p>
-								{sessao.instalacoes.length ? (
-									sessao.instalacoes.map((i) => (
-										<p className="caminho" key={i.id}>
-											{i.conta} · Instalação {i.id}
-										</p>
-									))
-								) : (
-									<p>Nenhuma instalação autorizada para esta conta.</p>
-								)}
-							</div>
-						</section>
-						<VinculoSlack key={sessao.usuario.id} />
-					</>
+					<section className="painel-sessao">
+						<h2>Sua identidade GitHub</h2>
+						<div>
+							<dl className="dados-identidade">
+								<div>
+									<dt>Conta autenticada</dt>
+									<dd>@{sessao.usuario.login}</dd>
+								</div>
+							</dl>
+							<p className="apoio">Sessão até {new Date(sessao.expira_em).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC</p>
+							{sessao.instalacoes.length ? (
+								sessao.instalacoes.map((i) => (
+									<p className="caminho" key={i.id}>
+										{i.conta} · Instalação {i.id}
+									</p>
+								))
+							) : (
+								<p>Nenhuma instalação autorizada para esta conta.</p>
+							)}
+						</div>
+					</section>
 				)}
 			</Protegida>
 		</div>

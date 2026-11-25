@@ -7,8 +7,8 @@ const raiz = path.resolve(__dirname, '..');
 const central = JSON.parse(fs.readFileSync(path.join(raiz, 'central-slack.json')));
 const osv = JSON.parse(fs.readFileSync(path.join(raiz, 'dependencias-osv.json')));
 const codigo = (w, prefixo) => w.nodes.find(n => n.name.startsWith(prefixo)).parameters.jsCode;
-const executar = (w, prefixo, json, origem = json) => new Function('$json', '$', codigo(w, prefixo))(
-  json, () => ({ item: { json: origem } }),
+const executar = (w, prefixo, json, origem = json, indiceDaLeitura = 0) => new Function('$json', '$', '$runIndex', codigo(w, prefixo))(
+  json, () => ({ item: { json: origem } }), indiceDaLeitura,
 ).json;
 const expressao = (texto, json) => new Function('$json', 'return (' + texto.slice(3, -2).trim() + ');')(json);
 
@@ -35,7 +35,9 @@ function snapshot(base = evento(), overrides = {}) {
   };
 }
 const preparar = base => executar(central, '02A |', base);
-const selecionar = (base, snap) => executar(central, '02C |', snap ? { contexto: JSON.stringify(snap) } : {}, preparar(base));
+const selecionar = (base, snap, indiceDaLeitura = 0) => executar(
+  central, '02C |', snap ? { contexto: JSON.stringify(snap) } : {}, preparar(base), indiceDaLeitura,
+);
 
 test('contexto da análise correspondente enriquece o alerta antes dos dois botões', () => {
   const original = evento();
@@ -69,15 +71,46 @@ test('contexto de outro tenant, análise, PR, repositório ou commit nunca é re
 test('sem resultado e sem dependências, alerta indica indisponibilidade e mantém as ações', () => {
   const entrada = selecionar(evento());
   assert.equal(entrada.consultar_osv, false);
+  assert.equal(entrada.aguardar_osv, false);
   assert.match(entrada.contexto_osv.resumo, /não indica ausência de vulnerabilidades/);
   const resultado = executar(central, '03A |', entrada);
   assert.equal(resultado.slack_payload.blocks.find(b => b.type === 'actions').elements.length, 2);
   assert.equal(resultado.risco.nivel, 'ALTO');
 });
 
+test('dependência nova aguarda o resultado da mesma análise até o limite de oito releituras', () => {
+  const base = evento({ risco: { nivel: 'ALTO', motivos: [{ nome: 'dependencia_nova' }] } });
+  assert.equal(selecionar(base).aguardar_osv, true);
+  assert.equal(selecionar(base, undefined, 7).aguardar_osv, true);
+
+  const encontrado = selecionar(base, snapshot(base), 2);
+  assert.equal(encontrado.aguardar_osv, false);
+  assert.equal(encontrado.contexto_osv.status, 'concluida');
+
+  const esgotado = selecionar(base, undefined, 8);
+  assert.equal(esgotado.aguardar_osv, false);
+  assert.equal(esgotado.contexto_osv.status, 'indisponivel');
+
+  const falha = executar(central, '02C |', { error: 'table unavailable' }, preparar(base));
+  assert.equal(falha.aguardar_osv, false);
+});
+
+test('espera relê a tabela em um segundo e libera a verificação do recibo ao terminar', () => {
+  const nome = prefixo => central.nodes.find(n => n.name.startsWith(prefixo)).name;
+  const destino = (prefixo, saida) => central.connections[nome(prefixo)].main[saida].map(c => c.node);
+  assert.deepEqual(destino('02D |', 1), [nome('02G |')]);
+  assert.deepEqual(destino('02G |', 0), [nome('02H |')]);
+  assert.deepEqual(destino('02G |', 1), [nome('V01 |')]);
+  assert.deepEqual(destino('02H |', 0), [nome('02B |')]);
+  assert.deepEqual(central.nodes.find(n => n.name === nome('02H |')).parameters, {
+    resume: 'timeInterval', amount: 1, unit: 'seconds',
+  });
+});
+
 test('dependências no próprio evento permitem consulta antes do alerta sem depender da ordem de outro evento', () => {
-  const entrada = selecionar(evento({ dependencias }));
+  const entrada = selecionar(evento({ dependencias, risco: { nivel: 'ALTO', motivos: [{ nome: 'dependencia_nova' }] } }));
   assert.equal(entrada.consultar_osv, true);
+  assert.equal(entrada.aguardar_osv, false);
   assert.equal(entrada.modo_osv, 'contexto_aprovacao');
   const registro = snapshot(entrada);
   const resultado = executar(central, '02F |', { contexto_osv_snapshot: registro }, entrada);
@@ -130,10 +163,15 @@ test('o resumo é preservado nos dois formulários e não é anexado ao contrato
   }
 });
 
-test('consulta para contextualizar aprovação não publica um alerta OSV separado', () => {
-  const condicao = osv.nodes.find(n => n.name.startsWith('06D |')).parameters.conditions.conditions[0].leftValue;
-  assert.equal(expressao(condicao, { modo_osv: 'contexto_aprovacao' }), false);
-  assert.equal(expressao(condicao, { evento: { tipo: 'dependencia_nova' } }), true);
+test('consulta síncrona devolve o contexto persistido e a consulta normal segue para a Central', () => {
+  const retorno = osv.nodes.find(n => n.name.startsWith('06D |'));
+  const condicao = retorno.parameters.conditions.conditions[0].leftValue;
+  assert.equal(expressao(condicao, { modo_osv: 'contexto_aprovacao' }), true);
+  assert.equal(expressao(condicao, { evento: { tipo: 'dependencia_nova' } }), false);
+  const nome = prefixo => osv.nodes.find(n => n.name.startsWith(prefixo)).name;
+  assert.equal(osv.connections[nome('06B |')].main[0][0].node, nome('06C |'));
+  assert.equal(osv.connections[nome('06C |')].main[0][0].node, retorno.name);
+  assert.deepEqual(osv.connections[retorno.name].main, [[], [{ node: nome('06E |'), type: 'main', index: 0 }]]);
   const consulta = central.nodes.find(n => n.name.startsWith('02E |'));
   assert.equal(consulta.parameters.options.waitForSubWorkflow, true);
   assert.equal(consulta.parameters.mode, 'each');

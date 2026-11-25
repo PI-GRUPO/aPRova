@@ -2,13 +2,16 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
-import { AcoesSimuladas } from "@/componentes/AcoesSimuladas";
+import { AcoesDaAnalise } from "@/componentes/AcoesDaAnalise";
 import { dataUTC, Estado, PainelAnalise, Risco } from "@/componentes/Analise";
-import { Ativo } from "@/componentes/Ativo";
+import { Ativo, type NomeDoAtivo } from "@/componentes/Ativo";
+import { useLeitura } from "@/componentes/ConsultaPrivada";
 import { Botao, Modal, PainelDeEstado } from "@/componentes/Primitivos";
 import { CabecalhoDaTabela, Celula, Coluna, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
-import { type Detalhe, detalharAnalise, erroDeAnalise, estados, urlGitHub } from "@/servicos/analises";
+import type { ResultadoAcao } from "@/servicos/acoes-analise";
+import { type Detalhe, detalharAnalise, type Etapa, estados, urlGitHub } from "@/servicos/analises";
 import type { ComplementoDemonstracao } from "@/servicos/analises-demonstracao";
+import type { Consulta } from "@/servicos/fonte";
 import { buscarRecibo, type Verificacao, verificarRecibo } from "@/servicos/recibos";
 import { Protegida } from "./Acesso";
 import "@/estilos/analises.css";
@@ -38,40 +41,76 @@ export function DetalheAnalise() {
 		</div>
 	);
 }
+const consultarDetalhe: Consulta<Detalhe> = ({ instalacao, repositorio }, filtros, signal) =>
+	detalharAnalise(filtros.get("id") ?? "", instalacao, signal, repositorio);
+
+function marcadorDaEtapa(etapa: Etapa, proxima: Etapa | undefined, estadoAtual: string): { icone: NomeDoAtivo; rotulo: string } {
+	switch (etapa.para) {
+		case "concluido":
+			return { icone: "concluido", rotulo: "Concluída" };
+		case "falhou":
+			return { icone: "falhou", rotulo: "Falhou" };
+		case "rejeitado":
+			return { icone: "falhou", rotulo: "Rejeitada" };
+	}
+	// O card representa o estado alcançado. A próxima transição registra a saída dessa etapa.
+	if (proxima?.de === etapa.para) {
+		return proxima.para === "falhou" ? { icone: "falhou", rotulo: "Interrompida" } : { icone: "concluido", rotulo: "Concluída" };
+	}
+	if (etapa.para === estadoAtual) return { icone: "clock", rotulo: estadoAtual === "aguardando_aprovacao" ? "Aguardando" : "Em andamento" };
+	return { icone: "clock", rotulo: "Transição registrada" };
+}
+
 function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalacao: string; repositorio: string }) {
-	const [dados, setDados] = useState<Detalhe>();
-	const [erro, setErro] = useState("");
-	const [tentativa, setTentativa] = useState(0);
 	const [q] = useSearchParams();
-	// biome-ignore lint/correctness/useExhaustiveDependencies: tentativa permite repetir uma consulta por ação explícita.
+	const [resultadoAcao, setResultadoAcao] = useState<ResultadoAcao>();
+	const filtros = new URLSearchParams({ id, repositorio });
+	const { estado, repetir } = useLeitura(consultarDetalhe, instalacao, filtros.toString(), {
+		reutilizar: true,
+		manterDadosDuranteAtualizacao: true,
+	});
+	const dados = estado && "dados" in estado ? estado.dados : undefined;
+	const erro = estado && "erro" in estado ? estado.erro : "";
 	useEffect(() => {
-		const c = new AbortController();
-		setDados(undefined);
-		setErro("");
-		detalharAnalise(id, instalacao, c.signal, repositorio)
-			.then((v) => {
-				if (!c.signal.aborted) setDados(v);
-			})
-			.catch((e) => {
-				if (!c.signal.aborted) setErro(erroDeAnalise(e));
-			});
-		return () => c.abort();
-	}, [id, instalacao, repositorio, tentativa]);
+		if (!dados?.atual) return;
+		const estadoAtual = dados.analise.estado;
+		if (
+			estadoAtual !== "aguardando_aprovacao" &&
+			estadoAtual !== "aplicando" &&
+			!(estadoAtual === "falhou" && resultadoAcao?.tipo === "reexecutar_analise")
+		)
+			return;
+		// Agenda a próxima leitura só depois que os dados anteriores chegarem.
+		let solicitada = false;
+		const atualizar = () => {
+			if (solicitada || document.visibilityState !== "visible") return;
+			solicitada = true;
+			repetir();
+		};
+		const timer = window.setTimeout(atualizar, 5_000);
+		document.addEventListener("visibilitychange", atualizar);
+		window.addEventListener("focus", atualizar);
+		return () => {
+			window.clearTimeout(timer);
+			document.removeEventListener("visibilitychange", atualizar);
+			window.removeEventListener("focus", atualizar);
+		};
+	}, [dados, repetir, resultadoAcao?.tipo]);
 	const retorno = new URLSearchParams(q.get("retorno") ?? "");
 	retorno.set("installation_id", instalacao);
 	if (!q.has("retorno") && dados) retorno.set("repositorio", dados.analise.repositorio);
 	return (
 		<>
-			<Link className="voltar" to={`/analises?${retorno}`}>
+			<Link className="voltar" to={`${q.get("origem") === "fila" ? "/" : "/analises"}?${retorno.toString()}`}>
 				<Ativo nome="voltar" />
-				Voltar às análises
+				{q.get("origem") === "fila" ? "Voltar à visão geral" : "Voltar às análises"}
 			</Link>
 			{erro ? (
 				<>
 					<h1>Detalhe da análise</h1>
 					<PainelDeEstado titulo="Não foi possível abrir a análise" erro>
 						<p>{erro}</p>
-						<Botao onClick={() => setTentativa((v) => v + 1)}>Tentar novamente</Botao>
+						<Botao onClick={repetir}>Tentar novamente</Botao>
 					</PainelDeEstado>
 				</>
 			) : !dados ? (
@@ -80,7 +119,13 @@ function ConsultaAnalise({ id, instalacao, repositorio }: { id: string; instalac
 					<p role="status">Carregando análise…</p>
 				</>
 			) : (
-				<ConteudoAnalise dados={dados} instalacao={instalacao} />
+				<ConteudoAnalise
+					dados={dados}
+					instalacao={instalacao}
+					aoAtualizar={repetir}
+					resultadoAcao={resultadoAcao}
+					aoReceberAcao={setResultadoAcao}
+				/>
 			)}
 		</>
 	);
@@ -91,14 +136,21 @@ export function ConteudoAnalise({
 	demonstracao = false,
 	complementoSimulado,
 	linhaDoTempoSimulada,
+	aoAtualizar,
+	resultadoAcao,
+	aoReceberAcao,
 }: {
 	dados: Detalhe;
 	instalacao: string;
 	demonstracao?: boolean;
 	complementoSimulado?: ComplementoDemonstracao;
 	linhaDoTempoSimulada?: ReactNode;
+	aoAtualizar?: () => void;
+	resultadoAcao?: ResultadoAcao;
+	aoReceberAcao?: (resultado: ResultadoAcao) => void;
 }) {
-	const { sessao } = useSessao();
+	const { sessao, cacheDeLeituras } = useSessao();
+	const csrfDasAcoes = !demonstracao && !__MOCKS__ && sessao?.autenticado && sessao.acoes_disponiveis ? sessao.csrf_token : "";
 	const a = d.analise;
 	const g = d.gate;
 
@@ -123,7 +175,7 @@ export function ConteudoAnalise({
 					)}
 				</h1>
 				<p className="apoio caminho metadados-analise">
-					Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
+					{demonstracao && "Dados simulados · "}Análise {a.id} · commit {a.sha_head.slice(0, 7)} · recebida em {dataUTC(a.recebido_em)}
 				</p>
 			</div>
 			<div className="controles estado-do-detalhe">
@@ -139,7 +191,7 @@ export function ConteudoAnalise({
 				<PainelDeEstado titulo="Esta análise foi substituída">
 					<p>Existe uma análise mais recente deste PR. A decisão e as evidências abaixo pertencem exclusivamente ao commit {a.sha_head}.</p>
 					<Link
-						to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: a.repositorio, numero_pr: String(a.numero_pr), periodo: "todos" })}`}
+						to={`/analises?${new URLSearchParams({ installation_id: instalacao, repositorio: a.repositorio, numero_pr: String(a.numero_pr), periodo: "todos" }).toString()}`}
 					>
 						Consultar histórico deste PR
 					</Link>
@@ -256,24 +308,28 @@ export function ConteudoAnalise({
 				{linhaDoTempoSimulada ??
 					(d.etapas.length ? (
 						<ol className="timeline-analise">
-							{d.etapas.map((e) => (
-								<li key={e.id}>
-									<span className="marcador-etapa">
-										<Ativo nome={e.para === "concluido" ? "concluido" : e.para === "falhou" ? "falhou" : "clock"} />
-										{e.para === "concluido" ? "Concluída" : e.para === "falhou" ? "Falhou" : "Transição registrada"}
-									</span>
-									<Modal
-										titulo={estados.get(e.para) ?? e.para}
-										descricao={`De ${estados.get(e.de) ?? e.de} para ${estados.get(e.para) ?? e.para}, em ${dataUTC(e.criado_em)}.`}
-										gatilho={<Botao variante="discreto">{estados.get(e.para) ?? e.para}</Botao>}
-									>
-										<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
-									</Modal>
-									<time className="apoio" dateTime={e.criado_em}>
-										{dataUTC(e.criado_em)}
-									</time>
-								</li>
-							))}
+							{d.etapas.map((e, i) => {
+								const { icone, rotulo } = marcadorDaEtapa(e, d.etapas[i + 1], a.estado);
+								const titulo = estados.get(e.para) ?? e.para;
+								return (
+									<li key={e.id}>
+										<span className="marcador-etapa">
+											<Ativo nome={icone} />
+											{rotulo}
+										</span>
+										<Modal
+											titulo={titulo}
+											descricao={`De ${estados.get(e.de) ?? e.de} para ${titulo}, em ${dataUTC(e.criado_em)}.`}
+											gatilho={<Botao variante="discreto">{titulo}</Botao>}
+										>
+											<p>{e.detalhe || "Nenhum detalhe adicional registrado."}</p>
+										</Modal>
+										<time className="apoio" dateTime={e.criado_em}>
+											{dataUTC(e.criado_em)}
+										</time>
+									</li>
+								);
+							})}
 						</ol>
 					) : (
 						<p>Histórico de transições não disponível.</p>
@@ -350,8 +406,15 @@ export function ConteudoAnalise({
 				) : (
 					<p>Nenhuma decisão humana registrada para esta análise.</p>
 				)}
-				<AcoesSimuladas
-					key={`${instalacao}:${a.id}:${a.sha_head}:${a.estado}:${d.atual}:${usuario}`}
+				<AcoesDaAnalise
+					key={`${instalacao}:${a.id}:${a.sha_head}:${usuario}`}
+					csrf={csrfDasAcoes}
+					resultado={resultadoAcao}
+					aoReceber={aoReceberAcao}
+					aoAtualizar={() => {
+						cacheDeLeituras?.limpar();
+						aoAtualizar?.();
+					}}
 					contexto={{
 						instalacao,
 						id: a.id,
@@ -364,10 +427,10 @@ export function ConteudoAnalise({
 						atual: d.atual,
 						proprioPR:
 							!demonstracao && !!sessao?.autenticado && sessao.usuario.login.toLowerCase() === a.autor.replace(/^@/, "").toLowerCase(),
-						falhaInfra: d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
+						falhaInfra: d.gate === null && d.tentativas.at(-1)?.tipo_falha === "infraestrutura",
 					}}
 				/>
-				<p className="apoio">Aprovação, pedido de alterações e reexecução pelo painel estão indisponíveis.</p>
+				{!csrfDasAcoes && <p className="apoio">Ações indisponíveis nesta visualização.</p>}
 			</PainelAnalise>
 			<PainelAnalise
 				titulo="Recibo assinado"
@@ -377,7 +440,7 @@ export function ConteudoAnalise({
 					<>
 						<p>Verificação de assinatura indisponível.</p>
 						{d.recibo_id ? <code className="caminho">{d.recibo_id}</code> : <p>Recibo indisponível.</p>}
-						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio })}`}>Consultar recibos</Link>
+						<Link to={`/recibos?${new URLSearchParams({ repositorio: a.repositorio }).toString()}`}>Consultar recibos</Link>
 					</>
 				) : d.recibo_id ? (
 					<ReciboDaAnalise id={d.recibo_id} analiseID={a.id} />

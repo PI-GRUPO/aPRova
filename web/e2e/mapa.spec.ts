@@ -3,6 +3,12 @@ import { autenticarFixture } from "./sessao-dashboard";
 
 test.beforeEach(async ({ page }) => {
 	await autenticarFixture(page);
+	await page.route("**/api/repositorios?*", (r) => r.fulfill({ json: { installation_id: 42, repositorios: [] } }));
+	await page.route("**/api/analises?*", (r) =>
+		r.fulfill({
+			json: { installation_id: 42, itens: [], total: 0, pagina: 1, limite: 20, tem_mais: false, snapshot: new Date().toISOString() },
+		}),
+	);
 });
 for (const largura of [1440, 390, 360])
 	for (const tema of ["escuro", "claro"]) {
@@ -14,7 +20,7 @@ for (const largura of [1440, 390, 360])
 			const proibidas: string[] = [];
 			page.on("request", (r) => {
 				const caminho = new URL(r.url()).pathname;
-				if (r.method() !== "GET" || caminho.startsWith("/api/analises") || caminho.startsWith("/receipts/")) proibidas.push(r.url());
+				if (r.method() !== "GET" || caminho.startsWith("/api/analises/") || caminho.startsWith("/receipts/")) proibidas.push(r.url());
 			});
 			await page.goto("/?fila=go.mod&repositorio=cobranca-api");
 			for (const [dia, quantidade, primeiro] of [
@@ -26,7 +32,7 @@ for (const largura of [1440, 390, 360])
 				await page.keyboard.press("Enter");
 				const modal = page.getByRole("dialog");
 				await expect(modal.getByRole("link")).toHaveCount(quantidade);
-				await expect(modal).not.toContainText("Dados simulados");
+				await expect(modal).toContainText("Dados simulados");
 				await expect(modal.getByRole("link").first()).toContainText(primeiro);
 				await page.evaluate(() => document.fonts.ready);
 				await modal.screenshot({ path: `../.capturas-mcp/mapa/local-${dia}-${largura}-${tema}.png` });
@@ -35,7 +41,7 @@ for (const largura of [1440, 390, 360])
 				await modal.getByRole("link").first().focus();
 				await page.keyboard.press("Enter");
 				await expect(page).toHaveURL((url) => url.pathname === `/analises/demonstracao/mapa-${dia}-alto-1`);
-				await expect(page.locator("main")).not.toContainText(/dados simulados/i);
+				await expect(page.locator("main")).toContainText(/dados simulados/i);
 				await expect(page.getByRole("heading", { level: 1 })).toContainText(primeiro);
 				await expect(page.locator(".estado-do-detalhe")).toContainText("risco alto");
 				await page.getByRole("link", { name: "Voltar à visão geral", exact: true }).click();
@@ -125,7 +131,7 @@ test("falha ao carregar o recorte permite retry e nunca consulta dados reais", a
 	let falhar = true;
 	const proibidas: string[] = [];
 	page.on("request", (r) => {
-		if (new URL(r.url()).pathname.startsWith("/api/analises")) proibidas.push(r.url());
+		if (new URL(r.url()).pathname.startsWith("/api/analises/")) proibidas.push(r.url());
 	});
 	await page.route("**/src/mocks/mapa.ts*", (r) => {
 		if (falhar) {

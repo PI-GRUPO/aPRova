@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/PI-GRUPO/aPRova/internal/domain"
+	"github.com/PI-GRUPO/aPRova/internal/receipt"
 	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
 )
 
@@ -72,8 +73,8 @@ type relatoriosSessaoTeste struct{}
 func (relatoriosSessaoTeste) RelatorioSemanalDosRepositorios(_ context.Context, id int64, _ []string, inicio, fim time.Time) (domain.RelatorioSemanal, error) {
 	return domain.RelatorioSemanal{TenantID: id, Inicio: inicio, Fim: fim, Total: 10, Concluidas: 6, Rejeitadas: 1, Falhas: 1, ExigiramAprovacao: 3, RiscoMedio: 2}, nil
 }
-func sessaoDeTeste() *sessaoweb.Servidor {
-	s, e := sessaoweb.Novo(sessaoweb.Opcoes{Origem: "http://127.0.0.1:18080", Provedor: githubSessaoTeste{}, Armazenamento: &armazenamentoSessaoTeste{valores: map[string][]byte{}}, Relatorios: relatoriosSessaoTeste{}, Analises: analisesSessaoTeste{}})
+func sessaoDeTeste(recibos *receipt.Verificador, cadeia *receipt.VerificadorDeCadeia) *sessaoweb.Servidor {
+	s, e := sessaoweb.Novo(sessaoweb.Opcoes{Origem: "http://127.0.0.1:18080", Provedor: githubSessaoTeste{}, Armazenamento: &armazenamentoSessaoTeste{valores: map[string][]byte{}}, Relatorios: relatoriosSessaoTeste{}, Analises: analisesSessaoTeste{}, Leituras: leiturasTeste{recibos}, Cadeia: cadeia, Vinculos: map[string]string{"USUARIO-E2E": "pessoa-e2e"}})
 	if e != nil {
 		panic(e)
 	}

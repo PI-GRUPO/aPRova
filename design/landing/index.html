@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>aPRova · nenhum PR de IA chega à main sem prova</title>
-<meta name="description" content="O aPRova testa o código escrito por IA num ambiente isolado, decide o risco com regras fixas e assina cada decisão. Risco alto espera uma pessoa.">
+<meta name="description" content="O aPRova testa o código escrito por IA em um ambiente isolado, decide o risco com regras fixas e assina cada decisão. Risco alto espera uma pessoa.">
 <meta name="color-scheme" content="dark light">
 <script>try{const tema=localStorage.getItem("aprova-tema");if(tema==="claro"||tema==="escuro")document.documentElement.dataset.tema=tema}catch(erro){}</script>
 <link rel="preload" href="fontes/inter-latin-variavel.woff2" as="font" type="font/woff2" crossorigin>
@@ -14,6 +14,7 @@
 <script src="menu.js" defer></script>
 <script src="passos.js" defer></script>
 <script src="cartoes.js" defer></script>
+<script src="recibo-transicao.js" defer></script>
 </head>
 <body>
 <a class="pular" href="#conteudo">Pular para o conteúdo</a>
@@ -29,7 +30,8 @@
           <li><a href="#painel">Painel</a></li>
           <li><a href="#recibo">Recibo</a></li>
           <li><a href="#benchmark">Benchmark</a></li>
-          <li><a href="https://github.com/PI-GRUPO/aPRova">Código no GitHub</a></li>
+          <li><a href="#nunca">Limites</a></li>
+          <li><a class="topo-github" href="https://github.com/PI-GRUPO/aPRova"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>GitHub</span></a></li>
         </ul>
       </nav>
       <button class="trocar-tema" type="button" aria-label="Mudar para o tema claro">
@@ -91,8 +93,7 @@
         <h1 id="titulo">Nenhum PR de IA chega à main <em>sem prova</em></h1>
       </div>
       <div class="abertura-lado">
-        <p class="glossario"><strong>PR</strong>: pedido para juntar uma mudança ao código principal. <strong>main</strong>: a versão oficial do código.</p>
-        <p class="subtitulo">Código escrito por IA é testado num ambiente isolado, sem internet. Regras fixas decidem o risco, cada decisão é assinada, e risco alto espera uma pessoa.</p>
+        <p class="subtitulo">Código escrito por IA é testado em um ambiente isolado, sem internet. Regras fixas decidem o risco, cada decisão é assinada, e risco alto espera uma pessoa.</p>
         <div class="acoes">
           <a class="botao botao-principal" href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">Ver a demonstração</a>
           <a class="botao botao-metal" href="#recibo">Verificar um recibo</a>
@@ -120,7 +121,10 @@
         <dd><span class="digitos">Ed25519</span></dd>
       </div>
     </dl>
-    <p class="faixa-fonte">Os dois primeiros números vêm do estudo-piloto (rodada 2b, 21 tarefas). <a href="#benchmark">Ver o benchmark</a>.</p>
+    <p class="faixa-fonte">
+      <span>Os dois primeiros números vêm do estudo-piloto (rodada 2b, 21 tarefas).</span>
+      <a href="#benchmark">Ver o benchmark <span aria-hidden="true">→</span></a>
+    </p>
   </div>
 </section>
 
@@ -217,7 +221,7 @@
       <p>Sete regras olham o que mudou; nenhuma IA participa.</p>
       <p class="no-caso"><span>No PR #6</span> «Testes falharam»: risco alto.</p>
       <div class="visual-passo" data-visual="3">
-        <div class="mini mini-regras">
+        <div class="mini mini-regras cartao-vivo">
       <table class="regras">
         <caption class="visualmente-oculto">As sete regras e o risco que cada uma dá</caption>
         <thead><tr><th scope="col">O que mudou</th><th scope="col">Risco</th></tr></thead>
@@ -312,7 +316,7 @@
   </div>
 </section>
 
-<section class="secao tambem" aria-labelledby="titulo-tambem">
+<section class="secao tambem" id="alem-da-decisao" aria-labelledby="titulo-tambem">
   <h2 id="titulo-tambem">Além da decisão</h2>
   <p class="lead">Recursos de apoio. Nenhum muda o risco decidido pelas regras.</p>
   <ul class="lista-tambem">
@@ -329,8 +333,11 @@
       <details class="mais"><summary>Mais detalhes</summary><p><code>/metrics</code>, <code>/health/live</code> e <code>/health/ready</code>; liga com <code>METRICAS_ENDERECO</code>.</p></details>
     </li>
     <li class="cartao cartao-vivo">
-      <div class="cartao-cabeca"><h3 class="cartao-rotulo">Limites de uso</h3><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg></div>
-      <p class="cartao-destaque"><span class="cartao-numero">60</span> análises por hora</p>
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Limites de uso</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg></div>
+      <div class="cartao-limite">
+        <span class="cartao-numero">60</span>
+        <h3 class="cartao-destaque">análises por hora</h3>
+      </div>
       <p class="cartao-detalhe">Por conta. Acima disso, o pedido espera na fila; nunca passa sem análise.</p>
       <details class="mais"><summary>Mais detalhes</summary><p>Teto por instalação em <code>APROVA_TETO_ANALISES_POR_HORA</code>; leitura pública de recibos limitada a 60 por minuto por IP.</p></details>
     </li>
@@ -358,7 +365,7 @@
   </figure>
   <figure class="cena">
     <figcaption class="cena-texto"><h3>Recibo do PR #6 conferido</h3><p>Um clique confere hash, chave, assinatura, conteúdo e o elo com o recibo anterior.</p></figcaption>
-    <div class="navegador">
+    <div class="navegador" data-recibo-origem>
       <div class="navegador-barra" aria-hidden="true"><span class="navegador-pontos"><i></i><i></i><i></i></span><span class="navegador-url">localhost:8080/analises/3e2643de</span></div>
       <a class="ampliar" href="imagens/painel-recibo.webp"><img src="imagens/painel-recibo.webp" width="1397" height="338" loading="lazy" decoding="async" alt="Bloco «Recibo assinado» do PR #6 no painel, depois de «Verificar recibo»: recibo 6eddb1ce válido, com hash, chave, assinatura, conteúdo e elo marcados como «Confere»."></a>
     </div>
@@ -398,10 +405,10 @@
 </section>
 
 <section class="secao bench" id="benchmark" aria-labelledby="titulo-bench">
+  <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
   <div class="bench-intro">
     <h2 id="titulo-bench">O aPRova barra o código quebrado e deixa passar o certo?</h2>
     <p class="lead">Uma IA resolveu 21 exercícios, e cada solução passou pelo aPRova. Os testes originais diziam quais estavam certas.</p>
-    <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
   </div>
   <figure class="bench-print">
     <div class="mini mini-bench cartao-vivo">
@@ -431,8 +438,14 @@
   </div>
 
   <div class="bench-leitura">
-    <p>Na rodada 2b, as 4 quebradas foram barradas; em 6 casos de risco montados, 6 de 6 acertaram o nível.</p>
-    <p class="limites"><strong>Limites:</strong> uma rodada por tarefa, só 4 quebradas, e a 2b mudou modelo e execução juntos. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo</a></p>
+    <p class="bench-resultado">
+      <span>Na rodada 2b, as <strong>4</strong> quebradas foram barradas;</span>
+      <span>Em 6 casos de risco montados, <strong>6 de 6</strong> acertaram o nível.</span>
+    </p>
+    <details class="bench-limites" open>
+      <summary>Limites</summary>
+      <p class="limites">uma rodada por tarefa, só 4 quebradas, e a 2b mudou modelo e execução juntos. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo <svg class="icone-externo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></a></p>
+    </details>
   </div>
   <figure class="bench-grafico">
     <svg viewBox="0 0 360 204" role="img" aria-label="Rodada 2b: 21 soluções entregues, 4 quebradas, 4 barradas pelo aPRova e 0 quebradas que passaram.">
@@ -453,7 +466,7 @@
   </figure>
 </section>
 
-<section class="secao nunca" aria-labelledby="titulo-nunca">
+<section class="secao nunca" id="nunca" aria-labelledby="titulo-nunca">
   <h2 id="titulo-nunca">O que o aPRova nunca faz</h2>
   <ul class="lista-nunca">
     <li class="cartao cartao-vivo">
@@ -479,20 +492,37 @@
 <footer class="rodape">
   <div class="rodape-conteudo">
     <div class="rodape-grupo">
-      <p class="rodape-rotulo">Desenvolvido por</p>
-      <p>Pedro, Júlia, Sara, Laís, Geizilane e Luís.</p>
+      <a class="rodape-marca" href="#inicio" aria-label="aPRova, início"><svg class="logo" viewBox="0 0 193 52" width="116" height="31" role="img" aria-label="aPRova"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
+<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg></a>
+      <p class="rodape-rotulo">Desenvolvido por:</p>
+      <ul class="rodape-participantes">
+        <li>Pedro Henrique Mello</li>
+        <li>Julia Eduarda Fernandes</li>
+        <li>Sara Ferreira Rodrigues</li>
+        <li>Laís Santana Landim</li>
+        <li>Geizilane da Silva Melo</li>
+        <li>Luís Miguel Siqueira</li>
+      </ul>
     </div>
+    <nav aria-label="Navegação do rodapé">
     <ul class="rodape-links">
+      <li><a href="#inicio">Início</a></li>
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#alem-da-decisao">Além da decisão</a></li>
+      <li><a href="#painel">Painel</a></li>
+      <li><a href="#recibo">Recibo</a></li>
+      <li><a href="#benchmark">Benchmark</a></li>
+      <li><a href="#nunca">Limites</a></li>
       <li><a href="https://github.com/PI-GRUPO/aPRova/tree/main/docs">Documentação</a></li>
-      <li><a href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">PR #6, o caso da demonstração</a></li>
-      <li><a class="rodape-github" href="https://github.com/PI-GRUPO/aPRova" aria-label="Repositório do aPRova no GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg></a></li>
+      <li><a href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">Caso de demonstração</a></li>
+      <li><a class="rodape-github" href="https://github.com/PI-GRUPO/aPRova" aria-label="Repositório do aPRova no GitHub">Repositório do aPRova</a></li>
     </ul>
+    </nav>
+    <p class="rodape-nota">Projeto Integrador III desenvolvido no curso de Sistemas de Informação do UNIPAM.</p>
   </div>
   <div class="rodape-faixa">
     <div class="rodape-faixa-dentro">
-      <svg class="logo" viewBox="0 0 193 52" width="116" height="31" role="img" aria-label="aPRova"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
-<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg>
-      <p>© <span class="codigo-pontos">2026</span> aPRova · Projeto Integrador de Sistemas de Informação, UNIPAM</p>
+      <p>© 2026 aPRova. Todos os direitos reservados.</p>
     </div>
   </div>
 </footer>

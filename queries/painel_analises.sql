@@ -1,6 +1,12 @@
 -- name: ListWebAnalyses :many
-SELECT tr.*, rg.level AS risk_level
+SELECT tr.*, rg.level AS risk_level, coalesce(floor(extract(epoch FROM (CURRENT_TIMESTAMP - espera.created_at)))::bigint, -1)::bigint AS espera_segundos
 FROM task_runs tr
+LEFT JOIN LATERAL (
+ SELECT ts.created_at FROM task_steps ts
+ WHERE tr.state='aguardando_aprovacao' AND ts.tenant_id=tr.tenant_id
+ AND ts.task_run_id=tr.id AND ts.to_state='aguardando_aprovacao'
+ ORDER BY ts.created_at DESC,ts.id DESC LIMIT 1
+) espera ON true
 LEFT JOIN risk_gates rg ON rg.task_run_id = tr.id AND rg.tenant_id = tr.tenant_id
 WHERE tr.tenant_id = sqlc.arg(tenant_id)
  AND tr.repository = ANY(sqlc.arg(repositories)::text[])
