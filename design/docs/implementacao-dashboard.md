@@ -3,6 +3,9 @@
 Configuração do gate, Sugestões da IA e Limites de SLA ficam fora do menu em
 desktop e no celular. As rotas continuam disponíveis por endereço direto.
 
+Em Conta e integrações, o painel de vínculo com o Slack está oculto. A página
+exibe a identidade GitHub e as instalações autorizadas.
+
 ## Balões de ajuda
 
 Os pontos de interrogação de análises, recibos e gestão exibem a explicação

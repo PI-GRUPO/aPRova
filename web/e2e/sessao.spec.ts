@@ -58,11 +58,9 @@ for (const largura of [1440, 390, 360])
 			await page.screenshot({ path: `../.capturas-mcp/f3/local-semanal-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 		}
-		await page.route("**/api/web/vinculo-slack", (r) => r.fulfill({ json: { usuario_id: sessao.usuario.id, vinculado: false } }));
 		await page.goto("/conta");
 		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
-		await expect(page.getByText("Nenhuma conta Slack vinculada.")).toBeVisible();
-		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeDisabled();
+		await expect(page.getByText("equipe · Instalação 42", { exact: true })).toBeVisible();
 		await page.screenshot({ path: `../.capturas-mcp/f3/local-conta-${largura}.png`, fullPage: true });
 	});
 test("troca de escopo descarta dados e URL adulterada não dispara relatório", async ({ page }) => {

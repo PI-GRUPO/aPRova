@@ -3,7 +3,6 @@ import { Link, useSearchParams } from "react-router";
 import { useSessao } from "@/app/sessao";
 import { Ativo } from "@/componentes/Ativo";
 import { Botao, PainelDeEstado } from "@/componentes/Primitivos";
-import { VinculoSlack } from "@/componentes/VinculoSlack";
 import { ErroHTTP } from "@/servicos/http";
 import "@/estilos/sessao.css";
 export function Protegida({ children }: { children: ReactNode }) {
@@ -98,34 +97,30 @@ export function Conta() {
 		<div className="pagina">
 			<div className="titulo-contexto">
 				<h1>Conta e integrações</h1>
-				<p className="apoio">Conecte sua conta Slack ao GitHub</p>
 			</div>
 			<Protegida>
 				{sessao?.autenticado && (
-					<>
-						<section className="painel-sessao">
-							<h2>Sua identidade GitHub</h2>
-							<div>
-								<dl className="dados-identidade">
-									<div>
-										<dt>Conta autenticada</dt>
-										<dd>@{sessao.usuario.login}</dd>
-									</div>
-								</dl>
-								<p className="apoio">Sessão até {new Date(sessao.expira_em).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC</p>
-								{sessao.instalacoes.length ? (
-									sessao.instalacoes.map((i) => (
-										<p className="caminho" key={i.id}>
-											{i.conta} · Instalação {i.id}
-										</p>
-									))
-								) : (
-									<p>Nenhuma instalação autorizada para esta conta.</p>
-								)}
-							</div>
-						</section>
-						<VinculoSlack usuario={sessao.usuario.id} key={sessao.usuario.id} />
-					</>
+					<section className="painel-sessao">
+						<h2>Sua identidade GitHub</h2>
+						<div>
+							<dl className="dados-identidade">
+								<div>
+									<dt>Conta autenticada</dt>
+									<dd>@{sessao.usuario.login}</dd>
+								</div>
+							</dl>
+							<p className="apoio">Sessão até {new Date(sessao.expira_em).toLocaleString("pt-BR", { timeZone: "UTC" })} UTC</p>
+							{sessao.instalacoes.length ? (
+								sessao.instalacoes.map((i) => (
+									<p className="caminho" key={i.id}>
+										{i.conta} · Instalação {i.id}
+									</p>
+								))
+							) : (
+								<p>Nenhuma instalação autorizada para esta conta.</p>
+							)}
+						</div>
+					</section>
 				)}
 			</Protegida>
 		</div>

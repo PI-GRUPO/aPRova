@@ -23,7 +23,6 @@ test.beforeEach(async ({ page }) => {
 			json: { installation_id: 42, pagina: 1, limite: 20, total: 0, tem_mais: false, snapshot: new Date().toISOString(), itens: [] },
 		}),
 	);
-	await page.route("**/api/web/vinculo-slack", (r) => r.fulfill({ status: 503, json: {} }));
 	await autenticarFixture(page);
 });
 for (const largura of [1440, 390, 360]) {
@@ -188,7 +187,7 @@ test("catálogo autenticado distingue falta de proteção, acesso insuficiente e
 });
 
 for (const largura of [1440, 390, 360]) {
-	test(`vínculo Slack indisponível preserva identidade GitHub em ${largura}px`, async ({ page }) => {
+	test(`conta mostra a identidade GitHub com o vínculo Slack oculto em ${largura}px`, async ({ page }) => {
 		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
 		await page.unroute("**/api/sessao");
 		await page.route("**/api/sessao", (r) =>
@@ -203,9 +202,9 @@ for (const largura of [1440, 390, 360]) {
 				},
 			}),
 		);
-		const escritas: string[] = [];
+		const requisicoesIndevidas: string[] = [];
 		page.on("request", (r) => {
-			if (r.method() !== "GET") escritas.push(r.url());
+			if (r.method() !== "GET" || new URL(r.url()).pathname === "/api/web/vinculo-slack") requisicoesIndevidas.push(r.url());
 		});
 		await page.goto("/conta");
 		for (const tema of ["escuro", "claro"]) {
@@ -214,9 +213,9 @@ for (const largura of [1440, 390, 360]) {
 			await page.screenshot({ path: `../.capturas-mcp/dashboard/local-conta-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 		}
-		await expect(page.getByRole("button", { name: "Conectar minha conta Slack" })).toBeDisabled();
 		await expect(page.locator(".dados-identidade").getByText("@pessoa-fixture", { exact: true })).toBeVisible();
-		expect(escritas).toEqual([]);
+		await expect(page.locator("main")).not.toContainText("Slack");
+		expect(requisicoesIndevidas).toEqual([]);
 	});
 }
 
