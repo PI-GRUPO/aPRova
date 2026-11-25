@@ -56,10 +56,9 @@ export async function consultarJSON(
 	} = {},
 ): Promise<unknown> {
 	const controlador = new AbortController();
-	let expirou = false;
 	let iniciouEnvio = false;
 	let timer: ReturnType<typeof setTimeout> | undefined;
-	const cancelar = () => controlador.abort();
+	const cancelar = () => controlador.abort(new ErroHTTP("cancelado", "Consulta cancelada."));
 	try {
 		if (!Object.hasOwn(rotas, rota)) throw new ErroHTTP("requisicao", "Rota de API não permitida.");
 		let caminho: string = rotas[rota];
@@ -72,13 +71,10 @@ export async function consultarJSON(
 		const destino = new URL(caminho, origem || window.location.origin);
 		if (opcoes.parametros) destino.search = opcoes.parametros.toString();
 		const corpo = opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo);
-		if (opcoes.signal?.aborted) controlador.abort();
+		if (opcoes.signal?.aborted) cancelar();
 		controlador.signal.throwIfAborted();
 		opcoes.signal?.addEventListener("abort", cancelar, { once: true });
-		timer = setTimeout(() => {
-			expirou = true;
-			controlador.abort();
-		}, opcoes.timeout ?? 10000);
+		timer = setTimeout(() => controlador.abort(new ErroHTTP("timeout", "A consulta demorou além do limite.")), opcoes.timeout ?? 10000);
 		iniciouEnvio = true;
 		const resposta = await fetch(destino, {
 			method: opcoes.metodo ?? "GET",
@@ -120,14 +116,13 @@ export async function consultarJSON(
 		if (!resposta.headers.get("content-type")?.includes("application/json")) throw new ErroHTTP("resposta", "O serviço não retornou JSON.");
 		try {
 			return await resposta.json();
-		} catch (erro) {
-			if (controlador.signal.aborted) throw erro;
+		} catch {
+			controlador.signal.throwIfAborted();
 			throw new ErroHTTP("resposta", "A resposta do serviço não é válida.");
 		}
 	} catch (erro) {
 		if (erro instanceof ErroHTTP) throw erro;
-		if (controlador.signal.aborted)
-			throw new ErroHTTP(expirou ? "timeout" : "cancelado", expirou ? "A consulta demorou além do limite." : "Consulta cancelada.");
+		controlador.signal.throwIfAborted();
 		if (!iniciouEnvio) throw new ErroHTTP("requisicao", "Não foi possível preparar a requisição.");
 		throw new ErroHTTP("rede", "Não foi possível conectar ao serviço.");
 	} finally {
