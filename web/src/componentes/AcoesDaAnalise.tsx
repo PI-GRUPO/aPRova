@@ -6,24 +6,28 @@ import { Risco } from "./Analise";
 import { Botao, Modal } from "./Primitivos";
 import "@/estilos/acoes.css";
 
-const rotulos = {
-	aprovar: { botao: "Aprovar", titulo: "Aprovar PR", confirmar: "Confirmar aprovação", resultado: "Solicitação recebida" },
-	solicitar_alteracao: {
+type AcaoNoPainel = { tipo: TipoAcao; botao: string; titulo: string; confirmar: string; resultado: string };
+
+const acoes: readonly AcaoNoPainel[] = [
+	{ tipo: "aprovar", botao: "Aprovar", titulo: "Aprovar PR", confirmar: "Confirmar aprovação", resultado: "Solicitação recebida" },
+	{
+		tipo: "solicitar_alteracao",
 		botao: "Pedir alterações",
 		titulo: "Pedir alteração",
 		confirmar: "Enviar solicitação",
 		resultado: "Alteração solicitada",
 	},
-	reexecutar_analise: {
+	{
+		tipo: "reexecutar_analise",
 		botao: "Reexecutar análise",
 		titulo: "Reexecutar análise",
 		confirmar: "Reexecutar análise",
 		resultado: "Reexecução solicitada",
 	},
-};
+];
 function FormularioAcao({
 	contexto,
-	tipo,
+	acao,
 	resultado,
 	aoReceber,
 	aberto,
@@ -31,20 +35,20 @@ function FormularioAcao({
 	csrf,
 }: {
 	contexto: ContextoAcao;
-	tipo: TipoAcao;
+	acao: AcaoNoPainel;
 	resultado?: ResultadoAcao;
 	aoReceber: Dispatch<ResultadoAcao>;
 	aberto: boolean;
 	aoMudar: (v: boolean) => void;
 	csrf: string;
 }) {
+	const { tipo } = acao;
 	const [justificativa, setJustificativa] = useState("");
 	const [erro, setErro] = useState("");
 	const [enviando, setEnviando] = useState(false);
 	const trava = useRef(false);
 	const idAcao = useRef<string | null>(null);
 	const campoId = useId();
-	const texto = rotulos[tipo];
 	const motivo = motivoIndisponivel(contexto, tipo) || (!csrf ? "Ação indisponível no painel." : "");
 	const respostaDaAcao = resultado?.tipo === tipo ? resultado : undefined;
 	async function enviar() {
@@ -76,11 +80,11 @@ function FormularioAcao({
 				}
 			}}
 			className={`modal-acao modal-acao-${tipo}`}
-			titulo={respostaDaAcao ? texto.resultado : tipo === "aprovar" ? `${texto.titulo} #${contexto.pr}` : texto.titulo}
+			titulo={respostaDaAcao ? acao.resultado : tipo === "aprovar" ? `${acao.titulo} #${contexto.pr}` : acao.titulo}
 			descricao="Confira a análise e o commit antes de confirmar."
 			gatilho={
 				<Botao disabled={!!motivo || !!resultado} title={motivo || undefined} variante={tipo === "aprovar" ? "primario" : "secundario"}>
-					{texto.botao}
+					{acao.botao}
 				</Botao>
 			}
 		>
@@ -99,7 +103,9 @@ function FormularioAcao({
 									repositorio: contexto.repo,
 									numero_pr: String(contexto.pr),
 								}).toString()}`}
-								onClick={() => { aoMudar(false); }}
+								onClick={() => {
+									aoMudar(false);
+								}}
 							>
 								Ver análises deste PR
 							</Link>
@@ -171,7 +177,7 @@ function FormularioAcao({
 								Cancelar
 							</Botao>
 							<Botao variante="primario" type="submit" disabled={enviando}>
-								{enviando ? "Registrando…" : texto.confirmar}
+								{enviando ? "Registrando…" : acao.confirmar}
 							</Botao>
 						</div>
 					</form>
@@ -203,18 +209,18 @@ export function AcoesDaAnalise({
 	return (
 		<div className="acoes-da-analise">
 			<div className="controles">
-				{(Object.keys(rotulos) as TipoAcao[]).map((tipo) => (
+				{acoes.map((acao) => (
 					<FormularioAcao
-						key={tipo}
+						key={acao.tipo}
 						contexto={contexto}
-						tipo={tipo}
+						acao={acao}
 						csrf={csrf}
 						resultado={resultado}
 						aoReceber={(v) => aoReceber?.(v)}
-						aberto={aberta === tipo}
+						aberto={aberta === acao.tipo}
 						aoMudar={(v) => {
-							setAberta(v ? tipo : undefined);
-							if (!v && resultado?.tipo === tipo) aoAtualizar?.();
+							setAberta(v ? acao.tipo : undefined);
+							if (!v && resultado?.tipo === acao.tipo) aoAtualizar?.();
 						}}
 					/>
 				))}
