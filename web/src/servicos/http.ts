@@ -1,6 +1,6 @@
 import { uuidValido } from "./uuid";
 
-export type TipoDeErro = "http" | "rede" | "timeout" | "cancelado" | "resposta";
+export type TipoDeErro = "http" | "rede" | "timeout" | "cancelado" | "resposta" | "requisicao";
 export class ErroHTTP extends Error {
 	constructor(
 		public tipo: TipoDeErro,
@@ -19,7 +19,6 @@ function origemPublica(valor: string | undefined) {
 		throw new Error("A origem pública deve ser uma origem HTTP sem credenciais ou caminho.");
 	return url.origin;
 }
-const origem = origemPublica(import.meta.env.VITE_API_ORIGEM);
 const rotas = {
 	acoesAnalise: "/api/web/analises/:id/acoes",
 	analise: "/api/analises/:id",
@@ -56,25 +55,31 @@ export async function consultarJSON(
 		lerCodigo?: boolean;
 	} = {},
 ): Promise<unknown> {
-	if (!Object.hasOwn(rotas, rota)) throw new Error("Rota de API não permitida.");
-	let caminho: string = rotas[rota];
-	if (caminho.includes(":id")) {
-		const id = opcoes.id;
-		if (!id || !uuidValido(id)) throw new ErroHTTP("http", "Identificador inválido.", 404);
-		caminho = caminho.replace(":id", id);
-	}
-	const destino = new URL(caminho, origem || window.location.origin);
-	if (opcoes.parametros) destino.search = opcoes.parametros.toString();
 	const controlador = new AbortController();
 	let expirou = false;
+	let iniciouEnvio = false;
+	let timer: ReturnType<typeof setTimeout> | undefined;
 	const cancelar = () => controlador.abort();
-	if (opcoes.signal?.aborted) controlador.abort();
-	opcoes.signal?.addEventListener("abort", cancelar, { once: true });
-	const timer = setTimeout(() => {
-		expirou = true;
-		controlador.abort();
-	}, opcoes.timeout ?? 10000);
 	try {
+		if (!Object.hasOwn(rotas, rota)) throw new ErroHTTP("requisicao", "Rota de API não permitida.");
+		let caminho: string = rotas[rota];
+		if (caminho.includes(":id")) {
+			const id = opcoes.id;
+			if (!id || !uuidValido(id)) throw new ErroHTTP("http", "Identificador inválido.", 404);
+			caminho = caminho.replace(":id", id);
+		}
+		const origem = origemPublica(import.meta.env.VITE_API_ORIGEM);
+		const destino = new URL(caminho, origem || window.location.origin);
+		if (opcoes.parametros) destino.search = opcoes.parametros.toString();
+		const corpo = opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo);
+		if (opcoes.signal?.aborted) controlador.abort();
+		controlador.signal.throwIfAborted();
+		opcoes.signal?.addEventListener("abort", cancelar, { once: true });
+		timer = setTimeout(() => {
+			expirou = true;
+			controlador.abort();
+		}, opcoes.timeout ?? 10000);
+		iniciouEnvio = true;
 		const resposta = await fetch(destino, {
 			method: opcoes.metodo ?? "GET",
 			headers: {
@@ -82,7 +87,7 @@ export async function consultarJSON(
 				...(opcoes.csrf ? { "X-CSRF-Token": opcoes.csrf } : {}),
 				...(opcoes.corpo === undefined ? {} : { "Content-Type": "application/json" }),
 			},
-			body: opcoes.corpo === undefined ? undefined : JSON.stringify(opcoes.corpo),
+			body: corpo,
 			credentials: "include",
 			cache: "no-store",
 			signal: controlador.signal,
@@ -123,6 +128,7 @@ export async function consultarJSON(
 		if (erro instanceof ErroHTTP) throw erro;
 		if (controlador.signal.aborted)
 			throw new ErroHTTP(expirou ? "timeout" : "cancelado", expirou ? "A consulta demorou além do limite." : "Consulta cancelada.");
+		if (!iniciouEnvio) throw new ErroHTTP("requisicao", "Não foi possível preparar a requisição.");
 		throw new ErroHTTP("rede", "Não foi possível conectar ao serviço.");
 	} finally {
 		clearTimeout(timer);

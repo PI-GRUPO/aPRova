@@ -156,6 +156,25 @@ test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) =>
 	await expect(page.getByRole("status")).toContainText("resposta:");
 });
 
+test("cliente distingue falha ao preparar a requisição de falha de rede", async ({ page }) => {
+	await page.goto("/__teste");
+	const resultado = await page.evaluate(async (modulo) => {
+		const { consultarJSON, ErroHTTP }: typeof import("../src/servicos/http") = await import(modulo);
+		let enviou = false;
+		window.fetch = async () => {
+			enviou = true;
+			return Response.json({});
+		};
+		try {
+			await consultarJSON("sair", { metodo: "POST", corpo: { valor: BigInt(1) } });
+			return { enviou, tipo: "sucesso" };
+		} catch (erro) {
+			return { enviou, tipo: erro instanceof ErroHTTP ? erro.tipo : "desconhecido" };
+		}
+	}, "/src/servicos/http.ts");
+	expect(resultado).toEqual({ enviou: false, tipo: "requisicao" });
+});
+
 test("timeout e cancelamento não viram sucesso", async ({ page }) => {
 	await page.route("**/receipts/keys", (route) => {
 		// Mantém o GET interceptado para exercitar timeout e cancelamento do cliente.
