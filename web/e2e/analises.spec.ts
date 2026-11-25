@@ -1,7 +1,5 @@
 import { expect, type Page, type Route, test } from "@playwright/test";
 
-import tentativaComHtml from "./fixtures/tentativa-com-html.json" with { type: "json" };
-
 const id = "00000000-0000-4000-8000-000000000003";
 const id2 = "00000000-0000-4000-8000-000000000004";
 const reciboID = "00000000-0000-4000-8000-000000000002";
@@ -26,6 +24,17 @@ const analise = {
 	criado_em: instante,
 	atualizado_em: instante,
 };
+const tentativa = {
+	tentativa: 1,
+	compilou: true,
+	testes_passaram: 10,
+	testes_falharam: 1,
+	saida: "FAIL: teste de referência",
+	saida_truncada: true,
+	duracao_ms: 42459,
+	tipo_falha: "teste",
+	criado_em: instante,
+};
 const detalhe = {
 	installation_id: 42,
 	analise,
@@ -48,7 +57,7 @@ const detalhe = {
 		{ id: 1, de: "pendente", para: "testando_sandbox", detalhe: "Início da execução isolada.", criado_em: instante },
 		{ id: 2, de: "testando_sandbox", para: "avaliando_risco", detalhe: "Contadores persistidos.", criado_em: instante },
 	],
-	tentativas: [tentativaComHtml],
+	tentativas: [tentativa],
 	aprovacoes: [
 		{
 			id: 1,
@@ -152,11 +161,6 @@ for (const largura of [1440, 390, 360])
 					),
 			).toBeTruthy();
 		}
-		await page.getByText("Saída da tentativa 1", { exact: true }).click();
-		const saida = page.locator("pre.saida-analise");
-		await expect.poll(async () => (await saida.textContent()) === tentativaComHtml.saida).toBe(true);
-		await expect(saida.locator("script")).toHaveCount(0);
-		expect(await page.evaluate(() => "invasao" in window)).toBeFalsy();
 		await expect(page.getByText(/Registro de outro commit/)).toBeVisible();
 		await page.getByRole("link", { name: "Abrir Check Run", exact: true }).focus();
 		await page.keyboard.press("Tab");
@@ -171,6 +175,16 @@ for (const largura of [1440, 390, 360])
 		await page.getByRole("link", { name: "Voltar às análises", exact: true }).click();
 		await expect(page).toHaveURL(/\/analises\?installation_id=42$/);
 	});
+test("saída da tentativa exibe marcação como texto literal", async ({ page }) => {
+	const log = "<strong>Marcador & diagnóstico</strong>\nFAIL: teste de referência";
+	await simular(page, { ...detalhe, tentativas: [{ ...tentativa, saida: log }] });
+	await page.goto(`/analises/${id}?installation_id=42`);
+	await page.getByText("Saída da tentativa 1", { exact: true }).click();
+	const saida = page.locator("pre.saida-analise");
+	await expect(saida).toBeVisible();
+	await expect.poll(() => saida.textContent()).toBe(log);
+	await expect(saida.locator("*")).toHaveCount(0);
+});
 test("filtros, ordenação, paginação e retorno preservam URL e snapshot", async ({ page }) => {
 	await simular(page);
 	await page.goto("/analises?installation_id=42");
