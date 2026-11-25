@@ -163,10 +163,15 @@ test('o resumo é preservado nos dois formulários e não é anexado ao contrato
   }
 });
 
-test('consulta para contextualizar aprovação não publica um alerta OSV separado', () => {
-  const condicao = osv.nodes.find(n => n.name.startsWith('06D |')).parameters.conditions.conditions[0].leftValue;
-  assert.equal(expressao(condicao, { modo_osv: 'contexto_aprovacao' }), false);
-  assert.equal(expressao(condicao, { evento: { tipo: 'dependencia_nova' } }), true);
+test('consulta síncrona devolve o contexto persistido e a consulta normal segue para a Central', () => {
+  const retorno = osv.nodes.find(n => n.name.startsWith('06D |'));
+  const condicao = retorno.parameters.conditions.conditions[0].leftValue;
+  assert.equal(expressao(condicao, { modo_osv: 'contexto_aprovacao' }), true);
+  assert.equal(expressao(condicao, { evento: { tipo: 'dependencia_nova' } }), false);
+  const nome = prefixo => osv.nodes.find(n => n.name.startsWith(prefixo)).name;
+  assert.equal(osv.connections[nome('06B |')].main[0][0].node, nome('06C |'));
+  assert.equal(osv.connections[nome('06C |')].main[0][0].node, retorno.name);
+  assert.deepEqual(osv.connections[retorno.name].main, [[], [{ node: nome('06E |'), type: 'main', index: 0 }]]);
   const consulta = central.nodes.find(n => n.name.startsWith('02E |'));
   assert.equal(consulta.parameters.options.waitForSubWorkflow, true);
   assert.equal(consulta.parameters.mode, 'each');

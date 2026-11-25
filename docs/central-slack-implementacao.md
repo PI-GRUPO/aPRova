@@ -1058,6 +1058,17 @@ complementar a mensagem quando a correlação está ligada.
   instância confirmou a espera com resultado simulado, o limite com leitura
   real de uma chave fictícia e a passagem imediata sem dependência nova. O
   ensaio foi isolado e não enviou mensagem no Slack.
+- [x] Teste integrado na [PR 12 de aPRova-TESTES](https://github.com/PI-GRUPO/aPRova-TESTES/pull/12).
+  O OSV respondeu HTTP 200 para `github.com/google/uuid v1.6.0`. Depois de
+  quatro releituras, a Central leu o resultado persistido e publicou o
+  primeiro alerta de aprovação no Slack já com o resumo da consulta.
+- [x] Removido o aviso separado de dependência. O OSV devolve o resultado
+  persistido para a consulta síncrona ou o encaminha à Central para compor ou
+  atualizar o alerta de aprovação. Os dois caminhos foram validados no n8n
+  em fluxo isolado, com persistência e destino simulados.
+- [x] Teste integrado na [PR 13 de aPRova-TESTES](https://github.com/PI-GRUPO/aPRova-TESTES/pull/13).
+  O OSV respondeu HTTP 200 sem avisos conhecidos. A Central publicou um
+  único alerta de aprovação, já com o resumo, após quatro releituras.
 
 Após guardar o snapshot em `aprova_osv_por_analise`, o workflow OSV passa por
 `06E–06F` e encaminha `dependencia_nova` enriquecido à Central usando
@@ -1065,7 +1076,7 @@ Após guardar o snapshot em `aprova_osv_por_analise`, o workflow OSV passa por
 A entrega usa um marcador interno entre subworkflows; não é um novo evento
 assinado do worker nem muda o contrato v1. Consultas síncronas com
 `modo_osv=contexto_aprovacao` não voltam à Central, evitando ciclo.
-O alerta independente de dependência e o retorno síncrono foram preservados.
+A Central exibe o resultado no alerta de aprovação.
 
 `O01` exige origem autenticada/normalizada e valida identidade do snapshot,
 tenant, análise, repositório, PR e SHA quando disponível nos dois lados.
@@ -1257,9 +1268,9 @@ não significam ausência de vulnerabilidades.
 | Nós | Função |
 | --- | --- |
 | `01–03` | Entrada, validação e separação das dependências. |
-| `04–06` | Consulta paginada, consolidação de CVEs/completude e alerta. |
+| `04–06` | Consulta paginada, consolidação de CVEs/completude e resumo por dependência. |
 | `06A–06C` | Agrupamento, persistência e retorno do contexto por análise. |
-| `06D`, `07` | Separam contextualização e publicação do alerta. |
+| `06D` | Devolve o contexto persistido ao chamador síncrono. |
 | `06E–06F` | Encaminham contexto já persistido à Central, quando a correlação está habilitada e a consulta não é síncrona. |
 
 Data Table `aprova_osv_por_analise`: colunas String `chave` e

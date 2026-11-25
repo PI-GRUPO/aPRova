@@ -280,8 +280,8 @@ para o mesmo canal e timestamp, com persistência do resultado conferida.
 Na Fase 4, OSV encaminha à Central o resultado já persistido de
 `dependencia_nova`, via `APROVA_SLACK_WORKFLOW_ID`, por evento e sem aguardar.
 Consultas síncronas de contexto da aprovação não fazem esse encaminhamento,
-evitando ciclo Central → OSV → Central. O alerta independente de dependência
-continua no caminho existente. `O01` valida estrutura, identidade, SHA quando
+evitando ciclo Central → OSV → Central. A Central exibe o resultado no alerta
+de aprovação. `O01` valida estrutura, identidade, SHA quando
 disponível, validade de 24h e até 5 minutos de relógio futuro.
 
 A atualização reutiliza a mesma associação e reserva de decisão, preservando
@@ -596,7 +596,7 @@ correspondência inequívoca na instância. Nenhum vínculo de pessoa foi inferi
 | `N8N_SEGREDO_EVENTOS` | Go → Core, HMAC | vazio; obrigatório quando emissão habilitada | Segredo compartilhado por direção | Emissor e n8n |
 | `N8N_SEGREDO_ACOES` | n8n → API, HMAC | vazio; obrigatório para ações/consultas | Segredo compartilhado por direção | API e n8n |
 | `SLACK_SIGNING_SECRET` | Central/assistente: autenticar Slack | vazio bloqueia | Slack App / Basic Information | n8n |
-| `SLACK_INCOMING_WEBHOOK_URL` | Alertas, OSV, Trello e Digest | vazio impede envio | Incoming Webhook do Slack (segredo) | n8n |
+| `SLACK_INCOMING_WEBHOOK_URL` | Alertas, Trello e Digest | vazio impede envio | Incoming Webhook do Slack (segredo) | n8n |
 | `NODE_FUNCTION_ALLOW_BUILTIN` | Compose → Code | `crypto`, fixo no Compose | Requisito HMAC | n8n |
 | `N8N_BLOCK_ENV_ACCESS_IN_NODE` | Compose → Code | `false`, fixo no Compose | Permitir leitura de `$env` | n8n |
 | `APROVA_TRELLO_LISTA_BACKLOG_ID` | Trello: lista Backlog | vazio; sete IDs obrigatórios | Lista existente no quadro | n8n |
