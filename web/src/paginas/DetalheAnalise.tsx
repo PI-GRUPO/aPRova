@@ -150,7 +150,7 @@ export function ConteudoAnalise({
 	aoReceberAcao?: (resultado: ResultadoAcao) => void;
 }) {
 	const { sessao, cacheDeLeituras } = useSessao();
-	const csrfDasAcoes = !demonstracao && !__MOCKS__ && sessao?.autenticado && sessao.acoes_disponiveis ? sessao.csrf_token : "";
+	const csrfDasAcoes = !demonstracao && !__MOCKS__ && sessao?.autenticado && sessao.acoes_disponiveis ? sessao.csrf : "";
 	const a = d.analise;
 	const g = d.gate;
 

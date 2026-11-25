@@ -1,5 +1,8 @@
 import { consultarJSON, ErroHTTP } from "./http";
 import { objeto } from "./recibos";
+
+type Instalacao = { id: number; conta: string };
+
 export type Sessao =
 	| { autenticado: false; login_disponivel: boolean }
 	| {
@@ -7,31 +10,46 @@ export type Sessao =
 			login_disponivel: boolean;
 			acoes_disponiveis?: boolean;
 			usuario: { id: number; login: string };
-			instalacoes: { id: number; conta: string }[];
-			csrf_token: string;
+			instalacoes: Instalacao[];
+			csrf: string;
 			expira_em: string;
 	  };
+
+function instalacaoValida(v: unknown): v is Instalacao {
+	return objeto(v) && typeof v.id === "number" && Number.isSafeInteger(v.id) && v.id > 0 && typeof v.conta === "string";
+}
+
 export async function consultarSessao(signal: AbortSignal): Promise<Sessao> {
 	const v = await consultarJSON("sessao", { signal });
 	if (!objeto(v) || typeof v.autenticado !== "boolean" || typeof v.login_disponivel !== "boolean")
 		throw new ErroHTTP("resposta", "Resposta de sessão inválida.");
+	if (!v.autenticado) return { autenticado: false, login_disponivel: v.login_disponivel };
+
+	const { usuario, instalacoes, acoes_disponiveis, expira_em, csrf_token: csrf } = v;
 	if (
-		v.autenticado &&
-		(!objeto(v.usuario) ||
-			!(typeof v.usuario.id === "number" && Number.isSafeInteger(v.usuario.id) && v.usuario.id > 0) ||
-			typeof v.usuario.login !== "string" ||
-			(v.acoes_disponiveis !== undefined && typeof v.acoes_disponiveis !== "boolean") ||
-			!Array.isArray(v.instalacoes) ||
-			!v.instalacoes.every(
-				(i) => objeto(i) && typeof i.id === "number" && Number.isSafeInteger(i.id) && i.id > 0 && typeof i.conta === "string",
-			) ||
-			typeof v.csrf_token !== "string" ||
-			v.csrf_token.length < 32 ||
-			typeof v.expira_em !== "string" ||
-			Number.isNaN(Date.parse(v.expira_em)))
+		!objeto(usuario) ||
+		typeof usuario.id !== "number" ||
+		!Number.isSafeInteger(usuario.id) ||
+		usuario.id <= 0 ||
+		typeof usuario.login !== "string" ||
+		(acoes_disponiveis !== undefined && typeof acoes_disponiveis !== "boolean") ||
+		!Array.isArray(instalacoes) ||
+		!instalacoes.every(instalacaoValida) ||
+		typeof csrf !== "string" ||
+		csrf.length < 32 ||
+		typeof expira_em !== "string" ||
+		Number.isNaN(Date.parse(expira_em))
 	)
 		throw new ErroHTTP("resposta", "Resposta de sessão inválida.");
-	return v as Sessao;
+	return {
+		autenticado: true,
+		login_disponivel: v.login_disponivel,
+		acoes_disponiveis,
+		usuario: { id: usuario.id, login: usuario.login },
+		instalacoes,
+		csrf,
+		expira_em,
+	};
 }
 export async function encerrarSessao(csrf: string) {
 	await consultarJSON("sair", { metodo: "POST", csrf, statusEsperado: 204 });

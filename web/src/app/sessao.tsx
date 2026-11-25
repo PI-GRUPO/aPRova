@@ -96,9 +96,9 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 	}, [estado.sessao, encerrarLocalmente]);
 
 	const { erro } = estado;
-	const sessao = estado.carregando ?? erro ? undefined : estado.sessao;
+	const sessao = (estado.carregando ?? erro) ? undefined : estado.sessao;
 	const escopoDaSessao = sessao?.autenticado
-		? JSON.stringify([sessao.usuario.id, sessao.csrf_token, sessao.expira_em, sessao.instalacoes.map((i) => i.id).sort((a, b) => a - b)])
+		? JSON.stringify([sessao.usuario.id, sessao.csrf, sessao.expira_em, sessao.instalacoes.map((i) => i.id).sort((a, b) => a - b)])
 		: "";
 	const cacheDeLeituras = useMemo(() => (escopoDaSessao ? new CacheDeLeituras() : undefined), [escopoDaSessao]);
 	const logout = useRef<Promise<void> | null>(null);
@@ -111,7 +111,7 @@ export function ProvedorDeSessao({ children }: { children: ReactNode }) {
 	async function encerrar() {
 		if (!sessao?.autenticado) return;
 		try {
-			await encerrarSessao(sessao.csrf_token);
+			await encerrarSessao(sessao.csrf);
 		} catch (e) {
 			if (!(e instanceof ErroHTTP && e.status === 401)) throw e;
 		}
