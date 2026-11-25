@@ -38,5 +38,5 @@ export function retornoDaFila(valor: string | null) {
 		const v = origem.get(nome);
 		if (v) retorno.set(nome, v);
 	}
-	return `/${retorno.size ? `?${retorno}` : ""}`;
+	return retorno.size ? `/?${retorno.toString()}` : "/";
 }

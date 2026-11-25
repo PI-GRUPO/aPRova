@@ -21,5 +21,6 @@ export const consultarVisaoGeral: Consulta<VisaoGeralDados> = __MOCKS__
 
 export function destinoAnalise(id: string, origem: "mock" | "api", instalacao: string, retorno: URLSearchParams) {
 	const caminho = origem === "mock" ? "/analises/demonstracao" : "/analises";
-	return `${caminho}/${encodeURIComponent(id)}?${new URLSearchParams({ installation_id: instalacao, retorno: retorno.toString() })}`;
+	const parametros = new URLSearchParams({ installation_id: instalacao, retorno: retorno.toString() });
+	return `${caminho}/${encodeURIComponent(id)}?${parametros.toString()}`;
 }

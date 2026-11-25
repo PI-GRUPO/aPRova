@@ -12,6 +12,10 @@ function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
 	const [aberto, setAberto] = useState(false);
 	const [erro, setErro] = useState("");
 	const [ocupado, setOcupado] = useState(false);
+	function abrirConfiguracao() {
+		const parametros = new URLSearchParams({ repositorio: sugestao.repo, proposta: sugestao.id });
+		navegar(`/configuracao?${parametros.toString()}`);
+	}
 	async function agir(acao: "recusada" | "em_revisao") {
 		if (ocupado || !revisarSugestao.disponivel) return;
 		setOcupado(true);
@@ -19,7 +23,7 @@ function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
 		try {
 			await revisarSugestao.executar(escopo, sugestao.id, acao);
 			setAberto(false);
-			if (acao === "em_revisao") navegar(`/configuracao?${new URLSearchParams({ repositorio: sugestao.repo, proposta: sugestao.id })}`);
+			if (acao === "em_revisao") abrirConfiguracao();
 		} catch (e) {
 			setErro(e instanceof Error ? e.message : "Não foi possível revisar.");
 		} finally {
@@ -60,11 +64,7 @@ function RevisarSugestao({ sugestao }: { sugestao: Sugestao }) {
 								</Botao>
 							</>
 						)}
-						{sugestao.estado === "em_revisao" && (
-							<Botao onClick={() => navegar(`/configuracao?${new URLSearchParams({ repositorio: sugestao.repo, proposta: sugestao.id })}`)}>
-								Continuar revisão
-							</Botao>
-						)}
+						{sugestao.estado === "em_revisao" && <Botao onClick={abrirConfiguracao}>Continuar revisão</Botao>}
 					</div>
 					<Botao disabled={ocupado} onClick={() => setAberto(false)}>
 						Cancelar

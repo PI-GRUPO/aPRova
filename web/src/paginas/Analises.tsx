@@ -10,6 +10,7 @@ import { Selecao } from "@/componentes/Selecao";
 import { CabecalhoDaTabela, Celula, Coluna, ColunaOrdenavel, CorpoDaTabela, LinhaDaTabela, Tabela } from "@/componentes/Tabela";
 import { consultarRepos, estados, listarAnalises, type PaginaAnalises } from "@/servicos/analises";
 import type { Consulta } from "@/servicos/fonte";
+import { destinoAnalise } from "@/servicos/visao-geral";
 import { Protegida } from "./Acesso";
 import "@/estilos/analises.css";
 export function Analises() {
@@ -288,7 +289,7 @@ function Resultados({
 									<Link
 										className="botao botao-secundario"
 										aria-label={`Abrir análise ${a.repositorio} #${a.numero_pr}`}
-										to={`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: voltar.toString() })}`}
+										to={destinoAnalise(a.id, "api", id, voltar)}
 									>
 										Abrir análise
 									</Link>
@@ -313,13 +314,13 @@ function Resultados({
 									<LinhaDaTabela key={a.id}>
 										<Celula>
 											<Link
-												to={`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: voltar.toString() })}`}
+												to={destinoAnalise(a.id, "api", id, voltar)}
 												onClick={(e) => {
 													if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 													e.preventDefault();
 													const retorno = new URLSearchParams(window.location.search);
 													retorno.set("installation_id", id);
-													navegar(`/analises/${a.id}?${new URLSearchParams({ installation_id: id, retorno: retorno.toString() })}`);
+													navegar(destinoAnalise(a.id, "api", id, retorno));
 												}}
 											>
 												{a.repositorio} #{a.numero_pr}
