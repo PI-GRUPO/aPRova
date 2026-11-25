@@ -871,7 +871,7 @@ volta por `POST /acoes-remotas`; não chama GitHub diretamente.
 | Nós | Função |
 | --- | --- |
 | `01–02`, `03A–03B`, `HTTP Request` | Recebem evento, separam e publicam alertas; `03A` inclui acesso à PR, recibo e verificação. |
-| `02A–02F` | Buscam/validam contexto OSV e fazem consulta complementar quando possível. |
+| `02A–02H` | Buscam e validam o contexto OSV, consultam diretamente se conhecem os pacotes e aguardam brevemente quando o gate detectou dependência nova. |
 | `O01`, `C01–C13`, `D00–D09` | Validam OSV posterior e reutilizam associação, reserva e confirmação das edições, preservando decisões. |
 | `V01–V07` | Consultam documento e verificação do recibo no núcleo, conferem identidade e classificam válido, inválido ou indisponível antes de `03A`. |
 | `05–07`, `07E` | Interações, assinatura Slack, confirmação e recusa. |
@@ -1046,6 +1046,18 @@ a ativação operacional permanecem validações próprias, não consequência
 do teste de uma mensagem com dados fictícios.
 
 ### Atualização posterior com OSV — Fase 4
+
+Quando a primeira leitura não encontra contexto e o alerta tem o motivo
+`dependencia_nova` sem uma lista de pacotes, `02G–02H` relê a tabela da mesma
+análise até oito vezes, com intervalo de um segundo. Sai da espera assim que
+há contexto aproveitável. Se o prazo se esgotar ou a leitura falhar, o alerta
+segue com o status de indisponibilidade. A atualização posterior pode
+complementar a mensagem quando a correlação está ligada.
+
+- [x] Espera publicada na Central e exportada com os testes do grafo. A
+  instância confirmou a espera com resultado simulado, o limite com leitura
+  real de uma chave fictícia e a passagem imediata sem dependência nova. O
+  ensaio foi isolado e não enviou mensagem no Slack.
 
 Após guardar o snapshot em `aprova_osv_por_analise`, o workflow OSV passa por
 `06E–06F` e encaminha `dependencia_nova` enriquecido à Central usando

@@ -418,9 +418,12 @@ sem publicar Digest. É pedido da automação, não evento emitido pelo worker.
 
 OSV é público, não altera risco e guarda contexto por análise na Data Table.
 Central reutiliza contexto por até 24h ou consulta dependências conhecidas
-antes do alerta. Sem resultado completo, informa indisponibilidade/parcial.
-Eventos fora de ordem não atualizam automaticamente alerta já publicado.
-Falta emissão automática de dependências e contexto na review do núcleo.
+antes do alerta. Quando o gate detectou uma dependência nova e o alerta chega
+sem a lista de pacotes, a Central pode esperar até oito intervalos de um
+segundo para o resultado da mesma análise. Sem resultado completo, o alerta
+informa indisponibilidade ou resultados parciais. Com a correlação habilitada,
+uma consulta posterior pode atualizar a mensagem. O contexto OSV ainda não é
+exibido na review do núcleo.
 
 Trello exige link completo da PR na descrição de um único card. Pesquisa,
 revalida e comenta, sem mover. Marcador tenant/evento evita duplicidade

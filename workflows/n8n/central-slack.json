@@ -650,7 +650,7 @@
       ],
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "function compativel(snapshot, evento) {\n  if (!snapshot || snapshot.versao !== 1 ||\n      !['concluida', 'incompleta', 'falha'].includes(snapshot.status) ||\n      !Array.isArray(snapshot.dependencias) || snapshot.dependencias.length === 0 ||\n      JSON.stringify(snapshot.identidade) !== evento.chave_osv ||\n      (snapshot.sha && evento.pr?.sha && snapshot.sha !== evento.pr.sha) ||\n      !Number.isFinite(Date.parse(snapshot.consultado_em))) return false;\n  if (snapshot.dependencias.some(d => !d || !['nome', 'versao', 'ecossistema'].every(k => typeof d[k] === 'string' && d[k].trim()))) return false;\n  const nomes = lista => JSON.stringify(lista.map(d => [d.ecossistema, d.nome, d.versao]).sort());\n  return !Array.isArray(evento.dependencias) || evento.dependencias.length === 0 ||\n    nomes(evento.dependencias) === nomes(snapshot.dependencias);\n}\nfunction apresentar(snapshot) {\n  const prefixo = snapshot.status === 'concluida' ? 'Consulta OSV concluída' : snapshot.status === 'falha' ? 'Consulta OSV indisponível' : 'Consulta OSV com resultados parciais';\n  const linhas = snapshot.dependencias.slice(0, 3).map(d =>\n    d.nome + ' @ ' + d.versao + ' (' + d.ecossistema + '): ' + String(d.resumo || 'Resultado indisponível.').slice(0, 230));\n  if (snapshot.total_dependencias > 3) linhas.push('Resumo limitado a 3 de ' + snapshot.total_dependencias + ' dependências; este resumo não é exaustivo.');\n  return (prefixo + ' em ' + snapshot.consultado_em + '.\\n\\n' + linhas.join('\\n\\n')).slice(0, 1000);\n}\nconst evento = $('02A | Identificar Contexto OSV').item.json;\nlet snapshot;\ntry { snapshot = JSON.parse($json.contexto); } catch {}\nconst valido = compativel(snapshot, evento);\nconst recente = valido && snapshot.status !== 'falha' && Date.now() - Date.parse(snapshot.consultado_em) <= 24 * 60 * 60 * 1000 &&\n  Date.parse(snapshot.consultado_em) - Date.now() <= 300000;\nconst dependencias = Array.isArray(evento.dependencias) && evento.dependencias.length > 0\n  ? evento.dependencias\n  : valido ? snapshot.dependencias.map(({ nome, versao, ecossistema }) => ({ nome, versao, ecossistema })) : [];\nreturn { json: {\n  ...evento, dependencias: dependencias.slice(0, 10),\n  osv_pacotes_total: dependencias.length,\n  modo_osv: 'contexto_aprovacao',\n  consultar_osv: !recente && dependencias.length > 0,\n  contexto_osv: recente\n    ? { status: snapshot.status, resumo: apresentar(snapshot), consultado_em: snapshot.consultado_em }\n    : { status: 'indisponivel', resumo: 'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.' },\n} };"
+        "jsCode": "function compativel(snapshot, evento) {\n  if (!snapshot || snapshot.versao !== 1 ||\n      !['concluida', 'incompleta', 'falha'].includes(snapshot.status) ||\n      !Array.isArray(snapshot.dependencias) || snapshot.dependencias.length === 0 ||\n      JSON.stringify(snapshot.identidade) !== evento.chave_osv ||\n      (snapshot.sha && evento.pr?.sha && snapshot.sha !== evento.pr.sha) ||\n      !Number.isFinite(Date.parse(snapshot.consultado_em))) return false;\n  if (snapshot.dependencias.some(d => !d || !['nome', 'versao', 'ecossistema'].every(k => typeof d[k] === 'string' && d[k].trim()))) return false;\n  const nomes = lista => JSON.stringify(lista.map(d => [d.ecossistema, d.nome, d.versao]).sort());\n  return !Array.isArray(evento.dependencias) || evento.dependencias.length === 0 ||\n    nomes(evento.dependencias) === nomes(snapshot.dependencias);\n}\nfunction apresentar(snapshot) {\n  const prefixo = snapshot.status === 'concluida' ? 'Consulta OSV concluída' : snapshot.status === 'falha' ? 'Consulta OSV indisponível' : 'Consulta OSV com resultados parciais';\n  const linhas = snapshot.dependencias.slice(0, 3).map(d =>\n    d.nome + ' @ ' + d.versao + ' (' + d.ecossistema + '): ' + String(d.resumo || 'Resultado indisponível.').slice(0, 230));\n  if (snapshot.total_dependencias > 3) linhas.push('Resumo limitado a 3 de ' + snapshot.total_dependencias + ' dependências; este resumo não é exaustivo.');\n  return (prefixo + ' em ' + snapshot.consultado_em + '.\\n\\n' + linhas.join('\\n\\n')).slice(0, 1000);\n}\nconst evento = $('02A | Identificar Contexto OSV').item.json;\nlet snapshot;\ntry { snapshot = JSON.parse($json.contexto); } catch {}\nconst valido = compativel(snapshot, evento);\nconst recente = valido && snapshot.status !== 'falha' && Date.now() - Date.parse(snapshot.consultado_em) <= 24 * 60 * 60 * 1000 &&\n  Date.parse(snapshot.consultado_em) - Date.now() <= 300000;\nconst dependencias = Array.isArray(evento.dependencias) && evento.dependencias.length > 0\n  ? evento.dependencias\n  : valido ? snapshot.dependencias.map(({ nome, versao, ecossistema }) => ({ nome, versao, ecossistema })) : [];\nconst aguardarOsv = !recente && dependencias.length === 0 && !$json.error &&\n  evento.risco?.motivos?.some(motivo => motivo?.nome === 'dependencia_nova') === true &&\n  $runIndex < 8;\nreturn { json: {\n  ...evento, dependencias: dependencias.slice(0, 10),\n  aguardar_osv: aguardarOsv,\n  osv_pacotes_total: dependencias.length,\n  modo_osv: 'contexto_aprovacao',\n  consultar_osv: !recente && dependencias.length > 0,\n  contexto_osv: recente\n    ? { status: snapshot.status, resumo: apresentar(snapshot), consultado_em: snapshot.consultado_em }\n    : { status: 'indisponivel', resumo: 'OSV: resultado ainda não disponível para esta análise. Isso não indica ausência de vulnerabilidades.' },\n} };"
       }
     },
     {
@@ -721,6 +721,53 @@
       "parameters": {
         "mode": "runOnceForEachItem",
         "jsCode": "function compativel(snapshot, evento) {\n  if (!snapshot || snapshot.versao !== 1 ||\n      !['concluida', 'incompleta', 'falha'].includes(snapshot.status) ||\n      !Array.isArray(snapshot.dependencias) || snapshot.dependencias.length === 0 ||\n      JSON.stringify(snapshot.identidade) !== evento.chave_osv ||\n      (snapshot.sha && evento.pr?.sha && snapshot.sha !== evento.pr.sha) ||\n      !Number.isFinite(Date.parse(snapshot.consultado_em))) return false;\n  if (snapshot.dependencias.some(d => !d || !['nome', 'versao', 'ecossistema'].every(k => typeof d[k] === 'string' && d[k].trim()))) return false;\n  const nomes = lista => JSON.stringify(lista.map(d => [d.ecossistema, d.nome, d.versao]).sort());\n  return !Array.isArray(evento.dependencias) || evento.dependencias.length === 0 ||\n    nomes(evento.dependencias) === nomes(snapshot.dependencias);\n}\nfunction apresentar(snapshot) {\n  const prefixo = snapshot.status === 'concluida' ? 'Consulta OSV concluída' : snapshot.status === 'falha' ? 'Consulta OSV indisponível' : 'Consulta OSV com resultados parciais';\n  const linhas = snapshot.dependencias.slice(0, 3).map(d =>\n    d.nome + ' @ ' + d.versao + ' (' + d.ecossistema + '): ' + String(d.resumo || 'Resultado indisponível.').slice(0, 230));\n  if (snapshot.total_dependencias > 3) linhas.push('Resumo limitado a 3 de ' + snapshot.total_dependencias + ' dependências; este resumo não é exaustivo.');\n  return (prefixo + ' em ' + snapshot.consultado_em + '.\\n\\n' + linhas.join('\\n\\n')).slice(0, 1000);\n}\nconst evento = $('02C | Selecionar Contexto OSV').item.json;\nconst snapshot = $json.contexto_osv_snapshot;\nconst valido = compativel(snapshot, evento);\nreturn { json: {\n  ...evento,\n  contexto_osv: valido\n    ? { status: snapshot.status, resumo: apresentar(snapshot), consultado_em: snapshot.consultado_em }\n    : { status: 'indisponivel', resumo: 'OSV: não foi possível concluir a consulta para esta análise. Isso não indica ausência de vulnerabilidades.' },\n} };"
+      }
+    },
+    {
+      "id": "584f3b1e-c9ce-4f0d-970a-cf127c8c0a39",
+      "name": "02G | Aguardar resultado do OSV",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1296,
+        -272
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.aguardar_osv === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ee45a8be-f180-44ec-966c-cee99daf1b44",
+      "name": "02H | Esperar 1 segundo pelo OSV",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        -176
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": 1,
+        "unit": "seconds"
       }
     },
     {
@@ -1982,7 +2029,7 @@
         ],
         [
           {
-            "node": "V01 | Preparar verificação do recibo",
+            "node": "02G | Aguardar resultado do OSV",
             "type": "main",
             "index": 0
           }
@@ -2479,6 +2526,35 @@
         [
           {
             "node": "16 | Conferir entrega do retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02G | Aguardar resultado do OSV": {
+      "main": [
+        [
+          {
+            "node": "02H | Esperar 1 segundo pelo OSV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "V01 | Preparar verificação do recibo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02H | Esperar 1 segundo pelo OSV": {
+      "main": [
+        [
+          {
+            "node": "02B | Buscar Contexto OSV",
             "type": "main",
             "index": 0
           }
