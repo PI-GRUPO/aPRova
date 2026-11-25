@@ -267,7 +267,7 @@ function ConteudoRepositorios({ instalacao }: { instalacao: string }) {
 			{sessao?.autenticado && (
 				<SeletorGestao
 					rotulo="Instalação"
-					valor={instalacao ?? ""}
+					valor={instalacao}
 					aoMudar={(v) => {
 						atualizar("installation_id", v);
 					}}
