@@ -1,4 +1,3 @@
-import { readdirSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
@@ -29,18 +28,14 @@ export default defineConfig(({ command, mode }) => {
 			react(),
 			tailwindcss(),
 			{
-				name: "limpar-build-preservando-checkout",
+				name: "validar-build-dashboard",
 				generateBundle(_, bundle) {
 					for (const output of Object.values(bundle)) {
 						if (output.type === "chunk" && Object.keys(output.modules).some((id) => id.includes("/src/mocks/")))
 							this.error("O build inclui fixtures do dashboard.");
 					}
-				},
-				buildStart() {
-					if (command !== "build") return;
-					for (const name of readdirSync(new URL("./dist/", import.meta.url))) {
-						if (name !== ".gitkeep") rmSync(new URL(`./dist/${name}`, import.meta.url), { recursive: true, force: true });
-					}
+					// O Go incorpora dist no binário mesmo em checkouts sem o frontend compilado.
+					this.emitFile({ type: "asset", fileName: ".gitkeep", source: "" });
 				},
 			},
 		],
@@ -54,7 +49,7 @@ export default defineConfig(({ command, mode }) => {
 			),
 			__HARNESS__: JSON.stringify(mode === "teste" && command === "serve"),
 		},
-		build: { emptyOutDir: false },
+		build: { emptyOutDir: true },
 		server: {
 			host: "127.0.0.1",
 			port: 5173,
