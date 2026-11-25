@@ -16,9 +16,10 @@ for (const largura of [1440, 390, 360])
 				const p = new URL(r.url()).pathname;
 				if (r.method() !== "GET" || p.startsWith("/api/analises") || p.startsWith("/receipts/")) proibidas.push(r.url());
 			});
-			await page.goto(`/analises/demonstracao/${id}?retorno=fila%3Dpeso%26repositorio%3DaPRova-TESTES`);
+			const caminho = `/analises/demonstracao/${id}`;
+			await page.goto(`${caminho}?retorno=fila%3Dpeso%26repositorio%3DaPRova-TESTES`);
 
-			await expect(page).toHaveURL(new RegExp(`/analises/demonstracao/${id}`));
+			await expect(page).toHaveURL((url) => url.pathname === caminho);
 			await expect(page.locator("main")).toContainText(/dados simulados/i);
 			await expect(page.getByText("Verificação de assinatura indisponível.")).toBeVisible();
 			await page.evaluate(() => document.fonts.ready);
