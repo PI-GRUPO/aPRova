@@ -50,6 +50,12 @@ test("as cinco referências abrem com sessão e IDs desconhecidos não acionam a
 	await expect(page.getByRole("link", { name: "Voltar à visão geral" })).toHaveAttribute("href", "/");
 	expect(consultas).toEqual([]);
 });
+test("identificador longo do mapa é rejeitado antes de carregar a fixture", async ({ page }) => {
+	await autenticarFixture(page);
+	await page.route("**/src/mocks/mapa.ts*", (r) => r.abort());
+	await page.goto(`/analises/demonstracao/mapa-2026-11-08-alto-${"1".repeat(128)}`);
+	await expect(page.getByRole("heading", { name: "Análise não encontrada" })).toBeVisible();
+});
 test("uma falha real de leitura continua sendo erro e não vira demonstração", async ({ page }) => {
 	await page.route("**/api/sessao", (r) =>
 		r.fulfill({

@@ -14,13 +14,16 @@ export type AnaliseDemonstracao = {
 
 	complemento?: ComplementoDemonstracao;
 };
+// O último segmento é um índice de array contado a partir de 1.
+const tamanhoMaximoIdMapa = "mapa-AAAA-MM-DD-baixo-4294967295".length;
+
 export async function consultarAnaliseDemonstracao(id: string, signal: AbortSignal): Promise<AnaliseDemonstracao | null> {
 	if (!__MOCKS__) return indisponivel();
 	signal.throwIfAborted();
 	const { analisesDemonstracao, complementosDemonstracao } = await import("@/mocks/analises-demonstracao");
 	signal.throwIfAborted();
 	let dados = analisesDemonstracao.find((a) => a.analise.id === id);
-	if (!dados && /^mapa-\d{4}-\d{2}-\d{2}-(alto|medio|baixo)-[1-9]\d*$/.test(id)) {
+	if (!dados && id.length <= tamanhoMaximoIdMapa && id.startsWith("mapa-")) {
 		const { referenciasMapaMock } = await import("@/mocks/mapa");
 		signal.throwIfAborted();
 		dados = referenciasMapaMock.find((r) => r.detalhe.analise.id === id)?.detalhe;
