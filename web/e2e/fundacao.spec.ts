@@ -122,8 +122,8 @@ test("cliente trata saúde, prontidão 503 e falha de rede", async ({ page }) =>
 
 test("cliente só consulta rotas cadastradas e mantém filtros na query", async ({ page }) => {
 	await page.goto("/__teste");
-	const resultado = await page.evaluate(async (modulo) => {
-		const { consultarJSON }: typeof import("../src/servicos/http") = await import(modulo);
+	const resultado = await page.evaluate(async () => {
+		const { consultarJSON } = await import("/src/servicos/http");
 		const destinos: string[] = [];
 		window.fetch = async (url) => {
 			destinos.push(String(url));
@@ -136,7 +136,7 @@ test("cliente só consulta rotas cadastradas e mantém filtros na query", async 
 		const id = "00000000-0000-0000-0000-000000000001";
 		await consultarJSON("analise", { id, parametros: new URLSearchParams({ repositorio: "org/repo & teste" }) });
 		return { rejeicoes: rejeicoes.map((r) => r.status), destinos };
-	}, "/src/servicos/http.ts");
+	});
 	expect(resultado.rejeicoes).toEqual(["rejected", "rejected"]);
 	expect(resultado.destinos).toEqual([
 		`${new URL(page.url()).origin}/api/analises/00000000-0000-0000-0000-000000000001?repositorio=org%2Frepo+%26+teste`,
@@ -158,8 +158,8 @@ test("cliente valida DTOs e rejeita HTML e JSON malformado", async ({ page }) =>
 
 test("cliente distingue falha ao preparar a requisição de falha de rede", async ({ page }) => {
 	await page.goto("/__teste");
-	const resultado = await page.evaluate(async (modulo) => {
-		const { consultarJSON, ErroHTTP }: typeof import("../src/servicos/http") = await import(modulo);
+	const resultado = await page.evaluate(async () => {
+		const { consultarJSON, ErroHTTP } = await import("/src/servicos/http");
 		let enviou = false;
 		window.fetch = async () => {
 			enviou = true;
@@ -171,7 +171,7 @@ test("cliente distingue falha ao preparar a requisição de falha de rede", asyn
 		} catch (erro) {
 			return { enviou, tipo: erro instanceof ErroHTTP ? erro.tipo : "desconhecido" };
 		}
-	}, "/src/servicos/http.ts");
+	});
 	expect(resultado).toEqual({ enviou: false, tipo: "requisicao" });
 });
 
