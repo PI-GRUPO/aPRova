@@ -44,11 +44,6 @@ function Painel({
 				)}
 			</header>
 			<div className="conteudo-recibo">{children}</div>
-			{assinado && (
-				<div className="serrilhado-recibo">
-					<Ativo nome="serrilhado" />
-				</div>
-			)}
 		</section>
 	);
 }

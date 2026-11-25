@@ -37,10 +37,10 @@ async function simular(page: Page, doc: unknown = documento, resultado: unknown 
 		await route.fulfill({ json: path.endsWith("/keys") ? { chaves } : path.endsWith("/verify") ? resultado : doc });
 	});
 }
-for (const largura of [1440, 390, 360]) {
+for (const largura of [1920, 1440, 390, 360]) {
 	test(`consulta, verificação, exportação e temas em ${largura}px`, async ({ page }) => {
 		await simular(page);
-		await page.setViewportSize({ width: largura, height: largura === 1440 ? 900 : 844 });
+		await page.setViewportSize({ width: largura, height: largura >= 768 ? 900 : 844 });
 		await page.goto("/recibos");
 		await page.getByLabel("UUID do recibo").fill(id);
 		await page.getByRole("button", { name: "Localizar recibo" }).click();
@@ -50,6 +50,15 @@ for (const largura of [1440, 390, 360]) {
 		await page.evaluate(() => document.fonts.ready);
 		for (const tema of ["escuro", "claro"]) {
 			if (tema === "claro") await page.getByRole("button", { name: "Usar tema claro" }).click();
+			if (largura === 1920) {
+				const borda = await page.locator(".recibo-assinado").evaluate((painel) => {
+					const estilo = getComputedStyle(painel, "::after");
+					return { repeticao: estilo.backgroundRepeat, imagem: estilo.backgroundImage, largura: parseFloat(estilo.width) };
+				});
+				expect(borda.repeticao).toBe("repeat-x");
+				expect(borda.imagem).not.toBe("none");
+				expect(borda.largura).toBeGreaterThan(558);
+			}
 			await page.screenshot({ path: `../.capturas-mcp/f2/local-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
 			expect(
@@ -212,7 +221,9 @@ test.describe("ajuda em tela de toque", () => {
 	test.use({ viewport: { width: 320, height: 844 }, hasTouch: true });
 	test("abre o balão ao tocar e fecha ao tocar fora", async ({ page }) => {
 		await simular(page);
-		await page.addInitScript(() => { localStorage.setItem("aprova-tema", "claro"); });
+		await page.addInitScript(() => {
+			localStorage.setItem("aprova-tema", "claro");
+		});
 		await page.goto(`/recibos/${id}`);
 		const ajuda = page.getByRole("button", { name: "Ajuda: Conteúdo assinado", exact: true });
 		const balao = page.getByRole("tooltip");

@@ -1152,6 +1152,8 @@ que incluía uma proposta de AGENTS.md versionado.
 - Contratos: os três GETs públicos de recibos existentes; nenhuma API nova.
 - Arquivos: páginas/serviço/estilo de recibos, rotas, ativos de ajuda/serrilhado,
   cenários Playwright, fixture assinada do servidor exclusivo de testes e documentação.
+- A borda do conteúdo assinado repete o serrilhado por toda a largura. A
+  regressão cobre 1920 px nos temas claro e escuro.
 - Validação: Biome e build aprovados; testes Go de API/receipt/web e go vet web
   aprovados. Regressão F1/servidor aprovada; cenários F2 incluem HTTP local com
   verificador real e assinatura do download conferida independentemente.
