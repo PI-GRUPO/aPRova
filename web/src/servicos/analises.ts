@@ -232,6 +232,7 @@ export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, fi
 	q.set("nivel", "alto");
 	q.set("inicio", "1970-01-01");
 	q.set("ordem", "antigas");
+	q.set("limite", "25");
 	const dados = await listarAnalises(q, signal);
 	const corteSolicitado = q.get("snapshot");
 	if (

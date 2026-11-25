@@ -1242,7 +1242,7 @@ Base local `5fb6476`, cards #65–#68 e #70, visão geral desktop `9:22` e varia
 
 | Seção | Origem e comportamento |
 | --- | --- |
-| Fila da visão geral | `GET /api/analises` com instalação, repositório opcional, estado `aguardando_aprovacao`, nível alto e início em 1970 para incluir pendências anteriores aos últimos 30 dias. O servidor ordena por recebimento, calcula o total e fornece o snapshot para paginar. A busca por texto abrange a página indicada. |
+| Fila da visão geral | `GET /api/analises` com instalação, repositório opcional, estado `aguardando_aprovacao`, nível alto e início em 1970 para incluir pendências anteriores aos últimos 30 dias. A fila pede até 25 PRs por página. O servidor ordena por recebimento, calcula o total e fornece o snapshot para paginar. A busca por texto abrange a página indicada. |
 | Filtros e detalhe | `GET /api/repositorios` fornece o catálogo da instalação. O link da fila abre `GET /api/analises/{id}` no escopo da linha. URL, busca e paginação acompanham o retorno. O resumo informa PR, autor, commit e recebimento. A idade da pendência, a branch, os motivos e as evidências estão ausentes no resumo. |
 | Sessão e relatório semanal | Integrações existentes em `GET /api/sessao` e `GET /api/web/relatorio-semanal`. O relatório cobre sete dias UTC no escopo autorizado. |
 | Recibo individual | Consulta por UUID, download, verificação e chaves públicas já integrados a `/receipts/{id}`, `/receipts/{id}/verify` e `/receipts/keys`. O envelope preserva os bytes assinados. A rota de instruções `/receipts/{id}/revert` da base local não tem ação correspondente no dashboard. |

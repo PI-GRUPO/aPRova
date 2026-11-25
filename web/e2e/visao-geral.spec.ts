@@ -14,7 +14,13 @@ const item = {
 	criado_em: snapshot,
 	atualizado_em: snapshot,
 };
-const dados = { installation_id: 42, snapshot, pagina: 1, limite: 1, total: 2, tem_mais: true, itens: [item] };
+const itens = Array.from({ length: 26 }, (_, indice) => ({
+	...item,
+	id: `00000000-0000-4000-8000-${String(indice + 11).padStart(12, "0")}`,
+	numero_pr: item.numero_pr + indice,
+}));
+const itemDaSegundaPagina = itens[25];
+const dados = { installation_id: 42, snapshot, pagina: 1, limite: 25, total: itens.length, tem_mais: true, itens: itens.slice(0, 25) };
 test.beforeEach(async ({ page }) => {
 	await autenticarFixture(page);
 	await page.route("**/api/repositorios?*", (r) => r.fulfill({ json: { installation_id: 42, repositorios: [item.repositorio] } }));
@@ -24,9 +30,10 @@ test.beforeEach(async ({ page }) => {
 		expect(q.get("nivel")).toBe("alto");
 		expect(q.get("inicio")).toBe("1970-01-01");
 		expect(q.get("installation_id")).toBe("42");
+		expect(q.get("limite")).toBe("25");
 		if (q.get("pagina") === "2") {
 			expect(q.get("snapshot")).toBe(snapshot);
-			return r.fulfill({ json: { ...dados, pagina: 2, tem_mais: false, itens: [{ ...item, numero_pr: 19 }] } });
+			return r.fulfill({ json: { ...dados, pagina: 2, tem_mais: false, itens: [itemDaSegundaPagina] } });
 		}
 		return r.fulfill({ json: dados });
 	});
@@ -47,6 +54,8 @@ for (const largura of [1440, 390, 360])
 			await expect(page.getByText(/Métricas simuladas/)).toBeVisible();
 			const fila = page.getByRole("region", { name: "Fila de pendências" });
 			await expect(fila.getByRole("link", { name: "equipe/projeto #18" })).toBeVisible();
+			await expect(fila.getByRole("status")).toHaveText("25 nesta página · 26 no total · página 1");
+			await expect(fila.getByRole("link", { name: "equipe/projeto #42" })).toBeVisible();
 			await page.evaluate(() => document.fonts.ready);
 			await page.screenshot({ path: `../.capturas-mcp/dashboard/local-overview-${largura}-${tema}.png`, fullPage: true });
 			expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
@@ -61,9 +70,9 @@ for (const largura of [1440, 390, 360])
 				r.fulfill({
 					json: {
 						installation_id: 42,
-						analise: { ...item, numero_pr: 19 },
+						analise: itemDaSegundaPagina,
 						branch: null,
-						url_pr: "https://github.com/equipe/projeto/pull/19",
+						url_pr: "https://github.com/equipe/projeto/pull/43",
 						url_check: null,
 						atual: true,
 						gate: null,
@@ -76,11 +85,12 @@ for (const largura of [1440, 390, 360])
 					},
 				}),
 			);
-			await fila.getByRole("link", { name: "equipe/projeto #19" }).click();
-			await expect(page.getByRole("heading", { name: "equipe/projeto / PR #19" })).toBeVisible();
+			await expect(fila.getByRole("status")).toHaveText("1 nesta página · 26 no total · página 2");
+			await fila.getByRole("link", { name: "equipe/projeto #43" }).click();
+			await expect(page.getByRole("heading", { name: "equipe/projeto / PR #43" })).toBeVisible();
 			await page.getByRole("link", { name: "Voltar à visão geral" }).click();
 			await page.reload();
-			await expect(fila.getByRole("link", { name: "equipe/projeto #19" })).toBeVisible();
+			await expect(fila.getByRole("link", { name: "equipe/projeto #43" })).toBeVisible();
 			if (largura === 1440) await expect(page.getByRole("searchbox")).toHaveValue("abc");
 			expect(escritas).toEqual([]);
 		});
