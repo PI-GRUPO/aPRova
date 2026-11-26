@@ -65,6 +65,26 @@ design/prototipo/tsconfig.tsbuildinfo
 # Contexto local do Codex e plano de manutenção dos workflows
 /AGENTS.md
 /docs/plano-atualizacao-workflows.md
+/design/docs/dashboard-api-desenvolvimento.md
 
 # Capturas recebidas pelos MCPs e comparações visuais locais
 /.capturas-mcp/
+
+# Dashboard web: dependências, build e saídas de teste
+/web/node_modules/
+/web/dist/*
+!/web/dist/.gitkeep
+/web/test-results/
+/web/playwright-report/
+/web/tsconfig.tsbuildinfo
+
+# Relatórios locais de ciclos do dashboard substituídos pelo contexto atual
+/design/docs/dashboard-acoes-simuladas.md
+/design/docs/dashboard-fila-detalhe.md
+/design/docs/dashboard-gestao.md
+/design/docs/dashboard-mapa.md
+/design/docs/dashboard-visao-geral.md
+
+# Referências visuais da landing (imagens de terceiros)
+design/landing/referencias/
+design/landing/prints/

@@ -1,0 +1,245 @@
+.grade-recibo {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+	align-items: start;
+}
+.painel-recibo {
+	min-width: 0;
+	border: 1px solid var(--borda-padrao);
+	border-radius: 12px;
+	background: var(--fundo-superficie);
+	overflow: hidden;
+}
+.painel-recibo > header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 12px;
+	min-height: 36px;
+	background: var(--fundo-elevado);
+}
+.pagina > h2 {
+	font-size: 14px;
+	line-height: 20px;
+}
+.painel-recibo h2 {
+	font-size: 14px;
+	line-height: 20px;
+}
+.conteudo-recibo {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow-wrap: anywhere;
+}
+.recibo-assinado {
+	background: var(--fundo-elevado);
+	border-bottom: 0;
+	border-radius: 12px 12px 0 0;
+}
+.recibo-assinado::after {
+	display: block;
+	height: 10px;
+	background: url("../ativos/escuro-serrilhado.svg") left bottom / auto 8px repeat-x;
+	content: "";
+}
+[data-tema="claro"] .recibo-assinado {
+	background: var(--fundo-superficie);
+}
+[data-tema="claro"] .recibo-assinado::after {
+	background-image: url("../ativos/claro-serrilhado.svg");
+}
+.ajuda-recibo {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+}
+.dados-recibo {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.dados-recibo > div {
+	display: grid;
+	grid-template-columns: 128px minmax(0, 1fr);
+	gap: 12px;
+}
+.dados-recibo dt {
+	color: var(--texto-secundario);
+	font-size: 12px;
+	line-height: 16px;
+}
+.mono,
+.comando-recibo,
+.chave-recibo code {
+	font-family: var(--font-mono);
+}
+.acoes-recibo {
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	flex-wrap: wrap;
+}
+.acoes-recibo .botao:first-child {
+	min-width: 190px;
+	background: var(--texto-primario);
+}
+.acoes-recibo .botao:last-child {
+	min-width: 170px;
+}
+.chave-recibo {
+	display: flex;
+	flex-direction: column;
+	align-items: start;
+	gap: 10px;
+}
+.localizar-recibo .campo {
+	flex: 1;
+	min-width: 220px;
+	max-width: 480px;
+}
+.conferencias-recibo {
+	margin-top: 12px;
+}
+.conferencias-recibo td {
+	white-space: normal;
+}
+.conferencias-recibo caption {
+	text-align: left;
+	margin-bottom: 8px;
+}
+.comando-recibo {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-size: 12px;
+	margin: 0;
+}
+@media (max-width: 767px) {
+	.grade-recibo {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.dados-recibo > div {
+		grid-template-columns: 90px minmax(0, 1fr);
+	}
+	.acoes-recibo .botao {
+		flex: 1;
+	}
+}
+.voltar-recibos-mobile,
+.titulo-recibos-mobile {
+	display: none;
+}
+.pagina-verificacao-mobile {
+	padding-top: 20px;
+}
+.voltar-verificacao {
+	border: 0;
+	background: transparent;
+	padding: 0;
+	color: var(--texto-primario);
+	text-decoration: underline;
+}
+.resultado-verificacao-mobile .painel-recibo {
+	border: 0;
+	background: transparent;
+}
+.resultado-verificacao-mobile .painel-recibo > header {
+	background: transparent;
+	padding: 0;
+	height: 36px;
+}
+.resultado-verificacao-mobile .conteudo-recibo {
+	padding: 0;
+}
+.resultado-verificacao-mobile .resultado-verificacao {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.resultado-verificacao-mobile table {
+	order: -1;
+	margin: 0;
+}
+.resultado-verificacao-mobile caption {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+.resultado-verificacao-mobile th,
+.resultado-verificacao-mobile td {
+	width: 50%;
+	padding: 6px 12px;
+}
+.resultado-verificacao-mobile th {
+	line-height: 16px;
+}
+.resultado-verificacao-mobile td {
+	height: 36px;
+}
+.cards-recibos {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+.card-recibo {
+	background: var(--fundo-superficie);
+	border: 1px solid var(--borda-padrao);
+	border-radius: 12px;
+	overflow: hidden;
+}
+.card-recibo h2 {
+	background: var(--fundo-elevado);
+	padding: 8px 12px;
+	font-size: 14px;
+	line-height: 20px;
+}
+.card-recibo > div {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	align-items: start;
+	overflow-wrap: anywhere;
+}
+.card-recibo .botao {
+	width: 210px;
+	max-width: 100%;
+}
+.ferramentas-recibos-mobile summary {
+	cursor: pointer;
+	font-size: 12px;
+	text-decoration: underline;
+}
+.ferramentas-recibos-mobile > div {
+	padding-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+@media (max-width: 767px) {
+	.pagina-recibos {
+		padding-top: 20px;
+	}
+	.voltar-recibos-mobile {
+		display: inline-flex;
+	}
+	.titulo-recibos-mobile {
+		display: block;
+	}
+	.titulo-recibos-desktop {
+		display: none;
+	}
+	.pagina-recibos .titulo-contexto {
+		gap: 16px;
+	}
+	.pagina-recibos .filtros-recibos > .seletor-gestao:first-child {
+		width: 100%;
+	}
+}

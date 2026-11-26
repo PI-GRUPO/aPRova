@@ -19,6 +19,7 @@ func ambienteLimpo(t *testing.T) {
 	t.Helper()
 
 	for _, variavel := range []string{
+		"WEB_URL_PUBLICA", "GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET", "WEB_CHAVE_SESSAO",
 		"PORT", "LOG_LEVEL", "DATABASE_URL", "REDIS_URL",
 		"GITHUB_APP_ID", "GITHUB_PRIVATE_KEY_BASE64", "GITHUB_WEBHOOK_SECRET",
 		"APROVA_CHAVE_RECIBO", "APROVA_CHAVES_PUBLICAS_RECIBO",
@@ -620,5 +621,21 @@ func TestEnderecoDasMetricasRecusaValorSemPorta(t *testing.T) {
 
 	if err == nil || !strings.Contains(err.Error(), "METRICAS_ENDERECO") {
 		t.Errorf("endereço sem porta precisa ser recusado nomeando a variável, obtive %v", err)
+	}
+}
+
+func TestLoginWebExigeConfiguracaoCompletaSemExporSegredo(t *testing.T) {
+	ambienteMinimoValido(t)
+	t.Setenv("GITHUB_CLIENT_SECRET", "segredo-que-nao-pode-aparecer")
+	_, err := Carregar()
+	if err == nil || strings.Contains(err.Error(), "segredo-que-nao-pode-aparecer") {
+		t.Fatalf("configuração parcial aceita ou segredo exposto: %v", err)
+	}
+	t.Setenv("GITHUB_CLIENT_ID", "cliente")
+	t.Setenv("WEB_URL_PUBLICA", "https://aprova.test")
+	t.Setenv("WEB_CHAVE_SESSAO", base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{7}, 32)))
+	c, err := Carregar()
+	if err != nil || len(c.WebChaveSessao) != 32 || c.GitHubClientID != "cliente" {
+		t.Fatal("configuração web completa recusada", err)
 	}
 }

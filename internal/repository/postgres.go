@@ -218,11 +218,21 @@ func (r *RepositorioPostgres) RegistrarRevisao(ctx context.Context, decisao doma
 		return err
 	}
 
-	taskRun, err := r.consultas.GetLatestTaskRunForPullRequest(ctx, db.GetLatestTaskRunForPullRequestParams{
-		TenantID:   decisao.InstallationID,
-		Repository: decisao.Repositorio,
-		PrNumber:   numeroPR,
-	})
+	var taskRun db.TaskRun
+	if decisao.Origem == domain.OrigemPainel {
+		if decisao.TaskRunID == "" {
+			return domain.ErrNaoEncontrado
+		}
+		taskRun, err = r.consultas.GetTaskRun(ctx, decisao.TaskRunID)
+		if err == nil && (taskRun.TenantID != decisao.InstallationID || taskRun.Repository != decisao.Repositorio ||
+			taskRun.PrNumber != numeroPR || taskRun.HeadSha != decisao.CommitSHA) {
+			return domain.ErrNaoEncontrado
+		}
+	} else {
+		taskRun, err = r.consultas.GetLatestTaskRunForPullRequest(ctx, db.GetLatestTaskRunForPullRequestParams{
+			TenantID: decisao.InstallationID, Repository: decisao.Repositorio, PrNumber: numeroPR,
+		})
+	}
 	if err != nil {
 		return traduzir("buscar task_run do pull request", err)
 	}
@@ -572,6 +582,31 @@ func (r *RepositorioPostgres) RelatorioSemanal(ctx context.Context, tenantID int
 	}, nil
 }
 
+// RelatorioSemanalDosRepositorios restringe todas as contagens ao escopo autorizado.
+func (r *RepositorioPostgres) RelatorioSemanalDosRepositorios(ctx context.Context, tenantID int64, repositorios []string, inicio, fim time.Time) (domain.RelatorioSemanal, error) {
+	if tenantID <= 0 || len(repositorios) == 0 || !fim.After(inicio) {
+		return domain.RelatorioSemanal{}, fmt.Errorf("%w: tenant %d, janela %s a %s", domain.ErrDadosInvalidos, tenantID, inicio, fim)
+	}
+
+	linha, err := r.consultas.GetWeeklyReportForRepositories(ctx, db.GetWeeklyReportForRepositoriesParams{TenantID: tenantID, Repositories: repositorios, StartsAt: inicio, EndsAt: fim})
+	if err != nil {
+		return domain.RelatorioSemanal{}, traduzir("montar relatório semanal", err)
+	}
+
+	return domain.RelatorioSemanal{
+		TenantID:          tenantID,
+		Inicio:            inicio,
+		Fim:               fim,
+		Total:             linha.Total,
+		Concluidas:        linha.Succeeded,
+		Rejeitadas:        linha.Rejected,
+		Falhas:            linha.Failed,
+		ExigiramAprovacao: linha.NeededApproval,
+		RiscoMedio:        linha.MediumRisk,
+		Revertidas:        linha.Reverted,
+	}, nil
+}
+
 // VincularIdentidade associa o usuário do Slack ao login do GitHub no tenant,
 // substituindo um vínculo anterior.
 func (r *RepositorioPostgres) VincularIdentidade(ctx context.Context, tenantID int64, usuarioSlack, loginGitHub string) error {
@@ -654,6 +689,12 @@ func (r *RepositorioPostgres) gravarTentativa(ctx context.Context, tentativa aca
 		taskRunID = &tentativa.TaskRunID
 	}
 
+	origem := "slack"
+	usuarioSlack := &tentativa.UsuarioSlack
+	if tentativa.Origem == acaoremota.OrigemPainel {
+		origem = tentativa.Origem
+		usuarioSlack = nil
+	}
 	id, err := r.consultas.CreateRemoteActionAttempt(ctx, db.CreateRemoteActionAttemptParams{
 		ActionID:      tentativa.IDAcao,
 		TaskRunID:     taskRunID,
@@ -662,11 +703,12 @@ func (r *RepositorioPostgres) gravarTentativa(ctx context.Context, tentativa aca
 		Repository:    tentativa.Repositorio,
 		PrNumber:      numeroPR,
 		ActionType:    string(tentativa.Tipo),
-		SlackUserID:   tentativa.UsuarioSlack,
+		SlackUserID:   usuarioSlack,
 		GithubLogin:   login,
 		Decision:      string(tentativa.Decisao),
 		Reason:        string(tentativa.Motivo),
 		AttemptedAt:   tentativa.Em,
+		Origin:        origem,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("registrar tentativa de ação remota: %w", err)

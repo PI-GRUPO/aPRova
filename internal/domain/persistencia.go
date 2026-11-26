@@ -11,6 +11,7 @@ var (
 	ErrNaoEncontrado        = errors.New("domain: registro não encontrado")
 	ErrDuplicado            = errors.New("domain: registro já existe")
 	ErrDadosInvalidos       = errors.New("domain: dados inválidos")
+	ErrCadeiaSemAcesso      = errors.New("domain: acesso insuficiente para verificar a cadeia inteira")
 	ErrTransicaoConcorrente = errors.New("domain: task_run não está mais no estado esperado")
 	ErrTransicaoProibida    = errors.New("domain: transição fora da máquina de estados")
 	ErrPrazoPerdido         = errors.New("domain: task_run não está mais reivindicado por este trabalhador")
@@ -64,6 +65,7 @@ type OrigemAprovacao string
 const (
 	OrigemGitHub OrigemAprovacao = "github"
 	OrigemSlack  OrigemAprovacao = "slack"
+	OrigemPainel OrigemAprovacao = "painel"
 )
 
 // TamanhoMaximoDaJustificativa é o número máximo de caracteres da justificativa
@@ -168,7 +170,7 @@ type Aprovacao struct {
 	DeliveryID     string           `validate:"required,max=100"`
 	Decisao        DecisaoAprovacao `validate:"required,oneof=aprovada alteracoes_solicitadas"`
 	Revisor        string           `validate:"required,max=100"`
-	Origem         OrigemAprovacao  `validate:"omitempty,oneof=github slack"`
+	Origem         OrigemAprovacao  `validate:"omitempty,oneof=github slack painel"`
 	MotivoFeedback *MotivoFeedback  `validate:"omitempty,oneof=regra_conservadora risco_aceito falso_positivo"`
 	Justificativa  *string          `validate:"omitempty,max=4000"`
 	DecididaEm     time.Time        `validate:"required"`

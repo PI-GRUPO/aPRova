@@ -95,7 +95,7 @@ type RemoteActionAttempt struct {
 	TenantID      int64     `json:"tenant_id"`
 	TaskRunID     *string   `json:"task_run_id"`
 	ActionType    string    `json:"action_type"`
-	SlackUserID   string    `json:"slack_user_id"`
+	SlackUserID   *string   `json:"slack_user_id"`
 	GithubLogin   *string   `json:"github_login"`
 	Repository    string    `json:"repository"`
 	PrNumber      int32     `json:"pr_number"`
@@ -105,6 +105,7 @@ type RemoteActionAttempt struct {
 	CreatedAt     time.Time `json:"created_at"`
 	ID            int64     `json:"id"`
 	Justification string    `json:"justification"`
+	Origin        string    `json:"origin"`
 }
 
 type RiskExplanation struct {

@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aPRova · nenhum PR de IA chega à main sem prova</title>
+<meta name="description" content="O aPRova testa o código escrito por IA em um ambiente isolado, decide o risco com regras fixas e assina cada decisão. Risco alto espera uma pessoa.">
+<meta name="color-scheme" content="dark light">
+<script>try{const tema=localStorage.getItem("aprova-tema");if(tema==="claro"||tema==="escuro")document.documentElement.dataset.tema=tema}catch(erro){}</script>
+<link rel="preload" href="fontes/inter-latin-variavel.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="estilo.css">
+<script src="contagem.js" defer></script>
+<script src="ampliar.js" defer></script>
+<script src="menu.js" defer></script>
+<script src="passos.js" defer></script>
+<script src="cartoes.js" defer></script>
+<script src="recibo-transicao.js" defer></script>
+</head>
+<body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="topo">
+  <div class="topo-dentro">
+    <a class="topo-marca" href="#inicio" aria-label="aPRova, início"><svg class="logo" viewBox="0 0 193 52" width="116" height="31" aria-hidden="true" focusable="false"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
+<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg></a>
+    <div class="topo-acoes">
+      <nav aria-label="Seções">
+        <ul>
+          <li><a href="#como-funciona">Como funciona</a></li>
+          <li><a href="#painel">Painel</a></li>
+          <li><a href="#recibo">Recibo</a></li>
+          <li><a href="#benchmark">Benchmark</a></li>
+          <li><a href="#nunca">Limites</a></li>
+          <li><a class="topo-github" href="https://github.com/PI-GRUPO/aPRova"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg><span>GitHub</span></a></li>
+        </ul>
+      </nav>
+      <button class="trocar-tema" type="button" aria-label="Mudar para o tema claro">
+        <svg class="icone-lua" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+        <svg class="icone-sol" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="conteudo">
+
+<section class="abertura" id="inicio" aria-labelledby="titulo">
+  <svg class="trilhas" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <g class="trilha-fundo">
+      <path d="M0 820 H520 Q560 820 560 780 V640 Q560 600 600 600 H660"/>
+      <path d="M1440 80 H940 Q900 80 900 120 V250"/>
+      <path d="M1440 860 H1200 Q1160 860 1160 820 V700"/>
+      <path d="M300 0 V60 Q300 100 340 100 H560"/>
+    </g>
+    <g class="trilha">
+      <path id="ramo-a" pathLength="1000" d="M0 150 H220 Q260 150 260 190 V310 Q260 350 300 350 H1100 Q1140 350 1140 310 V190 Q1140 150 1180 150 H1440"/>
+      <path id="ramo-b" pathLength="1000" d="M0 520 H140 Q180 520 180 480 V420 Q180 380 220 380 H1240 Q1280 380 1280 420 V560 Q1280 600 1320 600 H1440"/>
+      <path id="ramo-d" pathLength="1000" d="M0 300 H60 Q100 300 100 340 V400 Q100 440 140 440 H1000 Q1040 440 1040 480 V720 Q1040 760 1080 760 H1440"/>
+      <path class="ramo-barrado" pathLength="1000" d="M0 700 H380 Q420 700 420 660 V450 Q420 410 460 410 H688"/>
+    </g>
+    <g class="pulsos">
+      <path class="pulso pulso-a" pathLength="1000" d="M0 150 H220 Q260 150 260 190 V310 Q260 350 300 350 H1100 Q1140 350 1140 310 V190 Q1140 150 1180 150 H1440"/>
+      <path class="pulso pulso-b" pathLength="1000" d="M0 520 H140 Q180 520 180 480 V420 Q180 380 220 380 H1240 Q1280 380 1280 420 V560 Q1280 600 1320 600 H1440"/>
+      <path class="pulso pulso-d" pathLength="1000" d="M0 300 H60 Q100 300 100 340 V400 Q100 440 140 440 H1000 Q1040 440 1040 480 V720 Q1040 760 1080 760 H1440"/>
+      <path class="pulso pulso-barrado" pathLength="1000" d="M0 700 H380 Q420 700 420 660 V450 Q420 410 460 410 H688"/>
+    </g>
+    <g class="nos">
+      <rect x="246" y="236" width="28" height="18" rx="6"/>
+      <rect x="520" y="341" width="30" height="18" rx="6"/>
+      <rect x="166" y="440" width="28" height="18" rx="6"/>
+      <rect x="406" y="560" width="28" height="18" rx="6"/>
+      <rect x="880" y="371" width="30" height="18" rx="6"/>
+      <rect x="1126" y="236" width="28" height="18" rx="6"/>
+      <rect x="1266" y="480" width="28" height="18" rx="6"/>
+      <rect x="1026" y="600" width="28" height="18" rx="6"/>
+      <rect x="886" y="160" width="28" height="18" rx="6"/>
+    </g>
+    <g class="portao">
+      <rect x="688" y="322" width="64" height="146" rx="12"/>
+      <g transform="translate(696 234) scale(0.75)">
+        <path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z"/>
+        <path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z"/>
+        <path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z"/>
+      </g>
+      <g class="barreira"><path d="M664 398 L680 414 M680 398 L664 414"/></g>
+    </g>
+  </svg>
+
+  <div class="abertura-texto">
+    <div class="abertura-grade">
+      <div>
+        <p class="selo">Projeto Integrador · UNIPAM 2026</p>
+        <h1 id="titulo">Nenhum PR de IA chega à main <em>sem prova</em></h1>
+      </div>
+      <div class="abertura-lado">
+        <p class="subtitulo">Código escrito por IA é testado em um ambiente isolado, sem internet. Regras fixas decidem o risco, cada decisão é assinada, e risco alto espera uma pessoa.</p>
+        <div class="acoes">
+          <a class="botao botao-principal" href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">Ver a demonstração</a>
+          <a class="botao botao-metal" href="#recibo">Verificar um recibo</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="faixa">
+    <dl class="numeros">
+      <div>
+        <dt>soluções quebradas barradas</dt>
+        <dd><span class="digitos"><span data-contar>4</span> de 4</span></dd>
+      </div>
+      <div>
+        <dt>soluções certas barradas sem motivo</dt>
+        <dd><span class="digitos">0 de <span data-contar>21</span></span></dd>
+      </div>
+      <div>
+        <dt>linguagens testadas sem internet: Go, Python e Java</dt>
+        <dd><span class="digitos" data-contar>3</span></dd>
+      </div>
+      <div>
+        <dt>assinatura digital de cada decisão</dt>
+        <dd><span class="digitos">Ed25519</span></dd>
+      </div>
+    </dl>
+    <p class="faixa-fonte">
+      <span>Os dois primeiros números vêm do estudo-piloto (rodada 2b, 21 tarefas).</span>
+      <a href="#benchmark">Ver o benchmark <span aria-hidden="true">→</span></a>
+    </p>
+  </div>
+</section>
+
+<section class="secao" id="como-funciona" aria-labelledby="titulo-como">
+  <div class="como-cabeca">
+    <h2 id="titulo-como">Um caso real, do começo ao fim</h2>
+    <p class="lead">O PR #6 do projeto de testes traz um teste que falha de propósito.</p>
+  </div>
+
+  <figure class="fluxo-figura">
+    <div class="fluxo-trilho">
+    <ol class="fluxo" aria-label="O caminho de um pedido">
+      <li class="fluxo-passo cartao-vivo">
+        <div class="cartao-cabeca"><span class="fluxo-numero">1</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="6" cy="5.5" r="2"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/><path d="M6 7.5v9M18 16.5V10a3 3 0 0 0-3-3h-4M13 4.5 10.5 7l2.5 2.5"/></svg></div>
+        <h3>A IA abre o pedido</h3>
+        <p>Um agente abre o PR no GitHub.</p>
+      </li>
+      <li class="fluxo-passo cartao-vivo">
+        <div class="cartao-cabeca"><span class="fluxo-numero">2</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M3.5 10h17M8 14.5h3"/><path d="M15 3 9 3"/></svg></div>
+        <h3>Roda isolado</h3>
+        <p>Os testes rodam sem internet.</p>
+      </li>
+      <li class="fluxo-passo cartao-vivo">
+        <div class="cartao-cabeca"><span class="fluxo-numero">3</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 6.5h14M5 12h14M5 17.5h9"/><circle cx="18" cy="17.5" r="1.5"/></svg></div>
+        <h3>Regras decidem</h3>
+        <p>Regras fixas dão o risco, sem IA.</p>
+      </li>
+      <li class="fluxo-passo cartao-vivo">
+        <div class="cartao-cabeca"><span class="fluxo-numero">4</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2Z"/><path d="M9 9h6M9 12.5h4"/></svg></div>
+        <h3>Vira recibo</h3>
+        <p>A decisão fica assinada.</p>
+      </li>
+      <li class="fluxo-passo cartao-vivo">
+        <div class="cartao-cabeca"><span class="fluxo-numero">5</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></svg></div>
+        <h3>O GitHub trava</h3>
+        <p>O botão de juntar fica travado.</p>
+      </li>
+      <li class="fluxo-passo cartao-vivo fluxo-final">
+        <div class="cartao-cabeca"><span class="fluxo-numero">6</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div>
+        <h3>Uma pessoa aprova</h3>
+        <p>Só quando o risco é alto.</p>
+      </li>
+    </ol>
+    <span class="fluxo-linha" aria-hidden="true"><span class="fluxo-ponto"></span></span>
+    </div>
+    <figcaption>Com risco baixo ou médio, o GitHub libera sem o último passo.</figcaption>
+  </figure>
+
+  <div class="caso">
+  <ol class="passos">
+    <li>
+      <h3>A IA abre o pedido</h3>
+      <p>Um agente de IA abre o PR no GitHub, onde o código fica guardado.</p>
+      <p class="no-caso"><span>No PR #6</span> Um pedido que acrescenta um teste ao cálculo de frete.</p>
+      <div class="visual-passo" data-visual="1">
+        <div class="mini mini-pr cartao-vivo">
+          <p class="mini-rotulo">PI-GRUPO/aPRova-TESTES · PR <span class="codigo-pontos">#6</span></p>
+          <p class="mini-titulo">Testa frete com peso zero</p>
+          <p class="mini-meta">Pede para juntar 6 commits à <code>main</code></p>
+          <div class="mini-diff">
+            <p class="mini-diff-cabeca"><code>go/frete/frete_test.go</code><span class="codigo-pontos mini-mais">+7</span></p>
+<pre tabindex="0" aria-label="Linhas acrescentadas em go/frete/frete_test.go"><code>+
++func TestPesoZeroRetornaErro(t *testing.T) {
++  valor, err := Calcular(0, 100)
++  if !errors.Is(err, ErrPesoInvalido) {
++    t.Errorf("peso zero e entrada invalida: esperado ErrPesoInvalido, obtido valor %v e erro %v", valor, err)
++  }
++}</code></pre>
+          </div>
+        </div>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>O GitHub avisa o aPRova por webhook, e cada versão do código (commit) ganha uma análise.</p></details>
+    </li>
+    <li>
+      <h3>Roda isolado, sem internet</h3>
+      <p>Os testes rodam numa caixa fechada, com permissões mínimas.</p>
+      <p class="no-caso"><span>No PR #6</span> 10 testes passaram, 1 falhou.</p>
+      <div class="visual-passo" data-visual="2">
+        <div class="mini mini-sandbox cartao-vivo">
+          <p class="mini-rotulo">Sandbox · Go · sem internet</p>
+          <div class="mini-placar">
+            <p><span class="mini-numero">10</span> passaram</p>
+            <p><span class="mini-numero mini-falha">1</span> falhou</p>
+          </div>
+          <div class="mini-barra" aria-hidden="true"><span style="flex: 10"></span><span class="mini-barra-falha" style="flex: 1"></span></div>
+          <p class="mini-meta">Falhou: <code>TestPesoZeroRetornaErro</code></p>
+          <p class="mini-meta mini-apagado">Compilou na tentativa <span class="codigo-pontos">1</span> · <span class="codigo-pontos">29,61</span> s</p>
+        </div>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>Sandbox em duas etapas: prepara com rede e testa com <code>--network none</code>, com usuário sem privilégio. Go, Python e Java.</p></details>
+    </li>
+    <li>
+      <h3>Regras fixas decidem</h3>
+      <p>Sete regras olham o que mudou; nenhuma IA participa.</p>
+      <p class="no-caso"><span>No PR #6</span> «Testes falharam»: risco alto.</p>
+      <div class="visual-passo" data-visual="3">
+        <div class="mini mini-regras cartao-vivo">
+      <table class="regras">
+        <caption class="visualmente-oculto">As sete regras e o risco que cada uma dá</caption>
+        <thead><tr><th scope="col">O que mudou</th><th scope="col">Risco</th></tr></thead>
+        <tbody>
+          <tr class="regra-acionada"><td>Testes falharam ou o código não compilou <span class="marca-caso">PR #6</span></td><td>alto</td></tr>
+          <tr><td>Biblioteca nova</td><td>alto</td></tr>
+          <tr><td>Senha ou chave no código</td><td>alto</td></tr>
+          <tr><td>Automação que monta o projeto</td><td>alto</td></tr>
+          <tr><td>Área sensível, como login ou banco de dados</td><td>alto</td></tr>
+          <tr><td>Mais de 20 arquivos de uma vez</td><td>alto</td></tr>
+          <tr><td>Código sem teste</td><td>médio</td></tr>
+        </tbody>
+      </table>
+        </div>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>Nomes no código: <code>falha_sandbox</code>, <code>dependencia_nova</code>, <code>segredo_versionado</code>, <code>configuracao_ci</code>, <code>area_sensivel</code>, <code>muitos_arquivos</code> e <code>codigo_sem_teste</code>. A mesma mudança dá sempre o mesmo risco; sem nenhuma regra, o risco é baixo.</p></details>
+    </li>
+    <li>
+      <h3>O histórico pode baixar um nível</h3>
+      <p>Casos parecidos já aprovados podem baixar o risco um nível.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Desligado por padrão e registrado no recibo. Nunca sobe o risco nem baixa dois níveis. Testes falhando, biblioteca nova, senha no código e mudança na automação nunca baixam.</p></details>
+    </li>
+    <li>
+      <h3>Cada decisão vira recibo</h3>
+      <p>O <strong>recibo</strong> é o registro assinado da decisão, que qualquer pessoa pode conferir.</p>
+      <p class="no-caso"><span>No PR #6</span> Recibo <span class="codigo-pontos">6eddb1ce</span>. <a href="#recibo">Conferir</a></p>
+      <div class="visual-passo" data-visual="4">
+        <div class="mini mini-recibo cartao-vivo">
+          <p class="mini-rotulo">Recibo assinado · Ed25519</p>
+          <ol class="cadeia" aria-label="Cadeia de recibos">
+            <li><span class="cadeia-rotulo">Recibo anterior</span><span class="codigo-pontos">0af9e531</span></li>
+            <li class="cadeia-atual"><span class="cadeia-rotulo">Recibo do PR #6</span><span class="codigo-pontos">6eddb1ce</span></li>
+          </ol>
+          <p class="mini-meta">Versão <span class="codigo-pontos">3263018</span> · risco <span class="risco-alto">alto</span></p>
+          <p class="mini-verificado"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12.5 10 17.5 19 7"/></svg>Assinatura verificada</p>
+          <p class="mini-meta"><a href="#recibo">Conferir o recibo</a></p>
+        </div>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>Cada recibo aponta para o anterior, como elos de uma corrente. Prova que a decisão foi essa e que ninguém a mudou depois. Não prova que estava certa, nem protege contra quem tiver a chave secreta. Assinatura Ed25519.</p></details>
+    </li>
+    <li>
+      <h3>O GitHub trava o botão de juntar</h3>
+      <p>Sem a verificação do aPRova, o botão fica travado. Um comentário explica o motivo.</p>
+      <p class="no-caso"><span>No PR #6</span> Nem um administrador pula a trava.</p>
+      <div class="visual-passo" data-visual="5">
+      <div class="mini mini-verificacao cartao-vivo">
+        <p class="mini-rotulo">Verificação aPRova · obrigatória</p>
+        <p class="mini-numero mini-falha">ALTO</p>
+        <div class="mini-barra" aria-hidden="true"><span class="mini-barra-falha" style="flex: 1"></span></div>
+        <p class="mini-meta">Juntar: travado até aprovação</p>
+      </div>
+      <div class="mini mini-comentario cartao-vivo">
+        <p class="mini-rotulo">Comentário no pedido</p>
+        <p><span class="mini-numero mini-falha">1 de 11</span> testes falharam</p>
+        <div class="mini-barra" aria-hidden="true"><span style="flex: 10"></span><span class="mini-barra-falha" style="flex: 1"></span></div>
+        <p class="mini-meta">Motivo: os testes falharam · recibo <span class="codigo-pontos">6eddb1ce</span></p>
+      </div>
+      <div class="mini mini-juntar cartao-vivo">
+        <p class="mini-rotulo">Botão de juntar</p>
+        <button class="botao-travado" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>Aguardando <span class="codigo-pontos">1</span> aprovação</button>
+        <p class="mini-meta">Libera depois que uma pessoa aprova.</p>
+      </div>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>Check Run <code>aPRova</code> exigido pela proteção da branch; o comentário é editado a cada versão nova.</p></details>
+    </li>
+    <li>
+      <h3>Risco alto espera uma pessoa</h3>
+      <p>Quem tem permissão aprova pelo Slack, o chat da equipe, ou pelo GitHub.</p>
+      <p class="no-caso"><span>No PR #6</span> Aprovação pelo Slack, na apresentação.</p>
+      <div class="visual-passo" data-visual="6">
+        <figure class="print">
+          <a class="ampliar" href="imagens/painel-aguardando.webp"><img src="imagens/painel-aguardando.webp" width="750" height="150" loading="lazy" decoding="async" alt="Topo do detalhe do PR #6 no painel do aPRova: risco alto, aguardando aprovação."></a>
+          <figcaption>No painel, o PR #6 espera aprovação, que vem pelo Slack ou pelo GitHub.</figcaption>
+        </figure>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>A aprovação vale só para a versão analisada e fica gravada com a origem; se o código mudar, a análise recomeça.</p></details>
+    </li>
+    <li>
+      <h3>O recibo ajuda a desfazer</h3>
+      <p>Se algo passou, o aPRova prepara o comando; quem desfaz é uma pessoa.</p>
+      <div class="visual-passo" data-visual="7">
+        <figure class="mini-terminal">
+<pre class="terminal" tabindex="0"><code><span class="prompt">$</span> curl -s "$APROVA/receipts/$ID/revert"
+<span class="saida">"comando": "git fetch origin &amp;&amp; git switch -c revert/pr-21 origin/base/reversao-e2e &amp;&amp; git revert --no-edit -m 1 &lt;sha&gt;"</span></code></pre>
+          <figcaption>Exemplo da documentação (PR #21 do bench-go). O PR #6 não foi juntado, então não há o que desfazer.</figcaption>
+        </figure>
+      </div>
+      <details class="mais"><summary>Mais detalhes</summary><p>Reversão assistida: <code>GET /receipts/{id}/revert</code>, só leitura, sem permissão de escrita.</p></details>
+    </li>
+  </ol>
+  <aside class="caso-visuais" aria-label="Imagem do passo em leitura"></aside>
+  </div>
+</section>
+
+<section class="secao tambem" id="alem-da-decisao" aria-labelledby="titulo-tambem">
+  <h2 id="titulo-tambem">Além da decisão</h2>
+  <p class="lead">Recursos de apoio. Nenhum muda o risco decidido pelas regras.</p>
+  <ul class="lista-tambem">
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Desligado por padrão</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5 21 19.5H3Z"/><path d="M12 10v4.5M12 17v.5"/></svg></div>
+      <h3 class="cartao-destaque">Alertas no GitHub</h3>
+      <p class="cartao-detalhe">Os motivos do risco aparecem como alertas na aba de segurança.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>SARIF 2.1.0 enviado ao code scanning; liga com <code>SARIF_LIGADO</code>.</p></details>
+    </li>
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Desligado por padrão</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12h4l2.5-6 4.5 12 2.5-6h5.5"/></svg></div>
+      <h3 class="cartao-destaque">Saúde do sistema</h3>
+      <p class="cartao-detalhe">Números de uso e de saúde para quem opera, num endereço interno.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p><code>/metrics</code>, <code>/health/live</code> e <code>/health/ready</code>; liga com <code>METRICAS_ENDERECO</code>.</p></details>
+    </li>
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Limites de uso</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 3.5h10M7 20.5h10M8 3.5c0 5 8 5 8 8.5s-8 3.5-8 8.5M16 3.5c0 5-8 5-8 8.5s8 3.5 8 8.5"/></svg></div>
+      <div class="cartao-limite">
+        <span class="cartao-numero">60</span>
+        <h3 class="cartao-destaque">análises por hora</h3>
+      </div>
+      <p class="cartao-detalhe">Por conta. Acima disso, o pedido espera na fila; nunca passa sem análise.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Teto por instalação em <code>APROVA_TETO_ANALISES_POR_HORA</code>; leitura pública de recibos limitada a 60 por minuto por IP.</p></details>
+    </li>
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Desligado por padrão</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v10H10l-4 3.5v-3.5H4Z"/><path d="M8 9h8M8 12h5"/></svg></div>
+      <h3 class="cartao-destaque">Explicação em texto simples</h3>
+      <p class="cartao-detalhe">Uma IA descreve a decisão que as regras já tomaram.</p>
+      <details class="mais"><summary>Mais detalhes</summary><p>Gemini, só no comentário do PR; liga com <code>EXPLICACAO_LIGADA</code>.</p></details>
+    </li>
+  </ul>
+</section>
+
+<section class="secao painel" id="painel" aria-labelledby="titulo-painel">
+  <div class="painel-cabeca">
+    <h2 id="titulo-painel">O painel da equipe</h2>
+    <p class="lead">Num painel web, a equipe vê cada pedido com risco, motivo, testes e recibo.</p>
+    <p class="tecnico">Dados reais da instância usada na demonstração.</p>
+  </div>
+  <figure class="cena">
+    <figcaption class="cena-texto"><h3>Pedidos à espera de uma pessoa</h3><p>A lista filtrada mostra os pedidos de risco alto aguardando aprovação, com a versão analisada.</p></figcaption>
+    <div class="navegador">
+      <div class="navegador-barra" aria-hidden="true"><span class="navegador-pontos"><i></i><i></i><i></i></span><span class="navegador-url">localhost:8080/analises</span></div>
+      <a class="ampliar" href="imagens/painel-analises.webp"><img src="imagens/painel-analises.webp" width="1416" height="647" loading="lazy" decoding="async" alt="Lista de análises no painel do aPRova, filtrada pelo estado «Aguardando aprovação». Quatro pedidos do repositório PI-GRUPO/aPRova-TESTES, os PRs 6, 5, 9 e 8, todos com risco alto, com data de chegada e versão analisada."></a>
+    </div>
+  </figure>
+  <figure class="cena">
+    <figcaption class="cena-texto"><h3>Recibo do PR #6 conferido</h3><p>Um clique confere hash, chave, assinatura, conteúdo e o elo com o recibo anterior.</p></figcaption>
+    <div class="navegador" data-recibo-origem>
+      <div class="navegador-barra" aria-hidden="true"><span class="navegador-pontos"><i></i><i></i><i></i></span><span class="navegador-url">localhost:8080/analises/3e2643de</span></div>
+      <a class="ampliar" href="imagens/painel-recibo.webp"><img src="imagens/painel-recibo.webp" width="1397" height="338" loading="lazy" decoding="async" alt="Bloco «Recibo assinado» do PR #6 no painel, depois de «Verificar recibo»: recibo 6eddb1ce válido, com hash, chave, assinatura, conteúdo e elo marcados como «Confere»."></a>
+    </div>
+  </figure>
+</section>
+
+<section class="secao recibo" id="recibo" aria-labelledby="titulo-recibo">
+  <div class="recibo-texto">
+    <h2 id="titulo-recibo">Qualquer pessoa pode confirmar que a decisão não mudou</h2>
+    <p class="lead">Basta a chave pública: sem conta e sem acesso ao servidor.</p>
+    <p>O recibo é <strong>assinado e verificável</strong>; um caractere alterado já invalida a assinatura.</p>
+  </div>
+
+  <div class="recibo-cartao">
+    <dl>
+      <div><dt>Pedido</dt><dd>PI-GRUPO/aPRova-TESTES, PR #6</dd></div>
+      <div><dt>Versão analisada</dt><dd><span class="codigo-pontos">3263018</span></dd></div>
+      <div><dt>Risco</dt><dd><span class="risco-alto">alto</span></dd></div>
+      <div><dt>Recibo anterior</dt><dd><span class="codigo-pontos">0af9e531</span></dd></div>
+      <div><dt>Chave que assinou</dt><dd><span class="codigo-pontos">46c0151cbbfd52b8</span></dd></div>
+    </dl>
+
+    <details class="conferir">
+      <summary>Ver como conferir</summary>
+      <p>Comandos para conferir o <a href="recibo-pr6.json" download="recibo.json">recibo do PR #6</a> com OpenSSL 3:</p>
+<pre class="terminal" tabindex="0"><code><span class="prompt">$</span> jq -r .payload_base64    recibo.json | openssl base64 -d -A &gt; payload.bin
+<span class="prompt">$</span> jq -r .assinatura_base64 recibo.json | openssl base64 -d -A &gt; assinatura.bin
+<span class="prompt">$</span> CHAVE='Jlx6KQYEoJTm/atXMaj53IJHUfJxKEDtKrtqPWKsm1s='
+<span class="prompt">$</span> { printf '302a300506032b6570032100' | xxd -r -p; printf '%s' "$CHAVE" | openssl base64 -d -A; } \
+    | openssl pkey -pubin -inform DER -out chave-publica.pem
+<span class="prompt">$</span> openssl pkeyutl -verify -pubin -inkey chave-publica.pem -rawin -in payload.bin -sigfile assinatura.bin
+<span class="saida">Signature Verified Successfully</span></code></pre>
+      <p class="nota">No macOS, o <code>openssl</code> do sistema não confere Ed25519; o do Homebrew confere (<code>brew install openssl@3</code>). A chave é a da instância da demonstração.</p>
+      <p class="nota"><a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/verificacao-recibo.md">Passo a passo completo</a></p>
+    </details>
+  </div>
+</section>
+
+<section class="secao bench" id="benchmark" aria-labelledby="titulo-bench">
+  <p class="selo-piloto">Estudo-piloto: amostra pequena</p>
+  <div class="bench-intro">
+    <h2 id="titulo-bench">O aPRova barra o código quebrado e deixa passar o certo?</h2>
+    <p class="lead">Uma IA resolveu 21 exercícios, e cada solução passou pelo aPRova. Os testes originais diziam quais estavam certas.</p>
+  </div>
+  <figure class="bench-print">
+    <div class="mini mini-bench cartao-vivo">
+      <p class="mini-rotulo">Rodada 2b · aprova-bench-python · PR <span class="codigo-pontos">#13</span></p>
+      <p><span class="mini-numero mini-falha">5 de 10</span> testes falharam</p>
+      <div class="mini-barra" aria-hidden="true"><span style="flex: 5"></span><span class="mini-barra-falha" style="flex: 5"></span></div>
+      <p class="mini-meta">Risco alto: juntar travado até aprovação. Motivos: testes falharam e código sem teste.</p>
+    </div>
+    <figcaption>Uma das 4 soluções quebradas da rodada 2b, barrada.</figcaption>
+  </figure>
+
+  <div class="tabela-bench">
+    <table>
+      <caption>Resultados como «N de M», sem valor estatístico.</caption>
+      <thead>
+        <tr><th scope="col">O que foi medido</th><th scope="col">Rodada 1</th><th scope="col">Rodada 2b</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Soluções certas</th><td>21 de 21</td><td>17 de 21</td></tr>
+        <tr><th scope="row">Soluções quebradas</th><td>0 de 21</td><td>4 de 21</td></tr>
+        <tr><th scope="row">Quebradas que passaram</th><td>0 de 21</td><td>0 de 21</td></tr>
+        <tr><th scope="row">Certas barradas sem motivo</th><td>0 de 21</td><td>0 de 21</td></tr>
+        <tr><th scope="row">Testes originais alterados</th><td>0 de 21</td><td>0 de 21</td></tr>
+      </tbody>
+    </table>
+    <p class="legenda-tabela"><strong>Rodada 1:</strong> a IA podia rodar os testes (claude-sonnet-5). <strong>Rodada 2b:</strong> não podia (claude-haiku-4-5).</p>
+  </div>
+
+  <div class="bench-leitura">
+    <p class="bench-resultado">
+      <span>Na rodada 2b, as <strong>4</strong> quebradas foram barradas;</span>
+      <span>Em 6 casos de risco montados, <strong>6 de 6</strong> acertaram o nível.</span>
+    </p>
+    <details class="bench-limites" open>
+      <summary>Limites</summary>
+      <p class="limites">uma rodada por tarefa, só 4 quebradas, e a 2b mudou modelo e execução juntos. <a href="https://github.com/PI-GRUPO/aPRova/blob/main/docs/benchmark.md">Relatório completo <svg class="icone-externo" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3h7v7M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/></svg></a></p>
+    </details>
+  </div>
+  <figure class="bench-grafico">
+    <svg viewBox="0 0 360 204" role="img" aria-label="Rodada 2b: 21 soluções entregues, 4 quebradas, 4 barradas pelo aPRova e 0 quebradas que passaram.">
+      <text class="grafico-rotulo" x="0" y="14">Soluções entregues</text>
+      <rect class="grafico-barra" x="0" y="22" width="300" height="16" rx="3"/>
+      <text class="grafico-numero" x="310" y="37">21</text>
+      <text class="grafico-rotulo" x="0" y="66">Quebradas</text>
+      <rect class="grafico-barra" x="0" y="74" width="57" height="16" rx="3"/>
+      <text class="grafico-numero" x="67" y="89">4</text>
+      <text class="grafico-rotulo" x="0" y="118">Barradas pelo aPRova</text>
+      <rect class="grafico-barra" x="0" y="126" width="57" height="16" rx="3"/>
+      <text class="grafico-numero" x="67" y="141">4</text>
+      <text class="grafico-rotulo" x="0" y="170">Quebradas que passaram</text>
+      <rect class="grafico-zero" x="0" y="178" width="2" height="16"/>
+      <text class="grafico-numero destaque" x="10" y="193">0</text>
+    </svg>
+    <figcaption>Rodada 2b do estudo-piloto.</figcaption>
+  </figure>
+</section>
+
+<section class="secao nunca" id="nunca" aria-labelledby="titulo-nunca">
+  <h2 id="titulo-nunca">O que o aPRova nunca faz</h2>
+  <ul class="lista-nunca">
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Nunca</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4v5a5 5 0 0 0 5 5M17 4v5a5 5 0 0 1-5 5v6"/><path d="M4 20 20 4"/></svg></div>
+      <h3 class="cartao-destaque">Juntar o código sozinho</h3>
+      <p class="cartao-detalhe">Quem junta é sempre uma pessoa.</p>
+    </li>
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Nunca</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 4v3M14 4v3M10 17v3M14 17v3M4 10h3M4 14h3M17 10h3M17 14h3"/><path d="M4 20 20 4"/></svg></div>
+      <h3 class="cartao-destaque">Decidir o risco com IA</h3>
+      <p class="cartao-detalhe">Quem decide são regras fixas.</p>
+    </li>
+    <li class="cartao cartao-vivo">
+      <div class="cartao-cabeca"><span class="cartao-rotulo">Nunca</span><svg class="icone-item" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></div>
+      <h3 class="cartao-destaque">Liberar risco alto sem uma pessoa</h3>
+      <p class="cartao-detalhe">O pedido fica barrado até alguém aprovar.</p>
+    </li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="rodape">
+  <div class="rodape-conteudo">
+    <div class="rodape-grupo">
+      <a class="rodape-marca" href="#inicio" aria-label="aPRova, início"><svg class="logo" viewBox="0 0 193 52" width="116" height="31" role="img" aria-label="aPRova"><g transform="translate(0 2) scale(0.75)"><path d="M50 6C53.3137 6 56 8.68629 56 12C56 15.3137 53.3137 18 50 18C49.2646 18 48.5603 17.8671 47.9092 17.625L34.5 31.0342V48.5449C36.5654 49.493 38 51.5786 38 54C38 57.3137 35.3137 60 32 60C28.6863 60 26 57.3137 26 54C26 51.5786 27.4346 49.493 29.5 48.5449V31.0352L16.0898 17.625C15.439 17.8669 14.7351 18 14 18C10.6863 18 8 15.3137 8 12C8 8.68629 10.6863 6 14 6C17.3137 6 20 8.68629 20 12C20 12.7351 19.8669 13.439 19.625 14.0898L32 26.4648L44.374 14.0898C44.1322 13.4391 44 12.735 44 12C44 8.68629 46.6863 6 50 6Z" class="logo-simbolo"/><path d="M23 39.5C24.3807 39.5 25.5 40.6193 25.5 42C25.5 43.3807 24.3807 44.5 23 44.5H15C13.6193 44.5 12.5 43.3807 12.5 42C12.5 40.6193 13.6193 39.5 15 39.5H23Z" class="logo-simbolo"/><path d="M49 39.5C50.3807 39.5 51.5 40.6193 51.5 42C51.5 43.3807 50.3807 44.5 49 44.5H41C39.6193 44.5 38.5 43.3807 38.5 42C38.5 40.6193 39.6193 39.5 41 39.5H49Z" class="logo-simbolo"/></g>
+<path transform="translate(62 0)" d="M20.2 41H18.4C17.5467 41 16.8533 40.8267 16.32 40.48C15.7867 40.1067 15.4 39.6 15.16 38.96C14.92 38.32 14.8 37.5867 14.8 36.76V36.48L16.04 37.64H14.64C14.2133 38.8933 13.4667 39.8533 12.4 40.52C11.36 41.16 10.12 41.48 8.68 41.48C6.49333 41.48 4.78667 40.92 3.56 39.8C2.36 38.68 1.76 37.16 1.76 35.24C1.76 33.9333 2.08 32.84 2.72 31.96C3.36 31.0533 4.32 30.3733 5.6 29.92C6.90667 29.44 8.56 29.2 10.56 29.2H14.64V27.16C14.64 25.6933 14.24 24.5733 13.44 23.8C12.64 23.0267 11.4133 22.64 9.76 22.64C8.53333 22.64 7.49333 22.92 6.64 23.48C5.78667 24.04 5.08 24.7867 4.52 25.72L2.6 23.92C3.16 22.8267 4.05333 21.88 5.28 21.08C6.50667 20.28 8.05333 19.88 9.92 19.88C12.4 19.88 14.3333 20.4933 15.72 21.72C17.1333 22.9467 17.84 24.6533 17.84 26.84V38.2H20.2V41ZM14.64 31.6H10.4C8.58667 31.6 7.25333 31.8667 6.4 32.4C5.54667 32.9333 5.12 33.7067 5.12 34.72V35.56C5.12 36.5733 5.49333 37.36 6.24 37.92C6.98667 38.48 7.97333 38.76 9.2 38.76C10.2667 38.76 11.2 38.6 12 38.28C12.8267 37.9333 13.4667 37.48 13.92 36.92C14.4 36.3333 14.64 35.6933 14.64 35V31.6ZM24.1672 41V13.08H34.7672C37.4872 13.08 39.5672 13.8533 41.0072 15.4C42.4472 16.9467 43.1672 19.0533 43.1672 21.72C43.1672 24.3867 42.4472 26.4933 41.0072 28.04C39.5672 29.5867 37.4872 30.36 34.7672 30.36H29.4072V41H24.1672ZM29.4072 26.08H33.6872C35.1005 26.08 36.1139 25.8 36.7272 25.24C37.3405 24.6533 37.6472 23.7333 37.6472 22.48V20.96C37.6472 19.7067 37.3405 18.8 36.7272 18.24C36.1139 17.6533 35.1005 17.36 33.6872 17.36H29.4072V26.08ZM52.9916 41H47.7516V13.08H58.3516C61.0716 13.08 63.1516 13.8533 64.5916 15.4C66.0316 16.9467 66.7516 19.0533 66.7516 21.72C66.7516 23.7733 66.2716 25.5067 65.3116 26.92C64.3782 28.3067 63.0316 29.1867 61.2716 29.56L67.2316 41H61.4716L56.1516 30.16H52.9916V41ZM57.2716 26.08C58.6849 26.08 59.6982 25.8 60.3116 25.24C60.9249 24.6533 61.2316 23.7333 61.2316 22.48V20.96C61.2316 19.7067 60.9249 18.8 60.3116 18.24C59.6982 17.6533 58.6849 17.36 57.2716 17.36H52.9916V26.08H57.2716ZM79.3359 41.48C77.4959 41.48 75.8693 41.04 74.4559 40.16C73.0693 39.2533 71.9759 38 71.1759 36.4C70.4026 34.7733 70.0159 32.8667 70.0159 30.68C70.0159 28.4933 70.4026 26.6 71.1759 25C71.9759 23.3733 73.0693 22.12 74.4559 21.24C75.8693 20.3333 77.4959 19.88 79.3359 19.88C81.1759 19.88 82.7893 20.3333 84.1759 21.24C85.5893 22.12 86.6826 23.3733 87.4559 25C88.2559 26.6 88.6559 28.4933 88.6559 30.68C88.6559 32.8667 88.2559 34.7733 87.4559 36.4C86.6826 38 85.5893 39.2533 84.1759 40.16C82.7893 41.04 81.1759 41.48 79.3359 41.48ZM79.3359 38.64C81.0693 38.64 82.4826 38.1067 83.5759 37.04C84.6693 35.9733 85.2159 34.3467 85.2159 32.16V29.2C85.2159 27.0133 84.6693 25.3867 83.5759 24.32C82.4826 23.2533 81.0693 22.72 79.3359 22.72C77.6293 22.72 76.2159 23.2533 75.0959 24.32C74.0026 25.3867 73.4559 27.0133 73.4559 29.2V32.16C73.4559 34.3467 74.0026 35.9733 75.0959 37.04C76.2159 38.1067 77.6293 38.64 79.3359 38.64ZM101.486 41H97.7663L90.5263 20.36H93.7263L97.3263 30.6L99.5663 37.64H99.7663L102.006 30.6L105.686 20.36H108.766L101.486 41ZM128.942 41H127.142C126.289 41 125.596 40.8267 125.062 40.48C124.529 40.1067 124.142 39.6 123.902 38.96C123.662 38.32 123.542 37.5867 123.542 36.76V36.48L124.782 37.64H123.382C122.956 38.8933 122.209 39.8533 121.142 40.52C120.102 41.16 118.862 41.48 117.422 41.48C115.236 41.48 113.529 40.92 112.302 39.8C111.102 38.68 110.502 37.16 110.502 35.24C110.502 33.9333 110.822 32.84 111.462 31.96C112.102 31.0533 113.062 30.3733 114.342 29.92C115.649 29.44 117.302 29.2 119.302 29.2H123.382V27.16C123.382 25.6933 122.982 24.5733 122.182 23.8C121.382 23.0267 120.156 22.64 118.502 22.64C117.276 22.64 116.236 22.92 115.382 23.48C114.529 24.04 113.822 24.7867 113.262 25.72L111.342 23.92C111.902 22.8267 112.796 21.88 114.022 21.08C115.249 20.28 116.796 19.88 118.662 19.88C121.142 19.88 123.076 20.4933 124.462 21.72C125.876 22.9467 126.582 24.6533 126.582 26.84V38.2H128.942V41ZM123.382 31.6H119.142C117.329 31.6 115.996 31.8667 115.142 32.4C114.289 32.9333 113.862 33.7067 113.862 34.72V35.56C113.862 36.5733 114.236 37.36 114.982 37.92C115.729 38.48 116.716 38.76 117.942 38.76C119.009 38.76 119.942 38.6 120.742 38.28C121.569 37.9333 122.209 37.48 122.662 36.92C123.142 36.3333 123.382 35.6933 123.382 35V31.6Z" class="logo-texto"/></svg></a>
+      <p class="rodape-rotulo">Desenvolvido por:</p>
+      <ul class="rodape-participantes">
+        <li>Pedro Henrique Mello</li>
+        <li>Julia Eduarda Fernandes</li>
+        <li>Sara Ferreira Rodrigues</li>
+        <li>Laís Santana Landim</li>
+        <li>Geizilane da Silva Melo</li>
+        <li>Luís Miguel Siqueira</li>
+      </ul>
+    </div>
+    <nav aria-label="Navegação do rodapé">
+    <ul class="rodape-links">
+      <li><a href="#inicio">Início</a></li>
+      <li><a href="#como-funciona">Como funciona</a></li>
+      <li><a href="#alem-da-decisao">Além da decisão</a></li>
+      <li><a href="#painel">Painel</a></li>
+      <li><a href="#recibo">Recibo</a></li>
+      <li><a href="#benchmark">Benchmark</a></li>
+      <li><a href="#nunca">Limites</a></li>
+      <li><a href="https://github.com/PI-GRUPO/aPRova/tree/main/docs">Documentação</a></li>
+      <li><a href="https://github.com/PI-GRUPO/aPRova-TESTES/pull/6">Caso de demonstração</a></li>
+      <li><a class="rodape-github" href="https://github.com/PI-GRUPO/aPRova" aria-label="Repositório do aPRova no GitHub">Repositório do aPRova</a></li>
+    </ul>
+    </nav>
+    <p class="rodape-nota">Projeto Integrador III desenvolvido no curso de Sistemas de Informação do UNIPAM.</p>
+  </div>
+  <div class="rodape-faixa">
+    <div class="rodape-faixa-dentro">
+      <p>© 2026 aPRova. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</footer>
+<dialog class="ampliacao" aria-label="Imagem ampliada">
+  <button class="fechar" type="button">Fechar</button>
+</dialog>
+</body>
+</html>

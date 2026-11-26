@@ -45,19 +45,27 @@ const (
 	MotivoAcaoRepetida          Motivo = "acao_repetida"
 	MotivoFalhaNaReserva        Motivo = "falha_na_reserva"
 	MotivoFalhaNaExecucao       Motivo = "falha_na_execucao"
+	MotivoAnaliseIncompativel   Motivo = "analise_incompativel"
 )
+
+const OrigemPainel = "painel"
+
+// ErrAnaliseIncompativel indica que a análise perdeu o estado ou o commit necessário à ação.
+var ErrAnaliseIncompativel = errors.New("acaoremota: análise incompatível com a ação")
 
 // Pedido é o corpo enviado pelo canal externo. Diz apenas quem é o usuário no
 // canal; o login no GitHub é resolvido pelo núcleo.
 type Pedido struct {
 	IDAcao         string `json:"id_acao" validate:"required,max=200"`
 	Tipo           Tipo   `json:"tipo" validate:"required,oneof=aprovar solicitar_alteracao reexecutar_analise"`
-	UsuarioSlack   string `json:"usuario_slack" validate:"required,max=100"`
+	UsuarioSlack   string `json:"usuario_slack" validate:"required_unless=Origem painel,max=100"`
 	Repositorio    string `json:"repositorio" validate:"required,repositorio_github"`
 	NumeroPR       int    `json:"numero_pr" validate:"required,gt=0"`
 	InstallationID int64  `json:"installation_id" validate:"required,gt=0"`
 	TaskRunID      string `json:"task_run_id,omitempty" validate:"omitempty,uuid"`
 	Justificativa  string `json:"justificativa" validate:"required_unless=Tipo reexecutar_analise,max=4000"`
+	Origem         string `json:"-"`
+	CommitSHA      string `json:"-"`
 }
 
 // AcaoAutorizada é um pedido que passou pela autorização, acompanhado do login
@@ -81,6 +89,7 @@ type Tentativa struct {
 	Decisao        Decisao
 	Motivo         Motivo
 	Em             time.Time
+	Origem         string
 }
 
 // ResolvedorIdentidade traduz o usuário do canal externo para o login no GitHub.

@@ -9,6 +9,8 @@ import (
 	"github.com/PI-GRUPO/aPRova/internal/acaoremota"
 	"github.com/PI-GRUPO/aPRova/internal/domain"
 	"github.com/PI-GRUPO/aPRova/internal/saude"
+	"github.com/PI-GRUPO/aPRova/internal/sessaoweb"
+	"github.com/PI-GRUPO/aPRova/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -44,6 +46,7 @@ type FonteDeRelatorios interface {
 
 // Opcoes reúne as dependências com que o servidor HTTP é construído.
 type Opcoes struct {
+	SessaoWeb           *sessaoweb.Servidor
 	Dependencias        []Dependencia
 	SegredoWebhook      []byte
 	Execucoes           RegistroDeExecucoes
@@ -65,6 +68,7 @@ type Opcoes struct {
 
 // Servidor agrupa as dependências externas usadas pelos handlers HTTP.
 type Servidor struct {
+	sessaoWeb           *sessaoweb.Servidor
 	dependencias        []Dependencia
 	segredoWebhook      []byte
 	execucoes           RegistroDeExecucoes
@@ -90,6 +94,7 @@ func NovoServidor(opcoes Opcoes) *Servidor {
 	}
 
 	return &Servidor{
+		sessaoWeb:           opcoes.SessaoWeb,
 		dependencias:        opcoes.Dependencias,
 		segredoWebhook:      opcoes.SegredoWebhook,
 		execucoes:           opcoes.Execucoes,
@@ -117,6 +122,10 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Use(middleware.Recoverer)
 	roteador.Use(middleware.Timeout(tempoLimiteRequisicao))
 
+	for _, caminho := range []string{"/auth/github", "/auth/github/callback", "/api/sessao", "/api/sessao/sair", "/api/repositorios", "/api/web/relatorio-semanal", "/api/metricas", "/api/web/recibos", "/api/web/auditoria", "/api/web/regras", "/api/web/vinculo-slack"} {
+		roteador.Handle(caminho, s.sessaoWeb)
+	}
+	roteador.With(s.limiteDeLeituras.segurar).Handle("/api/web/recibos/cadeia", s.sessaoWeb)
 	roteador.Get("/health", saude.Viva)
 	roteador.Get("/health/live", saude.Viva)
 	roteador.Get("/ready", saude.Pronta(s.dependencias))
@@ -126,6 +135,9 @@ func (s *Servidor) Rotas() http.Handler {
 	roteador.Get("/reports/weekly", s.manipularRelatorioSemanal)
 	roteador.Get("/api/analises", s.manipularListaAnalises)
 	roteador.Get("/api/analises/{id}", s.manipularConsultaAnalise)
+	roteador.Post("/api/web/analises/{id}/acoes", func(w http.ResponseWriter, r *http.Request) {
+		s.sessaoWeb.ExecutarAcao(w, r, chi.URLParam(r, "id"))
+	})
 	roteador.Route("/receipts", func(recibos chi.Router) {
 		recibos.Use(s.limiteDeLeituras.segurar)
 		recibos.Get("/keys", s.manipularChavesDeRecibo)
@@ -133,6 +145,8 @@ func (s *Servidor) Rotas() http.Handler {
 		recibos.Get("/{id}/verify", s.manipularVerificacaoDeRecibo)
 		recibos.Get("/{id}/revert", s.manipularReversaoDeRecibo)
 	})
+
+	roteador.NotFound(web.Handler().ServeHTTP)
 
 	return roteador
 }

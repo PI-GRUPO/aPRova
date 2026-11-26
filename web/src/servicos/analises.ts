@@ -1,0 +1,303 @@
+import type { Consulta, Escopo } from "./fonte";
+import { consultarJSON, ErroHTTP } from "./http";
+import { mesmoInstante } from "./instante";
+import { objeto, uuidValido } from "./recibos";
+export const estados = new Map<string, string>([
+	["pendente", "Pendente"],
+	["mapeando_contexto", "Mapeando contexto"],
+	["gerando", "Gerando"],
+	["testando_sandbox", "Testando sandbox"],
+	["avaliando_risco", "Avaliando risco"],
+	["aguardando_aprovacao", "Aguardando aprovação"],
+	["aplicando", "Aplicando"],
+	["concluido", "Concluído"],
+	["rejeitado", "Rejeitado"],
+	["falhou", "Falhou"],
+]);
+export const niveis = new Map<string, string>([
+	["baixo", "risco baixo"],
+	["medio", "risco médio"],
+	["alto", "risco alto"],
+	["nao_avaliado", "Não avaliado"],
+]);
+export type Analise = {
+	espera_segundos?: number;
+	id: string;
+	repositorio: string;
+	numero_pr: number;
+	sha_head: string;
+	autor: string;
+	estado: string;
+	nivel: string | null;
+	recebido_em: string;
+	criado_em: string;
+	atualizado_em: string;
+};
+export type PaginaAnalises = {
+	installation_id: number;
+	snapshot: string;
+	pagina: number;
+	limite: number;
+	total: number;
+	tem_mais: boolean;
+	itens: Analise[];
+};
+export type Motivo = { id: string; nivel: string; descricao: string; evidencias: string[] };
+export type Vizinho = { task_run_id: string; repositorio: string; numero_pr: number; similaridade: number; desfecho: string };
+export type Gate = {
+	nivel_deterministico: string;
+	nivel: string;
+	motivo: string;
+	motivos: Motivo[];
+	calibracao_estado: string;
+	calibracao_razao: string;
+	vizinhos: Vizinho[];
+};
+export type Etapa = { id: number; de: string; para: string; detalhe: string; criado_em: string };
+export type Tentativa = {
+	tentativa: number;
+	compilou: boolean;
+	testes_passaram: number;
+	testes_falharam: number;
+	saida: string;
+	saida_truncada: boolean;
+	duracao_ms: number;
+	tipo_falha: string;
+	criado_em: string;
+};
+export type Aprovacao = {
+	id: number;
+	decisao: string;
+	revisor: string;
+	origem: string;
+	justificativa: string | null;
+	commit_sha: string | null;
+	aplicavel_ao_commit: boolean;
+	decidido_em: string;
+};
+export type Detalhe = {
+	installation_id: number;
+	analise: Analise;
+	branch: string | null;
+	url_pr: string;
+	url_check: string | null;
+	atual: boolean;
+	gate: Gate | null;
+	etapas: Etapa[];
+	tentativas: Tentativa[];
+	aprovacoes: Aprovacao[];
+	recibo_id: string | null;
+	testes_estruturados_disponiveis: boolean;
+	rede_isolada: boolean | null;
+};
+const data = (v: unknown) => typeof v === "string" && !Number.isNaN(Date.parse(v));
+const numero = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
+const textos = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string");
+const anulavel = (v: unknown) => v === null || typeof v === "string";
+function invalida(): never {
+	throw new ErroHTTP("resposta", "A resposta de análises não corresponde ao contrato esperado.");
+}
+function analise(v: unknown): v is Analise {
+	return (
+		objeto(v) &&
+		[v.id, v.repositorio, v.sha_head, v.autor].every((campo) => typeof campo === "string") &&
+		numero(v.numero_pr) &&
+		(v.espera_segundos === undefined || numero(v.espera_segundos)) &&
+		typeof v.estado === "string" &&
+		estados.has(v.estado) &&
+		(v.nivel === null || (typeof v.nivel === "string" && ["baixo", "medio", "alto"].includes(v.nivel))) &&
+		[v.recebido_em, v.criado_em, v.atualizado_em].every(data)
+	);
+}
+export async function listarAnalises(q: URLSearchParams, signal: AbortSignal): Promise<PaginaAnalises> {
+	const v = await consultarJSON("analises", { parametros: q, signal, privada: true });
+	if (
+		!objeto(v) ||
+		v.installation_id !== Number(q.get("installation_id")) ||
+		!data(v.snapshot) ||
+		!numero(v.pagina) ||
+		!numero(v.total) ||
+		typeof v.tem_mais !== "boolean" ||
+		!Array.isArray(v.itens) ||
+		!v.itens.every(analise) ||
+		v.pagina !== Number(q.get("pagina") ?? 1) ||
+		!numero(v.limite) ||
+		v.limite < 1 ||
+		v.limite > 50 ||
+		v.itens.length > v.limite ||
+		(q.has("repositorio") && v.itens.some((i) => i.repositorio !== q.get("repositorio")))
+	)
+		return invalida();
+	return v as PaginaAnalises;
+}
+function gateValido(v: unknown) {
+	return (
+		v === null ||
+		(objeto(v) &&
+			[v.nivel_deterministico, v.nivel, v.motivo, v.calibracao_estado, v.calibracao_razao].every((campo) => typeof campo === "string") &&
+			Array.isArray(v.motivos) &&
+			v.motivos.every(
+				(m) => objeto(m) && [m.id, m.nivel, m.descricao].every((campo) => typeof campo === "string") && textos(m.evidencias),
+			) &&
+			Array.isArray(v.vizinhos) &&
+			v.vizinhos.every(
+				(m) =>
+					objeto(m) &&
+					[m.task_run_id, m.repositorio, m.desfecho].every((campo) => typeof campo === "string") &&
+					numero(m.numero_pr) &&
+					typeof m.similaridade === "number",
+			))
+	);
+}
+function agregadosValidos(v: Record<string, unknown>) {
+	return (
+		Array.isArray(v.etapas) &&
+		v.etapas.every(
+			(e) => objeto(e) && numero(e.id) && [e.de, e.para, e.detalhe].every((campo) => typeof campo === "string") && data(e.criado_em),
+		) &&
+		Array.isArray(v.tentativas) &&
+		v.tentativas.every(
+			(e) =>
+				objeto(e) &&
+				[e.tentativa, e.testes_passaram, e.testes_falharam, e.duracao_ms].every(numero) &&
+				typeof e.compilou === "boolean" &&
+				typeof e.saida_truncada === "boolean" &&
+				typeof e.saida === "string" &&
+				typeof e.tipo_falha === "string" &&
+				data(e.criado_em),
+		) &&
+		Array.isArray(v.aprovacoes) &&
+		v.aprovacoes.every(
+			(e) =>
+				objeto(e) &&
+				numero(e.id) &&
+				[e.decisao, e.revisor, e.origem].every((campo) => typeof campo === "string") &&
+				anulavel(e.justificativa) &&
+				anulavel(e.commit_sha) &&
+				typeof e.aplicavel_ao_commit === "boolean" &&
+				data(e.decidido_em),
+		)
+	);
+}
+export function urlGitHub(v: string) {
+	try {
+		const u = new URL(v);
+		return u.origin === "https://github.com" && !u.username && !u.password ? u.href : undefined;
+	} catch {
+		return undefined;
+	}
+}
+export async function detalharAnalise(id: string, instalacao: string, signal: AbortSignal, repositorio = ""): Promise<Detalhe> {
+	const q = new URLSearchParams({ installation_id: instalacao });
+	if (repositorio) q.set("repositorio", repositorio);
+	const v = await consultarJSON("analise", { id, parametros: q, signal, privada: true });
+	if (
+		!objeto(v) ||
+		v.installation_id !== Number(instalacao) ||
+		!analise(v.analise) ||
+		v.analise.id !== id ||
+		(!!repositorio && v.analise.repositorio !== repositorio) ||
+		!anulavel(v.branch) ||
+		typeof v.url_pr !== "string" ||
+		!urlGitHub(v.url_pr) ||
+		!anulavel(v.url_check) ||
+		(typeof v.url_check === "string" && !urlGitHub(v.url_check)) ||
+		typeof v.atual !== "boolean" ||
+		!gateValido(v.gate) ||
+		!agregadosValidos(v) ||
+		!anulavel(v.recibo_id) ||
+		typeof v.testes_estruturados_disponiveis !== "boolean" ||
+		!(v.rede_isolada === null || typeof v.rede_isolada === "boolean")
+	)
+		return invalida();
+	return v as Detalhe;
+}
+export async function listarRepositorios(id: string, signal: AbortSignal): Promise<string[]> {
+	const v = await consultarJSON("repositorios", { parametros: new URLSearchParams({ installation_id: id }), signal, privada: true });
+	if (!objeto(v) || v.installation_id !== Number(id) || !textos(v.repositorios)) return invalida();
+	return v.repositorios as string[];
+}
+export function erroDeAnalise(e: unknown) {
+	if (e instanceof ErroHTTP) {
+		if (e.status === 404) return "Análise não encontrada neste escopo.";
+		if (e.status === 403) return "Você não tem acesso a esta instalação ou repositório.";
+		if (e.status === 400) return "Os filtros ou o identificador não são válidos.";
+		return e.message;
+	}
+	return "Não foi possível consultar as análises.";
+}
+
+export const consultarRepos: Consulta<string[]> = ({ instalacao }, _, signal) => listarRepositorios(instalacao, signal);
+export const consultarFila: Consulta<PaginaAnalises> = async ({ instalacao }, filtros, signal) => {
+	const q = new URLSearchParams(filtros);
+	q.set("installation_id", instalacao);
+	q.set("estado", "aguardando_aprovacao");
+	q.set("nivel", "alto");
+	q.set("inicio", "1970-01-01");
+	q.set("ordem", "antigas");
+	q.set("limite", "25");
+	const dados = await listarAnalises(q, signal);
+	const corteSolicitado = q.get("snapshot");
+	if (
+		dados.itens.some((i) => !uuidValido(i.id) || i.estado !== "aguardando_aprovacao" || i.nivel !== "alto") ||
+		(corteSolicitado !== null && !mesmoInstante(dados.snapshot, corteSolicitado))
+	)
+		throw new ErroHTTP("resposta", "A resposta não corresponde aos filtros da fila.");
+	return dados;
+};
+
+const requisitosDaInstalacao = [
+	{ chave: "checks", nome: "Checks", minimo: "write", uso: "Publicar o resultado da análise no GitHub." },
+	{ chave: "contents", nome: "Conteúdo", minimo: "read", uso: "Ler o código e os commits analisados." },
+	{ chave: "pull_requests", nome: "Pull requests", minimo: "write", uso: "Consultar PRs e publicar revisões." },
+	{ chave: "administration", nome: "Administração", minimo: "read", uso: "Verificar a proteção clássica da branch." },
+	{ chave: "metadata", nome: "Metadados", minimo: "read", uso: "Consultar as regras ativas da branch." },
+] as const;
+const niveisDeAcesso = { none: 0, read: 1, write: 2, admin: 3 } as const;
+type NivelDeAcesso = keyof typeof niveisDeAcesso;
+
+function diagnosticarPermissoes(permissoes: Record<string, unknown>, conhecidas: boolean | undefined) {
+	return requisitosDaInstalacao.map((requisito) => {
+		const nivel = permissoes[requisito.chave];
+		if (nivel !== undefined && (typeof nivel !== "string" || !Object.hasOwn(niveisDeAcesso, nivel))) return invalida();
+		const concedida = nivel as NivelDeAcesso | undefined;
+		const verificada = conhecidas !== false && (concedida !== undefined || (conhecidas === true && requisito.chave !== "metadata"));
+		return {
+			...requisito,
+			concedida,
+			suficiente: verificada ? niveisDeAcesso[concedida ?? "none"] >= niveisDeAcesso[requisito.minimo] : null,
+		};
+	});
+}
+
+export async function saudeRepositorios({ instalacao }: Escopo, filtros: URLSearchParams, signal: AbortSignal) {
+	const pagina = Number(filtros.get("pagina") ?? 1);
+	const q = new URLSearchParams({ installation_id: instalacao, detalhes: "1", pagina: String(pagina) });
+	const v = await consultarJSON("repositorios", { parametros: q, privada: true, signal });
+	if (
+		!objeto(v) ||
+		v.installation_id !== Number(instalacao) ||
+		v.pagina !== pagina ||
+		v.limite !== 10 ||
+		!numero(v.total) ||
+		!objeto(v.permissoes) ||
+		(v.permissoes_conhecidas !== undefined && typeof v.permissoes_conhecidas !== "boolean") ||
+		!Array.isArray(v.itens) ||
+		v.itens.length !== Math.max(0, Math.min(10, v.total - (pagina - 1) * 10))
+	)
+		return invalida();
+	const permissoes = diagnosticarPermissoes(v.permissoes, v.permissoes_conhecidas);
+	const itens = v.itens.map((r) => {
+		if (
+			!objeto(r) ||
+			typeof r.nome !== "string" ||
+			typeof r.branch !== "string" ||
+			(r.motivo_protecao !== undefined && typeof r.motivo_protecao !== "string") ||
+			!(r.ultima_analise === null || (typeof r.ultima_analise === "string" && data(r.ultima_analise))) ||
+			!(r.check_obrigatorio === null || typeof r.check_obrigatorio === "boolean")
+		)
+			return invalida();
+		return { nome: r.nome, branch: r.branch, ultima: r.ultima_analise, check: r.check_obrigatorio, motivo: r.motivo_protecao };
+	});
+	return { itens, permissoes, total: v.total };
+}

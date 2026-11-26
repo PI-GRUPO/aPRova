@@ -52,12 +52,22 @@ for (const tipo of ['aprovar', 'solicitar_alteracao']) {
     for (const status of [202, 400, 401, 403, 409, 500]) {
       const resultado = rodar('14 |', { statusCode: status, body: { status: 'aceito' } }, pedido).json;
       assert.equal(resultado.resultado_nucleo.confirmada, status === 202);
+      assert.equal(resultado.slack_payload.channel, 'C123');
       assert.match(resultado.slack_payload.text, /equipe\/projeto #42/);
       assert.match(resultado.slack_payload.text, /https:\/\/github.com\/equipe\/projeto\/pull\/42/);
-      assert.ok(resultado.slack_payload.text.includes(pedido.pedido_acao.justificativa));
-      assert.ok(resultado.slack_payload.blocks.some(b => b.text.text.includes('<@U123>')));
-      assert.ok(resultado.slack_payload.blocks.every(b => b.text.text.length <= 3000));
-      if (status !== 202) assert.doesNotMatch(resultado.slack_payload.text, /O núcleo confirmou/);
+      if (status === 202) {
+        assert.equal(resultado.visibilidade_retorno, 'canal');
+        assert.equal(resultado.slack_payload.user, undefined);
+        assert.ok(!resultado.slack_payload.text.includes(pedido.pedido_acao.justificativa));
+        assert.match(resultado.slack_payload.text, tipo === 'aprovar'
+          ? /^Aprovação enviada ao GitHub por <@U123>/
+          : /^Pedido de alterações enviado ao GitHub por <@U123>/);
+      } else {
+        assert.equal(resultado.visibilidade_retorno, 'privada');
+        assert.equal(resultado.slack_payload.user, 'U123');
+        assert.ok(resultado.slack_payload.text.includes(pedido.pedido_acao.justificativa));
+        assert.ok(resultado.slack_payload.blocks.every(b => b.text.text.length <= 3000));
+      }
     }
     for (const resposta of [{ error: 'ECONNREFUSED' }, { statusCode: 202, body: 'invalid json' }, { statusCode: 202, body: { status: 'pendente' } }]) {
       const resultado = rodar('14 |', resposta, pedido).json;
@@ -97,6 +107,7 @@ test('reexecução preserva a identidade e o contexto sem exigir justificativa',
   assert.equal(pedido.pedido_acao.justificativa, undefined);
   const retorno = rodar('14 |', { statusCode: 500, body: { status: 'falha ao executar' } }, pedido).json;
   assert.equal(retorno.resultado_nucleo.confirmada, false);
+  assert.equal(retorno.visibilidade_retorno, 'privada');
   assert.match(retorno.slack_payload.text, /Não solicitada para a reexecução/);
 });
 
@@ -137,6 +148,41 @@ test('exports não carregam credenciais, segredos ou dados fixados', () => {
     assert.doesNotMatch(texto, /https:\/\/hooks\.slack\.com\/services\//);
     assert.deepEqual(workflow.pinData, {});
     assert.ok(workflow.nodes.every(n => !n.credentials));
+  }
+});
+
+test('o retorno usa o método Slack correspondente e confirma a entrega no canal correto', () => {
+  const preparar = central.nodes.find(n => n.name.startsWith('14 |'));
+  const responder = central.nodes.find(n => n.name.startsWith('15 |'));
+  const conferir = central.nodes.find(n => n.name.startsWith('16 |'));
+  const url = new Function('$json', 'return ' + responder.parameters.url.slice(3, -2));
+  assert.equal(url({ visibilidade_retorno: 'canal' }), 'https://slack.com/api/chat.postMessage');
+  assert.equal(url({ visibilidade_retorno: 'privada' }), 'https://slack.com/api/chat.postEphemeral');
+  assert.equal(url({}), 'https://slack.com/api/chat.postEphemeral');
+  assert.equal(responder.parameters.nodeCredentialType, 'slackApi');
+  assert.deepEqual(central.connections[preparar.name].main[0].map(n => n.node), [responder.name]);
+  assert.deepEqual(central.connections[responder.name].main[0].map(n => n.node), [conferir.name]);
+  assert.equal(central.connections[conferir.name], undefined);
+  const canal = { visibilidade_retorno: 'canal', slack_payload: { channel: 'C123' } };
+  assert.throws(() => rodar('16 |', { ok: false }, canal), /não confirmou a entrega/);
+  assert.throws(() => rodar('16 |', { ok: true, channel: 'C456', ts: '123.456' }, canal), /não confirmou a entrega/);
+  assert.throws(() => rodar('16 |', { ok: true, channel: 'C123' }, canal), /não confirmou a entrega/);
+  assert.equal(rodar('16 |', { ok: true, channel: 'C123', ts: '123.456' }, canal).json.entrega_retorno, 'confirmada');
+  const privado = { ...canal, visibilidade_retorno: 'privada' };
+  assert.equal(rodar('16 |', { ok: true }, privado).json.entrega_retorno, 'confirmada');
+});
+
+test('simulação, DM e retorno sem assinatura ficam privados mesmo com HTTP 202', () => {
+  const pedido = rodar('11 |', formulario('aprovar')).json;
+  const aceito = { statusCode: 202, body: { status: 'aceito' } };
+  for (const origem of [
+    { ...pedido, simulacao: true },
+    { ...pedido, retorno_acao: { ...pedido.retorno_acao, canal_slack: 'D123' } },
+    { ...pedido, meta: {} },
+  ]) {
+    const retorno = rodar('14 |', aceito, origem).json;
+    assert.equal(retorno.visibilidade_retorno, 'privada');
+    assert.equal(retorno.slack_payload.user, 'U123');
   }
 });
 

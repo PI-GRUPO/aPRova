@@ -127,6 +127,10 @@ func filtroListaAnalises(q url.Values) (domain.FiltroAnalises, int32, error) {
 }
 
 func (s *Servidor) manipularListaAnalises(w http.ResponseWriter, r *http.Request) {
+	if s.sessaoWeb != nil && r.Header.Get("X-Aprova-Assinatura") == "" {
+		s.sessaoWeb.ListarAnalises(w, r)
+		return
+	}
 	if !s.autenticarConsultaAnalises(w, r) {
 		return
 	}
@@ -166,6 +170,10 @@ func estadoConsultaValido(estado string) bool {
 }
 
 func (s *Servidor) manipularConsultaAnalise(w http.ResponseWriter, r *http.Request) {
+	if s.sessaoWeb != nil && r.Header.Get("X-Aprova-Assinatura") == "" {
+		s.sessaoWeb.DetalharAnalise(w, r, chi.URLParam(r, "id"))
+		return
+	}
 	if !s.autenticarConsultaAnalises(w, r) {
 		return
 	}

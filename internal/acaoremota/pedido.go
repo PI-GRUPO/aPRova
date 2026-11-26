@@ -38,8 +38,11 @@ func interpretarPedido(corpo []byte) (Pedido, error) {
 		return pedido, fmt.Errorf("%w: conteúdo depois do objeto JSON", ErrPedidoInvalido)
 	}
 
-	pedido.Justificativa = strings.TrimSpace(pedido.Justificativa)
+	return validarPedido(pedido)
+}
 
+func validarPedido(pedido Pedido) (Pedido, error) {
+	pedido.Justificativa = strings.TrimSpace(pedido.Justificativa)
 	if err := validador.Struct(pedido); err != nil {
 		return pedido, fmt.Errorf("%w: %w", ErrPedidoInvalido, err)
 	}

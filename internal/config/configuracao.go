@@ -62,8 +62,12 @@ var variaveisQueSeraoObrigatorias = []string{
 
 // Configuracao reúne os valores de ambiente exigidos pelos processos do aPRova.
 type Configuracao struct {
-	Porta    string
-	NivelLog string
+	WebURLPublica      string
+	GitHubClientID     string
+	GitHubClientSecret string
+	WebChaveSessao     []byte
+	Porta              string
+	NivelLog           string
 
 	URLBancoDados string
 	URLRedis      string
@@ -137,8 +141,12 @@ func Carregar() (Configuracao, error) {
 	var leitura leitor
 
 	configuracao := Configuracao{
-		Porta:    leitura.opcional("PORT", portaPadrao),
-		NivelLog: leitura.nivelDeLog(),
+		WebURLPublica:      leitura.opcional("WEB_URL_PUBLICA", ""),
+		GitHubClientID:     leitura.opcional("GITHUB_CLIENT_ID", ""),
+		GitHubClientSecret: leitura.opcional("GITHUB_CLIENT_SECRET", ""),
+		WebChaveSessao:     leitura.base64Opcional("WEB_CHAVE_SESSAO"),
+		Porta:              leitura.opcional("PORT", portaPadrao),
+		NivelLog:           leitura.nivelDeLog(),
 
 		URLBancoDados: leitura.obrigatoria("DATABASE_URL", origemDocker),
 		URLRedis:      leitura.obrigatoria("REDIS_URL", origemDocker),
@@ -201,6 +209,11 @@ func Carregar() (Configuracao, error) {
 		ChaveAPIGemini:               lerVariavel("GEMINI_API_KEY"),
 	}
 
+	if configuracao.WebURLPublica != "" || configuracao.GitHubClientID != "" || configuracao.GitHubClientSecret != "" || len(configuracao.WebChaveSessao) > 0 {
+		if configuracao.WebURLPublica == "" || configuracao.GitHubClientID == "" || configuracao.GitHubClientSecret == "" || len(configuracao.WebChaveSessao) != 32 {
+			leitura.registrarPendencia("login web exige WEB_URL_PUBLICA, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET e WEB_CHAVE_SESSAO de 32 bytes em base64")
+		}
+	}
 	leitura.recusarVariaveisRemovidas()
 
 	if err := leitura.erro(); err != nil {
